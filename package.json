@@ -1,0 +1,12 @@
+{
+  "name": "nexus-system",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n server,client -c cyan,magenta \"npm run start:dev --prefix server\" \"npm run dev --prefix client\"",
+    "dev:server": "npm run start:dev --prefix server",
+    "dev:client": "npm run dev --prefix client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
