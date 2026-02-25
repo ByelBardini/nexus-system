@@ -4,12 +4,22 @@ export default {
     content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
   	extend: {
+  		fontFamily: {
+  			sans: ['Inter', 'sans-serif'],
+  			condensed: ['Roboto Condensed', 'sans-serif']
+  		},
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
   		},
   		colors: {
+  			'erp-blue': '#2563eb',
+  			'erp-yellow': '#eab308',
+  			'erp-orange': '#f97316',
+  			'erp-green': '#16a34a',
+  			'erp-purple': '#8b5cf6',
+  			'erp-bg': '#f1f5f9',
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {

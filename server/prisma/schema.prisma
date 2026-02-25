@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -12,9 +9,212 @@ datasource db {
   provider = "mysql"
 }
 
-// Modelo inicial apenas para teste de conexão
-model TestEntity {
-  id        Int      @id @default(autoincrement())
-  nome      String   @db.VarChar(100)
-  createdAt DateTime @default(now())
+// ==================== CORE (plataforma) ====================
+
+model Usuario {
+  id             Int             @id @default(autoincrement())
+  nome           String          @db.VarChar(200)
+  email          String          @unique @db.VarChar(255)
+  senhaHash      String          @map("senha_hash") @db.VarChar(255)
+  ativo          Boolean         @default(true)
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  usuarioCargos  UsuarioCargo[]
+  ordensServico  OrdemServico[]
+
+  @@map("usuarios")
+}
+
+model Setor {
+  id     Int     @id @default(autoincrement())
+  code   String  @unique @db.VarChar(50)
+  nome   String  @db.VarChar(100)
+  cargos Cargo[]
+
+  @@map("setores")
+}
+
+model Cargo {
+  id                Int               @id @default(autoincrement())
+  setorId           Int               @map("sector_id")
+  code              String            @db.VarChar(50)
+  nome              String            @db.VarChar(100)
+  setor             Setor             @relation(fields: [setorId], references: [id], onDelete: Cascade)
+  cargoPermissoes   CargoPermissao[]
+  usuarioCargos     UsuarioCargo[]
+
+  @@unique([setorId, code])
+  @@map("cargos")
+}
+
+model Permissao {
+  id               Int               @id @default(autoincrement())
+  code             String            @unique @db.VarChar(100)
+  cargoPermissoes  CargoPermissao[]
+
+  @@map("permissoes")
+}
+
+model CargoPermissao {
+  cargoId      Int       @map("role_id")
+  permissaoId  Int       @map("permission_id")
+  cargo        Cargo     @relation(fields: [cargoId], references: [id], onDelete: Cascade)
+  permissao    Permissao @relation(fields: [permissaoId], references: [id], onDelete: Cascade)
+
+  @@id([cargoId, permissaoId])
+  @@map("cargos_permissoes")
+}
+
+model UsuarioCargo {
+  usuarioId Int     @map("user_id")
+  cargoId   Int     @map("role_id")
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  cargo     Cargo   @relation(fields: [cargoId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, cargoId])
+  @@map("usuarios_cargos")
+}
+
+enum TipoOS {
+  INSTALACAO_COM_BLOQUEIO
+  INSTALACAO_SEM_BLOQUEIO
+  REVISAO
+  RETIRADA
+  DESLOCAMENTO
+}
+
+enum StatusOS {
+  AGENDADO
+  EM_TESTES
+  TESTES_REALIZADOS
+  AGUARDANDO_CADASTRO
+  FINALIZADO
+  CANCELADO
+}
+
+model RegistroAuditoria {
+  id          Int      @id @default(autoincrement())
+  usuarioId   Int?     @map("user_id")
+  action      String   @db.VarChar(50)
+  entity      String   @db.VarChar(100)
+  entityId    Int?     @map("entity_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  payloadJson String?  @map("payload_json") @db.Text
+
+  @@map("registros_auditoria")
+}
+
+// ==================== CADASTROS BASE ====================
+
+model Cliente {
+  id            Int            @id @default(autoincrement())
+  nome          String         @db.VarChar(200)
+  cnpj          String?        @db.VarChar(20)
+  contatos      ContatoCliente[]
+  subclientes   Subcliente[]
+  ordensServico OrdemServico[]
+
+  @@map("clientes")
+}
+
+model ContatoCliente {
+  id        Int     @id @default(autoincrement())
+  clienteId Int     @map("cliente_id")
+  nome      String  @db.VarChar(200)
+  celular   String? @db.VarChar(20)
+  email     String? @db.VarChar(255)
+  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  @@map("contatos_clientes")
+}
+
+model Subcliente {
+  id            Int            @id @default(autoincrement())
+  clienteId     Int            @map("cliente_id")
+  nome          String         @db.VarChar(200)
+  cep           String?        @db.VarChar(10)
+  cidade        String?        @db.VarChar(100)
+  estado        String?        @db.VarChar(2)
+  cpf           String?        @db.VarChar(14)
+  email         String?        @db.VarChar(255)
+  telefone      String?        @db.VarChar(20)
+  cobrancaTipo  String?        @map("cobranca_tipo") @db.VarChar(20)
+  cliente       Cliente        @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  ordensServico OrdemServico[]
+
+  @@map("subclientes")
+}
+
+model Tecnico {
+  id              Int            @id @default(autoincrement())
+  nome            String         @db.VarChar(200)
+  telefone        String?        @db.VarChar(20)
+  enderecoEntrega String?        @map("endereco_entrega") @db.VarChar(500)
+  cidade          String?        @db.VarChar(100)
+  estado          String?        @db.VarChar(2)
+  ativo           Boolean        @default(true)
+  precos          PrecoTecnico?
+  ordensServico   OrdemServico[]
+
+  @@map("tecnicos")
+}
+
+model PrecoTecnico {
+  id                    Int     @id @default(autoincrement())
+  tecnicoId             Int     @unique @map("tecnico_id")
+  instalacaoComBloqueio Decimal @default(0) @map("instalacao_com_bloqueio") @db.Decimal(10, 2)
+  instalacaoSemBloqueio Decimal @default(0) @map("instalacao_sem_bloqueio") @db.Decimal(10, 2)
+  revisao               Decimal @default(0) @db.Decimal(10, 2)
+  retirada              Decimal @default(0) @db.Decimal(10, 2)
+  deslocamento          Decimal @default(0) @db.Decimal(10, 2)
+  tecnico               Tecnico @relation(fields: [tecnicoId], references: [id], onDelete: Cascade)
+
+  @@map("precos_tecnicos")
+}
+
+model Veiculo {
+  id            Int            @id @default(autoincrement())
+  placa         String         @unique @db.VarChar(10)
+  marca         String         @db.VarChar(100)
+  modelo        String         @db.VarChar(100)
+  ano           Int?
+  cor           String?        @db.VarChar(50)
+  ordensServico OrdemServico[]
+
+  @@map("veiculos")
+}
+
+model OrdemServico {
+  id            Int           @id @default(autoincrement())
+  numero        Int           @unique
+  tipo          TipoOS
+  status        StatusOS      @default(AGENDADO)
+  clienteId     Int           @map("cliente_id")
+  subclienteId  Int?          @map("subcliente_id")
+  veiculoId     Int?          @map("veiculo_id")
+  tecnicoId     Int?          @map("tecnico_id")
+  criadoPorId   Int?          @map("criado_por_id")
+  observacoes   String?       @db.Text
+  criadoEm      DateTime      @default(now()) @map("criado_em")
+  atualizadoEm  DateTime      @updatedAt @map("atualizado_em")
+  cliente       Cliente       @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  subcliente    Subcliente?   @relation(fields: [subclienteId], references: [id], onDelete: SetNull)
+  veiculo       Veiculo?      @relation(fields: [veiculoId], references: [id], onDelete: SetNull)
+  tecnico       Tecnico?      @relation(fields: [tecnicoId], references: [id], onDelete: SetNull)
+  criadoPor     Usuario?      @relation(fields: [criadoPorId], references: [id], onDelete: SetNull)
+  historico     OSHistorico[]
+
+  @@map("ordens_servico")
+}
+
+model OSHistorico {
+  id             Int         @id @default(autoincrement())
+  ordemServicoId Int         @map("ordem_servico_id")
+  statusAnterior StatusOS    @map("status_anterior")
+  statusNovo     StatusOS    @map("status_novo")
+  criadoEm       DateTime    @default(now()) @map("criado_em")
+  observacao     String?     @db.VarChar(500)
+  ordemServico   OrdemServico @relation(fields: [ordemServicoId], references: [id], onDelete: Cascade)
+
+  @@map("os_historico")
 }

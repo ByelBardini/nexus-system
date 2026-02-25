@@ -13,9 +13,15 @@ async function bootstrap() {
   );
   app.useLogger(app.get(Logger));
 
+  app.enableCors({
+    origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+    credentials: true,
+  });
+
   const config = new DocumentBuilder()
     .setTitle('Nexus System API')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);

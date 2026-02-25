@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Advanced Service Order Lifecycle Management - Industrial ERP</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Roboto+Condensed:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0f172a",
+                        "erp-yellow": "#eab308",
+                        "erp-blue": "#2563eb",
+                        "erp-purple": "#8b5cf6",
+                        "erp-orange": "#f97316",
+                        "erp-green": "#16a34a",
+                        "background-light": "#f1f5f9",
+                    },
+                    fontFamily: {
+                        "sans": ["Inter", "sans-serif"],
+                        "condensed": ["Roboto Condensed", "sans-serif"]
+                    },
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        @layer base {
+            body { @apply bg-background-light text-slate-900 font-sans text-sm; }
+            h1, h2, h3, h4 { @apply font-condensed uppercase tracking-tight; }
+        }
+        .pipeline-item {
+            position: relative;
+            clip-path: polygon(0% 0%, calc(100% - 15px) 0%, 100% 50%, calc(100% - 15px) 100%, 0% 100%, 15px 50%);
+            margin-left: -12px;
+        }
+        .pipeline-item:first-child {
+            clip-path: polygon(0% 0%, calc(100% - 15px) 0%, 100% 50%, calc(100% - 15px) 100%, 0% 100%);
+            margin-left: 0;
+        }
+        .pipeline-item:last-child {
+            clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%, 15px 50%);
+        }
+        .high-density-table th { @apply px-3 py-2 text-[11px] font-bold border-b-2 border-slate-300 bg-slate-200 text-slate-700 uppercase; }
+        .high-density-table td { @apply px-3 py-1.5 border-b border-slate-200 align-middle; }
+    </style>
+</head>
+<body>
+<div class="flex h-screen overflow-hidden">
+<aside class="w-60 bg-slate-950 text-slate-300 flex flex-col border-r border-slate-800 shrink-0">
+<div class="p-4 flex items-center gap-3 border-b border-slate-800">
+<div class="size-7 bg-white flex items-center justify-center text-slate-950 rounded-sm">
+<span class="material-symbols-outlined text-xl">precision_manufacturing</span>
+</div>
+<div>
+<h1 class="text-white text-base font-bold leading-none">ERP OPS</h1>
+<p class="text-[9px] uppercase tracking-widest text-slate-500 font-bold">Industrial Terminal</p>
+</div>
+</div>
+<nav class="flex-1 px-2 py-4 flex flex-col gap-0.5">
+<a class="flex items-center gap-3 px-3 py-2 hover:bg-slate-900 transition-colors" href="#">
+<span class="material-symbols-outlined text-lg">dashboard</span>
+<span class="text-xs font-semibold uppercase">Monitor</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 bg-white/10 text-white border-l-4 border-erp-blue" href="#">
+<span class="material-symbols-outlined text-lg">list_alt</span>
+<span class="text-xs font-semibold uppercase">Service Orders</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 hover:bg-slate-900 transition-colors" href="#">
+<span class="material-symbols-outlined text-lg">inventory</span>
+<span class="text-xs font-semibold uppercase">Stock Control</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 hover:bg-slate-900 transition-colors" href="#">
+<span class="material-symbols-outlined text-lg">engineering</span>
+<span class="text-xs font-semibold uppercase">Field Staff</span>
+</a>
+</nav>
+<div class="p-4 mt-auto border-t border-slate-800 bg-slate-900/50">
+<div class="flex items-center gap-3">
+<div class="size-8 bg-slate-700 overflow-hidden">
+<img alt="User avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuARpg0-nt6W056FdqFH-rqKxSZ8Ii_hgt8bbU-oUEoL12CgEjywVmDMjGev9-WYUmxOqscYdxvY3NSpwo7twntcWKMFqBqooNNFNXU_x1ywIt_7x4Ren86RLRx3HnLf01UTLTN0XAwJfqFGpArbsE6Oev8q1Shm-o8L3C3w9T0XESL_nWwLf9dMsRbKJtY5ARFOM_lhRO4bFP4RGaLLlVMafRzOymbDAzlHS84emuOxa8Y8lJvyFUUQRlMGDdYwWiMRXOHL9SYNato"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-[11px] font-bold text-slate-100 uppercase truncate">M. Vinicius</p>
+<p class="text-[9px] text-slate-500 uppercase font-bold">Terminal Admin</p>
+</div>
+<button class="text-slate-500 hover:text-white"><span class="material-symbols-outlined text-lg">logout</span></button>
+</div>
+</div>
+</aside>
+<main class="flex-1 flex flex-col overflow-hidden">
+<header class="h-12 bg-white border-b border-slate-300 flex items-center justify-between px-6 shrink-0">
+<h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">settings_suggest</span>
+                Service Order Management
+            </h2>
+<div class="flex items-center gap-3">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-base">search</span>
+<input class="pl-8 pr-3 py-1 bg-slate-100 border border-slate-300 text-[11px] w-64 focus:ring-1 focus:ring-slate-400 placeholder:uppercase" placeholder="Search Order, Plate or Client" type="text"/>
+</div>
+<button class="bg-erp-blue hover:bg-blue-700 text-white px-3 py-1 text-[11px] font-bold uppercase flex items-center gap-1 transition-all">
+<span class="material-symbols-outlined text-sm font-bold">add</span>
+                    New Order
+                </button>
+</div>
+</header>
+<div class="flex-1 overflow-y-auto p-4 space-y-4">
+<div class="flex w-full h-20 shadow-sm border border-slate-300 bg-white">
+<div class="pipeline-item flex-1 bg-white border-r border-slate-200 p-3 flex flex-col justify-center">
+<div class="flex justify-between items-center border-l-4 border-erp-yellow pl-2">
+<span class="text-[10px] font-bold text-slate-500 uppercase">Agendado</span>
+<span class="text-lg font-black text-slate-800">42</span>
+</div>
+<div class="flex gap-4 mt-1 pl-3">
+<div class="text-[9px]"><span class="text-slate-400 font-bold uppercase">Avg:</span> <span class="font-bold">2.4h</span></div>
+<div class="text-[9px]"><span class="text-red-500 font-bold uppercase">Late:</span> <span class="font-bold text-red-600">3</span></div>
+</div>
+</div>
+<div class="pipeline-item flex-1 bg-blue-50/50 p-3 flex flex-col justify-center">
+<div class="flex justify-between items-center border-l-4 border-erp-blue pl-2">
+<span class="text-[10px] font-bold text-slate-600 uppercase">Em Testes</span>
+<span class="text-lg font-black text-slate-800">18</span>
+</div>
+<div class="flex gap-4 mt-1 pl-3">
+<div class="text-[9px]"><span class="text-slate-400 font-bold uppercase">Avg:</span> <span class="font-bold">45m</span></div>
+<div class="text-[9px]"><span class="text-red-500 font-bold uppercase">Late:</span> <span class="font-bold text-red-600">1</span></div>
+</div>
+</div>
+<div class="pipeline-item flex-1 bg-purple-50/50 p-3 flex flex-col justify-center">
+<div class="flex justify-between items-center border-l-4 border-erp-purple pl-2">
+<span class="text-[10px] font-bold text-slate-600 uppercase">Testes Realizados</span>
+<span class="text-lg font-black text-slate-800">12</span>
+</div>
+<div class="flex gap-4 mt-1 pl-3">
+<div class="text-[9px]"><span class="text-slate-400 font-bold uppercase">Avg:</span> <span class="font-bold">1.2h</span></div>
+<div class="text-[9px]"><span class="text-red-500 font-bold uppercase">Late:</span> <span class="font-bold text-slate-600">0</span></div>
+</div>
+</div>
+<div class="pipeline-item flex-1 bg-orange-50/50 p-3 flex flex-col justify-center">
+<div class="flex justify-between items-center border-l-4 border-erp-orange pl-2">
+<span class="text-[10px] font-bold text-slate-600 uppercase">Aguardando Cadastro</span>
+<span class="text-lg font-black text-slate-800">07</span>
+</div>
+<div class="flex gap-4 mt-1 pl-3">
+<div class="text-[9px]"><span class="text-slate-400 font-bold uppercase">Avg:</span> <span class="font-bold">5.1h</span></div>
+<div class="text-[9px]"><span class="text-red-500 font-bold uppercase">Late:</span> <span class="font-bold text-red-600">5</span></div>
+</div>
+</div>
+<div class="pipeline-item flex-1 bg-green-50/50 p-3 flex flex-col justify-center">
+<div class="flex justify-between items-center border-l-4 border-erp-green pl-2">
+<span class="text-[10px] font-bold text-slate-600 uppercase">Finalizado (Hoje)</span>
+<span class="text-lg font-black text-slate-800">26</span>
+</div>
+<div class="flex gap-4 mt-1 pl-3">
+<div class="text-[9px]"><span class="text-slate-400 font-bold uppercase">Total MTD:</span> <span class="font-bold">482</span></div>
+</div>
+</div>
+</div>
+<div class="bg-white border border-slate-300 shadow-sm overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse high-density-table font-condensed">
+<thead>
+<tr>
+<th class="w-8"></th>
+<th>Order #</th>
+<th>Client / Association</th>
+<th>Subclient</th>
+<th>Plate</th>
+<th>Technician</th>
+<th>Service Type</th>
+<th>Current Phase</th>
+<th>Last Movement</th>
+<th>SLA</th>
+<th class="text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="text-[12px] font-medium uppercase tracking-tight">
+<tr class="hover:bg-slate-50">
+<td><span class="material-symbols-outlined text-base text-slate-400 cursor-pointer">chevron_right</span></td>
+<td class="font-bold text-slate-950">#29481</td>
+<td>Trans-Logistics S.A.</td>
+<td>Regional Hub Alpha</td>
+<td class="font-bold">ABC-1234</td>
+<td>Ricardo Santos</td>
+<td>Installation</td>
+<td><span class="bg-erp-yellow/10 text-yellow-800 px-1.5 py-0.5 border border-erp-yellow/30">Agendado</span></td>
+<td class="text-slate-500">24/05 08:30</td>
+<td class="text-slate-500">24h remaining</td>
+<td class="text-right">
+<button class="p-1 hover:bg-slate-200 transition-colors"><span class="material-symbols-outlined text-sm">more_vert</span></button>
+</td>
+</tr>
+<tr class="bg-slate-100/50 border-l-4 border-erp-blue">
+<td><span class="material-symbols-outlined text-base text-erp-blue cursor-pointer">expand_more</span></td>
+<td class="font-bold text-erp-blue">#29480</td>
+<td>Global Trans-Association</td>
+<td>Fleet North</td>
+<td class="font-bold">XYZ-9876</td>
+<td>Marcos Silva</td>
+<td>Revision</td>
+<td><span class="bg-erp-blue/10 text-erp-blue px-1.5 py-0.5 border border-erp-blue/30">Em Testes</span></td>
+<td class="text-slate-500">24/05 10:15</td>
+<td class="text-red-600 font-bold">Overdue (2h)</td>
+<td class="text-right">
+<button class="p-1 text-erp-blue hover:bg-slate-200 transition-colors"><span class="material-symbols-outlined text-sm">edit</span></button>
+</td>
+</tr>
+<tr>
+<td class="p-0 bg-white" colspan="11">
+<div class="grid grid-cols-4 border-b border-slate-300">
+<div class="p-4 border-r border-slate-200 bg-slate-50">
+<h4 class="text-[10px] font-black text-slate-400 mb-3 flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">assignment_late</span> 01. ISSUANCE / EMISSÃO
+                                            </h4>
+<div class="space-y-2">
+<div>
+<label class="text-[9px] text-slate-400 block font-bold">Created At</label>
+<span class="text-[11px] font-bold">23/05/2024 - 14:42</span>
+</div>
+<div>
+<label class="text-[9px] text-slate-400 block font-bold">Author</label>
+<span class="text-[11px] font-bold">System Admin</span>
+</div>
+<div>
+<label class="text-[9px] text-slate-400 block font-bold">Technical Spec</label>
+<p class="text-[10px] leading-tight italic text-slate-600">"Replacement of secondary telemetry module due to inconsistent signal in North region."</p>
+</div>
+</div>
+</div>
+<div class="p-4 border-r border-slate-200">
+<h4 class="text-[10px] font-black text-slate-400 mb-3 flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">build</span> 02. EXECUTION / SERVIÇO
+                                            </h4>
+<div class="flex flex-col gap-3">
+<div class="p-2 bg-slate-50 border border-dashed border-slate-300 rounded-sm">
+<p class="text-[10px] text-slate-500 uppercase font-bold text-center">Awaiting technical form</p>
+</div>
+<button class="w-full bg-slate-900 text-white py-2 text-[10px] font-black uppercase hover:bg-slate-800 transition-all">
+                                                    Registrar Execução
+                                                </button>
+</div>
+</div>
+<div class="p-4 border-r border-slate-200 bg-blue-50/40">
+<h4 class="text-[10px] font-black text-erp-blue mb-3 flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">router</span> 03. TESTING / EM TESTES
+                                            </h4>
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<label class="text-[9px] font-bold text-slate-500 uppercase">Status:</label>
+<span class="text-[10px] font-black text-erp-green flex items-center gap-1">
+<span class="size-1.5 bg-erp-green rounded-full animate-pulse"></span>
+                                                        Communicating
+                                                    </span>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<button class="bg-erp-blue text-white py-1.5 text-[9px] font-bold uppercase hover:bg-blue-700">Aprovar Teste</button>
+<button class="bg-white border border-slate-300 text-slate-600 py-1.5 text-[9px] font-bold uppercase hover:bg-slate-50">Trocar Aparelho</button>
+</div>
+</div>
+</div>
+<div class="p-4">
+<h4 class="text-[10px] font-black text-slate-400 mb-3 flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">inventory_2</span> 04. INVENTORY / CADASTRO
+                                            </h4>
+<div class="space-y-3">
+<div class="flex justify-between">
+<div class="text-[10px] font-bold text-slate-600 uppercase">Stock: <span class="text-slate-900 ml-1">Infinity</span></div>
+<div class="text-[10px] font-bold text-slate-600 uppercase">Serial: <span class="text-slate-900 ml-1">672901-A</span></div>
+</div>
+<button class="w-full border-2 border-slate-300 text-slate-300 py-2 text-[10px] font-black uppercase cursor-not-allowed">
+                                                    Concluir Cadastro
+                                                </button>
+<p class="text-[8px] text-slate-400 uppercase text-center font-bold">Testing approval required</p>
+</div>
+</div>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-slate-50">
+<td><span class="material-symbols-outlined text-base text-slate-400 cursor-pointer">chevron_right</span></td>
+<td class="font-bold text-slate-950">#29479</td>
+<td>Steel Logistics Group</td>
+<td>South Terminal</td>
+<td class="font-bold">DEF-5678</td>
+<td>Ana Paula</td>
+<td>Removal</td>
+<td><span class="bg-erp-orange/10 text-orange-800 px-1.5 py-0.5 border border-erp-orange/30">Ag. Cadastro</span></td>
+<td class="text-slate-500">24/05 09:45</td>
+<td class="text-slate-500">8h remaining</td>
+<td class="text-right">
+<button class="p-1 hover:bg-slate-200 transition-colors"><span class="material-symbols-outlined text-sm">more_vert</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="px-4 py-2 border-t border-slate-300 flex justify-between items-center bg-slate-50">
+<div class="text-[10px] font-bold text-slate-500 uppercase">Showing 1-15 of 105 Orders</div>
+<div class="flex gap-1">
+<button class="px-2 py-1 border border-slate-300 bg-white text-[10px] font-bold">PREV</button>
+<button class="px-3 py-1 bg-slate-900 text-white text-[10px] font-bold">1</button>
+<button class="px-3 py-1 border border-slate-300 bg-white text-[10px] font-bold">2</button>
+<button class="px-2 py-1 border border-slate-300 bg-white text-[10px] font-bold">NEXT</button>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-4 gap-4">
+<div class="bg-white border border-slate-300 p-3 flex items-center gap-4">
+<div class="p-2 bg-slate-100 text-slate-600"><span class="material-symbols-outlined">schedule</span></div>
+<div>
+<p class="text-[9px] font-bold text-slate-500 uppercase">Average Cycle Time</p>
+<p class="text-xl font-black text-slate-900">4.8 Hours</p>
+</div>
+</div>
+<div class="bg-white border border-slate-300 p-3 flex items-center gap-4">
+<div class="p-2 bg-slate-100 text-erp-green"><span class="material-symbols-outlined">task_alt</span></div>
+<div>
+<p class="text-[9px] font-bold text-slate-500 uppercase">Success Rate</p>
+<p class="text-xl font-black text-slate-900">97.2%</p>
+</div>
+</div>
+<div class="bg-white border border-slate-300 p-3 flex items-center gap-4">
+<div class="p-2 bg-slate-100 text-erp-orange"><span class="material-symbols-outlined">warning</span></div>
+<div>
+<p class="text-[9px] font-bold text-slate-500 uppercase">Stock Latency</p>
+<p class="text-xl font-black text-slate-900">12 Units</p>
+</div>
+</div>
+<div class="bg-white border border-slate-300 p-3 flex items-center gap-4">
+<div class="p-2 bg-slate-100 text-erp-blue"><span class="material-symbols-outlined">trending_up</span></div>
+<div>
+<p class="text-[9px] font-bold text-slate-500 uppercase">Daily Throughput</p>
+<p class="text-xl font-black text-slate-900">+14.3%</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+</body></html>
