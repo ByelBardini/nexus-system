@@ -3,6 +3,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { AppLayout } from '@/layouts/AppLayout'
 import { Login } from '@/pages/Login'
 import { OrdensServicoPage } from '@/pages/OrdensServicoPage'
+import { ConfiguracoesPage } from '@/pages/configuracoes/ConfiguracoesPage'
 import { UsuariosPage } from '@/pages/usuarios/UsuariosPage'
 import { CargosPage } from '@/pages/cargos/CargosPage'
 import { ClientesPage } from '@/pages/clientes/ClientesPage'
@@ -21,6 +22,7 @@ function App() {
         }
       >
         <Route index element={<OrdensServicoPage />} />
+        <Route path="configuracoes" element={<ConfiguracoesPage />} />
         <Route path="usuarios" element={<UsuariosPage />} />
         <Route path="cargos" element={<CargosPage />} />
         <Route path="clientes" element={<ClientesPage />} />
