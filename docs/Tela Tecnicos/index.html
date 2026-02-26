@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-br"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Technician Coverage and Management - Industrial ERP</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        :root {
+            --sidebar-bg: #1E293B;
+            --sidebar-hover: #334155;
+            --background-gray: #F1F5F9;
+            --border-subtle: #E2E8F0;
+            --primary-blue: #2563EB;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-gray);
+        }
+        .sidebar-item {
+            @apply flex items-center gap-3 px-4 py-2 text-slate-300 hover:bg-[var(--sidebar-hover)] hover:text-white transition-all text-sm;
+        }
+        .sidebar-item.active {
+            @apply bg-[var(--sidebar-hover)] text-white border-r-4 border-blue-500;
+        }
+        .sidebar-group-title {
+            @apply px-4 py-2 mt-4 text-[10px] font-bold uppercase tracking-wider text-slate-500;
+        }
+        .map-container {
+            background-color: #e5e7eb;
+            background-image: 
+                radial-gradient(#d1d5db 1px, transparent 1px),
+                linear-gradient(to right, #e5e7eb 1px, transparent 1px),
+                linear-gradient(to bottom, #e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
+            position: relative;
+        }
+        .marker-active {
+            @apply w-3 h-3 bg-emerald-500 rounded-full border-2 border-white shadow-sm cursor-pointer;
+        }
+        .marker-inactive {
+            @apply w-3 h-3 bg-slate-400 rounded-full border-2 border-white shadow-sm cursor-pointer;
+        }
+        .table-header {
+            @apply px-4 py-2 bg-slate-50 border-b border-[var(--border-subtle)] text-[11px] font-bold uppercase tracking-wider text-slate-500;
+        }
+        .table-row {
+            @apply border-b border-[var(--border-subtle)] hover:bg-slate-50 transition-colors cursor-pointer;
+        }
+        .status-toggle {
+            @apply w-10 h-5 bg-slate-200 rounded-full relative transition-colors cursor-pointer;
+        }
+        .status-toggle.active {
+            @apply bg-emerald-500;
+        }
+        .status-toggle::after {
+            content: '';
+            @apply absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform shadow-sm;
+        }
+        .status-toggle.active::after {
+            @apply translate-x-5;
+        }
+        input, select {
+            @apply h-9 px-3 border border-slate-300 rounded-sm text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none;
+        }
+        label {
+            @apply block text-[10px] font-bold text-slate-500 uppercase mb-1;
+        }
+    </style>
+</head>
+<body class="text-slate-900 antialiased overflow-hidden">
+<div class="flex h-screen">
+<aside class="w-64 bg-[var(--sidebar-bg)] flex flex-col fixed h-screen z-20 overflow-y-auto">
+<div class="p-6 flex items-center gap-3 border-b border-slate-700/50 mb-2">
+<div class="bg-blue-600 p-1.5 rounded-sm">
+<span class="material-symbols-outlined text-white text-xl leading-none">precision_manufacturing</span>
+</div>
+<span class="text-white font-bold tracking-tight uppercase text-sm">Industrial Hub</span>
+</div>
+<nav class="flex-1">
+<div class="sidebar-group-title">Operação</div>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">list_alt</span>
+<span>Ordens</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">biotech</span>
+<span>Em Testes</span>
+</a>
+<div class="sidebar-group-title">Configuração</div>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">inventory_2</span>
+<span>Estoque</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">package_2</span>
+<span>Kits</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">local_shipping</span>
+<span>Despache</span>
+</a>
+<div class="sidebar-group-title">Gestão</div>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">assessment</span>
+<span>Relatórios</span>
+</a>
+<a class="sidebar-item active" href="#">
+<span class="material-symbols-outlined text-lg">engineering</span>
+<span>Técnicos</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">person_search</span>
+<span>Clientes</span>
+</a>
+</nav>
+<div class="p-4 border-t border-slate-700/50">
+<div class="flex items-center gap-3 px-2 py-3 text-slate-400">
+<div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-white">JD</div>
+<div class="flex flex-col overflow-hidden">
+<span class="text-xs text-white font-medium truncate">João D. Operador</span>
+<span class="text-[10px] uppercase">Painel de Controle</span>
+</div>
+</div>
+</div>
+</aside>
+<main class="flex-1 ml-64 flex flex-col h-screen">
+<header class="h-20 bg-white border-b border-[var(--border-subtle)] flex items-center justify-between px-8 shrink-0 z-10">
+<div>
+<h1 class="text-lg font-bold text-slate-800">Técnicos</h1>
+<p class="text-xs text-slate-500">Cobertura regional e gestão de prestadores</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex flex-col">
+<label>Busca</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-2.5 top-2 text-slate-400 text-lg">search</span>
+<input class="pl-9 w-64" placeholder="Nome ou CPF/CNPJ..." type="text"/>
+</div>
+</div>
+<div class="flex flex-col">
+<label>Estado</label>
+<select class="w-24">
+<option>Todos</option>
+<option>SP</option>
+<option>RJ</option>
+<option>MG</option>
+</select>
+</div>
+<div class="flex flex-col">
+<label>Status</label>
+<select class="w-32">
+<option>Todos</option>
+<option>Ativo</option>
+<option>Inativo</option>
+</select>
+</div>
+<div class="flex flex-col">
+<label> </label>
+<button class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold h-9 px-4 rounded-sm flex items-center gap-2 transition-colors">
+<span class="material-symbols-outlined text-lg">add</span>
+                            Novo Técnico
+                        </button>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<section class="w-[40%] border-r border-[var(--border-subtle)] map-container relative">
+<div class="absolute inset-0 overflow-hidden">
+<div class="absolute top-[20%] left-[30%] marker-active group">
+<div class="hidden group-hover:block absolute bottom-6 left-1/2 -translate-x-1/2 w-48 bg-white border border-slate-200 p-3 shadow-lg rounded-sm z-30">
+<div class="flex flex-col">
+<span class="text-xs font-bold text-slate-800">Ricardo Silva</span>
+<span class="text-[10px] text-slate-500">São Paulo, SP</span>
+<span class="text-[10px] text-slate-500">(11) 98765-4321</span>
+<button class="mt-2 text-[10px] font-bold text-blue-600 uppercase hover:underline text-left">Editar Perfil</button>
+</div>
+<div class="absolute bottom-[-6px] left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-b border-r border-slate-200 rotate-45"></div>
+</div>
+</div>
+<div class="absolute top-[45%] left-[60%] marker-inactive"></div>
+<div class="absolute top-[60%] left-[40%] marker-active"></div>
+<div class="absolute top-[35%] left-[75%] marker-active"></div>
+<div class="absolute top-[75%] left-[25%] marker-inactive"></div>
+</div>
+<div class="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm p-3 border border-slate-200 rounded-sm text-[10px] flex gap-4">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 bg-emerald-500 rounded-full"></div>
+<span class="font-bold uppercase tracking-wider">Ativo</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 bg-slate-400 rounded-full"></div>
+<span class="font-bold uppercase tracking-wider">Inativo</span>
+</div>
+</div>
+</section>
+<section class="w-[60%] flex flex-col bg-white overflow-hidden">
+<div class="overflow-y-auto flex-1">
+<table class="w-full border-collapse">
+<thead>
+<tr>
+<th class="table-header text-left">Nome</th>
+<th class="table-header text-left">Cidade/UF</th>
+<th class="table-header text-left">Telefone</th>
+<th class="table-header text-right">Valor Base (Inst.)</th>
+<th class="table-header text-center">Status</th>
+<th class="table-header w-10"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="table-row bg-slate-50/50">
+<td class="px-4 py-3 text-sm font-semibold text-slate-800">Ricardo Silva</td>
+<td class="px-4 py-3 text-sm text-slate-600">São Paulo / SP</td>
+<td class="px-4 py-3 text-sm text-slate-600">(11) 98765-4321</td>
+<td class="px-4 py-3 text-sm text-slate-800 font-medium text-right">R$ 150,00</td>
+<td class="px-4 py-3">
+<div class="flex justify-center">
+<div class="status-toggle active"></div>
+</div>
+</td>
+<td class="px-4 py-3 text-slate-400">
+<span class="material-symbols-outlined text-lg">expand_less</span>
+</td>
+</tr>
+<tr>
+<td class="p-0 border-b border-slate-200" colspan="6">
+<div class="bg-slate-100 p-6 flex flex-col gap-6">
+<div class="grid grid-cols-2 gap-8">
+<div>
+<h4 class="text-[10px] font-bold uppercase text-slate-500 mb-2">Endereço Completo</h4>
+<p class="text-sm text-slate-700 leading-relaxed">
+                                                        Rua das Indústrias, 452 - Galpão 4<br/>
+                                                        Bairro Industrial, São Paulo - SP<br/>
+                                                        CEP: 01234-567
+                                                    </p>
+</div>
+<div class="flex items-end justify-end">
+<button class="text-[11px] font-bold text-slate-600 border border-slate-300 px-3 py-1.5 rounded-sm bg-white hover:bg-slate-50 uppercase">Visualizar Contrato</button>
+</div>
+</div>
+<div>
+<h4 class="text-[10px] font-bold uppercase text-slate-500 mb-3">Tabela de Custos Operacionais</h4>
+<div class="grid grid-cols-5 gap-2">
+<div class="bg-white p-3 border border-slate-200">
+<span class="text-[9px] uppercase font-bold text-slate-400 block mb-1">Inst. c/ Bloqueio</span>
+<span class="text-sm font-bold text-slate-800">R$ 180,00</span>
+</div>
+<div class="bg-white p-3 border border-slate-200">
+<span class="text-[9px] uppercase font-bold text-slate-400 block mb-1">Inst. s/ Bloqueio</span>
+<span class="text-sm font-bold text-slate-800">R$ 150,00</span>
+</div>
+<div class="bg-white p-3 border border-slate-200">
+<span class="text-[9px] uppercase font-bold text-slate-400 block mb-1">Revisão</span>
+<span class="text-sm font-bold text-slate-800">R$ 90,00</span>
+</div>
+<div class="bg-white p-3 border border-slate-200">
+<span class="text-[9px] uppercase font-bold text-slate-400 block mb-1">Retirada</span>
+<span class="text-sm font-bold text-slate-800">R$ 80,00</span>
+</div>
+<div class="bg-white p-3 border border-slate-200">
+<span class="text-[9px] uppercase font-bold text-slate-400 block mb-1">Deslocamento (km)</span>
+<span class="text-sm font-bold text-slate-800">R$ 1,85</span>
+</div>
+</div>
+</div>
+</div>
+</td>
+</tr>
+<tr class="table-row">
+<td class="px-4 py-3 text-sm font-semibold text-slate-800">Mariana Costa</td>
+<td class="px-4 py-3 text-sm text-slate-600">Belo Horizonte / MG</td>
+<td class="px-4 py-3 text-sm text-slate-600">(31) 99912-8877</td>
+<td class="px-4 py-3 text-sm text-slate-800 font-medium text-right">R$ 145,00</td>
+<td class="px-4 py-3">
+<div class="flex justify-center">
+<div class="status-toggle active"></div>
+</div>
+</td>
+<td class="px-4 py-3 text-slate-400">
+<span class="material-symbols-outlined text-lg">expand_more</span>
+</td>
+</tr>
+<tr class="table-row">
+<td class="px-4 py-3 text-sm font-semibold text-slate-800">Carlos Pereira</td>
+<td class="px-4 py-3 text-sm text-slate-600">Campinas / SP</td>
+<td class="px-4 py-3 text-sm text-slate-600">(19) 97755-4422</td>
+<td class="px-4 py-3 text-sm text-slate-800 font-medium text-right">R$ 160,00</td>
+<td class="px-4 py-3">
+<div class="flex justify-center">
+<div class="status-toggle"></div>
+</div>
+</td>
+<td class="px-4 py-3 text-slate-400">
+<span class="material-symbols-outlined text-lg">expand_more</span>
+</td>
+</tr>
+<tr class="table-row">
+<td class="px-4 py-3 text-sm font-semibold text-slate-800">Antônio Marcos</td>
+<td class="px-4 py-3 text-sm text-slate-600">Rio de Janeiro / RJ</td>
+<td class="px-4 py-3 text-sm text-slate-600">(21) 98822-1133</td>
+<td class="px-4 py-3 text-sm text-slate-800 font-medium text-right">R$ 155,00</td>
+<td class="px-4 py-3">
+<div class="flex justify-center">
+<div class="status-toggle active"></div>
+</div>
+</td>
+<td class="px-4 py-3 text-slate-400">
+<span class="material-symbols-outlined text-lg">expand_more</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="h-12 border-t border-[var(--border-subtle)] bg-slate-50 flex items-center justify-between px-4 shrink-0">
+<span class="text-[11px] text-slate-500 font-medium uppercase tracking-tight">Total de 42 técnicos localizados</span>
+<div class="flex items-center gap-2">
+<button class="w-7 h-7 flex items-center justify-center rounded border border-slate-300 text-slate-400 bg-white">
+<span class="material-symbols-outlined text-base">chevron_left</span>
+</button>
+<span class="text-xs font-bold px-2">1 / 5</span>
+<button class="w-7 h-7 flex items-center justify-center rounded border border-slate-300 text-slate-600 bg-white">
+<span class="material-symbols-outlined text-base">chevron_right</span>
+</button>
+</div>
+</div>
+</section>
+</div>
+</main>
+</div>
+
+</body></html>

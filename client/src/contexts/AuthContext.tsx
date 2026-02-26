@@ -2,7 +2,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useState,
   type ReactNode,
 } from 'react';
@@ -56,34 +55,31 @@ function clearAuth() {
   localStorage.removeItem('accessToken');
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AuthState>({
+// Inicializa o estado síncronamente no primeiro render (localStorage é síncrono)
+// assim evitamos um render extra com isLoading e a tela "Carregando..."
+function getInitialState(): AuthState {
+  const stored = loadStoredAuth();
+  if (stored.accessToken && stored.user) {
+    localStorage.setItem('accessToken', stored.accessToken);
+    return {
+      user: stored.user,
+      permissions: stored.permissions ?? [],
+      accessToken: stored.accessToken,
+      isLoading: false,
+      isAuthenticated: true,
+    };
+  }
+  return {
     user: null,
     permissions: [],
     accessToken: null,
-    isLoading: true,
+    isLoading: false,
     isAuthenticated: false,
-  });
+  };
+}
 
-  const loadFromStorage = useCallback(() => {
-    const stored = loadStoredAuth();
-    if (stored.accessToken && stored.user) {
-      localStorage.setItem('accessToken', stored.accessToken);
-      setState({
-        user: stored.user,
-        permissions: stored.permissions ?? [],
-        accessToken: stored.accessToken,
-        isLoading: false,
-        isAuthenticated: true,
-      });
-    } else {
-      setState((s) => ({ ...s, isLoading: false }));
-    }
-  }, []);
-
-  useEffect(() => {
-    loadFromStorage();
-  }, [loadFromStorage]);
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<AuthState>(getInitialState);
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await api<{

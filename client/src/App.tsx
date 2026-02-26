@@ -1,13 +1,24 @@
+import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { AppLayout } from '@/layouts/AppLayout'
 import { Login } from '@/pages/Login'
-import { OrdensServicoPage } from '@/pages/OrdensServicoPage'
-import { ConfiguracoesPage } from '@/pages/configuracoes/ConfiguracoesPage'
-import { UsuariosPage } from '@/pages/usuarios/UsuariosPage'
-import { CargosPage } from '@/pages/cargos/CargosPage'
-import { ClientesPage } from '@/pages/clientes/ClientesPage'
-import { TecnicosPage } from '@/pages/tecnicos/TecnicosPage'
+import { Loader2 } from 'lucide-react'
+
+const OrdensServicoPage = lazy(() => import('@/pages/OrdensServicoPage').then((m) => ({ default: m.OrdensServicoPage })))
+const ConfiguracoesPage = lazy(() => import('@/pages/configuracoes/ConfiguracoesPage').then((m) => ({ default: m.ConfiguracoesPage })))
+const UsuariosPage = lazy(() => import('@/pages/usuarios/UsuariosPage').then((m) => ({ default: m.UsuariosPage })))
+const CargosPage = lazy(() => import('@/pages/cargos/CargosPage').then((m) => ({ default: m.CargosPage })))
+const ClientesPage = lazy(() => import('@/pages/clientes/ClientesPage').then((m) => ({ default: m.ClientesPage })))
+const TecnicosPage = lazy(() => import('@/pages/tecnicos/TecnicosPage').then((m) => ({ default: m.TecnicosPage })))
+
+function PageLoader() {
+  return (
+    <div className="flex min-h-[200px] items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+    </div>
+  )
+}
 
 function App() {
   return (
@@ -21,12 +32,54 @@ function App() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<OrdensServicoPage />} />
-        <Route path="configuracoes" element={<ConfiguracoesPage />} />
-        <Route path="usuarios" element={<UsuariosPage />} />
-        <Route path="cargos" element={<CargosPage />} />
-        <Route path="clientes" element={<ClientesPage />} />
-        <Route path="tecnicos" element={<TecnicosPage />} />
+        <Route
+          index
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <OrdensServicoPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="configuracoes"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <ConfiguracoesPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="usuarios"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <UsuariosPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="cargos"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <CargosPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="clientes"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <ClientesPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="tecnicos"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <TecnicosPage />
+            </Suspense>
+          }
+        />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
