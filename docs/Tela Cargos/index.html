@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="pt-br"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Cargos &amp; Permissões - Industrial ERP</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        :root {
+            --sidebar-bg: #1E293B;
+            --sidebar-hover: #334155;
+            --background-gray: #F8FAFC;
+            --border-subtle: #E2E8F0;
+            --primary-blue: #2563EB;
+            --industrial-dark: #0F172A;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-gray);
+        }
+        .sidebar-item {
+            @apply flex items-center gap-3 px-4 py-2 text-slate-300 hover:bg-[var(--sidebar-hover)] hover:text-white transition-all text-sm;
+        }
+        .sidebar-item.active {
+            @apply bg-[var(--sidebar-hover)] text-white border-r-4 border-blue-500;
+        }
+        .sidebar-group-title {
+            @apply px-4 py-2 mt-4 text-[10px] font-bold uppercase tracking-wider text-slate-500;
+        }
+        .table-header {
+            @apply px-4 py-3 bg-slate-100 border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider text-slate-600;
+        }
+        .table-row {
+            @apply border-b border-slate-200 hover:bg-slate-50 transition-colors bg-white;
+        }
+        .badge-operacional {
+            @apply px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-blue-100 text-blue-700 border border-blue-200 flex items-center gap-1;
+        }
+        .badge-administrativo {
+            @apply px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-100 text-emerald-700 border border-emerald-200 flex items-center gap-1;
+        }
+        .badge-gestao {
+            @apply px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-purple-100 text-purple-700 border border-purple-200 flex items-center gap-1;
+        }
+        input, select {
+            @apply h-9 px-3 border border-slate-300 rounded-sm text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white;
+        }
+        label {
+            @apply block text-[10px] font-bold text-slate-500 uppercase mb-1;
+        }
+        .status-dot-active {
+            @apply w-2 h-2 bg-emerald-500 rounded-full;
+        }
+        .status-dot-inactive {
+            @apply w-2 h-2 bg-slate-300 rounded-full;
+        }
+    </style>
+</head>
+<body class="text-slate-900 antialiased overflow-hidden">
+<div class="flex h-screen">
+<aside class="w-64 bg-[var(--sidebar-bg)] flex flex-col fixed h-screen z-20 overflow-y-auto">
+<div class="p-6 flex items-center gap-3 border-b border-slate-700/50 mb-2">
+<div class="bg-blue-600 p-1.5 rounded-sm">
+<span class="material-symbols-outlined text-white text-xl leading-none">precision_manufacturing</span>
+</div>
+<span class="text-white font-bold tracking-tight uppercase text-sm">Industrial Hub</span>
+</div>
+<nav class="flex-1">
+<div class="sidebar-group-title">Operação</div>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">list_alt</span>
+<span>Ordens</span>
+</a>
+<div class="sidebar-group-title">Configuração / Gestão</div>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">inventory_2</span>
+<span>Estoque</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">local_shipping</span>
+<span>Logística</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">engineering</span>
+<span>Técnicos</span>
+</a>
+<a class="sidebar-item active" href="#">
+<span class="material-symbols-outlined text-lg">admin_panel_settings</span>
+<span>Cargos e Permissões</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">groups</span>
+<span>Usuários</span>
+</a>
+</nav>
+<div class="p-4 border-t border-slate-700/50">
+<div class="flex items-center gap-3 px-2 py-3 text-slate-400">
+<div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-white">JD</div>
+<div class="flex flex-col overflow-hidden">
+<span class="text-xs text-white font-medium truncate">João D. Operador</span>
+<span class="text-[10px] uppercase">Administrador</span>
+</div>
+</div>
+</div>
+</aside>
+<main class="flex-1 ml-64 flex flex-col h-screen">
+<header class="h-20 bg-white border-b border-[var(--border-subtle)] flex items-center justify-between px-8 shrink-0 z-10">
+<div>
+<h1 class="text-lg font-bold text-slate-800">Cargos e Permissões</h1>
+<p class="text-xs text-slate-500">Gerencie níveis de acesso ao sistema</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex flex-col">
+<label>Busca por nome</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-2.5 top-2 text-slate-400 text-lg">search</span>
+<input class="pl-9 w-64" placeholder="Filtrar cargo..." type="text"/>
+</div>
+</div>
+<div class="flex flex-col">
+<label>Categoria</label>
+<select class="w-40">
+<option>Todas</option>
+<option>Operacional</option>
+<option>Administrativo</option>
+<option>Gestão</option>
+</select>
+</div>
+<div class="flex flex-col">
+<label> </label>
+<button class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold h-9 px-4 rounded-sm flex items-center gap-2 transition-colors">
+<span class="material-symbols-outlined text-lg">add_moderator</span>
+                        Novo Cargo
+                    </button>
+</div>
+</div>
+</header>
+<div class="flex-1 overflow-hidden p-6">
+<div class="bg-white border border-slate-200 rounded-sm shadow-sm flex flex-col h-full">
+<div class="overflow-y-auto flex-1">
+<table class="w-full border-collapse">
+<thead class="sticky top-0 z-10">
+<tr>
+<th class="table-header text-left">Nome do Cargo</th>
+<th class="table-header text-left">Categoria</th>
+<th class="table-header text-left">Descrição</th>
+<th class="table-header text-center">Usuários Vinculados</th>
+<th class="table-header text-center">Status</th>
+<th class="table-header w-12 text-center">Ações</th>
+</tr>
+</thead>
+<tbody>
+<tr class="table-row">
+<td class="px-4 py-3.5">
+<span class="text-sm font-bold text-slate-800">Administrador do Sistema</span>
+</td>
+<td class="px-4 py-3.5">
+<span class="badge-gestao">
+<span class="w-2 h-2 bg-purple-500 rounded-full"></span>
+                                    Gestão
+                                </span>
+</td>
+<td class="px-4 py-3.5">
+<span class="text-xs text-slate-500">Acesso total e irrestrito a todas as funcionalidades e configurações de sistema.</span>
+</td>
+<td class="px-4 py-3.5 text-center">
+<a class="text-blue-600 font-bold text-sm hover:underline" href="#">05</a>
+</td>
+<td class="px-4 py-3.5">
+<div class="flex items-center justify-center gap-2">
+<div class="status-dot-active"></div>
+<span class="text-[10px] font-bold uppercase text-slate-600">Ativo</span>
+</div>
+</td>
+<td class="px-4 py-3.5 text-center text-slate-400">
+<button class="hover:text-slate-600 transition-colors">
+<span class="material-symbols-outlined text-lg">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="table-row">
+<td class="px-4 py-3.5">
+<span class="text-sm font-bold text-slate-800">Operador de Agendamento</span>
+</td>
+<td class="px-4 py-3.5">
+<span class="badge-operacional">
+<span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                    Operacional
+                                </span>
+</td>
+<td class="px-4 py-3.5">
+<span class="text-xs text-slate-500">Gestão de horários de coleta e entrega, emissão de tickets básicos.</span>
+</td>
+<td class="px-4 py-3.5 text-center">
+<a class="text-blue-600 font-bold text-sm hover:underline" href="#">12</a>
+</td>
+<td class="px-4 py-3.5">
+<div class="flex items-center justify-center gap-2">
+<div class="status-dot-active"></div>
+<span class="text-[10px] font-bold uppercase text-slate-600">Ativo</span>
+</div>
+</td>
+<td class="px-4 py-3.5 text-center text-slate-400">
+<button class="hover:text-slate-600 transition-colors">
+<span class="material-symbols-outlined text-lg">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="table-row">
+<td class="px-4 py-3.5">
+<span class="text-sm font-bold text-slate-800">Analista de Faturamento</span>
+</td>
+<td class="px-4 py-3.5">
+<span class="badge-administrativo">
+<span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                                    Administrativo
+                                </span>
+</td>
+<td class="px-4 py-3.5">
+<span class="text-xs text-slate-500">Controle de notas fiscais, conciliação financeira e relatórios de vendas.</span>
+</td>
+<td class="px-4 py-3.5 text-center">
+<a class="text-blue-600 font-bold text-sm hover:underline" href="#">03</a>
+</td>
+<td class="px-4 py-3.5">
+<div class="flex items-center justify-center gap-2">
+<div class="status-dot-active"></div>
+<span class="text-[10px] font-bold uppercase text-slate-600">Ativo</span>
+</div>
+</td>
+<td class="px-4 py-3.5 text-center text-slate-400">
+<button class="hover:text-slate-600 transition-colors">
+<span class="material-symbols-outlined text-lg">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="table-row">
+<td class="px-4 py-3.5">
+<span class="text-sm font-bold text-slate-800">Supervisor de Logística</span>
+</td>
+<td class="px-4 py-3.5">
+<span class="badge-gestao">
+<span class="w-2 h-2 bg-purple-500 rounded-full"></span>
+                                    Gestão
+                                </span>
+</td>
+<td class="px-4 py-3.5">
+<span class="text-xs text-slate-500">Gerenciamento de frotas, rotas e supervisão da equipe de motoristas.</span>
+</td>
+<td class="px-4 py-3.5 text-center">
+<a class="text-blue-600 font-bold text-sm hover:underline" href="#">08</a>
+</td>
+<td class="px-4 py-3.5">
+<div class="flex items-center justify-center gap-2">
+<div class="status-dot-active"></div>
+<span class="text-[10px] font-bold uppercase text-slate-600">Ativo</span>
+</div>
+</td>
+<td class="px-4 py-3.5 text-center text-slate-400">
+<button class="hover:text-slate-600 transition-colors">
+<span class="material-symbols-outlined text-lg">more_vert</span>
+</button>
+</td>
+</tr>
+<tr class="table-row">
+<td class="px-4 py-3.5">
+<span class="text-sm font-bold text-slate-400">Auxiliar Temporário (Sazonal)</span>
+</td>
+<td class="px-4 py-3.5">
+<span class="badge-operacional grayscale opacity-60">
+<span class="w-2 h-2 bg-slate-400 rounded-full"></span>
+                                    Operacional
+                                </span>
+</td>
+<td class="px-4 py-3.5">
+<span class="text-xs text-slate-400 italic">Cargo desativado após período de safra. Acesso restrito a consulta.</span>
+</td>
+<td class="px-4 py-3.5 text-center">
+<a class="text-slate-400 font-bold text-sm hover:underline" href="#">00</a>
+</td>
+<td class="px-4 py-3.5">
+<div class="flex items-center justify-center gap-2">
+<div class="status-dot-inactive"></div>
+<span class="text-[10px] font-bold uppercase text-slate-400">Inativo</span>
+</div>
+</td>
+<td class="px-4 py-3.5 text-center text-slate-400">
+<button class="hover:text-slate-600 transition-colors">
+<span class="material-symbols-outlined text-lg">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="h-12 border-t border-slate-200 bg-slate-50 flex items-center justify-between px-6 shrink-0">
+<div class="flex items-center gap-6">
+<span class="text-[11px] text-slate-500 font-bold uppercase tracking-tight">Total de 24 cargos cadastrados</span>
+<div class="flex items-center gap-2 text-[11px] text-slate-400 uppercase font-bold">
+<span class="w-3 h-3 bg-blue-500 rounded-sm"></span> Operacional
+                            <span class="w-3 h-3 bg-emerald-500 rounded-sm ml-2"></span> Administrativo
+                            <span class="w-3 h-3 bg-purple-500 rounded-sm ml-2"></span> Gestão
+                        </div>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-[10px] font-bold text-slate-500 uppercase">Página 1 de 2</span>
+<div class="flex items-center gap-1">
+<button class="w-8 h-8 flex items-center justify-center rounded-sm border border-slate-300 text-slate-400 bg-white hover:bg-slate-50">
+<span class="material-symbols-outlined text-base">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-sm border border-slate-300 text-slate-600 bg-white hover:bg-slate-50">
+<span class="material-symbols-outlined text-base">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+</body></html>

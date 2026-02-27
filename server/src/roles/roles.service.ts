@@ -1,5 +1,29 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { CategoriaCargo } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+
+interface CreateCargoDto {
+  nome: string;
+  code: string;
+  setorId: number;
+  descricao?: string;
+  categoria?: CategoriaCargo;
+  ativo?: boolean;
+}
+
+interface UpdateCargoDto {
+  nome?: string;
+  descricao?: string;
+  categoria?: CategoriaCargo;
+  ativo?: boolean;
+}
+
+interface FindAllParams {
+  search?: string;
+  categoria?: CategoriaCargo;
+  page?: number;
+  limit?: number;
+}
 
 @Injectable()
 export class RolesService {
@@ -12,6 +36,105 @@ export class RolesService {
         setor: true,
         cargoPermissoes: { include: { permissao: true } },
       },
+    });
+  }
+
+  async findAllPaginated(params: FindAllParams) {
+    const { search, categoria, page = 1, limit = 15 } = params;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (search) {
+      where.nome = { contains: search };
+    }
+
+    if (categoria) {
+      where.categoria = categoria;
+    }
+
+    const [cargos, total] = await Promise.all([
+      this.prisma.cargo.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: [{ nome: 'asc' }],
+        include: {
+          setor: true,
+          cargoPermissoes: { include: { permissao: true } },
+          _count: {
+            select: { usuarioCargos: true },
+          },
+        },
+      }),
+      this.prisma.cargo.count({ where }),
+    ]);
+
+    return {
+      data: cargos.map((cargo) => ({
+        ...cargo,
+        usuariosVinculados: cargo._count.usuarioCargos,
+      })),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async findById(id: number) {
+    const cargo = await this.prisma.cargo.findUnique({
+      where: { id },
+      include: {
+        setor: true,
+        cargoPermissoes: { include: { permissao: true } },
+        _count: {
+          select: { usuarioCargos: true },
+        },
+      },
+    });
+
+    if (!cargo) throw new NotFoundException('Cargo não encontrado');
+
+    return {
+      ...cargo,
+      usuariosVinculados: cargo._count.usuarioCargos,
+    };
+  }
+
+  async create(data: CreateCargoDto) {
+    return this.prisma.cargo.create({
+      data: {
+        nome: data.nome,
+        code: data.code,
+        setorId: data.setorId,
+        descricao: data.descricao,
+        categoria: data.categoria ?? 'OPERACIONAL',
+        ativo: data.ativo ?? true,
+      },
+      include: {
+        setor: true,
+        cargoPermissoes: { include: { permissao: true } },
+      },
+    });
+  }
+
+  async update(id: number, data: UpdateCargoDto) {
+    const cargo = await this.prisma.cargo.findUnique({ where: { id } });
+    if (!cargo) throw new NotFoundException('Cargo não encontrado');
+
+    return this.prisma.cargo.update({
+      where: { id },
+      data,
+      include: {
+        setor: true,
+        cargoPermissoes: { include: { permissao: true } },
+      },
+    });
+  }
+
+  async findAllSetores() {
+    return this.prisma.setor.findMany({
+      orderBy: { nome: 'asc' },
     });
   }
 

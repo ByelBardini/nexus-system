@@ -34,12 +34,21 @@ model Cargo {
   setorId         Int              @map("sector_id")
   code            String           @db.VarChar(50)
   nome            String           @db.VarChar(100)
+  descricao       String?          @db.VarChar(500)
+  categoria       CategoriaCargo   @default(OPERACIONAL)
+  ativo           Boolean          @default(true)
   setor           Setor            @relation(fields: [setorId], references: [id], onDelete: Cascade)
   cargoPermissoes CargoPermissao[]
   usuarioCargos   UsuarioCargo[]
 
   @@unique([setorId, code])
   @@map("cargos")
+}
+
+enum CategoriaCargo {
+  OPERACIONAL
+  ADMINISTRATIVO
+  GESTAO
 }
 
 model Permissao {

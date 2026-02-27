@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-br"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Novo Cargo - Industrial ERP</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        :root {
+            --sidebar-bg: #1E293B;
+            --sidebar-hover: #334155;
+            --background-gray: #F1F5F9;
+            --border-subtle: #E2E8F0;
+            --primary-blue: #2563EB;
+            --industrial-dark: #0F172A;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-gray);
+        }
+        .sidebar-item {
+            @apply flex items-center gap-3 px-4 py-2 text-slate-300 hover:bg-[var(--sidebar-hover)] hover:text-white transition-all text-sm;
+        }
+        .sidebar-item.active {
+            @apply bg-[var(--sidebar-hover)] text-white border-r-4 border-blue-500;
+        }
+        .sidebar-group-title {
+            @apply px-4 py-2 mt-4 text-[10px] font-bold uppercase tracking-wider text-slate-500;
+        }
+        .matrix-header {
+            @apply px-3 py-2 bg-slate-100 border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider text-slate-600;
+        }
+        .matrix-row {
+            @apply border-b border-slate-100 hover:bg-slate-50 transition-colors bg-white;
+        }
+        input[type="text"], select, textarea {
+            @apply border border-slate-300 rounded-sm text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white;
+        }
+        label {
+            @apply block text-[10px] font-bold text-slate-500 uppercase mb-1;
+        }
+        .custom-checkbox {
+            @apply w-4 h-4 rounded-sm border-slate-300 text-blue-600 focus:ring-blue-500;
+        }
+        .sector-title {
+            @apply flex items-center justify-between bg-slate-50 px-4 py-2 border-y border-slate-200 cursor-pointer hover:bg-slate-100 transition-colors;
+        }.custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="text-slate-900 antialiased overflow-hidden">
+<div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+<div class="bg-white w-full max-w-[1000px] h-[90vh] rounded-sm shadow-2xl flex flex-col overflow-hidden">
+<header class="bg-white border-b border-slate-200 p-6 shrink-0">
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-blue-600 font-bold">add_moderator</span>
+<h2 class="text-lg font-bold text-slate-800 uppercase tracking-tight">Novo Cargo</h2>
+</div>
+<div class="grid grid-cols-12 gap-4">
+<div class="col-span-4">
+<label>Nome do Cargo</label>
+<input class="w-full h-10 px-3" placeholder="Ex: Operador Logístico Nível II" type="text"/>
+</div>
+<div class="col-span-3">
+<label>Categoria</label>
+<select class="w-full h-10 px-3">
+<option value="">Selecione...</option>
+<option value="adm">Administrativo</option>
+<option value="ops">Operacional</option>
+<option value="tec">Técnico</option>
+<option value="ges">Gestão</option>
+</select>
+</div>
+<div class="col-span-5">
+<label>Descrição</label>
+<textarea class="w-full h-10 px-3 py-2 resize-none" placeholder="Breve descrição das responsabilidades..."></textarea>
+</div>
+</div>
+</header>
+<div class="flex-1 flex overflow-hidden">
+<div class="flex-1 overflow-y-auto custom-scroll border-r border-slate-200">
+<div class="p-4 bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
+<h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Matriz de Permissões</h3>
+</div>
+<div class="sector-group">
+<div class="sector-title">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-slate-400 text-sm">keyboard_arrow_down</span>
+<span class="text-xs font-bold text-slate-700 uppercase">Administrativo</span>
+</div>
+<label class="flex items-center gap-2 mb-0 cursor-pointer">
+<span class="text-[9px] font-bold text-slate-500 uppercase">Acesso Total ao Setor</span>
+<input class="custom-checkbox" type="checkbox"/>
+</label>
+</div>
+<table class="w-full border-collapse">
+<thead>
+<tr>
+<th class="matrix-header text-left">Recurso</th>
+<th class="matrix-header text-center w-24">Visualizar</th>
+<th class="matrix-header text-center w-24">Criar</th>
+<th class="matrix-header text-center w-24">Editar</th>
+<th class="matrix-header text-center w-24">Deletar</th>
+</tr>
+</thead>
+<tbody>
+<tr class="matrix-row">
+<td class="px-4 py-2 text-xs font-medium text-slate-600">Dashboard Financeiro</td>
+<td class="px-4 py-2 text-center"><input checked="" class="custom-checkbox" type="checkbox"/></td>
+<td class="px-4 py-2 text-center"><input class="custom-checkbox" type="checkbox"/></td>
+<td class="px-4 py-2 text-center"><input class="custom-checkbox" type="checkbox"/></td>
+<td class="px-4 py-2 text-center"><input class="custom-checkbox" type="checkbox"/></td>
+</tr>
+<tr class="matrix-row">
+<td class="px-4 py-2 text-xs font-medium text-slate-600">Contas a Pagar</td>
+<td class="px-4 py-2 text-center"><input checked="" class="custom-checkbox" type="checkbox"/></td>
+<td class="px-4 py-2 text-center"><input checked="" class="custom-checkbox" type="checkbox"/></td>
+<td class="px-4 py-2 text-center"><input checked="" class="custom-checkbox" type="checkbox"/></td>
+<td class="px-4 py-2 text-center"><input class="custom-checkbox" type="checkbox"/></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sector-group mt-1">
+<div class="sector-title">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-slate-400 text-sm">keyboard_arrow_down</span>
+<span class="text-xs font-bold text-slate-700 uppercase">Agendamento &amp; Ordens</span>
+</div>
+<label class="flex items-center gap-2 mb-0 cursor-pointer">
+<span class="text-[9px] font-bold text-slate-500 uppercase">Acesso Total ao Setor</span>
+<input class="custom-checkbox" type="checkbox"/>
+</label>
+</div>
+<table class="w-full border-collapse">
+<tbody>
+<tr class="matrix-row">
+<td class="px-4 py-2 text-xs font-medium text-slate-600">Ordens de Serviço</td>
+<td class="px-4 py-2 text-center w-24"><input checked="" class="custom-checkbox" type="checkbox"/></td>
+<td class="px-4 py-2 text-center w-24"><input class="custom-checkbox" type="checkbox"/></td>
+<td class="px-4 py-2 text-center w-24"><input class="custom-checkbox" type="checkbox"/></td>
+<td class="px-4 py-2 text-center w-24"><input class="custom-checkbox" type="checkbox"/></td>
+</tr>
+<tr class="matrix-row">
+<td class="px-4 py-2 text-xs font-medium text-slate-600">Gestão de Coletas</td>
+<td class="px-4 py-2 text-center w-24"><input class="custom-checkbox" type="checkbox"/></td>
+<td class="px-4 py-2 text-center w-24"><input class="custom-checkbox" type="checkbox"/></td>
+<td class="px-4 py-2 text-center w-24"><input class="custom-checkbox" type="checkbox"/></td>
+<td class="px-4 py-2 text-center w-24"><input class="custom-checkbox" type="checkbox"/></td>
+</tr>
+<tr class="matrix-row">
+<td class="px-4 py-2 text-xs font-medium text-slate-600">Balancetes de Carga</td>
+<td class="px-4 py-2 text-center w-24"><input class="custom-checkbox" type="checkbox"/></td>
+<td class="px-4 py-2 text-center w-24"><input class="custom-checkbox" type="checkbox"/></td>
+<td class="px-4 py-2 text-center w-24"><input class="custom-checkbox" type="checkbox"/></td>
+<td class="px-4 py-2 text-center w-24"><input class="custom-checkbox" type="checkbox"/></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sector-group mt-1">
+<div class="sector-title">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-slate-400 text-sm">keyboard_arrow_right</span>
+<span class="text-xs font-bold text-slate-700 uppercase">Configuração</span>
+</div>
+<label class="flex items-center gap-2 mb-0 cursor-pointer">
+<span class="text-[9px] font-bold text-slate-500 uppercase">Acesso Total ao Setor</span>
+<input class="custom-checkbox" type="checkbox"/>
+</label>
+</div>
+</div>
+</div>
+<aside class="w-72 bg-slate-50 p-6 flex flex-col gap-6 shrink-0">
+<div class="sticky top-0">
+<h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4 border-b border-slate-200 pb-2">Resumo do Cargo</h3>
+<div class="space-y-4">
+<div>
+<label>Nome Visualizado</label>
+<div class="text-sm font-semibold text-slate-700 italic">— Definir Nome —</div>
+</div>
+<div>
+<label>Categoria Selecionada</label>
+<div class="text-[10px] font-bold uppercase inline-flex items-center px-2 py-0.5 rounded bg-slate-200 text-slate-500 border border-slate-300">
+                                Não Especificada
+                            </div>
+</div>
+<div class="pt-4 border-t border-slate-200">
+<div class="flex items-center justify-between mb-2">
+<span class="text-xs font-medium text-slate-600">Permissões Ativas</span>
+<span class="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">04</span>
+</div>
+<div class="space-y-1">
+<div class="flex items-center gap-2 text-[10px] text-slate-500">
+<span class="material-symbols-outlined text-[12px] text-emerald-500">check_circle</span>
+<span>Visualizar Dashboard Financeiro</span>
+</div>
+<div class="flex items-center gap-2 text-[10px] text-slate-500">
+<span class="material-symbols-outlined text-[12px] text-emerald-500">check_circle</span>
+<span>Criar Contas a Pagar</span>
+</div>
+<div class="flex items-center gap-2 text-[10px] text-slate-500">
+<span class="material-symbols-outlined text-[12px] text-emerald-500">check_circle</span>
+<span>Editar Contas a Pagar</span>
+</div>
+<div class="flex items-center gap-2 text-[10px] text-slate-500">
+<span class="material-symbols-outlined text-[12px] text-emerald-500">check_circle</span>
+<span>Visualizar Ordens de Serviço</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-8 p-4 bg-blue-50 border border-blue-100 rounded text-[10px] text-blue-700 leading-relaxed">
+<span class="font-bold flex items-center gap-1 mb-1">
+<span class="material-symbols-outlined text-[14px]">info</span>
+                            Lógica de Acesso:
+                        </span>
+                        Permissões de <strong>'Criar'</strong> ou <strong>'Editar'</strong> habilitam automaticamente a permissão de <strong>'Visualizar'</strong> para o recurso correspondente.
+                    </div>
+</div>
+</aside>
+</div>
+<footer class="bg-slate-50 border-t border-slate-200 p-4 flex items-center justify-between shrink-0">
+<div class="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase">
+<span class="material-symbols-outlined text-sm">lock</span>
+                Segurança Industrial Garantida
+            </div>
+<div class="flex items-center gap-3">
+<button class="px-6 h-10 text-xs font-bold text-slate-600 hover:text-slate-800 transition-colors uppercase">Cancelar</button>
+<button class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold h-10 px-8 rounded-sm shadow-sm transition-colors uppercase tracking-wide">Salvar Cargo</button>
+</div>
+</footer>
+</div>
+</div>
+<div class="flex h-screen opacity-40 grayscale pointer-events-none">
+<aside class="w-64 bg-[var(--sidebar-bg)] flex flex-col fixed h-screen z-20 overflow-y-auto">
+<div class="p-6 flex items-center gap-3 border-b border-slate-700/50 mb-2">
+<div class="bg-blue-600 p-1.5 rounded-sm">
+<span class="material-symbols-outlined text-white text-xl leading-none">precision_manufacturing</span>
+</div>
+<span class="text-white font-bold tracking-tight uppercase text-sm">Industrial Hub</span>
+</div>
+<nav class="flex-1">
+<div class="sidebar-group-title">Operação</div>
+<a class="sidebar-item" href="#"><span class="material-symbols-outlined text-lg">dashboard</span><span>Dashboard</span></a>
+<div class="sidebar-group-title">Configuração / Gestão</div>
+<a class="sidebar-item active" href="#"><span class="material-symbols-outlined text-lg">admin_panel_settings</span><span>Cargos e Permissões</span></a>
+</nav>
+</aside>
+<main class="flex-1 ml-64 flex flex-col h-screen">
+<header class="h-20 bg-white border-b border-[var(--border-subtle)] flex items-center justify-between px-8 shrink-0 z-10">
+<div>
+<h1 class="text-lg font-bold text-slate-800">Cargos e Permissões</h1>
+</div>
+</header>
+<div class="flex-1 p-6">
+<div class="bg-white border border-slate-200 h-full rounded-sm"></div>
+</div>
+</main>
+</div>
+
+</body></html>
