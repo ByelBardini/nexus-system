@@ -1,9 +1,10 @@
-import { useState, useMemo, Fragment } from 'react'
+import { useState, useMemo, Fragment, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Pencil, Loader2, Search, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, Pencil, Loader2, Search, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowLeft, X, CheckCircle } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,13 +17,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog'
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -31,19 +25,29 @@ import {
 } from '@/components/ui/select'
 import { InputPreco } from '@/components/InputPreco'
 import { InputTelefone } from '@/components/InputTelefone'
+import { InputCEP } from '@/components/InputCEP'
+import { SelectUF } from '@/components/SelectUF'
 import { SelectCidade } from '@/components/SelectCidade'
 import { api } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
 import { useUFs, useMunicipios } from '@/hooks/useBrasilAPI'
+import type { EnderecoCEP } from '@/hooks/useBrasilAPI'
 import { formatarTelefone } from '@/lib/format'
+import { cn } from '@/lib/utils'
 
 const schema = z.object({
   nome: z.string().min(1, 'Nome obrigatório'),
   telefone: z.string().optional(),
-  enderecoEntrega: z.string().optional(),
   cidade: z.string().optional(),
   estado: z.string().optional(),
+  cep: z.string().optional(),
+  logradouro: z.string().optional(),
+  numero: z.string().optional(),
+  complemento: z.string().optional(),
+  bairro: z.string().optional(),
+  cidadeEndereco: z.string().optional(),
+  estadoEndereco: z.string().optional(),
   ativo: z.boolean(),
   instalacaoComBloqueio: z.coerce.number().min(0),
   instalacaoSemBloqueio: z.coerce.number().min(0),
@@ -58,9 +62,15 @@ interface Tecnico {
   id: number
   nome: string
   telefone: string | null
-  enderecoEntrega: string | null
   cidade: string | null
   estado: string | null
+  cep: string | null
+  logradouro: string | null
+  numero: string | null
+  complemento: string | null
+  bairro: string | null
+  cidadeEndereco: string | null
+  estadoEndereco: string | null
   ativo: boolean
   precos?: {
     instalacaoComBloqueio: number | string
@@ -83,13 +93,17 @@ function formatReais(val: number): string {
   }).format(val)
 }
 
+function centavosToReais(centavos: number): string {
+  return formatReais(centavos / 100)
+}
+
 const PAGE_SIZE = 10
 
 export function TecnicosPage() {
   const queryClient = useQueryClient()
   const { hasPermission } = useAuth()
-  const [openCreate, setOpenCreate] = useState(false)
-  const [editingId, setEditingId] = useState<number | null>(null)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editingTecnico, setEditingTecnico] = useState<Tecnico | null>(null)
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [busca, setBusca] = useState('')
   const [filtroEstado, setFiltroEstado] = useState<string>('todos')
@@ -123,11 +137,11 @@ export function TecnicosPage() {
     return filtered.slice(start, start + PAGE_SIZE)
   }, [filtered, page])
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<FormData> }) =>
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, ativo }: { id: number; ativo: boolean }) =>
       api(`/tecnicos/${id}`, {
         method: 'PATCH',
-        body: JSON.stringify({ ativo: data.ativo }),
+        body: JSON.stringify({ ativo }),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tecnicos'] })
@@ -136,6 +150,33 @@ export function TecnicosPage() {
     onError: (err) => toast.error(err instanceof Error ? err.message : 'Erro'),
   })
 
+  const form = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      nome: '',
+      telefone: '',
+      cidade: '',
+      estado: '',
+      cep: '',
+      logradouro: '',
+      numero: '',
+      complemento: '',
+      bairro: '',
+      cidadeEndereco: '',
+      estadoEndereco: '',
+      ativo: true,
+      instalacaoComBloqueio: 0,
+      instalacaoSemBloqueio: 0,
+      revisao: 0,
+      retirada: 0,
+      deslocamento: 0,
+    },
+  })
+
+  const estadoAtuacao = form.watch('estado')
+  const { data: ufs = [] } = useUFs()
+  const { data: municipios = [] } = useMunicipios(estadoAtuacao || null)
+
   const createMutation = useMutation({
     mutationFn: (data: FormData) =>
       api('/tecnicos', {
@@ -143,9 +184,15 @@ export function TecnicosPage() {
         body: JSON.stringify({
           nome: data.nome,
           telefone: data.telefone || undefined,
-          enderecoEntrega: data.enderecoEntrega || undefined,
           cidade: data.cidade || undefined,
           estado: data.estado || undefined,
+          cep: data.cep || undefined,
+          logradouro: data.logradouro || undefined,
+          numero: data.numero || undefined,
+          complemento: data.complemento || undefined,
+          bairro: data.bairro || undefined,
+          cidadeEndereco: data.cidadeEndereco || undefined,
+          estadoEndereco: data.estadoEndereco || undefined,
           ativo: data.ativo,
           precos: {
             instalacaoComBloqueio: data.instalacaoComBloqueio / 100,
@@ -158,22 +205,28 @@ export function TecnicosPage() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tecnicos'] })
-      setOpenCreate(false)
-      toast.success('Técnico criado')
+      closeModal()
+      toast.success('Técnico criado com sucesso')
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : 'Erro'),
+    onError: (err) => toast.error(err instanceof Error ? err.message : 'Erro ao criar técnico'),
   })
 
-  const updateFullMutation = useMutation({
+  const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: FormData }) =>
       api(`/tecnicos/${id}`, {
         method: 'PATCH',
         body: JSON.stringify({
           nome: data.nome,
           telefone: data.telefone || undefined,
-          enderecoEntrega: data.enderecoEntrega || undefined,
           cidade: data.cidade || undefined,
           estado: data.estado || undefined,
+          cep: data.cep || undefined,
+          logradouro: data.logradouro || undefined,
+          numero: data.numero || undefined,
+          complemento: data.complemento || undefined,
+          bairro: data.bairro || undefined,
+          cidadeEndereco: data.cidadeEndereco || undefined,
+          estadoEndereco: data.estadoEndereco || undefined,
           ativo: data.ativo,
           precos: {
             instalacaoComBloqueio: data.instalacaoComBloqueio / 100,
@@ -186,66 +239,50 @@ export function TecnicosPage() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tecnicos'] })
-      setEditingId(null)
-      toast.success('Técnico atualizado')
+      closeModal()
+      toast.success('Técnico atualizado com sucesso')
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : 'Erro'),
+    onError: (err) => toast.error(err instanceof Error ? err.message : 'Erro ao atualizar técnico'),
   })
 
-  const form = useForm<FormData>({
-    resolver: zodResolver(schema) as any,
-    defaultValues: {
+  function openCreateModal() {
+    setEditingTecnico(null)
+    form.reset({
       nome: '',
       telefone: '',
-      enderecoEntrega: '',
       cidade: '',
       estado: '',
+      cep: '',
+      logradouro: '',
+      numero: '',
+      complemento: '',
+      bairro: '',
+      cidadeEndereco: '',
+      estadoEndereco: '',
       ativo: true,
       instalacaoComBloqueio: 0,
       instalacaoSemBloqueio: 0,
       revisao: 0,
       retirada: 0,
       deslocamento: 0,
-    } as FormData,
-  })
-
-  const editForm = useForm<FormData>({
-    resolver: zodResolver(schema) as any,
-    defaultValues: {
-      nome: '',
-      telefone: '',
-      enderecoEntrega: '',
-      cidade: '',
-      estado: '',
-      ativo: true,
-      instalacaoComBloqueio: 0,
-      instalacaoSemBloqueio: 0,
-      revisao: 0,
-      retirada: 0,
-      deslocamento: 0,
-    } as FormData,
-  })
-
-  const estadoForMunicipios = openCreate ? form.watch('estado') : editingId ? editForm.watch('estado') : null
-  const { data: ufs = [] } = useUFs()
-  const { data: municipios = [] } = useMunicipios(estadoForMunicipios || null)
-
-  function handleCreateSubmit(data: FormData) {
-    createMutation.mutate(data)
+    })
+    setModalOpen(true)
   }
 
-  function handleEditSubmit(data: FormData) {
-    if (!editingId) return
-    updateFullMutation.mutate({ id: editingId, data })
-  }
-
-  function openEdit(t: Tecnico) {
-    editForm.reset({
+  function openEditModal(t: Tecnico) {
+    setEditingTecnico(t)
+    form.reset({
       nome: t.nome,
       telefone: t.telefone ?? '',
-      enderecoEntrega: t.enderecoEntrega ?? '',
       cidade: t.cidade ?? '',
       estado: t.estado ?? '',
+      cep: t.cep ?? '',
+      logradouro: t.logradouro ?? '',
+      numero: t.numero ?? '',
+      complemento: t.complemento ?? '',
+      bairro: t.bairro ?? '',
+      cidadeEndereco: t.cidadeEndereco ?? '',
+      estadoEndereco: t.estadoEndereco ?? '',
       ativo: t.ativo,
       instalacaoComBloqueio: Math.round(toNum(t.precos?.instalacaoComBloqueio) * 100),
       instalacaoSemBloqueio: Math.round(toNum(t.precos?.instalacaoSemBloqueio) * 100),
@@ -253,74 +290,41 @@ export function TecnicosPage() {
       retirada: Math.round(toNum(t.precos?.retirada) * 100),
       deslocamento: Math.round(toNum(t.precos?.deslocamento) * 100),
     })
-    setEditingId(t.id)
+    setModalOpen(true)
+  }
+
+  function closeModal() {
+    setModalOpen(false)
+    setEditingTecnico(null)
+  }
+
+  function handleSubmit(data: FormData) {
+    if (editingTecnico) {
+      updateMutation.mutate({ id: editingTecnico.id, data })
+    } else {
+      createMutation.mutate(data)
+    }
   }
 
   function toggleStatus(t: Tecnico) {
     if (!canEdit) return
-    updateMutation.mutate({
-      id: t.id,
-      data: { ativo: !t.ativo } as FormData,
-    })
+    updateStatusMutation.mutate({ id: t.id, ativo: !t.ativo })
   }
 
-  const PrecosFields = ({ control: _control }: { control: 'form' | 'editForm' }) => {
-    const f = _control === 'form' ? form : editForm
-    return (
-      <div className="grid grid-cols-2 gap-2 text-sm">
-        <div>
-          <Label>Instalação c/ bloqueio</Label>
-          <Controller
-            name="instalacaoComBloqueio"
-            control={f.control}
-            render={({ field }) => (
-              <InputPreco value={field.value} onChange={field.onChange} />
-            )}
-          />
-        </div>
-        <div>
-          <Label>Instalação s/ bloqueio</Label>
-          <Controller
-            name="instalacaoSemBloqueio"
-            control={f.control}
-            render={({ field }) => (
-              <InputPreco value={field.value} onChange={field.onChange} />
-            )}
-          />
-        </div>
-        <div>
-          <Label>Revisão</Label>
-          <Controller
-            name="revisao"
-            control={f.control}
-            render={({ field }) => (
-              <InputPreco value={field.value} onChange={field.onChange} />
-            )}
-          />
-        </div>
-        <div>
-          <Label>Retirada</Label>
-          <Controller
-            name="retirada"
-            control={f.control}
-            render={({ field }) => (
-              <InputPreco value={field.value} onChange={field.onChange} />
-            )}
-          />
-        </div>
-        <div>
-          <Label>Deslocamento</Label>
-          <Controller
-            name="deslocamento"
-            control={f.control}
-            render={({ field }) => (
-              <InputPreco value={field.value} onChange={field.onChange} />
-            )}
-          />
-        </div>
-      </div>
-    )
-  }
+  const handleAddressFound = useCallback(
+    (endereco: EnderecoCEP) => {
+      form.setValue('logradouro', endereco.logradouro)
+      form.setValue('bairro', endereco.bairro)
+      form.setValue('cidadeEndereco', endereco.localidade)
+      form.setValue('estadoEndereco', endereco.uf)
+      if (endereco.complemento) {
+        form.setValue('complemento', endereco.complemento)
+      }
+    },
+    [form]
+  )
+
+  const watchedValues = form.watch()
 
   if (isLoading) {
     return (
@@ -341,12 +345,22 @@ export function TecnicosPage() {
     )
   }
 
+  const isSubmitting = createMutation.isPending || updateMutation.isPending
+
   return (
     <div className="-m-4 flex min-h-[100dvh] flex-col bg-slate-100">
       <header className="flex h-20 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-8">
-        <div>
-          <h1 className="text-lg font-bold text-slate-800">Técnicos</h1>
-          <p className="text-xs text-slate-500">Cobertura regional e gestão de prestadores</p>
+        <div className="flex items-center gap-4">
+          <Link
+            to="/configuracoes"
+            className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+          <div>
+            <h1 className="text-lg font-bold text-slate-800">Técnicos</h1>
+            <p className="text-xs text-slate-500">Cobertura regional e gestão de prestadores</p>
+          </div>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex flex-col">
@@ -399,10 +413,7 @@ export function TecnicosPage() {
           {canCreate && (
             <div className="flex flex-col">
               <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">&nbsp;</Label>
-              <Button
-                className="h-9 gap-2"
-                onClick={() => setOpenCreate(true)}
-              >
+              <Button className="h-9 gap-2" onClick={openCreateModal}>
                 <Plus className="h-4 w-4" />
                 Novo Técnico
               </Button>
@@ -412,7 +423,6 @@ export function TecnicosPage() {
       </header>
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
-        {/* Espaço para mapa futuro */}
         <section className="w-[40%] shrink-0 border-r border-slate-200 bg-slate-200" />
 
         <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-white">
@@ -435,7 +445,6 @@ export function TecnicosPage() {
                   return (
                     <Fragment key={t.id}>
                       <TableRow
-                        key={t.id}
                         className="cursor-pointer border-slate-200 hover:bg-slate-50"
                         onClick={() => setExpandedId(isExpanded ? null : t.id)}
                       >
@@ -457,50 +466,50 @@ export function TecnicosPage() {
                               aria-checked={t.ativo}
                               disabled={!canEdit}
                               onClick={() => toggleStatus(t)}
-                              className={`relative h-5 w-10 cursor-pointer rounded-full transition-colors ${
-                                t.ativo ? 'bg-emerald-500' : 'bg-slate-200'
-                              } ${!canEdit ? 'cursor-not-allowed opacity-60' : ''}`}
+                              className={cn(
+                                'relative h-5 w-10 cursor-pointer rounded-full transition-colors',
+                                t.ativo ? 'bg-emerald-500' : 'bg-slate-200',
+                                !canEdit && 'cursor-not-allowed opacity-60'
+                              )}
                             >
                               <span
-                                className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
-                                  t.ativo ? 'translate-x-5' : ''
-                                }`}
+                                className={cn(
+                                  'absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform',
+                                  t.ativo && 'translate-x-5'
+                                )}
                               />
                             </button>
                           </div>
                         </TableCell>
                         <TableCell className="px-4 py-3 text-slate-400">
-                          {isExpanded ? (
-                            <ChevronUp className="h-5 w-5" />
-                          ) : (
-                            <ChevronDown className="h-5 w-5" />
-                          )}
+                          {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
                         </TableCell>
                       </TableRow>
                       {isExpanded && (
-                        <TableRow key={`${t.id}-expanded`} className="bg-slate-50">
+                        <TableRow className="bg-slate-50">
                           <TableCell colSpan={6} className="border-b border-slate-200 p-0">
                             <div className="bg-slate-100 p-6">
                               <div className="grid grid-cols-2 gap-8">
                                 <div>
                                   <h4 className="mb-2 text-[10px] font-bold uppercase text-slate-500">Endereço Completo</h4>
                                   <p className="text-sm leading-relaxed text-slate-700">
-                                    {t.enderecoEntrega || '-'}
-                                    {t.enderecoEntrega && (t.cidade || t.estado) && (
+                                    {t.logradouro ? (
                                       <>
+                                        {t.logradouro}{t.numero && `, ${t.numero}`}
+                                        {t.complemento && ` - ${t.complemento}`}
                                         <br />
-                                        {[t.cidade, t.estado].filter(Boolean).join(' - ')}
+                                        {t.bairro && `${t.bairro}, `}
+                                        {t.cidadeEndereco && `${t.cidadeEndereco} - `}
+                                        {t.estadoEndereco}
+                                        {t.cep && <><br />CEP: {t.cep}</>}
                                       </>
+                                    ) : (
+                                      '-'
                                     )}
                                   </p>
                                 </div>
                                 <div className="flex items-end justify-end">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-auto px-3 py-1.5 text-[11px] uppercase"
-                                    disabled
-                                  >
+                                  <Button variant="outline" size="sm" className="h-auto px-3 py-1.5 text-[11px] uppercase" disabled>
                                     Visualizar Contrato
                                   </Button>
                                 </div>
@@ -537,7 +546,7 @@ export function TecnicosPage() {
                                     size="sm"
                                     onClick={(e) => {
                                       e.stopPropagation()
-                                      openEdit(t)
+                                      openEditModal(t)
                                     }}
                                   >
                                     <Pencil className="mr-2 h-4 w-4" />
@@ -587,199 +596,348 @@ export function TecnicosPage() {
         </section>
       </div>
 
-      <Dialog open={openCreate} onOpenChange={setOpenCreate}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Novo técnico</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={form.handleSubmit(handleCreateSubmit as any)} className="space-y-4">
-            <div>
-              <Label>Nome</Label>
-              <Input {...form.register('nome')} />
-              {form.formState.errors.nome && (
-                <p className="text-sm text-destructive">{form.formState.errors.nome.message}</p>
-              )}
-            </div>
-            <div>
-              <Label>Telefone</Label>
-              <Controller
-                name="telefone"
-                control={form.control}
-                render={({ field }) => (
-                  <InputTelefone value={field.value ?? ''} onChange={(v) => field.onChange(v)} />
-                )}
-              />
-            </div>
-            <div>
-              <Label>Endereço entrega</Label>
-              <Input {...form.register('enderecoEntrega')} />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
+      {/* Modal de Cadastro/Edição */}
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)' }}>
+          <div className="bg-white w-full max-w-[900px] h-[90vh] flex flex-col shadow-2xl rounded-sm overflow-hidden border border-slate-300">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white shrink-0">
               <div>
-                <Label>Estado (UF)</Label>
-                <Controller
-                  name="estado"
-                  control={form.control}
-                  render={({ field }) => (
-                    <Select
-                      value={field.value || ''}
-                      onValueChange={(v) => {
-                        field.onChange(v)
-                        form.setValue('cidade', '')
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a UF" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ufs.map((uf) => (
-                          <SelectItem key={uf.id} value={uf.sigla}>
-                            {uf.sigla} - {uf.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
+                <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <Plus className="h-5 w-5 text-blue-600" />
+                  {editingTecnico ? 'Editar Técnico' : 'Novo Técnico'}
+                </h2>
+                <p className="text-xs text-slate-500">Cadastro de prestador para execução de serviços</p>
               </div>
-              <div>
-                <Label>Cidade</Label>
-                <Controller
-                  name="cidade"
-                  control={form.control}
-                  render={({ field }) => (
-                    <SelectCidade
-                      municipios={municipios}
-                      value={field.value || ''}
-                      onChange={field.onChange}
-                      disabled={!form.watch('estado')}
-                      placeholder="Selecione a cidade"
-                    />
-                  )}
-                />
-              </div>
+              <button
+                type="button"
+                onClick={closeModal}
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
-            <div>
-              <Label className="mb-2 block">Tabela de preços</Label>
-              <PrecosFields control="form" />
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="ativo-create"
-                checked={form.watch('ativo')}
-                onChange={(e) => form.setValue('ativo', e.target.checked)}
-              />
-              <Label htmlFor="ativo-create">Ativo</Label>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpenCreate(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? 'Salvando...' : 'Salvar'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
 
-      <Dialog open={!!editingId} onOpenChange={(v) => !v && setEditingId(null)}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Editar técnico</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={editForm.handleSubmit(handleEditSubmit as any)} className="space-y-4">
-            <div>
-              <Label>Nome</Label>
-              <Input {...editForm.register('nome')} />
-              {editForm.formState.errors.nome && (
-                <p className="text-sm text-destructive">{editForm.formState.errors.nome.message}</p>
-              )}
-            </div>
-            <div>
-              <Label>Telefone</Label>
-              <Controller
-                name="telefone"
-                control={editForm.control}
-                render={({ field }) => (
-                  <InputTelefone value={field.value ?? ''} onChange={(v) => field.onChange(v)} />
-                )}
-              />
-            </div>
-            <div>
-              <Label>Endereço entrega</Label>
-              <Input {...editForm.register('enderecoEntrega')} />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label>Estado (UF)</Label>
-                <Controller
-                  name="estado"
-                  control={editForm.control}
-                  render={({ field }) => (
-                    <Select
-                      value={field.value || ''}
-                      onValueChange={(v) => {
-                        field.onChange(v)
-                        editForm.setValue('cidade', '')
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a UF" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ufs.map((uf) => (
-                          <SelectItem key={uf.id} value={uf.sigla}>
-                            {uf.sigla} - {uf.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
+            {/* Content */}
+            <div className="flex flex-1 overflow-hidden">
+              {/* Form */}
+              <form
+                id="tecnico-form"
+                onSubmit={form.handleSubmit(handleSubmit)}
+                className="flex-1 overflow-y-auto p-6 space-y-8 bg-slate-50/30"
+              >
+                {/* Seção 01 - Dados Básicos */}
+                <section>
+                  <div className="flex items-center gap-2 mb-4 border-b border-slate-200 pb-2">
+                    <span className="text-[11px] font-black uppercase text-slate-800 tracking-widest">01. Dados Básicos</span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-4">
+                    <div className="col-span-2">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nome Completo</label>
+                      <Input {...form.register('nome')} placeholder="Ex: Ricardo Silva" className="h-9" />
+                      {form.formState.errors.nome && (
+                        <p className="text-xs text-red-500 mt-1">{form.formState.errors.nome.message}</p>
+                      )}
+                    </div>
+                    <div className="col-span-1">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Telefone / WhatsApp</label>
+                      <Controller
+                        name="telefone"
+                        control={form.control}
+                        render={({ field }) => (
+                          <InputTelefone value={field.value ?? ''} onChange={field.onChange} className="h-9" />
+                        )}
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Status</label>
+                      <div className="flex items-center gap-3 h-9">
+                        <Controller
+                          name="ativo"
+                          control={form.control}
+                          render={({ field }) => (
+                            <>
+                              <button
+                                type="button"
+                                role="switch"
+                                aria-checked={field.value}
+                                onClick={() => field.onChange(!field.value)}
+                                className={cn(
+                                  'relative h-5 w-10 cursor-pointer rounded-full transition-colors',
+                                  field.value ? 'bg-emerald-500' : 'bg-slate-200'
+                                )}
+                              >
+                                <span
+                                  className={cn(
+                                    'absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform',
+                                    field.value && 'translate-x-5'
+                                  )}
+                                />
+                              </button>
+                              <span className={cn('text-xs font-bold', field.value ? 'text-emerald-600' : 'text-slate-500')}>
+                                {field.value ? 'ATIVO' : 'INATIVO'}
+                              </span>
+                            </>
+                          )}
+                        />
+                      </div>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Estado de Atuação</label>
+                      <Controller
+                        name="estado"
+                        control={form.control}
+                        render={({ field }) => (
+                          <SelectUF
+                            ufs={ufs}
+                            value={field.value || ''}
+                            onChange={(v) => {
+                              field.onChange(v)
+                              form.setValue('cidade', '')
+                            }}
+                            placeholder="Pesquisar estado..."
+                            className="h-9"
+                          />
+                        )}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Cidade de Atuação</label>
+                      <Controller
+                        name="cidade"
+                        control={form.control}
+                        render={({ field }) => (
+                          <SelectCidade
+                            municipios={municipios}
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            disabled={!estadoAtuacao}
+                            placeholder="Pesquisar cidade..."
+                            className="h-9"
+                          />
+                        )}
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                {/* Seção 02 - Endereço */}
+                <section>
+                  <div className="flex items-center gap-2 mb-4 border-b border-slate-200 pb-2">
+                    <span className="text-[11px] font-black uppercase text-slate-800 tracking-widest">02. Endereço para envio de rastreador</span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">CEP</label>
+                      <Controller
+                        name="cep"
+                        control={form.control}
+                        render={({ field }) => (
+                          <InputCEP
+                            value={field.value ?? ''}
+                            onChange={field.onChange}
+                            onAddressFound={handleAddressFound}
+                            className="h-9"
+                          />
+                        )}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Logradouro</label>
+                      <Input {...form.register('logradouro')} placeholder="Rua, Avenida..." className="h-9" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Número</label>
+                      <Input {...form.register('numero')} placeholder="123" className="h-9" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Complemento</label>
+                      <Input {...form.register('complemento')} placeholder="Apto, Bloco..." className="h-9" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Bairro</label>
+                      <Input {...form.register('bairro')} placeholder="Centro" className="h-9" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Cidade</label>
+                      <Input {...form.register('cidadeEndereco')} placeholder="Cidade" className="h-9" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Estado</label>
+                      <Controller
+                        name="estadoEndereco"
+                        control={form.control}
+                        render={({ field }) => (
+                          <SelectUF
+                            ufs={ufs}
+                            value={field.value || ''}
+                            onChange={field.onChange}
+                            placeholder="Pesquisar..."
+                            className="h-9"
+                          />
+                        )}
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                {/* Seção 03 - Valores */}
+                <section>
+                  <div className="flex items-center gap-2 mb-4 border-b border-slate-200 pb-2">
+                    <span className="text-[11px] font-black uppercase text-slate-800 tracking-widest">03. Valores de Serviço</span>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="bg-white p-4 border border-slate-200 rounded-sm">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase mb-3">Instalação</label>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-600 mb-1">Com Bloqueio</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">R$</span>
+                            <Controller
+                              name="instalacaoComBloqueio"
+                              control={form.control}
+                              render={({ field }) => (
+                                <InputPreco value={field.value} onChange={field.onChange} className="h-9 pl-9 text-right font-mono" />
+                              )}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-600 mb-1">Sem Bloqueio</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">R$</span>
+                            <Controller
+                              name="instalacaoSemBloqueio"
+                              control={form.control}
+                              render={({ field }) => (
+                                <InputPreco value={field.value} onChange={field.onChange} className="h-9 pl-9 text-right font-mono" />
+                              )}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="bg-white p-4 border border-slate-200 rounded-sm">
+                        <label className="block text-[10px] font-bold text-slate-600 mb-1">Revisão</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">R$</span>
+                          <Controller
+                            name="revisao"
+                            control={form.control}
+                            render={({ field }) => (
+                              <InputPreco value={field.value} onChange={field.onChange} className="h-9 pl-9 text-right font-mono" />
+                            )}
+                          />
+                        </div>
+                      </div>
+                      <div className="bg-white p-4 border border-slate-200 rounded-sm">
+                        <label className="block text-[10px] font-bold text-slate-600 mb-1">Retirada</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">R$</span>
+                          <Controller
+                            name="retirada"
+                            control={form.control}
+                            render={({ field }) => (
+                              <InputPreco value={field.value} onChange={field.onChange} className="h-9 pl-9 text-right font-mono" />
+                            )}
+                          />
+                        </div>
+                      </div>
+                      <div className="bg-white p-4 border border-slate-200 rounded-sm">
+                        <label className="block text-[10px] font-bold text-slate-600 mb-1">Deslocamento (km)</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">R$</span>
+                          <Controller
+                            name="deslocamento"
+                            control={form.control}
+                            render={({ field }) => (
+                              <InputPreco value={field.value} onChange={field.onChange} className="h-9 pl-9 text-right font-mono" />
+                            )}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              </form>
+
+              {/* Sidebar Resumo */}
+              <div className="w-64 border-l border-slate-200 bg-slate-50 p-6 shrink-0 overflow-y-auto">
+                <h3 className="text-[10px] font-black uppercase text-slate-400 mb-6 tracking-widest">Resumo do Técnico</h3>
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nome do Prestador</label>
+                    <p className="text-sm font-bold text-slate-800 break-words">{watchedValues.nome || '—'}</p>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Localidade</label>
+                    <p className="text-sm font-bold text-slate-800">
+                      {watchedValues.cidade && watchedValues.estado
+                        ? `${watchedValues.cidade} / ${watchedValues.estado}`
+                        : '— / —'}
+                    </p>
+                  </div>
+                  <div className="pt-4 border-t border-slate-200">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2">Taxas Principais</label>
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-[11px]">
+                        <span className="text-slate-500">Instalação:</span>
+                        <span className="font-bold text-slate-700">{centavosToReais(watchedValues.instalacaoSemBloqueio)}</span>
+                      </div>
+                      <div className="flex justify-between text-[11px]">
+                        <span className="text-slate-500">Revisão:</span>
+                        <span className="font-bold text-slate-700">{centavosToReais(watchedValues.revisao)}</span>
+                      </div>
+                      <div className="flex justify-between text-[11px]">
+                        <span className="text-slate-500">Km:</span>
+                        <span className="font-bold text-slate-700">{centavosToReais(watchedValues.deslocamento)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-8 p-3 bg-blue-50 border border-blue-100 rounded-sm">
+                    <p className="text-[10px] text-blue-700 leading-tight">
+                      Os valores informados serão utilizados para o cálculo automático de ordens de serviço.
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <Label>Cidade</Label>
-                <Controller
-                  name="cidade"
-                  control={editForm.control}
-                  render={({ field }) => (
-                    <SelectCidade
-                      municipios={municipios}
-                      value={field.value || ''}
-                      onChange={field.onChange}
-                      disabled={!editForm.watch('estado')}
-                      placeholder="Selecione a cidade"
-                    />
-                  )}
-                />
-              </div>
             </div>
-            <div>
-              <Label className="mb-2 block">Tabela de preços</Label>
-              <PrecosFields control="editForm" />
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="ativo-edit"
-                checked={editForm.watch('ativo')}
-                onChange={(e) => editForm.setValue('ativo', e.target.checked)}
-              />
-              <Label htmlFor="ativo-edit">Ativo</Label>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setEditingId(null)}>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-slate-200 flex justify-end gap-3 bg-white shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={closeModal}
+                className="px-6 uppercase text-sm font-bold"
+                disabled={isSubmitting}
+              >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={updateFullMutation.isPending}>
-                {updateFullMutation.isPending ? 'Salvando...' : 'Salvar'}
+              <Button
+                type="submit"
+                form="tecnico-form"
+                className="px-8 uppercase text-sm font-bold gap-2"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4" />
+                    Salvar Técnico
+                  </>
+                )}
               </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

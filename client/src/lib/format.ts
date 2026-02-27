@@ -37,3 +37,19 @@ export function formatarTelefone(val: string): string {
 export function telefoneApenasDigitos(val: string): string {
   return val.replace(/\D/g, '')
 }
+
+/**
+ * Formata CEP: 12345-678
+ */
+export function formatarCEP(val: string): string {
+  const d = val.replace(/\D/g, '')
+  if (d.length <= 5) return d
+  return `${d.slice(0, 5)}-${d.slice(5, 8)}`
+}
+
+/**
+ * Remove formatação do CEP
+ */
+export function cepApenasDigitos(val: string): string {
+  return val.replace(/\D/g, '')
+}

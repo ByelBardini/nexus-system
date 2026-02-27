@@ -29,9 +29,15 @@ export class TecnicosService {
       data: {
         nome: dto.nome,
         telefone: dto.telefone,
-        enderecoEntrega: dto.enderecoEntrega,
         cidade: dto.cidade,
         estado: dto.estado,
+        cep: dto.cep,
+        logradouro: dto.logradouro,
+        numero: dto.numero,
+        complemento: dto.complemento,
+        bairro: dto.bairro,
+        cidadeEndereco: dto.cidadeEndereco,
+        estadoEndereco: dto.estadoEndereco,
         ativo: dto.ativo ?? true,
       },
     });
@@ -58,9 +64,15 @@ export class TecnicosService {
       data: {
         nome: dto.nome,
         telefone: dto.telefone,
-        enderecoEntrega: dto.enderecoEntrega,
         cidade: dto.cidade,
         estado: dto.estado,
+        cep: dto.cep,
+        logradouro: dto.logradouro,
+        numero: dto.numero,
+        complemento: dto.complemento,
+        bairro: dto.bairro,
+        cidadeEndereco: dto.cidadeEndereco,
+        estadoEndereco: dto.estadoEndereco,
         ativo: dto.ativo,
       },
     });

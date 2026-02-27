@@ -54,20 +54,50 @@ export class UpdateTecnicoDto {
   @IsString()
   telefone?: string;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  enderecoEntrega?: string;
-
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Cidade de atuação' })
   @IsOptional()
   @IsString()
   cidade?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'Estado de atuação (UF)' })
   @IsOptional()
   @IsString()
   estado?: string;
+
+  @ApiPropertyOptional({ description: 'CEP do endereço de entrega' })
+  @IsOptional()
+  @IsString()
+  cep?: string;
+
+  @ApiPropertyOptional({ description: 'Logradouro do endereço de entrega' })
+  @IsOptional()
+  @IsString()
+  logradouro?: string;
+
+  @ApiPropertyOptional({ description: 'Número do endereço de entrega' })
+  @IsOptional()
+  @IsString()
+  numero?: string;
+
+  @ApiPropertyOptional({ description: 'Complemento do endereço de entrega' })
+  @IsOptional()
+  @IsString()
+  complemento?: string;
+
+  @ApiPropertyOptional({ description: 'Bairro do endereço de entrega' })
+  @IsOptional()
+  @IsString()
+  bairro?: string;
+
+  @ApiPropertyOptional({ description: 'Cidade do endereço de entrega' })
+  @IsOptional()
+  @IsString()
+  cidadeEndereco?: string;
+
+  @ApiPropertyOptional({ description: 'Estado do endereço de entrega (UF)' })
+  @IsOptional()
+  @IsString()
+  estadoEndereco?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
