@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="pt-br"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>User Management &amp; Security - Industrial ERP</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        :root {
+            --sidebar-bg: #1E293B;
+            --sidebar-hover: #334155;
+            --background-gray: #F8FAFC;
+            --border-subtle: #E2E8F0;
+            --primary-blue: #2563EB;
+            --industrial-dark: #0F172A;
+            --status-online: #10B981;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-gray);
+        }
+        .sidebar-item {
+            @apply flex items-center gap-3 px-4 py-2 text-slate-400 hover:bg-[var(--sidebar-hover)] hover:text-white transition-all text-sm;
+        }
+        .sidebar-item.active {
+            @apply bg-[var(--sidebar-hover)] text-white border-r-4 border-blue-500;
+        }
+        .sidebar-group-title {
+            @apply px-4 py-2 mt-4 text-[10px] font-bold uppercase tracking-wider text-slate-500;
+        }
+        .table-header {
+            @apply px-4 py-2.5 bg-slate-100 border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider text-slate-600;
+        }
+        .table-row {
+            @apply border-b border-slate-200 hover:bg-slate-50 transition-colors bg-white cursor-pointer;
+        }
+        .expanded-panel {
+            @apply bg-slate-50 border-b border-slate-200 px-8 py-4 shadow-inner;
+        }
+        .badge-access {
+            @apply px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase border flex items-center gap-1.5;
+        }
+        .badge-gestao { @apply bg-purple-50 text-purple-700 border-purple-200; }
+        .badge-operacional { @apply bg-blue-50 text-blue-700 border-blue-200; }
+        .badge-admin { @apply bg-emerald-50 text-emerald-700 border-emerald-200; }
+        input, select {
+            @apply h-8 px-3 border border-slate-300 rounded-sm text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white;
+        }
+        label {
+            @apply block text-[10px] font-bold text-slate-500 uppercase mb-1;
+        }
+        .btn-action {
+            @apply flex items-center gap-1 px-3 py-1.5 rounded-sm text-[11px] font-bold uppercase transition-colors border;
+        }
+    </style>
+</head>
+<body class="text-slate-900 antialiased overflow-hidden text-xs">
+<div class="flex h-screen">
+<aside class="w-60 bg-[var(--sidebar-bg)] flex flex-col fixed h-screen z-20">
+<div class="p-5 flex items-center gap-3 border-b border-slate-700/50 mb-2">
+<div class="bg-blue-600 p-1.5 rounded-sm">
+<span class="material-symbols-outlined text-white text-xl leading-none">security</span>
+</div>
+<span class="text-white font-bold tracking-tight uppercase text-sm">Industrial Hub</span>
+</div>
+<nav class="flex-1 overflow-y-auto">
+<div class="sidebar-group-title">Operação</div>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">dashboard</span>
+<span>Monitoramento</span>
+</a>
+<div class="sidebar-group-title">Administração</div>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">admin_panel_settings</span>
+<span>Cargos &amp; Permissões</span>
+</a>
+<a class="sidebar-item active" href="#">
+<span class="material-symbols-outlined text-lg">group</span>
+<span>Usuários &amp; Segurança</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">policy</span>
+<span>Políticas de Acesso</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">history_edu</span>
+<span>Logs de Auditoria</span>
+</a>
+</nav>
+<div class="p-4 border-t border-slate-700/50">
+<div class="flex items-center gap-3 px-2 py-3 text-slate-400">
+<div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-white border border-slate-600">AD</div>
+<div class="flex flex-col overflow-hidden">
+<span class="text-xs text-white font-medium truncate">Admin Master</span>
+<span class="text-[9px] uppercase font-bold text-slate-500">Super User</span>
+</div>
+</div>
+</div>
+</aside>
+<main class="flex-1 ml-60 flex flex-col h-screen">
+<header class="h-16 bg-white border-b border-[var(--border-subtle)] flex items-center justify-between px-8 shrink-0 z-10">
+<div>
+<h1 class="text-base font-bold text-slate-800">Industrial User Management &amp; Security</h1>
+<p class="text-[10px] text-slate-500 uppercase font-medium tracking-wide">Controle de acesso e auditoria de terminais industriais</p>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex flex-col">
+<input class="w-64" placeholder="Buscar por nome, CPF ou terminal..." type="text"/>
+</div>
+<select class="w-32">
+<option>Status: Todos</option>
+<option>Ativos</option>
+<option>Bloqueados</option>
+</select>
+<button class="bg-slate-800 hover:bg-slate-900 text-white text-[11px] font-bold h-8 px-4 rounded-sm flex items-center gap-2 transition-colors uppercase">
+<span class="material-symbols-outlined text-lg">person_add</span>
+                    Novo Usuário
+                </button>
+</div>
+</header>
+<div class="flex-1 overflow-hidden p-6 bg-[#F1F5F9]">
+<div class="bg-white border border-slate-200 rounded-sm shadow-sm flex flex-col h-full overflow-hidden">
+<div class="overflow-y-auto flex-1">
+<table class="w-full border-collapse">
+<thead class="sticky top-0 z-10">
+<tr>
+<th class="table-header w-8"></th>
+<th class="table-header text-left">Usuário / Identificação</th>
+<th class="table-header text-left">Cargo(s) Atribuídos</th>
+<th class="table-header text-left">Último Acesso</th>
+<th class="table-header text-left">Nível de Risco</th>
+<th class="table-header text-center w-24">Status</th>
+<th class="table-header w-10"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="table-row border-l-4 border-l-blue-600">
+<td class="px-4 py-3 text-slate-400">
+<span class="material-symbols-outlined text-base">expand_more</span>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-slate-100 rounded-sm flex items-center justify-center font-bold text-slate-600 border border-slate-200 text-[10px]">RC</div>
+<div class="flex flex-col">
+<span class="text-xs font-bold text-slate-800">Ricardo Cavalcanti</span>
+<span class="text-[10px] text-slate-500">ID: 45.002-8 • Terminal Norte</span>
+</div>
+</div>
+</td>
+<td class="px-4 py-3">
+<div class="flex flex-wrap gap-1">
+<span class="badge-access badge-gestao">Supervisor Prod.</span>
+<span class="badge-access badge-admin">Audit. Qualidade</span>
+</div>
+</td>
+<td class="px-4 py-3 text-slate-500">
+                                    Hoje, 14:22 <span class="text-[9px] bg-slate-100 px-1 rounded">192.168.1.44</span>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-2">
+<div class="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+<div class="w-1/4 h-full bg-emerald-500"></div>
+</div>
+<span class="text-[10px] font-bold text-emerald-600 uppercase">Baixo</span>
+</div>
+</td>
+<td class="px-4 py-3 text-center">
+<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[9px] font-bold uppercase border border-emerald-200">Online</span>
+</td>
+<td class="px-4 py-3 text-slate-400">
+<span class="material-symbols-outlined text-base">more_vert</span>
+</td>
+</tr>
+<tr>
+<td class="p-0" colspan="7">
+<div class="expanded-panel">
+<div class="grid grid-cols-12 gap-6">
+<div class="col-span-5 border-r border-slate-200 pr-6">
+<h4 class="text-[10px] font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">security_update_good</span>
+                                                    Audit Trail &amp; Security
+                                                </h4>
+<div class="space-y-3">
+<div class="flex justify-between items-center text-[11px] border-b border-slate-100 pb-2">
+<span class="text-slate-500">Falhas de login (24h)</span>
+<span class="font-bold text-slate-700">0 tentativas</span>
+</div>
+<div class="flex justify-between items-center text-[11px] border-b border-slate-100 pb-2">
+<span class="text-slate-500">Expiração da senha</span>
+<span class="font-bold text-amber-600">Em 12 dias</span>
+</div>
+<div class="flex justify-between items-center text-[11px]">
+<span class="text-slate-500">MFA Status</span>
+<span class="font-bold text-emerald-600">Ativado (Hardware Token)</span>
+</div>
+</div>
+</div>
+<div class="col-span-4 border-r border-slate-200 pr-6">
+<h4 class="text-[10px] font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">account_tree</span>
+                                                    Role Inheritance
+                                                </h4>
+<div class="space-y-1">
+<div class="flex items-center gap-2 text-[10px] text-slate-600">
+<span class="material-symbols-outlined text-xs text-slate-400">subdirectory_arrow_right</span>
+<span>Acesso ao Módulo de Inventário (Leitura)</span>
+</div>
+<div class="flex items-center gap-2 text-[10px] text-slate-600">
+<span class="material-symbols-outlined text-xs text-slate-400">subdirectory_arrow_right</span>
+<span>Aprovação de O.S. até R$ 5.000,00</span>
+</div>
+<div class="flex items-center gap-2 text-[10px] text-slate-600">
+<span class="material-symbols-outlined text-xs text-slate-400">subdirectory_arrow_right</span>
+<span>Visualização de Logs de Produção (Linha A)</span>
+</div>
+</div>
+</div>
+<div class="col-span-3 flex flex-col justify-center gap-2">
+<button class="btn-action bg-white text-slate-700 border-slate-300 hover:bg-slate-50">
+<span class="material-symbols-outlined text-base">lock_reset</span>
+                                                    Resetar Senha
+                                                </button>
+<button class="btn-action bg-white text-slate-700 border-slate-300 hover:bg-slate-50">
+<span class="material-symbols-outlined text-base">edit_note</span>
+                                                    Modificar Cargos
+                                                </button>
+<button class="btn-action bg-red-50 text-red-700 border-red-200 hover:bg-red-100">
+<span class="material-symbols-outlined text-base">block</span>
+                                                    Bloquear Acesso
+                                                </button>
+</div>
+</div>
+</div>
+</td>
+</tr>
+<tr class="table-row">
+<td class="px-4 py-3 text-slate-400">
+<span class="material-symbols-outlined text-base">chevron_right</span>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-slate-100 rounded-sm flex items-center justify-center font-bold text-slate-600 border border-slate-200 text-[10px]">MS</div>
+<div class="flex flex-col">
+<span class="text-xs font-bold text-slate-800">Marcos Silva</span>
+<span class="text-[10px] text-slate-500">ID: 12.884-1 • Terminal Logística</span>
+</div>
+</div>
+</td>
+<td class="px-4 py-3">
+<div class="flex flex-wrap gap-1">
+<span class="badge-access badge-operacional">Operador Empilhadeira</span>
+</div>
+</td>
+<td class="px-4 py-3 text-slate-500">
+                                    Ontem, 18:05 <span class="text-[9px] bg-slate-100 px-1 rounded">192.168.1.102</span>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-2">
+<div class="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+<div class="w-1/2 h-full bg-amber-500"></div>
+</div>
+<span class="text-[10px] font-bold text-amber-600 uppercase">Médio</span>
+</div>
+</td>
+<td class="px-4 py-3 text-center">
+<span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[9px] font-bold uppercase border border-slate-200">Offline</span>
+</td>
+<td class="px-4 py-3 text-slate-400">
+<span class="material-symbols-outlined text-base">more_vert</span>
+</td>
+</tr>
+<tr class="table-row">
+<td class="px-4 py-3 text-slate-400">
+<span class="material-symbols-outlined text-base">chevron_right</span>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-slate-100 rounded-sm flex items-center justify-center font-bold text-slate-600 border border-slate-200 text-[10px]">AP</div>
+<div class="flex flex-col">
+<span class="text-xs font-bold text-slate-800">Ana Paula Lima</span>
+<span class="text-[10px] text-slate-500">ID: 33.190-4 • Terminal Administrativo</span>
+</div>
+</div>
+</td>
+<td class="px-4 py-3">
+<div class="flex flex-wrap gap-1">
+<span class="badge-access badge-admin">Analista RH</span>
+<span class="badge-access badge-admin">Financeiro</span>
+</div>
+</td>
+<td class="px-4 py-3 text-slate-500">
+                                    Hoje, 08:30 <span class="text-[9px] bg-slate-100 px-1 rounded">192.168.1.12</span>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-2">
+<div class="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+<div class="w-1/6 h-full bg-emerald-500"></div>
+</div>
+<span class="text-[10px] font-bold text-emerald-600 uppercase">Baixo</span>
+</div>
+</td>
+<td class="px-4 py-3 text-center">
+<span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[9px] font-bold uppercase border border-emerald-200">Online</span>
+</td>
+<td class="px-4 py-3 text-slate-400">
+<span class="material-symbols-outlined text-base">more_vert</span>
+</td>
+</tr>
+<tr class="table-row bg-slate-50">
+<td class="px-4 py-3 text-slate-400">
+<span class="material-symbols-outlined text-base">chevron_right</span>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-3 opacity-50">
+<div class="w-8 h-8 bg-slate-200 rounded-sm flex items-center justify-center font-bold text-slate-400 border border-slate-300 text-[10px]">JG</div>
+<div class="flex flex-col">
+<span class="text-xs font-bold text-slate-800">Jorge Garcia</span>
+<span class="text-[10px] text-slate-500">ID: 09.441-2 • Externo</span>
+</div>
+</div>
+</td>
+<td class="px-4 py-3">
+<div class="flex flex-wrap gap-1 opacity-50 grayscale">
+<span class="badge-access badge-operacional">Terceiro</span>
+</div>
+</td>
+<td class="px-4 py-3 text-slate-400">
+                                    15 Set 2023 <span class="text-[9px] bg-slate-100 px-1 rounded">201.22.41.5</span>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-2">
+<div class="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+<div class="w-full h-full bg-red-500"></div>
+</div>
+<span class="text-[10px] font-bold text-red-600 uppercase">Crítico</span>
+</div>
+</td>
+<td class="px-4 py-3 text-center">
+<span class="px-2 py-0.5 rounded-full bg-red-50 text-red-700 text-[9px] font-bold uppercase border border-red-200">Bloqueado</span>
+</td>
+<td class="px-4 py-3 text-slate-400">
+<span class="material-symbols-outlined text-base">more_vert</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="h-10 border-t border-slate-200 bg-white flex items-center justify-between px-6 shrink-0">
+<div class="flex items-center gap-6">
+<span class="text-[10px] text-slate-500 font-bold uppercase">Total: 412 usuários cadastrados</span>
+<div class="flex items-center gap-4 text-[9px] text-slate-400 uppercase font-bold">
+<span class="flex items-center gap-1"><span class="w-2 h-2 bg-emerald-500 rounded-full"></span> 384 Ativos</span>
+<span class="flex items-center gap-1"><span class="w-2 h-2 bg-red-500 rounded-full"></span> 28 Bloqueados</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-bold text-slate-400 uppercase">Itens por página:</span>
+<select class="h-6 py-0 px-1 text-[10px]">
+<option>50</option>
+<option>100</option>
+</select>
+</div>
+<div class="flex items-center gap-1 border-l border-slate-200 pl-4">
+<button class="w-6 h-6 flex items-center justify-center rounded-sm border border-slate-200 text-slate-400 hover:bg-slate-50">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</button>
+<span class="text-[10px] font-bold px-2 text-slate-600 uppercase">1 de 9</span>
+<button class="w-6 h-6 flex items-center justify-center rounded-sm border border-slate-200 text-slate-400 hover:bg-slate-50">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+</body></html>

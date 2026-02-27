@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Loader2, MoreVertical, Search, ChevronDown, ChevronRight, Check } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Loader2, MoreVertical, Search, ChevronDown, ChevronRight, Check, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -662,12 +663,20 @@ export function CargosPage() {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="-m-4 flex min-h-[100dvh] flex-col bg-slate-100">
       {/* Header */}
-      <div className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
-        <div>
-          <h1 className="text-lg font-bold text-slate-800">Cargos e Permissões</h1>
-          <p className="text-xs text-slate-500">Gerencie níveis de acesso ao sistema</p>
+      <header className="flex h-20 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-8">
+        <div className="flex items-center gap-4">
+          <Link
+            to="/configuracoes"
+            className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
+          <div>
+            <h1 className="text-lg font-bold text-slate-800">Cargos e Permissões</h1>
+            <p className="text-xs text-slate-500">Gerencie níveis de acesso ao sistema</p>
+          </div>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex flex-col">
@@ -709,10 +718,10 @@ export function CargosPage() {
             </div>
           )}
         </div>
-      </div>
+      </header>
 
       {/* Content */}
-      <div className="flex-1 overflow-hidden flex flex-col bg-white">
+      <div className="flex-1 overflow-hidden flex flex-col bg-white min-h-0">
         <div className="overflow-y-auto flex-1">
           <table className="w-full border-collapse">
             <thead className="sticky top-0 z-10">

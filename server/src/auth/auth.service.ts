@@ -24,6 +24,9 @@ export class AuthService {
     if (!valid) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
+
+    await this.usersService.updateLastLogin(user.id);
+
     const permissions = this.usersService.getPermissions(user);
     const payload: JwtPayload = { sub: user.id, email: user.email };
     const accessToken = this.jwtService.sign(payload);

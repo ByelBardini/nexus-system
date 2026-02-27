@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="pt-br"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Role-Based User Setup - Industrial ERP</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        :root {
+            --sidebar-bg: #1E293B;
+            --sidebar-hover: #334155;
+            --background-gray: #F8FAFC;
+            --border-subtle: #E2E8F0;
+            --primary-blue: #2563EB;
+            --industrial-dark: #0F172A;
+            --status-online: #10B981;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-gray);
+        }
+        .sidebar-item {
+            @apply flex items-center gap-3 px-4 py-2 text-slate-400 hover:bg-[var(--sidebar-hover)] hover:text-white transition-all text-sm;
+        }
+        .sidebar-item.active {
+            @apply bg-[var(--sidebar-hover)] text-white border-r-4 border-blue-500;
+        }
+        .sidebar-group-title {
+            @apply px-4 py-2 mt-4 text-[10px] font-bold uppercase tracking-wider text-slate-500;
+        }
+        .table-header {
+            @apply px-4 py-2.5 bg-slate-100 border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider text-slate-600;
+        }
+        .table-row {
+            @apply border-b border-slate-200 bg-white cursor-pointer opacity-40 grayscale;
+        }
+        .badge-access {
+            @apply px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase border flex items-center gap-1.5;
+        }
+        .badge-gestao { @apply bg-purple-50 text-purple-700 border-purple-200; }
+        .badge-operacional { @apply bg-blue-50 text-blue-700 border-blue-200; }
+        .badge-admin { @apply bg-emerald-50 text-emerald-700 border-emerald-200; }
+        input, select, textarea {
+            @apply h-9 px-3 border border-slate-300 rounded-sm text-xs focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white w-full;
+        }
+        label {
+            @apply block text-[10px] font-bold text-slate-500 uppercase mb-1.5 tracking-tight;
+        }
+        .modal-overlay {
+            @apply fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4;
+        }
+        .modal-content {
+            @apply bg-white rounded-sm shadow-2xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden border border-slate-300;
+        }
+        .step-indicator {
+            @apply flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider;
+        }
+        .summary-panel {
+            @apply w-80 bg-slate-50 border-l border-slate-200 flex flex-col h-full;
+        }
+    </style>
+</head>
+<body class="text-slate-900 antialiased overflow-hidden text-xs">
+<div class="flex h-screen">
+<aside class="w-60 bg-[var(--sidebar-bg)] flex flex-col fixed h-screen z-20">
+<div class="p-5 flex items-center gap-3 border-b border-slate-700/50 mb-2">
+<div class="bg-blue-600 p-1.5 rounded-sm">
+<span class="material-symbols-outlined text-white text-xl leading-none">security</span>
+</div>
+<span class="text-white font-bold tracking-tight uppercase text-sm">Industrial Hub</span>
+</div>
+<nav class="flex-1 overflow-y-auto">
+<div class="sidebar-group-title">Operação</div>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">dashboard</span>
+<span>Monitoramento</span>
+</a>
+<div class="sidebar-group-title">Administração</div>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">admin_panel_settings</span>
+<span>Cargos &amp; Permissões</span>
+</a>
+<a class="sidebar-item active" href="#">
+<span class="material-symbols-outlined text-lg">group</span>
+<span>Usuários &amp; Segurança</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">policy</span>
+<span>Políticas de Acesso</span>
+</a>
+</nav>
+</aside>
+<main class="flex-1 ml-60 flex flex-col h-screen">
+<header class="h-16 bg-white border-b border-[var(--border-subtle)] flex items-center justify-between px-8 shrink-0 z-10 opacity-40">
+<div>
+<h1 class="text-base font-bold text-slate-800">Industrial User Management &amp; Security</h1>
+<p class="text-[10px] text-slate-500 uppercase font-medium tracking-wide">Controle de acesso e auditoria de terminais industriais</p>
+</div>
+<div class="flex items-center gap-3">
+<input class="w-64" placeholder="Buscar..." type="text"/>
+<button class="bg-slate-800 text-white text-[11px] font-bold h-8 px-4 rounded-sm uppercase">Novo Usuário</button>
+</div>
+</header>
+<div class="flex-1 overflow-hidden p-6 bg-[#F1F5F9]">
+<div class="bg-white border border-slate-200 rounded-sm shadow-sm h-full opacity-40"></div>
+</div>
+</main>
+</div>
+<div class="modal-overlay">
+<div class="modal-content">
+<header class="h-14 border-b border-slate-200 px-6 flex items-center justify-between shrink-0 bg-white">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-slate-400">person_add</span>
+<h2 class="text-sm font-bold text-slate-800 uppercase tracking-tight">Configuração de Novo Usuário</h2>
+<div class="h-4 w-px bg-slate-200 mx-2"></div>
+<div class="step-indicator text-blue-600">
+<span class="w-5 h-5 rounded-full border border-blue-600 flex items-center justify-center text-[9px] mr-1">01</span>
+                    Identidade &amp; Acesso
+                </div>
+</div>
+<button class="text-slate-400 hover:text-slate-600">
+<span class="material-symbols-outlined">close</span>
+</button>
+</header>
+<div class="flex-1 flex overflow-hidden">
+<div class="flex-1 overflow-y-auto p-8">
+<div class="max-w-2xl mx-auto space-y-8">
+<section>
+<h3 class="text-[11px] font-bold text-slate-400 uppercase mb-4 flex items-center gap-2">
+<span class="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
+                            Dados Cadastrais
+                        </h3>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label for="full_name">Nome Completo</label>
+<input id="full_name" placeholder="Ex: Ricardo Cavalcanti" type="text"/>
+</div>
+<div>
+<label for="cpf">CPF / Documento</label>
+<input id="cpf" placeholder="000.000.000-00" type="text"/>
+</div>
+<div class="col-span-2">
+<label for="email">E-mail Corporativo</label>
+<input id="email" placeholder="ricardo.c@industria.com.br" type="email"/>
+</div>
+</div>
+</section>
+<section>
+<h3 class="text-[11px] font-bold text-slate-400 uppercase mb-4 flex items-center gap-2">
+<span class="w-1.5 h-1.5 bg-blue-600 rounded-full"></span>
+                            Atribuição de Cargos
+                        </h3>
+<div class="space-y-4">
+<div>
+<label for="roles">Selecionar Cargos (Múltiplos)</label>
+<div class="border border-slate-300 p-2 min-h-[44px] flex flex-wrap gap-2 items-center bg-white rounded-sm">
+<span class="badge-access badge-gestao">
+                                        Supervisor Prod.
+                                        <span class="material-symbols-outlined text-[12px] cursor-pointer">close</span>
+</span>
+<span class="badge-access badge-admin">
+                                        Audit. Qualidade
+                                        <span class="material-symbols-outlined text-[12px] cursor-pointer">close</span>
+</span>
+<input class="border-none h-6 w-24 p-0 focus:ring-0 text-xs" placeholder="Adicionar..." type="text"/>
+</div>
+<p class="mt-2 text-[9px] text-slate-400 italic">As permissões serão herdadas automaticamente com base nos cargos selecionados.</p>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label for="terminal">Terminal Preferencial</label>
+<select id="terminal">
+<option>Terminal Norte - Produção</option>
+<option>Terminal Sul - Logística</option>
+<option>Terminal Adm - Escritório</option>
+</select>
+</div>
+<div>
+<label for="validity">Validade do Acesso</label>
+<input id="validity" type="date"/>
+</div>
+</div>
+</div>
+</section>
+<section class="bg-slate-50 p-4 border border-slate-200 rounded-sm">
+<h3 class="text-[11px] font-bold text-slate-400 uppercase mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">security</span>
+                            Protocolos de Segurança
+                        </h3>
+<div class="space-y-3">
+<label class="flex items-center gap-3 cursor-pointer group">
+<input checked="" class="w-4 h-4 rounded text-blue-600 border-slate-300" type="checkbox"/>
+<span class="normal-case text-xs font-medium text-slate-700">Forçar reset de senha no primeiro login (Obrigatório)</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input checked="" class="w-4 h-4 rounded text-blue-600 border-slate-300" type="checkbox"/>
+<span class="normal-case text-xs font-medium text-slate-700">Ativar Autenticação de Dois Fatores (MFA) via Token</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="w-4 h-4 rounded text-blue-600 border-slate-300" type="checkbox"/>
+<span class="normal-case text-xs font-medium text-slate-700">Restringir acesso apenas à rede local (VPN Industrial)</span>
+</label>
+</div>
+</section>
+</div>
+</div>
+<aside class="summary-panel">
+<div class="p-5 border-b border-slate-200 bg-slate-100/50">
+<h4 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Resumo de Herança</h4>
+<p class="text-[9px] text-slate-400 mt-1">Permissões efetivas calculadas em tempo real</p>
+</div>
+<div class="flex-1 overflow-y-auto p-5">
+<div class="space-y-6">
+<div>
+<span class="text-[9px] font-bold text-slate-400 uppercase block mb-3">Módulos Habilitados</span>
+<div class="space-y-2">
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-emerald-500 text-sm">check_circle</span>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-700">Gestão de Produção</span>
+<span class="text-[9px] text-slate-500">Herdado de [Supervisor Prod.]</span>
+</div>
+</div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-emerald-500 text-sm">check_circle</span>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-700">Controle de Qualidade</span>
+<span class="text-[9px] text-slate-500">Herdado de [Audit. Qualidade]</span>
+</div>
+</div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-emerald-500 text-sm">check_circle</span>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-700">Dashboard Industrial</span>
+<span class="text-[9px] text-slate-500">Herdado de [Supervisor Prod.]</span>
+</div>
+</div>
+</div>
+</div>
+<div>
+<span class="text-[9px] font-bold text-slate-400 uppercase block mb-3">Ações de Alto Risco</span>
+<div class="space-y-2">
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-amber-500 text-sm">warning</span>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-700">Parada de Linha</span>
+<span class="text-[9px] text-slate-500">Acesso via Supervisor</span>
+</div>
+</div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined text-slate-300 text-sm">cancel</span>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-400">Exclusão de Registros</span>
+<span class="text-[9px] text-slate-400 italic">Não autorizado</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="p-5 bg-slate-800 text-white">
+<div class="flex justify-between items-center mb-1">
+<span class="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Score de Acesso</span>
+<span class="text-xs font-bold text-emerald-400">SEGURO</span>
+</div>
+<div class="w-full h-1 bg-slate-700 rounded-full overflow-hidden">
+<div class="w-[85%] h-full bg-emerald-500"></div>
+</div>
+</div>
+</aside>
+</div>
+<footer class="h-16 border-t border-slate-200 px-6 flex items-center justify-between shrink-0 bg-white">
+<button class="text-[11px] font-bold text-slate-500 uppercase hover:text-slate-700">Cancelar</button>
+<div class="flex items-center gap-3">
+<button class="px-5 py-2 border border-slate-300 text-[11px] font-bold text-slate-700 uppercase hover:bg-slate-50 transition-colors">Salvar Rascunho</button>
+<button class="px-6 py-2 bg-blue-600 text-white text-[11px] font-bold uppercase hover:bg-blue-700 transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">verified_user</span>
+                    Finalizar Configuração
+                </button>
+</div>
+</footer>
+</div>
+</div>
+
+</body></html>
