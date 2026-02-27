@@ -72,3 +72,32 @@ export function formatarCNPJ(val: string): string {
 export function cnpjApenasDigitos(val: string): string {
   return val.replace(/\D/g, '')
 }
+
+/**
+ * Formata CPF: 000.000.000-00
+ */
+export function formatarCPF(val: string): string {
+  const d = val.replace(/\D/g, '')
+  if (d.length <= 3) return d
+  if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`
+  if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9, 11)}`
+}
+
+/**
+ * Formata CPF ou CNPJ automaticamente baseado no número de dígitos
+ * Até 11 dígitos: CPF (000.000.000-00)
+ * Mais de 11 dígitos: CNPJ (00.000.000/0001-00)
+ */
+export function formatarCPFCNPJ(val: string): string {
+  const d = val.replace(/\D/g, '')
+  if (d.length <= 11) return formatarCPF(d)
+  return formatarCNPJ(d)
+}
+
+/**
+ * Remove formatação de CPF/CNPJ
+ */
+export function cpfCnpjApenasDigitos(val: string): string {
+  return val.replace(/\D/g, '')
+}

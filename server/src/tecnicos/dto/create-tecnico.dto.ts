@@ -48,6 +48,11 @@ export class CreateTecnicoDto {
   @MinLength(1)
   nome: string;
 
+  @ApiPropertyOptional({ description: 'CPF ou CNPJ do técnico' })
+  @IsOptional()
+  @IsString()
+  cpfCnpj?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()

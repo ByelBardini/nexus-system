@@ -33,11 +33,13 @@ import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
 import { useUFs, useMunicipios } from '@/hooks/useBrasilAPI'
 import type { EnderecoCEP } from '@/hooks/useBrasilAPI'
-import { formatarTelefone } from '@/lib/format'
+import { formatarTelefone, formatarCPFCNPJ } from '@/lib/format'
+import { InputCPFCNPJ } from '@/components/InputCPFCNPJ'
 import { cn } from '@/lib/utils'
 
 const schema = z.object({
   nome: z.string().min(1, 'Nome obrigatório'),
+  cpfCnpj: z.string().optional(),
   telefone: z.string().optional(),
   cidade: z.string().optional(),
   estado: z.string().optional(),
@@ -61,6 +63,7 @@ type FormData = z.infer<typeof schema>
 interface Tecnico {
   id: number
   nome: string
+  cpfCnpj: string | null
   telefone: string | null
   cidade: string | null
   estado: string | null
@@ -154,6 +157,7 @@ export function TecnicosPage() {
     resolver: zodResolver(schema),
     defaultValues: {
       nome: '',
+      cpfCnpj: '',
       telefone: '',
       cidade: '',
       estado: '',
@@ -183,6 +187,7 @@ export function TecnicosPage() {
         method: 'POST',
         body: JSON.stringify({
           nome: data.nome,
+          cpfCnpj: data.cpfCnpj || undefined,
           telefone: data.telefone || undefined,
           cidade: data.cidade || undefined,
           estado: data.estado || undefined,
@@ -217,6 +222,7 @@ export function TecnicosPage() {
         method: 'PATCH',
         body: JSON.stringify({
           nome: data.nome,
+          cpfCnpj: data.cpfCnpj || undefined,
           telefone: data.telefone || undefined,
           cidade: data.cidade || undefined,
           estado: data.estado || undefined,
@@ -249,6 +255,7 @@ export function TecnicosPage() {
     setEditingTecnico(null)
     form.reset({
       nome: '',
+      cpfCnpj: '',
       telefone: '',
       cidade: '',
       estado: '',
@@ -273,6 +280,7 @@ export function TecnicosPage() {
     setEditingTecnico(t)
     form.reset({
       nome: t.nome,
+      cpfCnpj: t.cpfCnpj ?? '',
       telefone: t.telefone ?? '',
       cidade: t.cidade ?? '',
       estado: t.estado ?? '',
@@ -631,27 +639,27 @@ export function TecnicosPage() {
                   <div className="flex items-center gap-2 mb-4 border-b border-slate-200 pb-2">
                     <span className="text-[11px] font-black uppercase text-slate-800 tracking-widest">01. Dados Básicos</span>
                   </div>
-                  <div className="grid grid-cols-4 gap-4">
-                    <div className="col-span-2">
+                  <div className="grid grid-cols-6 gap-4">
+                    <div className="col-span-3">
                       <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nome Completo</label>
                       <Input {...form.register('nome')} placeholder="Ex: Ricardo Silva" className="h-9" />
                       {form.formState.errors.nome && (
                         <p className="text-xs text-red-500 mt-1">{form.formState.errors.nome.message}</p>
                       )}
                     </div>
-                    <div className="col-span-1">
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Telefone / WhatsApp</label>
+                    <div className="col-span-2">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">CPF / CNPJ</label>
                       <Controller
-                        name="telefone"
+                        name="cpfCnpj"
                         control={form.control}
                         render={({ field }) => (
-                          <InputTelefone value={field.value ?? ''} onChange={field.onChange} className="h-9" />
+                          <InputCPFCNPJ value={field.value ?? ''} onChange={field.onChange} className="h-9" />
                         )}
                       />
                     </div>
                     <div className="col-span-1">
                       <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Status</label>
-                      <div className="flex items-center gap-3 h-9">
+                      <div className="flex items-center gap-2 h-9">
                         <Controller
                           name="ativo"
                           control={form.control}
@@ -663,7 +671,7 @@ export function TecnicosPage() {
                                 aria-checked={field.value}
                                 onClick={() => field.onChange(!field.value)}
                                 className={cn(
-                                  'relative h-5 w-10 cursor-pointer rounded-full transition-colors',
+                                  'relative h-5 w-10 cursor-pointer rounded-full transition-colors flex-shrink-0',
                                   field.value ? 'bg-emerald-500' : 'bg-slate-200'
                                 )}
                               >
@@ -674,13 +682,23 @@ export function TecnicosPage() {
                                   )}
                                 />
                               </button>
-                              <span className={cn('text-xs font-bold', field.value ? 'text-emerald-600' : 'text-slate-500')}>
+                              <span className={cn('text-xs font-bold whitespace-nowrap', field.value ? 'text-emerald-600' : 'text-slate-500')}>
                                 {field.value ? 'ATIVO' : 'INATIVO'}
                               </span>
                             </>
                           )}
                         />
                       </div>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Telefone / WhatsApp</label>
+                      <Controller
+                        name="telefone"
+                        control={form.control}
+                        render={({ field }) => (
+                          <InputTelefone value={field.value ?? ''} onChange={field.onChange} className="h-9" />
+                        )}
+                      />
                     </div>
                     <div className="col-span-2">
                       <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Estado de Atuação</label>

@@ -160,6 +160,7 @@ model Subcliente {
 model Tecnico {
   id              Int            @id @default(autoincrement())
   nome            String         @db.VarChar(200)
+  cpfCnpj         String?        @map("cpf_cnpj") @db.VarChar(20)
   telefone        String?        @db.VarChar(20)
   cidade          String?        @db.VarChar(100)
   estado          String?        @db.VarChar(2)

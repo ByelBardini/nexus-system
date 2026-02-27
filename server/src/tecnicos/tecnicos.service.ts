@@ -28,6 +28,7 @@ export class TecnicosService {
     const tecnico = await this.prisma.tecnico.create({
       data: {
         nome: dto.nome,
+        cpfCnpj: dto.cpfCnpj,
         telefone: dto.telefone,
         cidade: dto.cidade,
         estado: dto.estado,
@@ -63,6 +64,7 @@ export class TecnicosService {
       where: { id },
       data: {
         nome: dto.nome,
+        cpfCnpj: dto.cpfCnpj,
         telefone: dto.telefone,
         cidade: dto.cidade,
         estado: dto.estado,
