@@ -1,14 +1,79 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, MinLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsBoolean,
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+  MinLength,
+  ValidateNested,
+} from 'class-validator';
 
-export class CreateClienteDto {
-  @ApiPropertyOptional({ example: 'Empresa ABC' })
+export enum TipoContrato {
+  COMODATO = 'COMODATO',
+  AQUISICAO = 'AQUISICAO',
+}
+
+export enum StatusCliente {
+  ATIVO = 'ATIVO',
+  PENDENTE = 'PENDENTE',
+  INATIVO = 'INATIVO',
+}
+
+export class ContatoDto {
+  @ApiProperty({ example: 'Carlos Alberto' })
   @IsString()
   @MinLength(1)
   nome: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: '(11) 99999-9999' })
+  @IsOptional()
+  @IsString()
+  celular?: string;
+
+  @ApiPropertyOptional({ example: 'carlos@empresa.com' })
+  @IsOptional()
+  @IsEmail()
+  email?: string;
+}
+
+export class CreateClienteDto {
+  @ApiProperty({ example: 'Empresa ABC Ltda' })
+  @IsString()
+  @MinLength(1)
+  nome: string;
+
+  @ApiPropertyOptional({ example: 'Empresa ABC' })
+  @IsOptional()
+  @IsString()
+  nomeFantasia?: string;
+
+  @ApiPropertyOptional({ example: '12.345.678/0001-90' })
   @IsOptional()
   @IsString()
   cnpj?: string;
+
+  @ApiPropertyOptional({ enum: TipoContrato, default: TipoContrato.COMODATO })
+  @IsOptional()
+  @IsEnum(TipoContrato)
+  tipoContrato?: TipoContrato;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  estoqueProprio?: boolean;
+
+  @ApiPropertyOptional({ enum: StatusCliente, default: StatusCliente.ATIVO })
+  @IsOptional()
+  @IsEnum(StatusCliente)
+  status?: StatusCliente;
+
+  @ApiPropertyOptional({ type: [ContatoDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ContatoDto)
+  contatos?: ContatoDto[];
 }

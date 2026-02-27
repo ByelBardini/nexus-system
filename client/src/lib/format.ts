@@ -53,3 +53,22 @@ export function formatarCEP(val: string): string {
 export function cepApenasDigitos(val: string): string {
   return val.replace(/\D/g, '')
 }
+
+/**
+ * Formata CNPJ: 00.000.000/0001-00
+ */
+export function formatarCNPJ(val: string): string {
+  const d = val.replace(/\D/g, '')
+  if (d.length <= 2) return d
+  if (d.length <= 5) return `${d.slice(0, 2)}.${d.slice(2)}`
+  if (d.length <= 8) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5)}`
+  if (d.length <= 12) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8)}`
+  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12, 14)}`
+}
+
+/**
+ * Remove formatação do CNPJ
+ */
+export function cnpjApenasDigitos(val: string): string {
+  return val.replace(/\D/g, '')
+}

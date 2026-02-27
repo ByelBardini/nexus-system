@@ -85,14 +85,29 @@ model RegistroAuditoria {
 }
 
 model Cliente {
-  id            Int              @id @default(autoincrement())
-  nome          String           @db.VarChar(200)
-  cnpj          String?          @db.VarChar(20)
-  contatos      ContatoCliente[]
-  ordensServico OrdemServico[]
-  subclientes   Subcliente[]
+  id             Int              @id @default(autoincrement())
+  nome           String           @db.VarChar(200)
+  nomeFantasia   String?          @map("nome_fantasia") @db.VarChar(200)
+  cnpj           String?          @db.VarChar(20)
+  tipoContrato   TipoContrato     @default(COMODATO) @map("tipo_contrato")
+  estoqueProprio Boolean          @default(false) @map("estoque_proprio")
+  status         StatusCliente    @default(ATIVO)
+  contatos       ContatoCliente[]
+  ordensServico  OrdemServico[]
+  subclientes    Subcliente[]
 
   @@map("clientes")
+}
+
+enum TipoContrato {
+  COMODATO
+  AQUISICAO
+}
+
+enum StatusCliente {
+  ATIVO
+  PENDENTE
+  INATIVO
 }
 
 model ContatoCliente {

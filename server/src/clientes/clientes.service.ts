@@ -10,6 +10,10 @@ export class ClientesService {
   async findAll() {
     return this.prisma.cliente.findMany({
       orderBy: { nome: 'asc' },
+      include: {
+        contatos: true,
+        _count: { select: { ordensServico: true } },
+      },
     });
   }
 
@@ -23,19 +27,69 @@ export class ClientesService {
   }
 
   async create(dto: CreateClienteDto) {
+    const { contatos, ...clienteData } = dto;
+
     return this.prisma.cliente.create({
       data: {
-        nome: dto.nome,
-        cnpj: dto.cnpj,
+        ...clienteData,
+        contatos: contatos?.length
+          ? {
+              create: contatos.map((c) => ({
+                nome: c.nome,
+                celular: c.celular,
+                email: c.email,
+              })),
+            }
+          : undefined,
       },
+      include: { contatos: true },
     });
   }
 
   async update(id: number, dto: UpdateClienteDto) {
     await this.findOne(id);
+
+    const { contatos, ...clienteData } = dto;
+
+    if (contatos !== undefined) {
+      const existingIds = contatos.filter((c) => c.id).map((c) => c.id as number);
+
+      await this.prisma.$transaction(async (tx) => {
+        await tx.contatoCliente.deleteMany({
+          where: {
+            clienteId: id,
+            id: { notIn: existingIds },
+          },
+        });
+
+        for (const contato of contatos) {
+          if (contato.id) {
+            await tx.contatoCliente.update({
+              where: { id: contato.id },
+              data: {
+                nome: contato.nome,
+                celular: contato.celular,
+                email: contato.email,
+              },
+            });
+          } else {
+            await tx.contatoCliente.create({
+              data: {
+                clienteId: id,
+                nome: contato.nome,
+                celular: contato.celular,
+                email: contato.email,
+              },
+            });
+          }
+        }
+      });
+    }
+
     return this.prisma.cliente.update({
       where: { id },
-      data: dto,
+      data: clienteData,
+      include: { contatos: true },
     });
   }
 }
