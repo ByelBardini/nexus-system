@@ -13,14 +13,14 @@ export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
   @Get()
-  @RequirePermissions('CONFIG.CARGO.LISTAR')
+  @RequirePermissions('ADMINISTRATIVO.CARGO.LISTAR')
   @ApiOperation({ summary: 'Listar roles por setor' })
   findAll() {
     return this.rolesService.findAllWithSectors();
   }
 
   @Get('paginated')
-  @RequirePermissions('CONFIG.CARGO.LISTAR')
+  @RequirePermissions('ADMINISTRATIVO.CARGO.LISTAR')
   @ApiOperation({ summary: 'Listar roles com paginação e filtros' })
   @ApiQuery({ name: 'search', required: false })
   @ApiQuery({ name: 'categoria', required: false, enum: CategoriaCargo })
@@ -41,28 +41,28 @@ export class RolesController {
   }
 
   @Get('setores')
-  @RequirePermissions('CONFIG.CARGO.LISTAR')
+  @RequirePermissions('ADMINISTRATIVO.CARGO.LISTAR')
   @ApiOperation({ summary: 'Listar setores' })
   findAllSetores() {
     return this.rolesService.findAllSetores();
   }
 
   @Get('permissions')
-  @RequirePermissions('CONFIG.CARGO.LISTAR')
+  @RequirePermissions('ADMINISTRATIVO.CARGO.LISTAR')
   @ApiOperation({ summary: 'Listar todas as permissões' })
   findAllPermissions() {
     return this.rolesService.findAllPermissions();
   }
 
   @Get(':id')
-  @RequirePermissions('CONFIG.CARGO.LISTAR')
+  @RequirePermissions('ADMINISTRATIVO.CARGO.LISTAR')
   @ApiOperation({ summary: 'Buscar cargo por ID' })
   findById(@Param('id') id: string) {
     return this.rolesService.findById(+id);
   }
 
   @Post()
-  @RequirePermissions('CONFIG.CARGO.CRIAR')
+  @RequirePermissions('ADMINISTRATIVO.CARGO.CRIAR')
   @ApiOperation({ summary: 'Criar novo cargo' })
   create(
     @Body()
@@ -79,7 +79,7 @@ export class RolesController {
   }
 
   @Patch(':id')
-  @RequirePermissions('CONFIG.CARGO.EDITAR')
+  @RequirePermissions('ADMINISTRATIVO.CARGO.EDITAR')
   @ApiOperation({ summary: 'Atualizar cargo' })
   update(
     @Param('id') id: string,
@@ -95,21 +95,21 @@ export class RolesController {
   }
 
   @Patch(':id/permissions')
-  @RequirePermissions('CONFIG.CARGO.EDITAR')
+  @RequirePermissions('ADMINISTRATIVO.CARGO.EDITAR')
   @ApiOperation({ summary: 'Atualizar permissões do role' })
   updatePermissions(@Param('id') id: string, @Body() body: { permissionIds: number[] }) {
     return this.rolesService.updateRolePermissions(+id, body.permissionIds);
   }
 
   @Get('users/:userId/roles')
-  @RequirePermissions('CONFIG.USUARIO.LISTAR')
+  @RequirePermissions('ADMINISTRATIVO.USUARIO.LISTAR')
   @ApiOperation({ summary: 'Listar roles do usuário' })
   getUserRoles(@Param('userId') userId: string) {
     return this.rolesService.getUserRoles(+userId);
   }
 
   @Patch('users/:userId/roles')
-  @RequirePermissions('CONFIG.USUARIO.EDITAR')
+  @RequirePermissions('ADMINISTRATIVO.USUARIO.EDITAR')
   @ApiOperation({ summary: 'Atualizar roles do usuário' })
   updateUserRoles(@Param('userId') userId: string, @Body() body: { roleIds: number[] }) {
     return this.rolesService.updateUserRoles(+userId, body.roleIds);

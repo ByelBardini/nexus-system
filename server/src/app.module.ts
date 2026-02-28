@@ -12,6 +12,7 @@ import { ClientesModule } from './clientes/clientes.module';
 import { TecnicosModule } from './tecnicos/tecnicos.module';
 import { VeiculosModule } from './veiculos/veiculos.module';
 import { OrdensServicoModule } from './ordens-servico/ordens-servico.module';
+import { AparelhosModule } from './aparelhos/aparelhos.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
@@ -30,6 +31,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     TecnicosModule,
     VeiculosModule,
     OrdensServicoModule,
+    AparelhosModule,
   ],
   controllers: [AppController],
   providers: [

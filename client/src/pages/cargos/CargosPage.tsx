@@ -109,13 +109,15 @@ const CATEGORIA_CONFIG: Record<CategoriaCargo, { label: string; className: strin
 }
 
 const NOMES_SETOR: Record<string, string> = {
-  CONFIG: 'Administrativo',
+  ADMINISTRATIVO: 'Administrativo',
+  CONFIGURACAO: 'Configuração',
   AGENDAMENTO: 'Agendamento & Ordens',
 }
 
 const NOMES_ITEM: Record<string, string> = {
   CARGO: 'Cargos',
   USUARIO: 'Usuários',
+  APARELHO: 'Aparelhos',
   CLIENTE: 'Clientes',
   OS: 'Ordens de Serviço',
   TECNICO: 'Técnicos',
@@ -128,9 +130,10 @@ const NOMES_ACAO: Record<string, string> = {
   EXCLUIR: 'Deletar',
 }
 
-const ORDEM_SETORES = ['CONFIG', 'AGENDAMENTO']
+const ORDEM_SETORES = ['ADMINISTRATIVO', 'CONFIGURACAO', 'AGENDAMENTO']
 const ORDEM_ITENS: Record<string, string[]> = {
-  CONFIG: ['CARGO', 'USUARIO'],
+  ADMINISTRATIVO: ['CARGO', 'USUARIO'],
+  CONFIGURACAO: ['APARELHO'],
   AGENDAMENTO: ['CLIENTE', 'OS', 'TECNICO'],
 }
 const ORDEM_ACOES = ['LISTAR', 'CRIAR', 'EDITAR', 'EXCLUIR']
@@ -173,7 +176,7 @@ function CargoModal({ cargo, isNew, onClose, permissoes, setores }: CargoModalPr
   const [categoria, setCategoria] = useState<CategoriaCargo>('OPERACIONAL')
   const [setorId, setSetorId] = useState<number>(0)
   const [selectedPermIds, setSelectedPermIds] = useState<number[]>([])
-  const [expandedSectors, setExpandedSectors] = useState<string[]>(ORDEM_SETORES)
+  const [expandedSectors, setExpandedSectors] = useState<string[]>(['ADMINISTRATIVO', 'CONFIGURACAO', 'AGENDAMENTO'])
 
   useEffect(() => {
     if (cargo) {
@@ -591,8 +594,8 @@ function CargoModal({ cargo, isNew, onClose, permissoes, setores }: CargoModalPr
 export function CargosPage() {
   const queryClient = useQueryClient()
   const { hasPermission } = useAuth()
-  const canCreate = hasPermission('CONFIG.CARGO.CRIAR')
-  const canEdit = hasPermission('CONFIG.CARGO.EDITAR')
+  const canCreate = hasPermission('ADMINISTRATIVO.CARGO.CRIAR')
+  const canEdit = hasPermission('ADMINISTRATIVO.CARGO.EDITAR')
 
   const [search, setSearch] = useState('')
   const [categoriaFilter, setCategoriaFilter] = useState<string>('TODAS')

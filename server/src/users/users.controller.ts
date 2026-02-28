@@ -14,14 +14,14 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  @RequirePermissions('CONFIG.USUARIO.LISTAR')
+  @RequirePermissions('ADMINISTRATIVO.USUARIO.LISTAR')
   @ApiOperation({ summary: 'Listar usuários' })
   findAll() {
     return this.usersService.findAll();
   }
 
   @Get('paginated')
-  @RequirePermissions('CONFIG.USUARIO.LISTAR')
+  @RequirePermissions('ADMINISTRATIVO.USUARIO.LISTAR')
   @ApiOperation({ summary: 'Listar usuários com paginação' })
   @ApiQuery({ name: 'search', required: false })
   @ApiQuery({ name: 'ativo', required: false })
@@ -42,28 +42,28 @@ export class UsersController {
   }
 
   @Get(':id')
-  @RequirePermissions('CONFIG.USUARIO.LISTAR')
+  @RequirePermissions('ADMINISTRATIVO.USUARIO.LISTAR')
   @ApiOperation({ summary: 'Buscar usuário por ID' })
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(+id);
   }
 
   @Post()
-  @RequirePermissions('CONFIG.USUARIO.CRIAR')
+  @RequirePermissions('ADMINISTRATIVO.USUARIO.CRIAR')
   @ApiOperation({ summary: 'Criar usuário' })
   create(@Body() dto: CreateUserDto) {
     return this.usersService.create(dto);
   }
 
   @Patch(':id')
-  @RequirePermissions('CONFIG.USUARIO.EDITAR')
+  @RequirePermissions('ADMINISTRATIVO.USUARIO.EDITAR')
   @ApiOperation({ summary: 'Atualizar usuário' })
   update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
     return this.usersService.update(+id, dto);
   }
 
   @Post(':id/reset-password')
-  @RequirePermissions('CONFIG.USUARIO.EDITAR')
+  @RequirePermissions('ADMINISTRATIVO.USUARIO.EDITAR')
   @ApiOperation({ summary: 'Resetar senha do usuário para o padrão' })
   resetPassword(@Param('id') id: string) {
     return this.usersService.resetPassword(+id);

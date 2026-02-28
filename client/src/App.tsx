@@ -11,6 +11,8 @@ const UsuariosPage = lazy(() => import('@/pages/usuarios/UsuariosPage').then((m)
 const CargosPage = lazy(() => import('@/pages/cargos/CargosPage').then((m) => ({ default: m.CargosPage })))
 const ClientesPage = lazy(() => import('@/pages/clientes/ClientesPage').then((m) => ({ default: m.ClientesPage })))
 const TecnicosPage = lazy(() => import('@/pages/tecnicos/TecnicosPage').then((m) => ({ default: m.TecnicosPage })))
+const AparelhosPage = lazy(() => import('@/pages/aparelhos/AparelhosPage').then((m) => ({ default: m.AparelhosPage })))
+const CadastroLotePage = lazy(() => import('@/pages/aparelhos/CadastroLotePage').then((m) => ({ default: m.CadastroLotePage })))
 
 function PageLoader() {
   return (
@@ -77,6 +79,22 @@ function App() {
           element={
             <Suspense fallback={<PageLoader />}>
               <TecnicosPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="aparelhos"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <AparelhosPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="aparelhos/lote"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <CadastroLotePage />
             </Suspense>
           }
         />

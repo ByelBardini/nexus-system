@@ -112,6 +112,8 @@ model Cliente {
   contatos       ContatoCliente[]
   ordensServico  OrdemServico[]
   subclientes    Subcliente[]
+  aparelhos      Aparelho[]
+  lotesAparelhos LoteAparelho[]
 
   @@map("clientes")
 }
@@ -174,6 +176,7 @@ model Tecnico {
   ativo           Boolean        @default(true)
   ordensServico   OrdemServico[]
   precos          PrecoTecnico?
+  aparelhos       Aparelho[]
 
   @@map("tecnicos")
 }
@@ -259,4 +262,93 @@ enum StatusOS {
   AGUARDANDO_CADASTRO
   FINALIZADO
   CANCELADO
+}
+
+// ============= APARELHOS / EQUIPAMENTOS =============
+
+model Aparelho {
+  id              Int               @id @default(autoincrement())
+  tipo            TipoAparelho
+  identificador   String?           @db.VarChar(50)
+  status          StatusAparelho    @default(EM_ESTOQUE)
+  proprietario    ProprietarioTipo  @default(INFINITY)
+  clienteId       Int?              @map("cliente_id")
+  marca           String?           @db.VarChar(100)
+  modelo          String?           @db.VarChar(100)
+  operadora       String?           @db.VarChar(50)
+  loteId          Int?              @map("lote_id")
+  valorUnitario   Decimal?          @map("valor_unitario") @db.Decimal(10, 2)
+  tecnicoId       Int?              @map("tecnico_id")
+  kitId           Int?              @map("kit_id")
+  simVinculadoId  Int?              @map("sim_vinculado_id")
+  criadoEm        DateTime          @default(now()) @map("criado_em")
+  atualizadoEm    DateTime          @updatedAt @map("atualizado_em")
+  
+  cliente         Cliente?          @relation(fields: [clienteId], references: [id])
+  lote            LoteAparelho?     @relation(fields: [loteId], references: [id])
+  tecnico         Tecnico?          @relation(fields: [tecnicoId], references: [id])
+  simVinculado    Aparelho?         @relation("SimVinculo", fields: [simVinculadoId], references: [id])
+  aparelhosVinculados Aparelho[]    @relation("SimVinculo")
+  historico       AparelhoHistorico[]
+
+  @@index([clienteId])
+  @@index([loteId])
+  @@index([tecnicoId])
+  @@index([simVinculadoId])
+  @@map("aparelhos")
+}
+
+model LoteAparelho {
+  id              Int               @id @default(autoincrement())
+  referencia      String            @db.VarChar(100)
+  notaFiscal      String?           @map("nota_fiscal") @db.VarChar(50)
+  dataChegada     DateTime          @map("data_chegada")
+  tipo            TipoAparelho
+  proprietario    ProprietarioTipo  @default(INFINITY)
+  clienteId       Int?              @map("cliente_id")
+  marca           String?           @db.VarChar(100)
+  modelo          String?           @db.VarChar(100)
+  operadora       String?           @db.VarChar(50)
+  quantidade      Int
+  valorUnitario   Decimal           @map("valor_unitario") @db.Decimal(10, 2)
+  valorTotal      Decimal           @map("valor_total") @db.Decimal(10, 2)
+  criadoEm        DateTime          @default(now()) @map("criado_em")
+  
+  cliente         Cliente?          @relation(fields: [clienteId], references: [id])
+  aparelhos       Aparelho[]
+
+  @@index([clienteId])
+  @@map("lotes_aparelhos")
+}
+
+model AparelhoHistorico {
+  id              Int               @id @default(autoincrement())
+  aparelhoId      Int               @map("aparelho_id")
+  statusAnterior  StatusAparelho    @map("status_anterior")
+  statusNovo      StatusAparelho    @map("status_novo")
+  observacao      String?           @db.VarChar(500)
+  criadoEm        DateTime          @default(now()) @map("criado_em")
+  
+  aparelho        Aparelho          @relation(fields: [aparelhoId], references: [id], onDelete: Cascade)
+
+  @@index([aparelhoId])
+  @@map("aparelhos_historico")
+}
+
+enum TipoAparelho {
+  RASTREADOR
+  SIM
+}
+
+enum StatusAparelho {
+  EM_ESTOQUE
+  CONFIGURADO
+  DESPACHADO
+  COM_TECNICO
+  INSTALADO
+}
+
+enum ProprietarioTipo {
+  INFINITY
+  CLIENTE
 }

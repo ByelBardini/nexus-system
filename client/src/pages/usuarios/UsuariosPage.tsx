@@ -112,8 +112,9 @@ function calcularPermissoesHerdadas(
 
 function getModuloLabel(modulo: string): string {
   const labels: Record<string, string> = {
-    'CONFIG.USUARIO': 'Usuários',
-    'CONFIG.CARGO': 'Cargos',
+    'ADMINISTRATIVO.USUARIO': 'Usuários',
+    'ADMINISTRATIVO.CARGO': 'Cargos',
+    'CONFIGURACAO.APARELHO': 'Aparelhos',
     'AGENDAMENTO.CLIENTE': 'Clientes',
     'AGENDAMENTO.TECNICO': 'Técnicos',
     'AGENDAMENTO.OS': 'Ordens de Serviço',
@@ -241,8 +242,8 @@ export function UsuariosPage() {
   const [page, setPage] = useState(1)
   const [showCreateRoleSelector, setShowCreateRoleSelector] = useState(false)
   const [showEditRoleSelector, setShowEditRoleSelector] = useState(false)
-  const canCreate = hasPermission('CONFIG.USUARIO.CRIAR')
-  const canEdit = hasPermission('CONFIG.USUARIO.EDITAR')
+  const canCreate = hasPermission('ADMINISTRATIVO.USUARIO.CRIAR')
+  const canEdit = hasPermission('ADMINISTRATIVO.USUARIO.EDITAR')
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300)

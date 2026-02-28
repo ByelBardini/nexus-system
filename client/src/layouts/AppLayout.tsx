@@ -2,8 +2,19 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
 
-const nav = [
-  { to: '/', label: 'Ordens de Serviço', icon: 'list_alt' },
+const navSections = [
+  {
+    title: 'Agendamento',
+    items: [
+      { to: '/', label: 'Ordens de Serviço', icon: 'list_alt' },
+    ],
+  },
+  {
+    title: 'Configuração',
+    items: [
+      { to: '/aparelhos', label: 'Aparelhos', icon: 'router' },
+    ],
+  },
 ]
 const navBottom = [
   { to: '/configuracoes', label: 'Configurações', icon: 'settings' },
@@ -60,15 +71,24 @@ export function AppLayout() {
             <p className="text-[9px] uppercase tracking-widest text-slate-500 font-bold">Agend. e Conf.</p>
           </div>
         </div>
-        <nav className="flex-1 px-2 py-4 flex flex-col gap-0.5 overflow-y-auto">
-          {nav.map(({ to, label, icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              label={label}
-              icon={icon}
-              isActive={location.pathname === to}
-            />
+        <nav className="flex-1 px-2 py-4 flex flex-col gap-4 overflow-y-auto">
+          {navSections.map((section) => (
+            <div key={section.title}>
+              <p className="px-3 mb-2 text-[9px] font-bold uppercase tracking-widest text-slate-500">
+                {section.title}
+              </p>
+              <div className="flex flex-col gap-0.5">
+                {section.items.map(({ to, label, icon }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    label={label}
+                    icon={icon}
+                    isActive={location.pathname === to}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
         <div className="px-2 pt-2 pb-2 border-t border-slate-800 shrink-0">
