@@ -40,6 +40,13 @@ export class AparelhosController {
     return this.aparelhosService.createLote(dto);
   }
 
+  @Post('individual')
+  @RequirePermissions('CONFIGURACAO.APARELHO.CRIAR')
+  @ApiOperation({ summary: 'Criar aparelho individual' })
+  createIndividual(@Body() dto: any) {
+    return this.aparelhosService.createIndividual(dto);
+  }
+
   @Patch(':id/status')
   @RequirePermissions('CONFIGURACAO.APARELHO.EDITAR')
   @ApiOperation({ summary: 'Atualizar status do aparelho' })

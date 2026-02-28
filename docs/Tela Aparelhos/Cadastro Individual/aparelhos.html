@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="pt-br"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Entrada Manual de Equipamento - Industrial Hub</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        :root {
+            --sidebar-bg: #1E293B;
+            --sidebar-hover: #334155;
+            --background-gray: #F1F5F9;
+            --border-subtle: #E2E8F0;
+            --primary-blue: #2563EB;
+            --industrial-dark: #0F172A;
+            --status-green: #22C55E;
+            --status-red: #EF4444;
+            --status-yellow: #F59E0B;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-gray);
+        }
+        .sidebar-item {
+            @apply flex items-center gap-3 px-4 py-2 text-slate-400 hover:bg-[var(--sidebar-hover)] hover:text-white transition-all text-sm;
+        }
+        .sidebar-item.active {
+            @apply bg-[var(--sidebar-hover)] text-white border-r-4 border-blue-500;
+        }
+        .sidebar-group-title {
+            @apply px-4 py-2 mt-4 text-[10px] font-bold uppercase tracking-wider text-slate-500;
+        }
+        .form-card {
+            @apply bg-white border border-slate-200 rounded-sm shadow-sm p-6 mb-4;
+        }
+        .form-label {
+            @apply block text-[10px] font-bold text-slate-500 uppercase mb-1.5 tracking-wider;
+        }
+        .form-input {
+            @apply w-full h-10 px-3 bg-white border border-slate-300 rounded-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all;
+        }
+        .form-select {
+            @apply w-full h-10 px-3 bg-white border border-slate-300 rounded-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm appearance-none;
+        }
+        .status-pill {
+            @apply flex-1 py-3 px-2 border rounded-sm flex flex-col items-center gap-1 transition-all cursor-pointer;
+        }
+    </style>
+</head>
+<body class="text-slate-900 antialiased overflow-hidden">
+<div class="flex h-screen">
+<aside class="w-64 bg-[var(--sidebar-bg)] flex flex-col fixed h-screen z-20 overflow-y-auto">
+<div class="p-6 flex items-center gap-3 border-b border-slate-700/50 mb-2">
+<div class="bg-blue-600 p-1.5 rounded-sm">
+<span class="material-symbols-outlined text-white text-xl leading-none">precision_manufacturing</span>
+</div>
+<span class="text-white font-bold tracking-tight uppercase text-sm">Industrial Hub</span>
+</div>
+<nav class="flex-1">
+<div class="sidebar-group-title">Operação</div>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">list_alt</span>
+<span>Ordens de Serviço</span>
+</a>
+<div class="sidebar-group-title">Logística e Inventário</div>
+<a class="sidebar-item active" href="#">
+<span class="material-symbols-outlined text-lg">inventory_2</span>
+<span>Estoque</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">local_shipping</span>
+<span>Despacho</span>
+</a>
+<div class="sidebar-group-title">Sistema</div>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">settings</span>
+<span>Configurações</span>
+</a>
+</nav>
+<div class="p-4 border-t border-slate-700/50">
+<div class="flex items-center gap-3 px-2 py-3 text-slate-400">
+<div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-white border border-slate-600">JD</div>
+<div class="flex flex-col overflow-hidden">
+<span class="text-xs text-white font-medium truncate">João D. Operador</span>
+<span class="text-[10px] uppercase tracking-tighter">Logística Nível II</span>
+</div>
+</div>
+</div>
+</aside>
+<main class="flex-1 ml-64 flex flex-col h-screen overflow-hidden">
+<header class="h-20 bg-white border-b border-[var(--border-subtle)] flex items-center justify-between px-8 shrink-0 z-10">
+<div>
+<nav class="flex items-center gap-2 mb-1">
+<span class="text-[10px] font-bold text-slate-400 uppercase">Estoque</span>
+<span class="material-symbols-outlined text-[14px] text-slate-300">chevron_right</span>
+<span class="text-[10px] font-bold text-blue-600 uppercase">Entrada Individual</span>
+</nav>
+<h1 class="text-lg font-bold text-slate-800">Cadastro Manual de Equipamento</h1>
+</div>
+</header>
+<div class="flex-1 overflow-y-auto p-8 pb-32">
+<div class="grid grid-cols-12 gap-8 max-w-7xl mx-auto">
+<div class="col-span-8 space-y-6">
+<div class="form-card">
+<div class="flex items-center gap-2 mb-6 pb-2 border-b border-slate-100">
+<span class="material-symbols-outlined text-blue-600">qr_code_scanner</span>
+<h3 class="text-xs font-bold text-slate-800 uppercase tracking-wide">Identificação Técnica</h3>
+</div>
+<div class="grid grid-cols-2 gap-6">
+<div class="col-span-2">
+<label class="form-label">IMEI / Número de Série <span class="text-red-500">*</span></label>
+<div class="relative">
+<input class="form-input border-red-500 bg-red-50 pr-10 focus:ring-red-500 focus:border-red-500" placeholder="Digite o identificador único..." type="text" value="358742091102834"/>
+<span class="material-symbols-outlined absolute right-3 top-2.5 text-red-500">error</span>
+</div>
+<p class="text-[10px] text-red-600 mt-1 font-bold uppercase">Atenção: Este IMEI já consta no sistema (Vinculado ao Lote LT-2023-089)</p>
+</div>
+<div>
+<label class="form-label">Tipo de Equipamento</label>
+<select class="form-select">
+<option>Rastreador Satelital</option>
+<option>Simcard M2M</option>
+<option>Gateway Industrial</option>
+</select>
+</div>
+<div>
+<label class="form-label">Modelo</label>
+<select class="form-select">
+<option>ST310U (Suntech)</option>
+<option>GV300W (Queclink)</option>
+<option>LMU-2630 (CalAmp)</option>
+</select>
+</div>
+</div>
+</div>
+<div class="form-card">
+<div class="flex items-center gap-2 mb-6 pb-2 border-b border-slate-100">
+<span class="material-symbols-outlined text-blue-600">history_edu</span>
+<h3 class="text-xs font-bold text-slate-800 uppercase tracking-wide">Origem e Rastreabilidade</h3>
+</div>
+<div class="grid grid-cols-2 gap-6">
+<div>
+<label class="form-label">Origem do Item <span class="text-red-500">*</span></label>
+<select class="form-select">
+<option>Retirada de Cliente</option>
+<option>Devolução de Técnico</option>
+<option>Compra Avulsa</option>
+</select>
+</div>
+<div>
+<label class="form-label">Responsável pela Entrega <span class="text-red-500">*</span></label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-lg">person_search</span>
+<input class="form-input pl-10" placeholder="Nome do técnico ou cliente..." type="text"/>
+</div>
+</div>
+<div class="col-span-2">
+<label class="form-label">Observações de Recebimento</label>
+<textarea class="w-full h-20 p-3 bg-slate-50 border border-slate-300 rounded-sm text-sm" placeholder="Detalhes adicionais sobre o estado físico ou motivo da entrada..."></textarea>
+</div>
+</div>
+</div>
+<div class="form-card">
+<div class="flex items-center gap-2 mb-6 pb-2 border-b border-slate-100">
+<span class="material-symbols-outlined text-blue-600">settings_suggest</span>
+<h3 class="text-xs font-bold text-slate-800 uppercase tracking-wide">Definição de Status</h3>
+</div>
+<div class="space-y-6">
+<div class="flex gap-4">
+<div class="status-pill border-slate-200 bg-slate-50 opacity-60">
+<span class="material-symbols-outlined text-emerald-500">check_circle</span>
+<span class="text-[10px] font-bold text-slate-600 uppercase">Novo / OK</span>
+</div>
+<div class="status-pill border-slate-200 bg-slate-50 opacity-60">
+<span class="material-symbols-outlined text-blue-500">build</span>
+<span class="text-[10px] font-bold text-slate-600 uppercase">Em Manutenção</span>
+</div>
+<div class="status-pill border-red-500 bg-red-50 ring-1 ring-red-500">
+<span class="material-symbols-outlined text-red-600">cancel</span>
+<span class="text-[10px] font-bold text-red-700 uppercase">Cancelado / Defeito</span>
+</div>
+</div>
+<div class="p-4 bg-red-50 border border-red-100 rounded-sm grid grid-cols-2 gap-4">
+<div class="col-span-2">
+<p class="text-[10px] font-bold text-red-800 uppercase mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">report_problem</span>
+                                        Detalhamento de Defeito Requerido
+                                    </p>
+</div>
+<div>
+<label class="form-label">Categoria de Falha</label>
+<select class="form-select border-red-200">
+<option>Falha de Comunicação (GPRS)</option>
+<option>Problema de Alimentação</option>
+<option>Dano Físico / Carcaça</option>
+<option>Curto-circuito Interno</option>
+</select>
+</div>
+<div>
+<label class="form-label">Destino Imediato</label>
+<select class="form-select border-red-200">
+<option>Sucata / Descarte</option>
+<option>Envio para Garantia</option>
+<option>Laboratório Interno</option>
+</select>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="col-span-4">
+<div class="sticky top-8">
+<div class="bg-slate-800 text-white rounded-sm shadow-xl overflow-hidden border border-slate-700">
+<div class="px-6 py-4 bg-slate-900 flex items-center justify-between">
+<h3 class="text-xs font-bold uppercase tracking-widest">Resumo da Entrada</h3>
+<span class="bg-red-500 text-[10px] px-2 py-0.5 rounded-full font-bold">REVISÃO NECESSÁRIA</span>
+</div>
+<div class="p-6 space-y-6">
+<div>
+<label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Equipamento</label>
+<p class="text-sm font-medium mt-1">📡 Rastreador Suntech ST310U</p>
+</div>
+<div class="grid grid-cols-1 gap-4">
+<div>
+<label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Identificador</label>
+<p class="text-sm font-mono text-red-400">358742091102834</p>
+</div>
+<div>
+<label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Responsável Origem</label>
+<p class="text-sm font-medium">--- não definido ---</p>
+</div>
+</div>
+<div class="pt-4 border-t border-slate-700">
+<div class="flex items-center justify-between mb-2">
+<label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status Definido</label>
+<span class="text-[10px] font-bold bg-red-600/20 text-red-400 border border-red-600/50 px-2 py-0.5 rounded-sm uppercase tracking-tighter">Cancelado / Defeito</span>
+</div>
+<div class="flex items-center justify-between">
+<label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Data Entrada</label>
+<span class="text-sm font-bold">24 Mai 2024</span>
+</div>
+</div>
+</div>
+<div class="p-4 bg-slate-700/30 border-t border-slate-700">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-blue-400 text-lg">verified_user</span>
+<div class="space-y-1">
+<p class="text-[9px] font-bold text-slate-300 uppercase">Trilha de Auditoria</p>
+<p class="text-[10px] text-slate-400 leading-tight">Este registro será vinculado à conta de <strong>João D.</strong> e gerará um log de entrada individual para fins de rastreabilidade patrimonial.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-sm">
+<div class="flex gap-3">
+<span class="material-symbols-outlined text-amber-600">warning</span>
+<p class="text-[11px] text-amber-800 font-medium">O IMEI informado já possui um registro ativo. Registrar novamente criará um histórico de duplicidade.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<footer class="h-20 bg-white border-t border-slate-200 fixed bottom-0 left-64 right-0 z-30 px-8 flex items-center justify-end gap-4 shadow-[0_-4px_10px_rgba(0,0,0,0.03)]">
+<button class="h-11 px-6 text-[11px] font-bold text-slate-500 uppercase hover:bg-slate-50 border border-transparent rounded-sm transition-colors">
+                Limpar Campos
+            </button>
+<button class="h-11 px-8 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold uppercase rounded-sm shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">save</span>
+                Finalizar Cadastro
+            </button>
+</footer>
+</main>
+</div>
+
+</body></html>

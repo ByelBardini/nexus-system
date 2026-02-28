@@ -41,57 +41,25 @@ interface IdValidation {
   jaExistentes: string[]
 }
 
-const MARCAS_RASTREADOR = [
-  { value: 'SUNTECH', label: 'Suntech' },
-  { value: 'QUECLINK', label: 'Queclink' },
-  { value: 'CONCOX', label: 'Concox' },
-  { value: 'TELTONIKA', label: 'Teltonika' },
-  { value: 'CALAMP', label: 'CalAmp' },
-  { value: 'COBAN', label: 'Coban' },
-  { value: 'OUTROS', label: 'Outros' },
-]
-
-const MODELOS_POR_MARCA: Record<string, { value: string; label: string }[]> = {
-  SUNTECH: [
-    { value: 'ST310UC', label: 'ST310UC' },
-    { value: 'ST340LC', label: 'ST340LC' },
-    { value: 'ST4315', label: 'ST4315' },
-  ],
-  QUECLINK: [
-    { value: 'GV300', label: 'GV300' },
-    { value: 'GV500', label: 'GV500' },
-    { value: 'GL300', label: 'GL300' },
-  ],
-  CONCOX: [
-    { value: 'GT06N', label: 'GT06N' },
-    { value: 'JM-VL01', label: 'JM-VL01' },
-    { value: 'JM-VL02', label: 'JM-VL02' },
-  ],
-  TELTONIKA: [
-    { value: 'FMB920', label: 'FMB920' },
-    { value: 'FMC130', label: 'FMC130' },
-  ],
-  CALAMP: [
-    { value: 'LMU-2630', label: 'LMU-2630' },
-  ],
-  COBAN: [
-    { value: 'TK103B', label: 'TK103B' },
-    { value: 'GPS103', label: 'GPS103' },
-  ],
-  OUTROS: [
-    { value: 'GENERICO', label: 'Modelo Genérico' },
-  ],
+interface Marca {
+  id: number
+  nome: string
+  ativo: boolean
+  modelos?: Modelo[]
 }
 
-const OPERADORAS = [
-  { value: 'VIVO', label: 'Vivo' },
-  { value: 'CLARO', label: 'Claro' },
-  { value: 'TIM', label: 'Tim' },
-  { value: 'OI', label: 'Oi' },
-  { value: 'ALGAR', label: 'Algar' },
-  { value: 'ARQIA', label: 'Arqia' },
-  { value: 'OUTROS', label: 'Outras' },
-]
+interface Modelo {
+  id: number
+  nome: string
+  ativo: boolean
+  marca?: Marca
+}
+
+interface Operadora {
+  id: number
+  nome: string
+  ativo: boolean
+}
 
 function validateIds(
   texto: string,
@@ -175,6 +143,24 @@ export function CadastroLotePage() {
     enabled: loteProprietario === 'CLIENTE',
   })
 
+  const { data: marcas = [] } = useQuery<Marca[]>({
+    queryKey: ['marcas'],
+    queryFn: () => api('/equipamentos/marcas'),
+  })
+
+  const { data: modelos = [] } = useQuery<Modelo[]>({
+    queryKey: ['modelos'],
+    queryFn: () => api('/equipamentos/modelos'),
+  })
+
+  const { data: operadoras = [] } = useQuery<Operadora[]>({
+    queryKey: ['operadoras'],
+    queryFn: () => api('/equipamentos/operadoras'),
+  })
+
+  const marcasAtivas = useMemo(() => marcas.filter((m) => m.ativo), [marcas])
+  const operadorasAtivas = useMemo(() => operadoras.filter((o) => o.ativo), [operadoras])
+
   const { data: aparelhosExistentes = [] } = useQuery<{ identificador: string }[]>({
     queryKey: ['aparelhos-ids'],
     queryFn: () => api('/aparelhos'),
@@ -205,8 +191,9 @@ export function CadastroLotePage() {
   }, [loteIdsTexto, loteTipo, loteDefinirIds, existingIds])
 
   const modelosDisponiveis = useMemo(() => {
-    return MODELOS_POR_MARCA[loteMarca] || []
-  }, [loteMarca])
+    if (!loteMarca) return []
+    return modelos.filter((m) => m.marca?.id === Number(loteMarca) && m.ativo)
+  }, [loteMarca, modelos])
 
   useEffect(() => {
     setLoteModelo('')
@@ -276,6 +263,10 @@ export function CadastroLotePage() {
 
   const createLoteMutation = useMutation({
     mutationFn: async () => {
+      const marcaSelecionada = marcasAtivas.find((m) => m.id === Number(loteMarca))
+      const modeloSelecionado = modelosDisponiveis.find((m) => m.id === Number(loteModelo))
+      const operadoraSelecionada = operadorasAtivas.find((o) => o.id === Number(loteOperadora))
+
       const payload = {
         referencia: loteReferencia,
         notaFiscal: loteNotaFiscal || null,
@@ -283,9 +274,9 @@ export function CadastroLotePage() {
         proprietarioTipo: loteProprietario,
         clienteId: loteProprietario === 'CLIENTE' ? loteClienteId : null,
         tipo: loteTipo,
-        marca: loteTipo === 'RASTREADOR' ? loteMarca : null,
-        modelo: loteTipo === 'RASTREADOR' ? loteModelo : null,
-        operadora: loteTipo === 'SIM' ? loteOperadora : null,
+        marca: loteTipo === 'RASTREADOR' ? marcaSelecionada?.nome : null,
+        modelo: loteTipo === 'RASTREADOR' ? modeloSelecionado?.nome : null,
+        operadora: loteTipo === 'SIM' ? operadoraSelecionada?.nome : null,
         quantidade: quantidadeFinal,
         valorUnitario: loteValorUnitario / 100,
         identificadores: loteDefinirIds ? idValidation.validos : [],
@@ -524,8 +515,8 @@ export function CadastroLotePage() {
                         <SelectValue placeholder="Selecione..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {MARCAS_RASTREADOR.map((m) => (
-                          <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                        {marcasAtivas.map((m) => (
+                          <SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -540,7 +531,7 @@ export function CadastroLotePage() {
                       </SelectTrigger>
                       <SelectContent>
                         {modelosDisponiveis.map((m) => (
-                          <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                          <SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -556,8 +547,8 @@ export function CadastroLotePage() {
                       <SelectValue placeholder="Selecione..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {OPERADORAS.map((o) => (
-                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      {operadorasAtivas.map((o) => (
+                        <SelectItem key={o.id} value={String(o.id)}>{o.nome}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -705,9 +696,9 @@ export function CadastroLotePage() {
               </div>
             </div>
           </div>
-          </div>
+        </div>
 
-          {/* Sidebar Resumo - Sticky */}
+        {/* Sidebar Resumo - Sticky */}
           <div className="w-80 shrink-0 sticky top-[calc(50vh-300px)] h-fit">
             <div className="bg-slate-800 text-white rounded-lg overflow-hidden shadow-xl">
               <div className="px-6 py-4 bg-slate-900 flex items-center justify-between">
@@ -744,19 +735,21 @@ export function CadastroLotePage() {
                     <div>
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Marca</label>
                       <p className="text-sm font-medium">
-                        {MARCAS_RASTREADOR.find((m) => m.value === loteMarca)?.label || '—'}
+                        {marcasAtivas.find((m) => m.id === Number(loteMarca))?.nome || '—'}
                       </p>
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Modelo</label>
-                      <p className="text-sm font-medium">{loteModelo || '—'}</p>
+                      <p className="text-sm font-medium">
+                        {modelosDisponiveis.find((m) => m.id === Number(loteModelo))?.nome || '—'}
+                      </p>
                     </div>
                   </div>
                 ) : (
                   <div>
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Operadora</label>
                     <p className="text-sm font-medium">
-                      {OPERADORAS.find((o) => o.value === loteOperadora)?.label || '—'}
+                      {operadorasAtivas.find((o) => o.id === Number(loteOperadora))?.nome || '—'}
                     </p>
                   </div>
                 )}

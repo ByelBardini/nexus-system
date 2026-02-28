@@ -17,6 +17,21 @@ interface CreateLoteDto {
   identificadores?: string[];
 }
 
+interface CreateIndividualDto {
+  identificador: string;
+  tipo: TipoAparelho;
+  marca?: string | null;
+  modelo?: string | null;
+  operadora?: string | null;
+  origem: 'RETIRADA_CLIENTE' | 'DEVOLUCAO_TECNICO' | 'COMPRA_AVULSA';
+  responsavelEntrega?: string | null;
+  tecnicoId?: number | null;
+  observacoes?: string | null;
+  statusEntrada: 'NOVO_OK' | 'EM_MANUTENCAO' | 'CANCELADO_DEFEITO';
+  categoriaFalha?: string | null;
+  destinoDefeito?: string | null;
+}
+
 @Injectable()
 export class AparelhosService {
   constructor(private readonly prisma: PrismaService) {}
@@ -188,5 +203,77 @@ export class AparelhosService {
         {} as Record<string, number>,
       ),
     };
+  }
+
+  async createIndividual(dto: CreateIndividualDto) {
+    const {
+      identificador,
+      tipo,
+      marca,
+      modelo,
+      operadora,
+      origem,
+      responsavelEntrega,
+      tecnicoId,
+      observacoes,
+      statusEntrada,
+      categoriaFalha,
+      destinoDefeito,
+    } = dto;
+
+    const existente = await this.prisma.aparelho.findFirst({
+      where: { identificador },
+    });
+
+    if (existente) {
+      throw new BadRequestException(
+        `O identificador ${identificador} já está cadastrado no sistema`,
+      );
+    }
+
+    let statusAparelho: StatusAparelho = 'EM_ESTOQUE';
+    if (statusEntrada === 'EM_MANUTENCAO') {
+      statusAparelho = 'EM_ESTOQUE';
+    } else if (statusEntrada === 'CANCELADO_DEFEITO') {
+      statusAparelho = 'EM_ESTOQUE';
+    }
+
+    const aparelho = await this.prisma.aparelho.create({
+      data: {
+        tipo,
+        identificador,
+        status: statusAparelho,
+        proprietario: 'INFINITY',
+        marca: tipo === 'RASTREADOR' ? marca : null,
+        modelo: tipo === 'RASTREADOR' ? modelo : null,
+        operadora: tipo === 'SIM' ? operadora : null,
+        tecnicoId: tecnicoId || null,
+      },
+      include: {
+        tecnico: { select: { id: true, nome: true } },
+      },
+    });
+
+    await this.prisma.aparelhoHistorico.create({
+      data: {
+        aparelhoId: aparelho.id,
+        statusAnterior: statusAparelho,
+        statusNovo: statusAparelho,
+        observacao: [
+          `Entrada individual - Origem: ${origem}`,
+          responsavelEntrega ? `Responsável: ${responsavelEntrega}` : null,
+          statusEntrada === 'CANCELADO_DEFEITO'
+            ? `Status: Defeito - ${categoriaFalha} - Destino: ${destinoDefeito}`
+            : statusEntrada === 'EM_MANUTENCAO'
+              ? 'Status: Em manutenção'
+              : 'Status: Novo/OK',
+          observacoes ? `Obs: ${observacoes}` : null,
+        ]
+          .filter(Boolean)
+          .join(' | '),
+      },
+    });
+
+    return aparelho;
   }
 }

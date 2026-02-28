@@ -283,10 +283,12 @@ export function AparelhosPage() {
               </div>
               <div className="flex flex-col">
                 <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500 opacity-0">Ação</Label>
-                <Button className="h-9 gap-2 bg-blue-600 hover:bg-blue-700">
-                  <Plus className="h-4 w-4" />
-                  Criar Manual
-                </Button>
+                <Link to="/aparelhos/individual">
+                  <Button className="h-9 gap-2 bg-blue-600 hover:bg-blue-700">
+                    <Plus className="h-4 w-4" />
+                    Criar Manual
+                  </Button>
+                </Link>
               </div>
             </>
           )}

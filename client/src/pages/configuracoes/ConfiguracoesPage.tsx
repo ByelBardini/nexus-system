@@ -90,33 +90,45 @@ export function ConfiguracoesPage() {
           </div>
         </section>
 
-        {/* Configuração - em Breve */}
-        <section className={`${industrialCardClasses} opacity-50`}>
+        {/* Equipamentos */}
+        <section className={industrialCardClasses}>
           <div className={cardHeaderClasses}>
-            <MaterialIcon name="picture_in_picture_alt" className="text-slate-400" />
-            <h2 className="text-sm font-bold uppercase tracking-tight text-slate-500">
-              Configuração
+            <MaterialIcon name="sensors" className="text-emerald-600" />
+            <h2 className="text-sm font-bold uppercase tracking-tight text-slate-800">
+              Equipamentos
             </h2>
           </div>
-          <div className="p-4">
-            <p className="text-[11px] text-slate-400 uppercase tracking-widest text-center py-8">
-              Em Breve
-            </p>
-          </div>
-        </section>
-
-        {/* Placeholder por enquantp */}
-        <section className={`${industrialCardClasses} opacity-50`}>
-          <div className={cardHeaderClasses}>
-            <MaterialIcon name="help_outline" className="text-slate-400" />
-            <h2 className="text-sm font-bold uppercase tracking-tight text-slate-500">
-              Placeholder por enquanto
-            </h2>
-          </div>
-          <div className="p-4">
-            <p className="text-[11px] text-slate-400 uppercase tracking-widest text-center py-8">
-              Ainda não sei o que colocar aqui
-            </p>
+          <div className="p-4 grid grid-cols-1 gap-2">
+            <Link to="/equipamentos/marcas" className={navTileClasses}>
+              <div className="flex items-center gap-3">
+                <MaterialIcon name="precision_manufacturing" className="text-slate-400" />
+                <span>Marcas</span>
+              </div>
+              <MaterialIcon
+                name="chevron_right"
+                className="text-slate-300 group-hover:text-slate-600"
+              />
+            </Link>
+            <Link to="/equipamentos/modelos" className={navTileClasses}>
+              <div className="flex items-center gap-3">
+                <MaterialIcon name="devices" className="text-slate-400" />
+                <span>Modelos</span>
+              </div>
+              <MaterialIcon
+                name="chevron_right"
+                className="text-slate-300 group-hover:text-slate-600"
+              />
+            </Link>
+            <Link to="/equipamentos/operadoras" className={navTileClasses}>
+              <div className="flex items-center gap-3">
+                <MaterialIcon name="sim_card" className="text-slate-400" />
+                <span>Operadoras</span>
+              </div>
+              <MaterialIcon
+                name="chevron_right"
+                className="text-slate-300 group-hover:text-slate-600"
+              />
+            </Link>
           </div>
         </section>
       </div>

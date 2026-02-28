@@ -13,6 +13,7 @@ import { TecnicosModule } from './tecnicos/tecnicos.module';
 import { VeiculosModule } from './veiculos/veiculos.module';
 import { OrdensServicoModule } from './ordens-servico/ordens-servico.module';
 import { AparelhosModule } from './aparelhos/aparelhos.module';
+import { EquipamentosModule } from './equipamentos/equipamentos.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
@@ -32,6 +33,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     VeiculosModule,
     OrdensServicoModule,
     AparelhosModule,
+    EquipamentosModule,
   ],
   controllers: [AppController],
   providers: [

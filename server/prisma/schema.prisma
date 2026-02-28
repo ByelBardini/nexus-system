@@ -266,6 +266,38 @@ enum StatusOS {
 
 // ============= APARELHOS / EQUIPAMENTOS =============
 
+model MarcaEquipamento {
+  id        Int               @id @default(autoincrement())
+  nome      String            @unique @db.VarChar(100)
+  ativo     Boolean           @default(true)
+  criadoEm  DateTime          @default(now()) @map("criado_em")
+  modelos   ModeloEquipamento[]
+
+  @@map("marcas_equipamentos")
+}
+
+model ModeloEquipamento {
+  id        Int               @id @default(autoincrement())
+  nome      String            @db.VarChar(100)
+  marcaId   Int               @map("marca_id")
+  ativo     Boolean           @default(true)
+  criadoEm  DateTime          @default(now()) @map("criado_em")
+  marca     MarcaEquipamento  @relation(fields: [marcaId], references: [id], onDelete: Cascade)
+
+  @@unique([marcaId, nome])
+  @@index([marcaId])
+  @@map("modelos_equipamentos")
+}
+
+model Operadora {
+  id        Int       @id @default(autoincrement())
+  nome      String    @unique @db.VarChar(100)
+  ativo     Boolean   @default(true)
+  criadoEm  DateTime  @default(now()) @map("criado_em")
+
+  @@map("operadoras")
+}
+
 model Aparelho {
   id              Int               @id @default(autoincrement())
   tipo            TipoAparelho
