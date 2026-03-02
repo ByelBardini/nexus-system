@@ -12,7 +12,7 @@ const navSections = [
   {
     title: 'Configuração',
     items: [
-      { to: '/aparelhos', label: 'Aparelhos', icon: 'router' },
+      { to: '/aparelhos', label: 'Rastreadores/Simcards', icon: 'router' },
     ],
   },
 ]

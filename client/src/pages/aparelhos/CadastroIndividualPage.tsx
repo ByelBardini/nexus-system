@@ -36,62 +36,29 @@ interface Tecnico {
   nome: string
 }
 
+interface Marca {
+  id: number
+  nome: string
+  ativo: boolean
+}
+
+interface Modelo {
+  id: number
+  nome: string
+  ativo: boolean
+  marca: { id: number; nome: string }
+}
+
+interface Operadora {
+  id: number
+  nome: string
+  ativo: boolean
+}
+
 interface ExistingId {
   identificador: string
   lote?: { referencia: string } | null
 }
-
-const MARCAS_RASTREADOR = [
-  { value: 'SUNTECH', label: 'Suntech' },
-  { value: 'QUECLINK', label: 'Queclink' },
-  { value: 'CONCOX', label: 'Concox' },
-  { value: 'TELTONIKA', label: 'Teltonika' },
-  { value: 'CALAMP', label: 'CalAmp' },
-  { value: 'COBAN', label: 'Coban' },
-  { value: 'OUTROS', label: 'Outros' },
-]
-
-const MODELOS_POR_MARCA: Record<string, { value: string; label: string }[]> = {
-  SUNTECH: [
-    { value: 'ST310UC', label: 'ST310UC' },
-    { value: 'ST340LC', label: 'ST340LC' },
-    { value: 'ST4315', label: 'ST4315' },
-  ],
-  QUECLINK: [
-    { value: 'GV300', label: 'GV300' },
-    { value: 'GV500', label: 'GV500' },
-    { value: 'GL300', label: 'GL300' },
-  ],
-  CONCOX: [
-    { value: 'GT06N', label: 'GT06N' },
-    { value: 'JM-VL01', label: 'JM-VL01' },
-    { value: 'JM-VL02', label: 'JM-VL02' },
-  ],
-  TELTONIKA: [
-    { value: 'FMB920', label: 'FMB920' },
-    { value: 'FMC130', label: 'FMC130' },
-  ],
-  CALAMP: [
-    { value: 'LMU-2630', label: 'LMU-2630' },
-  ],
-  COBAN: [
-    { value: 'TK103B', label: 'TK103B' },
-    { value: 'GPS103', label: 'GPS103' },
-  ],
-  OUTROS: [
-    { value: 'GENERICO', label: 'Modelo Genérico' },
-  ],
-}
-
-const OPERADORAS = [
-  { value: 'VIVO', label: 'Vivo' },
-  { value: 'CLARO', label: 'Claro' },
-  { value: 'TIM', label: 'Tim' },
-  { value: 'OI', label: 'Oi' },
-  { value: 'ALGAR', label: 'Algar' },
-  { value: 'ARQIA', label: 'Arqia' },
-  { value: 'OUTROS', label: 'Outras' },
-]
 
 const ORIGENS: { value: OrigemItem; label: string }[] = [
   { value: 'RETIRADA_CLIENTE', label: 'Retirada de Cliente' },
@@ -173,6 +140,31 @@ export function CadastroIndividualPage() {
     enabled: origem === 'DEVOLUCAO_TECNICO',
   })
 
+  const { data: marcas = [] } = useQuery<Marca[]>({
+    queryKey: ['marcas'],
+    queryFn: () => api('/equipamentos/marcas'),
+  })
+
+  const { data: modelos = [] } = useQuery<Modelo[]>({
+    queryKey: ['modelos'],
+    queryFn: () => api('/equipamentos/modelos'),
+  })
+
+  const { data: operadoras = [] } = useQuery<Operadora[]>({
+    queryKey: ['operadoras'],
+    queryFn: () => api('/equipamentos/operadoras'),
+  })
+
+  const marcasAtivas = useMemo(() => marcas.filter((m) => m.ativo), [marcas])
+  const operadorasAtivas = useMemo(() => operadoras.filter((o) => o.ativo), [operadoras])
+
+  const modelosDisponiveis = useMemo(() => {
+    if (!marca) return []
+    const marcaEncontrada = marcasAtivas.find((m) => m.nome === marca)
+    if (!marcaEncontrada) return []
+    return modelos.filter((m) => m.marca.id === marcaEncontrada.id && m.ativo)
+  }, [marca, marcasAtivas, modelos])
+
   const { data: aparelhosExistentes = [] } = useQuery<ExistingId[]>({
     queryKey: ['aparelhos-ids'],
     queryFn: () => api('/aparelhos'),
@@ -181,10 +173,6 @@ export function CadastroIndividualPage() {
       lote: a.lote,
     })),
   })
-
-  const existingIds = useMemo(() => {
-    return aparelhosExistentes.map((a) => a.identificador).filter(Boolean) as string[]
-  }, [aparelhosExistentes])
 
   const idJaExiste = useMemo(() => {
     if (!identificador.trim()) return null
@@ -203,10 +191,6 @@ export function CadastroIndividualPage() {
   const tecnicoSelecionado = useMemo(() => {
     return tecnicos.find((t) => t.id === tecnicoSelecionadoId)
   }, [tecnicos, tecnicoSelecionadoId])
-
-  const modelosDisponiveis = useMemo(() => {
-    return MODELOS_POR_MARCA[marca] || []
-  }, [marca])
 
   useEffect(() => {
     setModelo('')
@@ -407,8 +391,8 @@ export function CadastroIndividualPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="RASTREADOR">Rastreador Satelital</SelectItem>
-                    <SelectItem value="SIM">Simcard M2M</SelectItem>
+                    <SelectItem value="RASTREADOR">Rastreador</SelectItem>
+                    <SelectItem value="SIM">Simcard</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -417,7 +401,7 @@ export function CadastroIndividualPage() {
               {tipo === 'RASTREADOR' ? (
                 <div>
                   <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                    Modelo <span className="text-red-500">*</span>
+                    Marca e Modelo <span className="text-red-500">*</span>
                   </Label>
                   <div className="grid grid-cols-2 gap-2">
                     <Select value={marca} onValueChange={setMarca}>
@@ -425,8 +409,8 @@ export function CadastroIndividualPage() {
                         <SelectValue placeholder="Marca..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {MARCAS_RASTREADOR.map((m) => (
-                          <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                        {marcasAtivas.map((m) => (
+                          <SelectItem key={m.id} value={m.nome}>{m.nome}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -436,7 +420,7 @@ export function CadastroIndividualPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {modelosDisponiveis.map((m) => (
-                          <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                          <SelectItem key={m.id} value={m.nome}>{m.nome}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -452,8 +436,8 @@ export function CadastroIndividualPage() {
                       <SelectValue placeholder="Selecione..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {OPERADORAS.map((o) => (
-                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      {operadorasAtivas.map((o) => (
+                        <SelectItem key={o.id} value={o.nome}>{o.nome}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -666,9 +650,8 @@ export function CadastroIndividualPage() {
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Equipamento</label>
                   <p className="text-sm font-medium mt-1">
                     {tipo === 'RASTREADOR' ? '📡' : '📶'} {tipo === 'RASTREADOR' ? 'Rastreador' : 'Simcard'}{' '}
-                    {tipo === 'RASTREADOR' && marca && MARCAS_RASTREADOR.find((m) => m.value === marca)?.label}
-                    {tipo === 'RASTREADOR' && modelo && ` ${modelo}`}
-                    {tipo === 'SIM' && operadora && OPERADORAS.find((o) => o.value === operadora)?.label}
+                    {tipo === 'RASTREADOR' && marca && modelo && `${marca} ${modelo}`}
+                    {tipo === 'SIM' && operadora}
                   </p>
                 </div>
                 <div className="grid grid-cols-1 gap-4">

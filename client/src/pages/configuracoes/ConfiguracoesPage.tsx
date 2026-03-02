@@ -99,30 +99,10 @@ export function ConfiguracoesPage() {
             </h2>
           </div>
           <div className="p-4 grid grid-cols-1 gap-2">
-            <Link to="/equipamentos/marcas" className={navTileClasses}>
+            <Link to="/equipamentos" className={navTileClasses}>
               <div className="flex items-center gap-3">
                 <MaterialIcon name="precision_manufacturing" className="text-slate-400" />
-                <span>Marcas</span>
-              </div>
-              <MaterialIcon
-                name="chevron_right"
-                className="text-slate-300 group-hover:text-slate-600"
-              />
-            </Link>
-            <Link to="/equipamentos/modelos" className={navTileClasses}>
-              <div className="flex items-center gap-3">
-                <MaterialIcon name="devices" className="text-slate-400" />
-                <span>Modelos</span>
-              </div>
-              <MaterialIcon
-                name="chevron_right"
-                className="text-slate-300 group-hover:text-slate-600"
-              />
-            </Link>
-            <Link to="/equipamentos/operadoras" className={navTileClasses}>
-              <div className="flex items-center gap-3">
-                <MaterialIcon name="sim_card" className="text-slate-400" />
-                <span>Operadoras</span>
+                <span>Marcas, Modelos e Operadoras</span>
               </div>
               <MaterialIcon
                 name="chevron_right"

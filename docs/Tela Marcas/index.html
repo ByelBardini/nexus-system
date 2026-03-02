@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="pt-br"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Configurações de Hardware - Hardware &amp; Connectivity Configuration Hub</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        :root {
+            --sidebar-bg: #1E293B;
+            --sidebar-hover: #334155;
+            --background-gray: #F1F5F9;
+            --border-subtle: #E2E8F0;
+            --primary-blue: #2563EB;
+            --industrial-dark: #0F172A;
+            --status-green: #22C55E;
+            --status-gray: #94A3B8;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-gray);
+        }
+        .sidebar-item {
+            @apply flex items-center gap-3 px-4 py-2 text-slate-400 hover:bg-[var(--sidebar-hover)] hover:text-white transition-all text-sm;
+        }
+        .sidebar-item.active {
+            @apply bg-[var(--sidebar-hover)] text-white border-r-4 border-blue-500;
+        }
+        .sidebar-group-title {
+            @apply px-4 py-2 mt-4 text-[10px] font-bold uppercase tracking-wider text-slate-500;
+        }
+        .content-card {
+            @apply bg-white border border-slate-200 rounded-sm shadow-sm flex flex-col;
+        }
+        .section-header {
+            @apply p-4 border-b border-slate-100 flex flex-col gap-4;
+        }
+        .accordion-item {
+            @apply border-b border-slate-50 last:border-b-0;
+        }
+        .brand-row {
+            @apply flex items-center justify-between p-4 hover:bg-slate-50 cursor-pointer transition-colors;
+        }
+        .model-row {
+            @apply flex items-center justify-between py-3 pl-10 pr-4 hover:bg-blue-50/30 border-l-2 border-transparent hover:border-blue-400 transition-all;
+        }
+        .status-dot {
+            @apply w-2 h-2 rounded-full;
+        }
+        .badge {
+            @apply px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase border;
+        }
+        .badge-active {
+            @apply bg-green-50 text-green-700 border-green-100;
+        }
+        .badge-inactive {
+            @apply bg-slate-100 text-slate-600 border-slate-200;
+        }
+        .search-input {
+            @apply h-9 pl-9 pr-3 w-full bg-slate-100 border-transparent focus:bg-white focus:ring-1 focus:ring-blue-500 text-xs rounded-sm transition-all;
+        }
+    </style>
+</head>
+<body class="text-slate-900 antialiased overflow-hidden">
+<div class="flex h-screen">
+<aside class="w-64 bg-[var(--sidebar-bg)] flex flex-col fixed h-screen z-20 overflow-y-auto">
+<div class="p-6 flex items-center gap-3 border-b border-slate-700/50 mb-2">
+<div class="bg-blue-600 p-1.5 rounded-sm">
+<span class="material-symbols-outlined text-white text-xl leading-none">precision_manufacturing</span>
+</div>
+<span class="text-white font-bold tracking-tight uppercase text-sm">Industrial Hub</span>
+</div>
+<nav class="flex-1">
+<div class="sidebar-group-title">Operação</div>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">list_alt</span>
+<span>Ordens de Serviço</span>
+</a>
+<div class="sidebar-group-title">Logística e Inventário</div>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">inventory_2</span>
+<span>Estoque</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">local_shipping</span>
+<span>Despacho</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">engineering</span>
+<span>Técnicos</span>
+</a>
+<div class="sidebar-group-title">Sistema</div>
+<a class="sidebar-item active" href="#">
+<span class="material-symbols-outlined text-lg">settings</span>
+<span>Configurações</span>
+</a>
+</nav>
+<div class="p-4 border-t border-slate-700/50">
+<div class="flex items-center gap-3 px-2 py-3 text-slate-400">
+<div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-white border border-slate-600">JD</div>
+<div class="flex flex-col overflow-hidden">
+<span class="text-xs text-white font-medium truncate">João D. Operador</span>
+<span class="text-[10px] uppercase tracking-tighter">Administrador</span>
+</div>
+</div>
+</div>
+</aside>
+<main class="flex-1 ml-64 flex flex-col h-screen overflow-hidden">
+<header class="h-20 bg-white border-b border-[var(--border-subtle)] flex items-center justify-between px-8 shrink-0 z-10">
+<div>
+<h1 class="text-lg font-bold text-slate-800 uppercase tracking-tight">Hardware &amp; Connectivity Configuration Hub</h1>
+<p class="text-xs text-slate-500">Gestão de estrutura de inventário, marcas e conectividade</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="bg-white hover:bg-slate-50 text-slate-600 text-[11px] font-bold h-10 px-4 rounded-sm border border-slate-200 transition-colors uppercase flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">file_download</span>
+                    Exportar Estrutura
+                </button>
+</div>
+</header>
+<div class="flex-1 overflow-y-auto p-6">
+<div class="grid grid-cols-12 gap-6 h-full">
+<div class="col-span-7 flex flex-col">
+<div class="content-card h-full">
+<div class="section-header">
+<div class="flex items-center justify-between">
+<h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+<span class="material-symbols-outlined text-blue-600">sensors</span>
+                                    Marcas e Modelos de Rastreador
+                                </h2>
+<button class="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold h-8 px-3 rounded-sm flex items-center gap-1.5 transition-colors uppercase">
+<span class="material-symbols-outlined text-base">add</span>
+                                    Nova Marca
+                                </button>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2 text-slate-400 text-lg">search</span>
+<input class="search-input" placeholder="Pesquisar marca ou modelo..." type="text"/>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto">
+<div class="accordion-item">
+<div class="brand-row bg-slate-50/50">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-slate-400">expand_more</span>
+<span class="font-bold text-slate-800 text-sm tracking-tight">Teltonika</span>
+<span class="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold">12 MODELOS</span>
+</div>
+<button class="text-slate-400 hover:text-slate-600"><span class="material-symbols-outlined text-lg">edit</span></button>
+</div>
+<div class="bg-white">
+<div class="model-row">
+<div class="flex items-center gap-3">
+<span class="text-xs text-slate-600 font-medium">FMB920</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="badge badge-active">Ativo</span>
+<button class="text-slate-300 hover:text-slate-500"><span class="material-symbols-outlined text-lg">more_vert</span></button>
+</div>
+</div>
+<div class="model-row">
+<div class="flex items-center gap-3">
+<span class="text-xs text-slate-600 font-medium">FMC130</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="badge badge-active">Ativo</span>
+<button class="text-slate-300 hover:text-slate-500"><span class="material-symbols-outlined text-lg">more_vert</span></button>
+</div>
+</div>
+<div class="model-row">
+<div class="flex items-center gap-3">
+<span class="text-xs text-slate-400 font-medium line-through">FMB120</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="badge badge-inactive">Desativado</span>
+<button class="text-slate-300 hover:text-slate-500"><span class="material-symbols-outlined text-lg">more_vert</span></button>
+</div>
+</div>
+</div>
+</div>
+<div class="accordion-item">
+<div class="brand-row">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-slate-400">chevron_right</span>
+<span class="font-bold text-slate-800 text-sm tracking-tight">Suntech</span>
+<span class="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold">8 MODELOS</span>
+</div>
+<button class="text-slate-400 hover:text-slate-600"><span class="material-symbols-outlined text-lg">edit</span></button>
+</div>
+</div>
+<div class="accordion-item">
+<div class="brand-row">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-slate-400">chevron_right</span>
+<span class="font-bold text-slate-800 text-sm tracking-tight">Queclink</span>
+<span class="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold">5 MODELOS</span>
+</div>
+<button class="text-slate-400 hover:text-slate-600"><span class="material-symbols-outlined text-lg">edit</span></button>
+</div>
+</div>
+<div class="accordion-item">
+<div class="brand-row">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-slate-400">chevron_right</span>
+<span class="font-bold text-slate-800 text-sm tracking-tight">Coban</span>
+<span class="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold">3 MODELOS</span>
+</div>
+<button class="text-slate-400 hover:text-slate-600"><span class="material-symbols-outlined text-lg">edit</span></button>
+</div>
+</div>
+</div>
+<div class="p-3 border-t border-slate-100 bg-slate-50 text-center">
+<span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Total: 4 Marcas / 28 Modelos</span>
+</div>
+</div>
+</div>
+<div class="col-span-5 flex flex-col">
+<div class="content-card h-full">
+<div class="section-header">
+<div class="flex items-center justify-between">
+<h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+<span class="material-symbols-outlined text-blue-600">signal_cellular_alt</span>
+                                    Operadoras
+                                </h2>
+<button class="bg-slate-800 hover:bg-slate-900 text-white text-[10px] font-bold h-8 px-3 rounded-sm flex items-center gap-1.5 transition-colors uppercase">
+<span class="material-symbols-outlined text-base">add</span>
+                                    Nova Operadora
+                                </button>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2 text-slate-400 text-lg">search</span>
+<input class="search-input" placeholder="Filtrar operadoras..." type="text"/>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto">
+<table class="w-full border-collapse">
+<thead>
+<tr class="bg-slate-50">
+<th class="px-4 py-2.5 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100">Nome</th>
+<th class="px-4 py-2.5 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100">SIMs</th>
+<th class="px-4 py-2.5 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100">Status</th>
+<th class="px-4 py-2.5 w-10 border-b border-slate-100"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-50">
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="px-4 py-4">
+<div class="flex flex-col">
+<span class="text-xs font-bold text-slate-800">Vivo Empresas</span>
+<span class="text-[10px] text-slate-400">Protocolo M2M</span>
+</div>
+</td>
+<td class="px-4 py-4">
+<span class="text-xs font-semibold text-slate-600">4.520 SIMs</span>
+</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-1.5">
+<div class="status-dot bg-[var(--status-green)]"></div>
+<span class="text-[10px] font-bold text-slate-600 uppercase">Ativo</span>
+</div>
+</td>
+<td class="px-4 py-4 text-right">
+<button class="text-slate-400 hover:text-slate-600"><span class="material-symbols-outlined text-lg">settings</span></button>
+</td>
+</tr>
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="px-4 py-4">
+<div class="flex flex-col">
+<span class="text-xs font-bold text-slate-800">Claro M2M</span>
+<span class="text-[10px] text-slate-400">IoT Direct</span>
+</div>
+</td>
+<td class="px-4 py-4">
+<span class="text-xs font-semibold text-slate-600">3.812 SIMs</span>
+</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-1.5">
+<div class="status-dot bg-[var(--status-green)]"></div>
+<span class="text-[10px] font-bold text-slate-600 uppercase">Ativo</span>
+</div>
+</td>
+<td class="px-4 py-4 text-right">
+<button class="text-slate-400 hover:text-slate-600"><span class="material-symbols-outlined text-lg">settings</span></button>
+</td>
+</tr>
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="px-4 py-4">
+<div class="flex flex-col">
+<span class="text-xs font-bold text-slate-800">TIM Brasil</span>
+<span class="text-[10px] text-slate-400">Roaming Nacional</span>
+</div>
+</td>
+<td class="px-4 py-4">
+<span class="text-xs font-semibold text-slate-600">2.140 SIMs</span>
+</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-1.5">
+<div class="status-dot bg-[var(--status-green)]"></div>
+<span class="text-[10px] font-bold text-slate-600 uppercase">Ativo</span>
+</div>
+</td>
+<td class="px-4 py-4 text-right">
+<button class="text-slate-400 hover:text-slate-600"><span class="material-symbols-outlined text-lg">settings</span></button>
+</td>
+</tr>
+<tr class="hover:bg-slate-50/50 transition-colors opacity-60 bg-slate-50/20">
+<td class="px-4 py-4">
+<div class="flex flex-col">
+<span class="text-xs font-bold text-slate-500">Nextel Legacy</span>
+<span class="text-[10px] text-slate-400">Em descontinuação</span>
+</div>
+</td>
+<td class="px-4 py-4">
+<span class="text-xs font-semibold text-slate-400">42 SIMs</span>
+</td>
+<td class="px-4 py-4">
+<div class="flex items-center gap-1.5">
+<div class="status-dot bg-[var(--status-gray)]"></div>
+<span class="text-[10px] font-bold text-slate-400 uppercase">Inativo</span>
+</div>
+</td>
+<td class="px-4 py-4 text-right">
+<button class="text-slate-400 hover:text-slate-600"><span class="material-symbols-outlined text-lg">settings</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-3 border-t border-slate-100 bg-slate-50 text-center">
+<span class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Total: 4 Operadoras Registradas</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<div class="fixed top-0 right-0 w-80 h-full bg-white shadow-2xl z-30 border-l border-slate-200 translate-x-full hidden">
+<div class="p-6">
+<div class="flex items-center justify-between mb-6">
+<h3 class="text-sm font-bold text-slate-800 uppercase">Editar Modelo</h3>
+<button class="text-slate-400"><span class="material-symbols-outlined">close</span></button>
+</div>
+</div>
+</div>
+</div>
+
+</body></html>

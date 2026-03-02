@@ -32,7 +32,10 @@ export class PrismaService
   constructor(config: ConfigService) {
     const url = config.getOrThrow<string>('DATABASE_URL');
     const poolConfig = parseDatabaseUrl(url);
-    const adapter = new PrismaMariaDb(poolConfig);
+    const adapter = new PrismaMariaDb({
+      ...poolConfig,
+      acquireTimeout: 30000,
+    });
     super({ adapter });
   }
 
