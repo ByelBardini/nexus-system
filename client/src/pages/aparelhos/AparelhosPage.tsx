@@ -3,19 +3,13 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import {
   Loader2,
-  Search,
-  ChevronLeft,
-  ChevronRight,
   ChevronDown,
   ChevronUp,
-  Package,
-  Plus,
   Router,
   Smartphone,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Table,
   TableBody,
@@ -55,6 +49,7 @@ interface Aparelho {
   tecnico?: { id: number; nome: string } | null
   lote?: { id: number; referencia: string } | null
   valorUnitario?: number | null
+  ordemServicoId?: number | null
   criadoEm: string
   historico?: HistoricoItem[]
 }
@@ -239,66 +234,113 @@ export function AparelhosPage() {
   }
 
   return (
-    <div className="-m-4 flex min-h-[100dvh] flex-col bg-slate-100">
-      {/* Header */}
-      <header className="flex h-20 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-8">
-        <div className="flex items-center gap-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-slate-100 text-slate-600">
-            <Package className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-slate-800">Aparelhos</h1>
-            <p className="text-xs text-slate-500">Controle logístico de equipamentos</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex flex-col">
-            <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">Busca Global</Label>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input
-                className="h-9 w-72 pl-9"
-                placeholder="IMEI, ICCID, Lote, Kit, Técnico..."
-                value={busca}
-                onChange={(e) => {
-                  setBusca(e.target.value)
-                  setPage(0)
-                }}
-              />
-            </div>
-          </div>
-          {canCreate && (
-            <>
-              <div className="flex flex-col">
-                <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500 opacity-0">Ação</Label>
-                <Link to="/aparelhos/lote">
-                  <Button
-                    variant="outline"
-                    className="h-9 gap-2 border-slate-300"
-                  >
-                    <MaterialIcon name="inventory_2" className="text-base" />
-                    Entrada de Lote
-                  </Button>
-                </Link>
-              </div>
-              <div className="flex flex-col">
-                <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500 opacity-0">Ação</Label>
-                <Link to="/aparelhos/individual">
-                  <Button className="h-9 gap-2 bg-blue-600 hover:bg-blue-700">
-                    <Plus className="h-4 w-4" />
-                    Criar Manual
-                  </Button>
-                </Link>
-              </div>
-            </>
+    <div className="space-y-4">
+      {/* Cards de status */}
+      <div className="flex w-full min-h-[88px] shadow-sm border border-slate-300 bg-white">
+        <button
+          onClick={() => handleStatusClick('TODOS')}
+          className={cn(
+            'pipeline-item flex-1 bg-slate-50 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors',
+            statusFilter === 'TODOS' && 'border-t-2 border-b-2 border-t-blue-500 border-b-blue-500'
           )}
-        </div>
-      </header>
+        >
+          <div className="flex justify-between items-center border-l-4 border-erp-blue pl-2">
+            <span className="text-[10px] font-bold text-slate-500 uppercase font-condensed">
+              Total
+            </span>
+            <span className="text-lg font-black text-slate-800">{totalCount}</span>
+          </div>
+        </button>
+        <button
+          onClick={() => handleStatusClick('EM_ESTOQUE')}
+          className={cn(
+            'pipeline-item flex-1 bg-amber-100 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors',
+            statusFilter === 'EM_ESTOQUE' && 'border-t-2 border-b-2 border-t-amber-500 border-b-amber-500'
+          )}
+        >
+          <div className="flex justify-between items-center border-l-4 border-amber-500 pl-2">
+            <span className="text-[10px] font-bold text-slate-600 uppercase font-condensed">
+              Em Estoque
+            </span>
+            <span className="text-lg font-black text-slate-800">{statusCounts.EM_ESTOQUE}</span>
+          </div>
+        </button>
+        <button
+          onClick={() => handleStatusClick('CONFIGURADO')}
+          className={cn(
+            'pipeline-item flex-1 bg-blue-100 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors',
+            statusFilter === 'CONFIGURADO' && 'border-t-2 border-b-2 border-t-blue-500 border-b-blue-500'
+          )}
+        >
+          <div className="flex justify-between items-center border-l-4 border-erp-blue pl-2">
+            <span className="text-[10px] font-bold text-slate-600 uppercase font-condensed">
+              Configurado
+            </span>
+            <span className="text-lg font-black text-slate-800">{statusCounts.CONFIGURADO}</span>
+          </div>
+        </button>
+        <button
+          onClick={() => handleStatusClick('DESPACHADO')}
+          className={cn(
+            'pipeline-item flex-1 bg-purple-100 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors',
+            statusFilter === 'DESPACHADO' && 'border-t-2 border-b-2 border-t-purple-500 border-b-purple-500'
+          )}
+        >
+          <div className="flex justify-between items-center border-l-4 border-erp-purple pl-2">
+            <span className="text-[10px] font-bold text-slate-600 uppercase font-condensed">
+              Despachado
+            </span>
+            <span className="text-lg font-black text-slate-800">{statusCounts.DESPACHADO}</span>
+          </div>
+        </button>
+        <button
+          onClick={() => handleStatusClick('COM_TECNICO')}
+          className={cn(
+            'pipeline-item flex-1 bg-orange-100 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors',
+            statusFilter === 'COM_TECNICO' && 'border-t-2 border-b-2 border-t-orange-500 border-b-orange-500'
+          )}
+        >
+          <div className="flex justify-between items-center border-l-4 border-erp-orange pl-2">
+            <span className="text-[10px] font-bold text-slate-600 uppercase font-condensed">
+              Com Técnico
+            </span>
+            <span className="text-lg font-black text-slate-800">{statusCounts.COM_TECNICO}</span>
+          </div>
+        </button>
+        <button
+          onClick={() => handleStatusClick('INSTALADO')}
+          className={cn(
+            'pipeline-item flex-1 bg-green-100 p-3 flex flex-col justify-center text-left transition-colors',
+            statusFilter === 'INSTALADO' && 'border-t-2 border-b-2 border-t-emerald-500 border-b-emerald-500'
+          )}
+        >
+          <div className="flex justify-between items-center border-l-4 border-erp-green pl-2">
+            <span className="text-[10px] font-bold text-slate-600 uppercase font-condensed">
+              Instalado
+            </span>
+            <span className="text-lg font-black text-slate-800">{statusCounts.INSTALADO}</span>
+          </div>
+        </button>
+      </div>
 
-      {/* Filters */}
-      <div className="flex items-center gap-4 border-b border-slate-200 bg-white px-8 py-3">
-        <div className="flex flex-col">
-          <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">Status</Label>
+      {/* Barra de ferramentas */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="relative flex-1 max-w-xs">
+          <MaterialIcon
+            name="search"
+            className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-base"
+          />
+          <Input
+            className="pl-8 text-[11px]"
+            placeholder="Buscar IMEI, ICCID, Lote, Kit, Técnico..."
+            value={busca}
+            onChange={(e) => {
+              setBusca(e.target.value)
+              setPage(0)
+            }}
+          />
+        </div>
+        <div className="flex gap-2 flex-wrap">
           <Select
             value={statusFilter}
             onValueChange={(v) => {
@@ -306,24 +348,18 @@ export function AparelhosPage() {
               setPage(0)
             }}
           >
-            <SelectTrigger className="h-9 w-36">
-              <SelectValue />
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Filtrar por status" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="TODOS">Todos</SelectItem>
               {(Object.keys(STATUS_CONFIG) as StatusAparelho[]).map((status) => (
                 <SelectItem key={status} value={status}>
-                  <span className="flex items-center gap-2">
-                    <span>{STATUS_CONFIG[status].icon}</span>
-                    {STATUS_CONFIG[status].label}
-                  </span>
+                  {STATUS_CONFIG[status].label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-        </div>
-        <div className="flex flex-col">
-          <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">Tipo</Label>
           <Select
             value={tipoFilter}
             onValueChange={(v) => {
@@ -331,8 +367,8 @@ export function AparelhosPage() {
               setPage(0)
             }}
           >
-            <SelectTrigger className="h-9 w-36">
-              <SelectValue />
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Tipo" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="TODOS">Todos</SelectItem>
@@ -340,9 +376,6 @@ export function AparelhosPage() {
               <SelectItem value="SIM">SIM Card</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-        <div className="flex flex-col">
-          <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">Pertence a</Label>
           <Select
             value={proprietarioFilter}
             onValueChange={(v) => {
@@ -350,8 +383,8 @@ export function AparelhosPage() {
               setPage(0)
             }}
           >
-            <SelectTrigger className="h-9 w-36">
-              <SelectValue />
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="Proprietário" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="TODOS">Todos</SelectItem>
@@ -359,9 +392,6 @@ export function AparelhosPage() {
               <SelectItem value="CLIENTE">Cliente</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-        <div className="flex flex-col">
-          <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">Marca / Operadora</Label>
           <Select
             value={marcaFilter}
             onValueChange={(v) => {
@@ -369,8 +399,8 @@ export function AparelhosPage() {
               setPage(0)
             }}
           >
-            <SelectTrigger className="h-9 w-36">
-              <SelectValue />
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Marca/Operadora" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="TODOS">Todas</SelectItem>
@@ -381,65 +411,27 @@ export function AparelhosPage() {
               ))}
             </SelectContent>
           </Select>
-        </div>
-      </div>
-
-      {/* Pipeline Visual */}
-      <div className="border-b border-slate-200 bg-white px-8 py-4">
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => handleStatusClick('TODOS')}
-            className={cn(
-              'flex items-center gap-2 rounded-l-md border px-4 py-2.5 transition-all',
-              statusFilter === 'TODOS'
-                ? 'border-slate-400 bg-slate-100 ring-2 ring-slate-400 ring-offset-1'
-                : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
-            )}
-          >
-            <span className="text-sm font-bold text-slate-700">Total</span>
-            <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-bold text-slate-600">
-              {totalCount}
-            </span>
-          </button>
-
-          {(Object.keys(STATUS_CONFIG) as StatusAparelho[]).map((status, index) => {
-            const config = STATUS_CONFIG[status]
-            const count = statusCounts[status]
-            const isActive = statusFilter === status
-            const isLast = index === Object.keys(STATUS_CONFIG).length - 1
-
-            return (
-              <button
-                key={status}
-                onClick={() => handleStatusClick(status)}
-                className={cn(
-                  'flex items-center gap-2 border px-4 py-2.5 transition-all',
-                  isLast && 'rounded-r-md',
-                  isActive
-                    ? cn(config.bgColor, config.borderColor, 'ring-2 ring-offset-1', config.color.replace('text-', 'ring-'))
-                    : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
-                )}
-              >
-                <span className="text-sm">{config.icon}</span>
-                <span className={cn('text-sm font-medium', isActive ? config.color : 'text-slate-600')}>
-                  {config.label}
-                </span>
-                <span
-                  className={cn(
-                    'rounded-full px-2 py-0.5 text-xs font-bold',
-                    isActive ? cn(config.bgColor, config.color) : 'bg-slate-200 text-slate-600'
-                  )}
-                >
-                  {count}
-                </span>
-              </button>
-            )
-          })}
+          {canCreate && (
+            <>
+              <Link to="/aparelhos/lote">
+                <Button variant="outline" className="text-[11px] font-bold uppercase">
+                  <MaterialIcon name="inventory_2" className="text-sm mr-1" />
+                  Entrada de Lote
+                </Button>
+              </Link>
+              <Link to="/aparelhos/individual">
+                <Button className="bg-erp-blue hover:bg-blue-700 text-[11px] font-bold uppercase">
+                  <MaterialIcon name="add" className="text-sm mr-1" />
+                  Criar Manual
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
       </div>
 
       {/* Table Content */}
-      <div className="flex flex-1 min-h-0 flex-col overflow-hidden bg-white">
+      <div className="bg-white border border-slate-300 shadow-sm overflow-hidden">
         <div className="flex-1 overflow-y-auto">
           <Table>
             <TableHeader>
@@ -731,43 +723,49 @@ export function AparelhosPage() {
         </div>
 
         {/* Footer */}
-        <div className="flex h-12 shrink-0 items-center justify-between border-t border-slate-200 bg-slate-50 px-6">
-          <div className="flex items-center gap-6">
-            <span className="text-[11px] font-medium uppercase tracking-tight text-slate-500">
-              Total de {filtered.length} aparelho{filtered.length !== 1 ? 's' : ''} encontrado{filtered.length !== 1 ? 's' : ''}
-            </span>
-            <div className="flex items-center gap-4 text-[9px] text-slate-400 uppercase font-bold">
-              <span className="flex items-center gap-1">
-                <Router className="h-3 w-3" />
-                {aparelhos.filter((a) => a.tipo === 'RASTREADOR').length} Rastreadores
-              </span>
-              <span className="flex items-center gap-1">
-                <Smartphone className="h-3 w-3" />
-                {aparelhos.filter((a) => a.tipo === 'SIM').length} SIM Cards
-              </span>
-            </div>
+        <div className="px-4 py-2 border-t border-slate-300 flex justify-between items-center bg-slate-50">
+          <div className="text-[10px] font-bold text-slate-500 uppercase">
+            Exibindo {paginated.length === 0 ? 0 : page * PAGE_SIZE + 1}-
+            {Math.min((page + 1) * PAGE_SIZE, filtered.length)} de {filtered.length} aparelhos
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex gap-1">
             <Button
               variant="outline"
-              size="icon"
-              className="h-7 w-7"
+              size="sm"
+              className="text-[10px] font-bold h-7"
               disabled={page <= 0}
               onClick={() => setPage((p) => Math.max(0, p - 1))}
             >
-              <ChevronLeft className="h-4 w-4" />
+              Anterior
             </Button>
-            <span className="px-2 text-xs font-bold">
-              {page + 1} / {totalPages}
-            </span>
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let p = i
+              if (totalPages > 5) {
+                const half = Math.floor(5 / 2)
+                let start = Math.max(0, page - half)
+                if (start + 5 > totalPages) start = totalPages - 5
+                p = start + i
+              }
+              return (
+                <Button
+                  key={p}
+                  variant={page === p ? 'default' : 'outline'}
+                  size="sm"
+                  className={`text-[10px] font-bold h-7 ${page === p ? 'bg-slate-900' : ''}`}
+                  onClick={() => setPage(p)}
+                >
+                  {p + 1}
+                </Button>
+              )
+            })}
             <Button
               variant="outline"
-              size="icon"
-              className="h-7 w-7"
+              size="sm"
+              className="text-[10px] font-bold h-7"
               disabled={page >= totalPages - 1}
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
             >
-              <ChevronRight className="h-4 w-4" />
+              Próximo
             </Button>
           </div>
         </div>

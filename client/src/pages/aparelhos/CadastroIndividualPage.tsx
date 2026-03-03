@@ -321,8 +321,8 @@ export function CadastroIndividualPage() {
           <div className="flex items-center gap-3">
             <MaterialIcon name="qr_code_scanner" className="text-blue-600 text-xl" />
             <div>
-              <h1 className="text-lg font-bold text-slate-800">Cadastro Manual de Equipamento</h1>
-              <p className="text-xs text-slate-500">Entrada individual de equipamento</p>
+              <h1 className="text-lg font-bold text-slate-800">Cadastro Manual de Rastreador/Simcard</h1>
+              <p className="text-xs text-slate-500">Entrada individual de equipamentos</p>
             </div>
           </div>
         </div>

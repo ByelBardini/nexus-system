@@ -13,10 +13,18 @@ const ClientesPage = lazy(() => import('@/pages/clientes/ClientesPage').then((m)
 const TecnicosPage = lazy(() => import('@/pages/tecnicos/TecnicosPage').then((m) => ({ default: m.TecnicosPage })))
 const AparelhosPage = lazy(() => import('@/pages/aparelhos/AparelhosPage').then((m) => ({ default: m.AparelhosPage })))
 const CadastroLotePage = lazy(() => import('@/pages/aparelhos/CadastroLotePage').then((m) => ({ default: m.CadastroLotePage })))
+const EquipamentosPage = lazy(() =>
+  import('@/pages/equipamentos/EquipamentosPage').then((m) => ({
+    default: m.EquipamentosPage,
+  }))
+)
 const EquipamentosConfigPage = lazy(() =>
   import('@/pages/equipamentos/EquipamentosConfigPage').then((m) => ({
     default: m.EquipamentosConfigPage,
   }))
+)
+const PareamentoPage = lazy(() =>
+  import('@/pages/equipamentos/PareamentoPage').then((m) => ({ default: m.PareamentoPage }))
 )
 const CadastroIndividualPage = lazy(() => import('@/pages/aparelhos/CadastroIndividualPage').then((m) => ({ default: m.CadastroIndividualPage })))
 
@@ -116,21 +124,37 @@ function App() {
           path="equipamentos"
           element={
             <Suspense fallback={<PageLoader />}>
+              <EquipamentosPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="equipamentos/config"
+          element={
+            <Suspense fallback={<PageLoader />}>
               <EquipamentosConfigPage />
             </Suspense>
           }
         />
         <Route
+          path="equipamentos/pareamento"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <PareamentoPage />
+            </Suspense>
+          }
+        />
+        <Route
           path="equipamentos/marcas"
-          element={<Navigate to="/equipamentos" replace />}
+          element={<Navigate to="/equipamentos/config" replace />}
         />
         <Route
           path="equipamentos/modelos"
-          element={<Navigate to="/equipamentos" replace />}
+          element={<Navigate to="/equipamentos/config" replace />}
         />
         <Route
           path="equipamentos/operadoras"
-          element={<Navigate to="/equipamentos" replace />}
+          element={<Navigate to="/equipamentos/config" replace />}
         />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

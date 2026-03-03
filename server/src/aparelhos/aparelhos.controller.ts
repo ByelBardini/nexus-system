@@ -26,6 +26,20 @@ export class AparelhosController {
     return this.aparelhosService.getResumo();
   }
 
+  @Get('pareamento/lotes-rastreadores')
+  @RequirePermissions('CONFIGURACAO.APARELHO.LISTAR')
+  @ApiOperation({ summary: 'Listar lotes de rastreadores com itens sem ID' })
+  getLotesRastreadores() {
+    return this.aparelhosService.getLotesParaPareamento('RASTREADOR');
+  }
+
+  @Get('pareamento/lotes-sims')
+  @RequirePermissions('CONFIGURACAO.APARELHO.LISTAR')
+  @ApiOperation({ summary: 'Listar lotes de SIMs com itens sem ID' })
+  getLotesSims() {
+    return this.aparelhosService.getLotesParaPareamento('SIM');
+  }
+
   @Get(':id')
   @RequirePermissions('CONFIGURACAO.APARELHO.LISTAR')
   @ApiOperation({ summary: 'Buscar aparelho por ID' })
@@ -55,5 +69,37 @@ export class AparelhosController {
     @Body() dto: { status: StatusAparelho; observacao?: string },
   ) {
     return this.aparelhosService.updateStatus(+id, dto.status, dto.observacao);
+  }
+
+  @Post('pareamento/preview')
+  @RequirePermissions('CONFIGURACAO.APARELHO.LISTAR')
+  @ApiOperation({ summary: 'Preview de pareamento (rastreador + SIM)' })
+  pareamentoPreview(@Body() dto: { pares: { imei: string; iccid: string }[] }) {
+    return this.aparelhosService.pareamentoPreview(dto.pares || []);
+  }
+
+  @Post('pareamento')
+  @RequirePermissions('CONFIGURACAO.APARELHO.CRIAR')
+  @ApiOperation({ summary: 'Executar pareamento (criar equipamentos)' })
+  pareamento(
+    @Body()
+    dto: {
+      pares: { imei: string; iccid: string }[];
+      loteRastreadorId?: number;
+      loteSimId?: number;
+      rastreadorManual?: { marca: string; modelo: string };
+      simManual?: { operadora: string };
+      kitId?: number;
+      kitNome?: string;
+    },
+  ) {
+    return this.aparelhosService.pareamento(dto);
+  }
+
+  @Get('pareamento/kits')
+  @RequirePermissions('CONFIGURACAO.APARELHO.LISTAR')
+  @ApiOperation({ summary: 'Listar kits cadastrados' })
+  getKits() {
+    return this.aparelhosService.getKits();
   }
 }

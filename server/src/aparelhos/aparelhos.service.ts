@@ -276,4 +276,331 @@ export class AparelhosService {
 
     return aparelho;
   }
+
+  /** Normaliza texto de IDs: vírgula, ponto-vírgula, newline. Remove vazios e caracteres invisíveis. */
+  private parseIds(text: string): string[] {
+    if (!text || typeof text !== 'string') return [];
+    return text
+      .split(/[,;\n\r]+/)
+      .map((s) => s.replace(/\s+/g, '').replace(/[\u200B-\u200D\uFEFF]/g, '').trim())
+      .filter(Boolean);
+  }
+
+  /** Resolve rastreador por IMEI: FOUND_AVAILABLE | FOUND_ALREADY_LINKED | NEEDS_CREATE | INVALID_FORMAT */
+  private async resolveRastreador(imei: string): Promise<{
+    status: 'FOUND_AVAILABLE' | 'FOUND_ALREADY_LINKED' | 'NEEDS_CREATE' | 'INVALID_FORMAT';
+    trackerId?: number;
+    marca?: string;
+    modelo?: string;
+  }> {
+    const clean = imei.replace(/\D/g, '');
+    if (clean.length < 14 || clean.length > 16) {
+      return { status: 'INVALID_FORMAT' };
+    }
+    const rastreador = await this.prisma.aparelho.findFirst({
+      where: { tipo: 'RASTREADOR', identificador: clean },
+      include: { simVinculado: true },
+    });
+    if (!rastreador) return { status: 'NEEDS_CREATE' };
+    if (rastreador.simVinculadoId) {
+      return { status: 'FOUND_ALREADY_LINKED', trackerId: rastreador.id };
+    }
+    return {
+      status: 'FOUND_AVAILABLE',
+      trackerId: rastreador.id,
+      marca: rastreador.marca ?? undefined,
+      modelo: rastreador.modelo ?? undefined,
+    };
+  }
+
+  /** Resolve SIM por ICCID: FOUND_AVAILABLE | FOUND_ALREADY_LINKED | NEEDS_CREATE | INVALID_FORMAT */
+  private async resolveSim(iccid: string): Promise<{
+    status: 'FOUND_AVAILABLE' | 'FOUND_ALREADY_LINKED' | 'NEEDS_CREATE' | 'INVALID_FORMAT';
+    simId?: number;
+    operadora?: string;
+  }> {
+    const clean = iccid.replace(/\D/g, '');
+    if (clean.length < 18 || clean.length > 21) {
+      return { status: 'INVALID_FORMAT' };
+    }
+    const sim = await this.prisma.aparelho.findFirst({
+      where: { tipo: 'SIM', identificador: clean },
+      include: { aparelhosVinculados: true },
+    });
+    if (!sim) return { status: 'NEEDS_CREATE' };
+    const jaVinculado = sim.aparelhosVinculados?.length > 0;
+    if (jaVinculado) {
+      return { status: 'FOUND_ALREADY_LINKED', simId: sim.id };
+    }
+    return {
+      status: 'FOUND_AVAILABLE',
+      simId: sim.id,
+      operadora: sim.operadora ?? undefined,
+    };
+  }
+
+  /** Preview de pareamento: retorna status de cada par */
+  async pareamentoPreview(pares: { imei: string; iccid: string }[]) {
+    const resultados: Array<{
+      imei: string;
+      iccid: string;
+      tracker_status: 'FOUND_AVAILABLE' | 'FOUND_ALREADY_LINKED' | 'NEEDS_CREATE' | 'INVALID_FORMAT';
+      sim_status: 'FOUND_AVAILABLE' | 'FOUND_ALREADY_LINKED' | 'NEEDS_CREATE' | 'INVALID_FORMAT';
+      action_needed: 'OK' | 'SELECT_TRACKER_LOT' | 'SELECT_SIM_LOT' | 'FIX_ERROR';
+      trackerId?: number;
+      simId?: number;
+      marca?: string;
+      modelo?: string;
+      operadora?: string;
+    }> = [];
+
+    for (const { imei, iccid } of pares) {
+      const [trackerRes, simRes] = await Promise.all([
+        this.resolveRastreador(imei),
+        this.resolveSim(iccid),
+      ]);
+
+      let action_needed: 'OK' | 'SELECT_TRACKER_LOT' | 'SELECT_SIM_LOT' | 'FIX_ERROR' = 'OK';
+      if (
+        trackerRes.status === 'INVALID_FORMAT' ||
+        simRes.status === 'INVALID_FORMAT' ||
+        trackerRes.status === 'FOUND_ALREADY_LINKED' ||
+        simRes.status === 'FOUND_ALREADY_LINKED'
+      ) {
+        action_needed = 'FIX_ERROR';
+      } else if (trackerRes.status === 'NEEDS_CREATE' && simRes.status === 'NEEDS_CREATE') {
+        action_needed = 'SELECT_TRACKER_LOT'; // prioriza rastreador
+      } else if (trackerRes.status === 'NEEDS_CREATE') {
+        action_needed = 'SELECT_TRACKER_LOT';
+      } else if (simRes.status === 'NEEDS_CREATE') {
+        action_needed = 'SELECT_SIM_LOT';
+      }
+
+      resultados.push({
+        imei,
+        iccid,
+        tracker_status: trackerRes.status,
+        sim_status: simRes.status,
+        action_needed,
+        trackerId: trackerRes.trackerId,
+        simId: simRes.simId,
+        marca: trackerRes.marca,
+        modelo: trackerRes.modelo,
+        operadora: simRes.operadora,
+      });
+    }
+
+    const validos = resultados.filter((r) => r.action_needed === 'OK').length;
+    const exigemLote = resultados.filter(
+      (r) =>
+        r.action_needed === 'SELECT_TRACKER_LOT' || r.action_needed === 'SELECT_SIM_LOT',
+    ).length;
+    const erros = resultados.filter((r) => r.action_needed === 'FIX_ERROR').length;
+
+    return {
+      linhas: resultados,
+      contadores: { validos, exigemLote, erros },
+    };
+  }
+
+  /** Executa pareamento: cria equipamentos (vincula rastreador + SIM) */
+  async pareamento(dto: {
+    pares: { imei: string; iccid: string }[];
+    loteRastreadorId?: number;
+    loteSimId?: number;
+    rastreadorManual?: { marca: string; modelo: string };
+    simManual?: { operadora: string };
+    kitId?: number;
+    kitNome?: string;
+  }) {
+    const { pares, loteRastreadorId, loteSimId, rastreadorManual, simManual, kitId, kitNome } = dto;
+    if (!pares?.length) {
+      throw new BadRequestException('Nenhum par informado');
+    }
+
+    const preview = await this.pareamentoPreview(pares);
+    const linhasNeedTracker = preview.linhas.filter((l) => l.tracker_status === 'NEEDS_CREATE');
+    const linhasNeedSim = preview.linhas.filter((l) => l.sim_status === 'NEEDS_CREATE');
+
+    const temLoteTracker = !!loteRastreadorId;
+    const temManualTracker = !!(rastreadorManual?.marca && rastreadorManual?.modelo);
+    const temLoteSim = !!loteSimId;
+    const temManualSim = !!simManual?.operadora;
+
+    if (linhasNeedTracker.length > 0 && !temLoteTracker && !temManualTracker) {
+      throw new BadRequestException(
+        `${linhasNeedTracker.length} rastreador(es) não encontrado(s). Selecione um lote ou informe marca e modelo para criação manual.`,
+      );
+    }
+    if (linhasNeedSim.length > 0 && !temLoteSim && !temManualSim) {
+      throw new BadRequestException(
+        `${linhasNeedSim.length} SIM(s) não encontrado(s). Selecione um lote ou informe a operadora para criação manual.`,
+      );
+    }
+
+    let kitIdFinal = kitId;
+    if (kitNome?.trim()) {
+      const kit = await this.criarOuBuscarKitPorNome(kitNome.trim());
+      kitIdFinal = kit?.id ?? undefined;
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const criados: { rastreadorId: number; simId: number; equipamentoId: number }[] = [];
+
+      for (const linha of preview.linhas) {
+        let rastreadorId: number;
+        let simId: number;
+
+        // Resolver rastreador
+        if (linha.tracker_status === 'FOUND_AVAILABLE' && linha.trackerId) {
+          rastreadorId = linha.trackerId;
+        } else if (linha.tracker_status === 'NEEDS_CREATE' && loteRastreadorId) {
+          const aparelhoSemId = await tx.aparelho.findFirst({
+            where: {
+              loteId: loteRastreadorId,
+              tipo: 'RASTREADOR',
+              identificador: null,
+              status: 'EM_ESTOQUE',
+            },
+          });
+          if (!aparelhoSemId) {
+            throw new BadRequestException(
+              `Lote de rastreadores sem saldo disponível para IMEI ${linha.imei}`,
+            );
+          }
+          const cleanImei = linha.imei.replace(/\D/g, '');
+          await tx.aparelho.update({
+            where: { id: aparelhoSemId.id },
+            data: { identificador: cleanImei },
+          });
+          rastreadorId = aparelhoSemId.id;
+        } else if (linha.tracker_status === 'NEEDS_CREATE' && rastreadorManual?.marca && rastreadorManual?.modelo) {
+          const cleanImei = linha.imei.replace(/\D/g, '');
+          const novo = await tx.aparelho.create({
+            data: {
+              tipo: 'RASTREADOR',
+              identificador: cleanImei,
+              status: 'EM_ESTOQUE',
+              proprietario: 'INFINITY',
+              marca: rastreadorManual.marca,
+              modelo: rastreadorManual.modelo,
+            },
+          });
+          rastreadorId = novo.id;
+        } else {
+          continue; // linha com erro, pula
+        }
+
+        // Resolver SIM
+        if (linha.sim_status === 'FOUND_AVAILABLE' && linha.simId) {
+          simId = linha.simId;
+        } else if (linha.sim_status === 'NEEDS_CREATE' && loteSimId) {
+          const aparelhoSemId = await tx.aparelho.findFirst({
+            where: {
+              loteId: loteSimId,
+              tipo: 'SIM',
+              identificador: null,
+              status: 'EM_ESTOQUE',
+            },
+          });
+          if (!aparelhoSemId) {
+            throw new BadRequestException(
+              `Lote de SIMs sem saldo disponível para ICCID ${linha.iccid}`,
+            );
+          }
+          const cleanIccid = linha.iccid.replace(/\D/g, '');
+          await tx.aparelho.update({
+            where: { id: aparelhoSemId.id },
+            data: { identificador: cleanIccid },
+          });
+          simId = aparelhoSemId.id;
+        } else if (linha.sim_status === 'NEEDS_CREATE' && simManual?.operadora) {
+          const cleanIccid = linha.iccid.replace(/\D/g, '');
+          const novo = await tx.aparelho.create({
+            data: {
+              tipo: 'SIM',
+              identificador: cleanIccid,
+              status: 'EM_ESTOQUE',
+              proprietario: 'INFINITY',
+              operadora: simManual.operadora,
+            },
+          });
+          simId = novo.id;
+        } else {
+          continue;
+        }
+
+        // Vincular: rastreador recebe simVinculadoId e status CONFIGURADO
+        await tx.aparelho.update({
+          where: { id: rastreadorId },
+          data: {
+            simVinculadoId: simId,
+            status: 'CONFIGURADO',
+            kitId: kitIdFinal ?? null,
+          },
+        });
+        await tx.aparelho.update({
+          where: { id: simId },
+          data: { status: 'CONFIGURADO' },
+        });
+
+        await tx.aparelhoHistorico.create({
+          data: {
+            aparelhoId: rastreadorId,
+            statusAnterior: 'EM_ESTOQUE',
+            statusNovo: 'CONFIGURADO',
+            observacao: `Pareamento com SIM ${linha.iccid}`,
+          },
+        });
+
+        criados.push({
+          rastreadorId,
+          simId,
+          equipamentoId: rastreadorId,
+        });
+      }
+
+      return { criados: criados.length, equipamentos: criados };
+    });
+  }
+
+  /** Lista kits cadastrados (para seleção por nome) */
+  async getKits() {
+    const kits = await this.prisma.kit.findMany({
+      orderBy: { nome: 'asc' },
+      select: { id: true, nome: true },
+    });
+    return kits;
+  }
+
+  /** Cria ou busca kit por nome */
+  async criarOuBuscarKitPorNome(nome: string) {
+    const trimmed = nome.trim();
+    if (!trimmed) return null;
+    let kit = await this.prisma.kit.findUnique({ where: { nome: trimmed } });
+    if (!kit) {
+      kit = await this.prisma.kit.create({ data: { nome: trimmed } });
+    }
+    return kit;
+  }
+
+  /** Lista lotes disponíveis para consumo (com itens sem ID) */
+  async getLotesParaPareamento(tipo: TipoAparelho) {
+    const lotes = await this.prisma.loteAparelho.findMany({
+      where: { tipo },
+      include: {
+        aparelhos: {
+          where: { identificador: null, status: 'EM_ESTOQUE' },
+          select: { id: true },
+        },
+      },
+    });
+    return lotes
+      .filter((l) => l.aparelhos.length > 0)
+      .map((l) => ({
+        id: l.id,
+        referencia: l.referencia,
+        quantidadeDisponivelSemId: l.aparelhos.length,
+      }));
+  }
 }

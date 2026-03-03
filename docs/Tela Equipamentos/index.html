@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="pt-br"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Equipamentos - Configured Equipment Operational Control</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        :root {
+            --sidebar-bg: #1E293B;
+            --sidebar-hover: #334155;
+            --background-gray: #F1F5F9;
+            --border-subtle: #E2E8F0;
+            --primary-blue: #2563EB;
+            --industrial-dark: #0F172A;
+            --status-blue: #3B82F6;
+            --status-purple: #A855F7;
+            --status-yellow: #EAB308;
+            --status-orange: #F97316;
+            --status-green: #22C55E;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-gray);
+        }
+        .sidebar-item {
+            @apply flex items-center gap-3 px-4 py-2 text-slate-400 hover:bg-[var(--sidebar-hover)] hover:text-white transition-all text-sm;
+        }
+        .sidebar-item.active {
+            @apply bg-[var(--sidebar-hover)] text-white border-r-4 border-blue-500;
+        }
+        .sidebar-group-title {
+            @apply px-4 py-2 mt-4 text-[10px] font-bold uppercase tracking-wider text-slate-500;
+        }
+        .table-header {
+            @apply px-3 py-2.5 bg-slate-50 border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider text-slate-500;
+        }
+        .table-row {
+            @apply border-b border-slate-100 hover:bg-blue-50/30 transition-colors bg-white cursor-pointer;
+        }
+        .status-pill {
+            @apply flex items-center gap-2 px-3 py-2 rounded-sm border border-slate-200 bg-white shadow-sm flex-1 min-w-[140px];
+        }
+        .filter-chip {
+            @apply px-3 py-1 rounded-full border border-slate-300 text-[11px] font-semibold text-slate-600 bg-white hover:bg-slate-50 transition-colors flex items-center gap-1.5 cursor-pointer;
+        }
+        .filter-chip.active {
+            @apply bg-slate-800 text-white border-slate-800;
+        }
+        .pipeline-arrow {
+            @apply flex-shrink-0 text-slate-300 mx-1 self-center;
+        }
+        .timeline-item {
+            @apply relative pl-6 pb-4 border-l border-slate-200 last:pb-0 last:border-l-0;
+        }
+        .timeline-dot {
+            @apply absolute left-[-4.5px] top-1 w-2 h-2 rounded-full bg-slate-300;
+        }
+        .timeline-dot.active {
+            @apply bg-blue-500 ring-4 ring-blue-100;
+        }
+        .id-badge {
+            @apply text-[9px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200;
+        }
+    </style>
+</head>
+<body class="text-slate-900 antialiased overflow-hidden">
+<div class="flex h-screen">
+<aside class="w-64 bg-[var(--sidebar-bg)] flex flex-col fixed h-screen z-20 overflow-y-auto">
+<div class="p-6 flex items-center gap-3 border-b border-slate-700/50 mb-2">
+<div class="bg-blue-600 p-1.5 rounded-sm">
+<span class="material-symbols-outlined text-white text-xl leading-none">precision_manufacturing</span>
+</div>
+<span class="text-white font-bold tracking-tight uppercase text-sm">Industrial Hub</span>
+</div>
+<nav class="flex-1">
+<div class="sidebar-group-title">Operação</div>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">list_alt</span>
+<span>Ordens de Serviço</span>
+</a>
+<div class="sidebar-group-title">Logística e Inventário</div>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">inventory_2</span>
+<span>Estoque Geral</span>
+</a>
+<a class="sidebar-item active" href="#">
+<span class="material-symbols-outlined text-lg">settings_input_component</span>
+<span>Equipamentos</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">local_shipping</span>
+<span>Despacho</span>
+</a>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">engineering</span>
+<span>Técnicos</span>
+</a>
+<div class="sidebar-group-title">Sistema</div>
+<a class="sidebar-item" href="#">
+<span class="material-symbols-outlined text-lg">settings</span>
+<span>Configurações</span>
+</a>
+</nav>
+<div class="p-4 border-t border-slate-700/50">
+<div class="flex items-center gap-3 px-2 py-3 text-slate-400">
+<div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-white border border-slate-600">JD</div>
+<div class="flex flex-col overflow-hidden">
+<span class="text-xs text-white font-medium truncate">João D. Operador</span>
+<span class="text-[10px] uppercase tracking-tighter">Logística Nível II</span>
+</div>
+</div>
+</div>
+</aside>
+<main class="flex-1 ml-64 flex flex-col h-screen overflow-hidden">
+<header class="h-20 bg-white border-b border-[var(--border-subtle)] flex items-center justify-between px-8 shrink-0 z-10">
+<div>
+<h1 class="text-lg font-bold text-slate-800 uppercase tracking-tight">Equipamentos</h1>
+<p class="text-xs text-slate-500">Unidades configuradas (Rastreador + SIM)</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-lg">search</span>
+<input class="h-10 pl-10 pr-4 w-80 bg-slate-100 border-transparent focus:bg-white focus:ring-2 focus:ring-blue-500 text-sm rounded-sm transition-all" placeholder="IMEI, ICCID, Técnico, Ordem, Kit..." type="text"/>
+</div>
+<button class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold h-10 px-4 rounded-sm border border-slate-200 transition-colors uppercase">
+                    Montagem de Kit
+                </button>
+<button class="bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold h-10 px-4 rounded-sm flex items-center gap-2 transition-colors uppercase">
+<span class="material-symbols-outlined text-lg">build</span>
+                    Montar Equipamento
+                </button>
+</div>
+</header>
+<div class="flex-1 overflow-y-auto p-6 space-y-4">
+<div class="flex items-stretch gap-1">
+<div class="status-pill border-l-4 border-l-[var(--status-blue)]">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-400 uppercase">Configurados</span>
+<span class="text-lg font-bold text-slate-800">452</span>
+</div>
+</div>
+<span class="material-symbols-outlined pipeline-arrow">chevron_right</span>
+<div class="status-pill border-l-4 border-l-[var(--status-purple)]">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-400 uppercase">Em Kit</span>
+<span class="text-lg font-bold text-slate-800">128</span>
+</div>
+</div>
+<span class="material-symbols-outlined pipeline-arrow">chevron_right</span>
+<div class="status-pill border-l-4 border-l-[var(--status-yellow)]">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-400 uppercase">Despachados</span>
+<span class="text-lg font-bold text-slate-800">89</span>
+</div>
+</div>
+<span class="material-symbols-outlined pipeline-arrow">chevron_right</span>
+<div class="status-pill border-l-4 border-l-[var(--status-orange)]">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-400 uppercase">Com Técnico</span>
+<span class="text-lg font-bold text-slate-800">214</span>
+</div>
+</div>
+<span class="material-symbols-outlined pipeline-arrow">chevron_right</span>
+<div class="status-pill border-l-4 border-l-[var(--status-green)]">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-400 uppercase">Instalados</span>
+<span class="text-lg font-bold text-slate-800">8.902</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<span class="text-[10px] font-bold text-slate-500 uppercase mr-2">Filtros:</span>
+<div class="filter-chip active">Status: Todos</div>
+<div class="filter-chip">Técnico</div>
+<div class="filter-chip">Cliente</div>
+<div class="filter-chip">Marca</div>
+<div class="filter-chip">Operadora</div>
+<div class="filter-chip">Período</div>
+<button class="text-[10px] font-bold text-blue-600 uppercase hover:underline ml-auto">Limpar Filtros</button>
+</div>
+<div class="bg-white border border-slate-200 rounded-sm shadow-sm overflow-hidden">
+<table class="w-full border-collapse">
+<thead>
+<tr>
+<th class="table-header text-left pl-4 w-16">ID</th>
+<th class="table-header text-left">IMEI &amp; ICCID</th>
+<th class="table-header text-left">Marca / Operadora</th>
+<th class="table-header text-left">Status</th>
+<th class="table-header text-left">Kit</th>
+<th class="table-header text-left">Técnico</th>
+<th class="table-header text-left">Ordem</th>
+<th class="table-header text-left">Última Mov.</th>
+<th class="table-header w-10"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="table-row">
+<td class="px-4 py-3">
+<span class="id-badge">#48821</span>
+</td>
+<td class="px-3 py-3">
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-slate-400">sensors</span>
+<span class="text-xs font-bold text-slate-700">864291045882193</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-slate-400">sim_card</span>
+<span class="text-[10px] font-mono text-slate-500">895510001234567</span>
+</div>
+</div>
+</td>
+<td class="px-3 py-3">
+<div class="flex flex-col">
+<span class="text-[11px] font-semibold text-slate-700">CalAmp LMU-3030</span>
+<span class="text-[10px] text-slate-400 uppercase">Vivo / M2M</span>
+</div>
+</td>
+<td class="px-3 py-3">
+<div class="flex items-center gap-1.5">
+<div class="w-2 h-2 rounded-full bg-[var(--status-blue)]"></div>
+<span class="text-[10px] font-bold text-slate-600 uppercase">Configurado</span>
+</div>
+</td>
+<td class="px-3 py-3">
+<span class="text-[11px] text-blue-600 font-bold hover:underline">KIT-2024-X1</span>
+</td>
+<td class="px-3 py-3 text-[11px] text-slate-400">-</td>
+<td class="px-3 py-3 text-[11px] text-slate-400">-</td>
+<td class="px-3 py-3 text-[10px] font-mono text-slate-500">22/05/2024 14:30</td>
+<td class="px-3 py-3 text-right">
+<button class="text-slate-400 hover:text-slate-600"><span class="material-symbols-outlined text-xl">more_vert</span></button>
+</td>
+</tr>
+<tr class="bg-blue-50/20 border-l-4 border-l-blue-600">
+<td class="px-4 py-3">
+<span class="id-badge bg-blue-100 text-blue-700">#49002</span>
+</td>
+<td class="px-3 py-3">
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-slate-400">sensors</span>
+<span class="text-xs font-bold text-slate-700">865412300098745</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-slate-400">sim_card</span>
+<span class="text-[10px] font-mono text-slate-500">895510009988776</span>
+</div>
+</div>
+</td>
+<td class="px-3 py-3">
+<div class="flex flex-col">
+<span class="text-[11px] font-semibold text-slate-700">Suntech ST310U</span>
+<span class="text-[10px] text-slate-400 uppercase">Claro / M2M</span>
+</div>
+</td>
+<td class="px-3 py-3">
+<div class="flex items-center gap-1.5">
+<div class="w-2 h-2 rounded-full bg-[var(--status-orange)]"></div>
+<span class="text-[10px] font-bold text-slate-600 uppercase">Com Técnico</span>
+</div>
+</td>
+<td class="px-3 py-3">
+<span class="text-[11px] text-blue-600 font-bold hover:underline">KIT-2024-Z5</span>
+</td>
+<td class="px-3 py-3">
+<span class="text-[11px] text-slate-700 font-bold italic hover:underline">Marcos André S.</span>
+</td>
+<td class="px-3 py-3">
+<span class="text-[11px] text-blue-600 font-bold hover:underline">#OS-98812</span>
+</td>
+<td class="px-3 py-3 text-[10px] font-mono text-slate-500">24/05/2024 08:15</td>
+<td class="px-3 py-3 text-right">
+<button class="text-slate-600"><span class="material-symbols-outlined text-xl rotate-90">expand_more</span></button>
+</td>
+</tr>
+<tr class="bg-white border-b border-slate-200">
+<td class="p-6" colspan="9">
+<div class="grid grid-cols-12 gap-8">
+<div class="col-span-3">
+<h4 class="text-[10px] font-bold text-slate-400 uppercase mb-4 border-b border-slate-100 pb-1">Dados Técnicos</h4>
+<div class="space-y-3">
+<div>
+<label class="block text-[10px] text-slate-500 uppercase font-medium">IMEI / Identificação</label>
+<span class="text-xs font-bold text-slate-700">865412300098745</span>
+</div>
+<div>
+<label class="block text-[10px] text-slate-500 uppercase font-medium">Marca / Modelo</label>
+<span class="text-xs font-bold text-slate-700">Suntech / ST310U</span>
+</div>
+<div>
+<label class="block text-[10px] text-slate-500 uppercase font-medium">ICCID / Operadora</label>
+<span class="text-xs font-bold text-slate-700">895510009988776 (Claro)</span>
+</div>
+</div>
+</div>
+<div class="col-span-3">
+<h4 class="text-[10px] font-bold text-slate-400 uppercase mb-4 border-b border-slate-100 pb-1">Logística</h4>
+<div class="space-y-3">
+<div>
+<label class="block text-[10px] text-slate-500 uppercase font-medium">Lotes Vinculados</label>
+<span class="text-xs font-bold text-slate-700">LT-2204-B / SIM-5501</span>
+</div>
+<div>
+<label class="block text-[10px] text-slate-500 uppercase font-medium">Kit / Nota Fiscal</label>
+<span class="text-xs font-bold text-slate-700">KIT-2024-Z5 (NF-99281)</span>
+</div>
+<div>
+<label class="block text-[10px] text-slate-500 uppercase font-medium">Transporte / Rastreio</label>
+<span class="text-xs font-bold text-slate-700">Sedex (BR299100221X)</span>
+</div>
+</div>
+</div>
+<div class="col-span-3">
+<h4 class="text-[10px] font-bold text-slate-400 uppercase mb-4 border-b border-slate-100 pb-1">Destino</h4>
+<div class="space-y-3">
+<div>
+<label class="block text-[10px] text-slate-500 uppercase font-medium">Técnico Responsável</label>
+<span class="text-xs font-bold text-slate-700">Marcos André S. (ID: 442)</span>
+</div>
+<div>
+<label class="block text-[10px] text-slate-500 uppercase font-medium">Cliente Final</label>
+<span class="text-xs font-bold text-slate-700">Indústria Têxtil XPTO</span>
+</div>
+<div>
+<label class="block text-[10px] text-slate-500 uppercase font-medium">Ordem / Instalação</label>
+<span class="text-xs font-bold text-slate-700">#OS-98812 (Aguardando)</span>
+</div>
+</div>
+</div>
+<div class="col-span-3">
+<h4 class="text-[10px] font-bold text-slate-400 uppercase mb-4 border-b border-slate-100 pb-1">Histórico</h4>
+<div class="mt-2">
+<div class="timeline-item">
+<div class="timeline-dot bg-blue-500"></div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-800">Equipamento Configurado</span>
+<span class="text-[9px] text-slate-500">21/02/2024 14:30</span>
+</div>
+</div>
+<div class="timeline-item">
+<div class="timeline-dot bg-purple-500"></div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-800">Montagem de Kit</span>
+<span class="text-[9px] text-slate-500">22/02/2024 09:15</span>
+</div>
+</div>
+<div class="timeline-item">
+<div class="timeline-dot bg-yellow-500"></div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-800">Despachado</span>
+<span class="text-[9px] text-slate-500">22/02/2024 16:20</span>
+</div>
+</div>
+<div class="timeline-item">
+<div class="timeline-dot active"></div>
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-blue-600 uppercase">Com Técnico</span>
+<span class="text-[9px] text-slate-500">24/05/2024 08:15</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</td>
+</tr>
+<tr class="table-row">
+<td class="px-4 py-3">
+<span class="id-badge">#49102</span>
+</td>
+<td class="px-3 py-3">
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-slate-400">sensors</span>
+<span class="text-xs font-bold text-slate-700">864291045000012</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px] text-slate-400">sim_card</span>
+<span class="text-[10px] font-mono text-slate-500">895510001234599</span>
+</div>
+</div>
+</td>
+<td class="px-3 py-3">
+<div class="flex flex-col">
+<span class="text-[11px] font-semibold text-slate-700">CalAmp LMU-800</span>
+<span class="text-[10px] text-slate-400 uppercase">Algar / M2M</span>
+</div>
+</td>
+<td class="px-3 py-3">
+<div class="flex items-center gap-1.5">
+<div class="w-2 h-2 rounded-full bg-[var(--status-green)]"></div>
+<span class="text-[10px] font-bold text-slate-600 uppercase">Instalado</span>
+</div>
+</td>
+<td class="px-3 py-3">
+<span class="text-[11px] text-blue-600 font-bold hover:underline">KIT-2023-A2</span>
+</td>
+<td class="px-3 py-3">
+<span class="text-[11px] text-slate-700 font-bold italic hover:underline">Ricardo Oliveira</span>
+</td>
+<td class="px-3 py-3">
+<span class="text-[11px] text-blue-600 font-bold hover:underline">#OS-88210</span>
+</td>
+<td class="px-3 py-3 text-[10px] font-mono text-slate-500">15/01/2024 11:20</td>
+<td class="px-3 py-3 text-right">
+<button class="text-slate-400 hover:text-slate-600"><span class="material-symbols-outlined text-xl">more_vert</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="flex items-center justify-between py-2 border-t border-slate-200">
+<div class="flex items-center gap-4">
+<span class="text-[11px] text-slate-500 font-bold uppercase">Total: 452 registros</span>
+<div class="flex items-center gap-2">
+<label class="text-[10px] text-slate-400 uppercase font-bold">Mostrar</label>
+<select class="h-7 px-2 border-slate-300 text-[11px] rounded-sm focus:ring-blue-500">
+<option>50</option>
+<option>100</option>
+<option>200</option>
+</select>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-8 h-8 flex items-center justify-center rounded-sm border border-slate-300 text-slate-400 bg-white hover:bg-slate-50 disabled:opacity-50">
+<span class="material-symbols-outlined text-base">chevron_left</span>
+</button>
+<div class="flex items-center gap-1">
+<button class="w-8 h-8 text-[11px] font-bold bg-blue-600 text-white rounded-sm">1</button>
+<button class="w-8 h-8 text-[11px] font-bold text-slate-600 hover:bg-slate-100 rounded-sm">2</button>
+<button class="w-8 h-8 text-[11px] font-bold text-slate-600 hover:bg-slate-100 rounded-sm">3</button>
+<span class="px-1 text-slate-400">...</span>
+<button class="w-8 h-8 text-[11px] font-bold text-slate-600 hover:bg-slate-100 rounded-sm">9</button>
+</div>
+<button class="w-8 h-8 flex items-center justify-center rounded-sm border border-slate-300 text-slate-600 bg-white hover:bg-slate-50">
+<span class="material-symbols-outlined text-base">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+</body></html>

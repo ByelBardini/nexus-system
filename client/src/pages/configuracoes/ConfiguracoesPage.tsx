@@ -12,7 +12,7 @@ const industrialCardClasses =
 
 export function ConfiguracoesPage() {
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="px-8 pt-0 pb-8 max-w-7xl mx-auto -mt-4">
       <header className="mb-8">
         <h1 className="text-lg font-bold text-slate-800 uppercase tracking-tight">
           Configurações do Sistema
@@ -95,11 +95,11 @@ export function ConfiguracoesPage() {
           <div className={cardHeaderClasses}>
             <MaterialIcon name="sensors" className="text-emerald-600" />
             <h2 className="text-sm font-bold uppercase tracking-tight text-slate-800">
-              Equipamentos
+              Configuração
             </h2>
           </div>
           <div className="p-4 grid grid-cols-1 gap-2">
-            <Link to="/equipamentos" className={navTileClasses}>
+            <Link to="/equipamentos/config" className={navTileClasses}>
               <div className="flex items-center gap-3">
                 <MaterialIcon name="precision_manufacturing" className="text-slate-400" />
                 <span>Marcas, Modelos e Operadoras</span>

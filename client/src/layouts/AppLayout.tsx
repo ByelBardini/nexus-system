@@ -12,6 +12,7 @@ const navSections = [
   {
     title: 'Configuração',
     items: [
+      { to: '/equipamentos', label: 'Equipamentos', icon: 'settings_input_component' },
       { to: '/aparelhos', label: 'Rastreadores/Simcards', icon: 'router' },
     ],
   },
@@ -84,7 +85,10 @@ export function AppLayout() {
                     to={to}
                     label={label}
                     icon={icon}
-                    isActive={location.pathname === to}
+                    isActive={
+                      location.pathname === to ||
+                      (to !== '/' && location.pathname.startsWith(to + '/'))
+                    }
                   />
                 ))}
               </div>
@@ -122,7 +126,7 @@ export function AppLayout() {
         </div>
       </aside>
       <main className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto pt-4 px-4 pb-4">
           <Outlet />
         </div>
       </main>

@@ -310,7 +310,7 @@ export function CadastroLotePage() {
           <div className="flex items-center gap-3">
             <MaterialIcon name="inventory_2" className="text-blue-600 text-xl" />
             <div>
-              <h1 className="text-lg font-bold text-slate-800">Entrada de Equipamento</h1>
+              <h1 className="text-lg font-bold text-slate-800">Entrada de Rastreador/Simcard</h1>
               <p className="text-xs text-slate-500">Cadastro em massa de lote</p>
             </div>
           </div>

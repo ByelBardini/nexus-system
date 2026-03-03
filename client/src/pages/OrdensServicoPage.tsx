@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { api } from '@/lib/api'
+import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
 import { MaterialIcon } from '@/components/MaterialIcon'
@@ -112,7 +113,7 @@ export function OrdensServicoPage() {
   const { hasPermission } = useAuth()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string>('')
+  const [statusFilter, setStatusFilter] = useState<string>('TODOS')
   const [openCreate, setOpenCreate] = useState(false)
   const canCreate = hasPermission('AGENDAMENTO.OS.CRIAR')
 
@@ -142,7 +143,7 @@ export function OrdensServicoPage() {
       params.set('page', String(page))
       params.set('limit', '15')
       if (search) params.set('search', search)
-      if (statusFilter) params.set('status', statusFilter)
+      if (statusFilter && statusFilter !== 'TODOS') params.set('status', statusFilter)
       return api(`/ordens-servico?${params}`)
     },
   })
@@ -216,26 +217,70 @@ export function OrdensServicoPage() {
     )
   }
 
+  const totalOrdens =
+    (resumo?.agendado ?? 0) +
+    (resumo?.emTestes ?? 0) +
+    (resumo?.testesRealizados ?? 0) +
+    (resumo?.aguardandoCadastro ?? 0) +
+    (resumo?.finalizado ?? 0)
+
+  function handleStatusClick(status: string) {
+    setStatusFilter(status)
+    setPage(1)
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex w-full h-20 shadow-sm border border-slate-300 bg-white">
-        <div className="pipeline-item flex-1 bg-white border-r border-slate-200 p-3 flex flex-col justify-center">
+      <div className="flex w-full min-h-[88px] shadow-sm border border-slate-300 bg-white">
+        <button
+          onClick={() => handleStatusClick('TODOS')}
+          className={cn(
+            'pipeline-item flex-1 bg-slate-50 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors',
+            statusFilter === 'TODOS' && 'border-t-2 border-b-2 border-t-blue-500 border-b-blue-500'
+          )}
+        >
+          <div className="flex justify-between items-center border-l-4 border-erp-blue pl-2">
+            <span className="text-[10px] font-bold text-slate-500 uppercase font-condensed">
+              Total
+            </span>
+            <span className="text-lg font-black text-slate-800">{totalOrdens}</span>
+          </div>
+        </button>
+        <button
+          onClick={() => handleStatusClick('AGENDADO')}
+          className={cn(
+            'pipeline-item flex-1 bg-yellow-50 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors',
+            statusFilter === 'AGENDADO' && 'border-t-2 border-b-2 border-t-yellow-500 border-b-yellow-500'
+          )}
+        >
           <div className="flex justify-between items-center border-l-4 border-erp-yellow pl-2">
             <span className="text-[10px] font-bold text-slate-500 uppercase font-condensed">
               Agendado
             </span>
             <span className="text-lg font-black text-slate-800">{resumo?.agendado ?? 0}</span>
           </div>
-        </div>
-        <div className="pipeline-item flex-1 bg-blue-50/50 p-3 flex flex-col justify-center">
+        </button>
+        <button
+          onClick={() => handleStatusClick('EM_TESTES')}
+          className={cn(
+            'pipeline-item flex-1 bg-blue-100 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors',
+            statusFilter === 'EM_TESTES' && 'border-t-2 border-b-2 border-t-blue-500 border-b-blue-500'
+          )}
+        >
           <div className="flex justify-between items-center border-l-4 border-erp-blue pl-2">
             <span className="text-[10px] font-bold text-slate-600 uppercase font-condensed">
               Em Testes
             </span>
             <span className="text-lg font-black text-slate-800">{resumo?.emTestes ?? 0}</span>
           </div>
-        </div>
-        <div className="pipeline-item flex-1 bg-purple-50/50 p-3 flex flex-col justify-center">
+        </button>
+        <button
+          onClick={() => handleStatusClick('TESTES_REALIZADOS')}
+          className={cn(
+            'pipeline-item flex-1 bg-purple-100 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors',
+            statusFilter === 'TESTES_REALIZADOS' && 'border-t-2 border-b-2 border-t-purple-500 border-b-purple-500'
+          )}
+        >
           <div className="flex justify-between items-center border-l-4 border-erp-purple pl-2">
             <span className="text-[10px] font-bold text-slate-600 uppercase font-condensed">
               Testes Realizados
@@ -244,8 +289,14 @@ export function OrdensServicoPage() {
               {resumo?.testesRealizados ?? 0}
             </span>
           </div>
-        </div>
-        <div className="pipeline-item flex-1 bg-orange-50/50 p-3 flex flex-col justify-center">
+        </button>
+        <button
+          onClick={() => handleStatusClick('AGUARDANDO_CADASTRO')}
+          className={cn(
+            'pipeline-item flex-1 bg-orange-100 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors',
+            statusFilter === 'AGUARDANDO_CADASTRO' && 'border-t-2 border-b-2 border-t-orange-500 border-b-orange-500'
+          )}
+        >
           <div className="flex justify-between items-center border-l-4 border-erp-orange pl-2">
             <span className="text-[10px] font-bold text-slate-600 uppercase font-condensed">
               Aguardando Cadastro
@@ -254,15 +305,21 @@ export function OrdensServicoPage() {
               {resumo?.aguardandoCadastro ?? 0}
             </span>
           </div>
-        </div>
-        <div className="pipeline-item flex-1 bg-green-50/50 p-3 flex flex-col justify-center">
+        </button>
+        <button
+          onClick={() => handleStatusClick('FINALIZADO')}
+          className={cn(
+            'pipeline-item flex-1 bg-green-100 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors',
+            statusFilter === 'FINALIZADO' && 'border-t-2 border-b-2 border-t-green-500 border-b-green-500'
+          )}
+        >
           <div className="flex justify-between items-center border-l-4 border-erp-green pl-2">
             <span className="text-[10px] font-bold text-slate-600 uppercase font-condensed">
               Finalizado
             </span>
             <span className="text-lg font-black text-slate-800">{resumo?.finalizado ?? 0}</span>
           </div>
-        </div>
+        </button>
       </div>
 
       <div className="flex items-center justify-between gap-4">
@@ -284,6 +341,7 @@ export function OrdensServicoPage() {
               <SelectValue placeholder="Filtrar por status" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="TODOS">Todos</SelectItem>
               {Object.entries(statusLabels).map(([k, v]) => (
                 <SelectItem key={k} value={k}>
                   {v}

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-br"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Configuração de Hardware &amp; Vinculo de Kit - Industrial Hub</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        :root {
+            --sidebar-bg: #0F172A;
+            --sidebar-hover: #1E293B;
+            --background-gray: #F8FAFC;
+            --border-subtle: #E2E8F0;
+            --primary-blue: #2563EB;
+            --industrial-dark: #0F172A;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-gray);
+        }
+        .sidebar-item {
+            @apply flex items-center gap-3 px-4 py-2.5 text-slate-400 hover:bg-[var(--sidebar-hover)] hover:text-white transition-all text-sm;
+        }
+        .sidebar-item.active {
+            @apply bg-[var(--sidebar-hover)] text-white border-r-4 border-blue-500;
+        }
+        .sidebar-group-title {
+            @apply px-4 py-2 mt-4 text-[10px] font-bold uppercase tracking-wider text-slate-500;
+        }
+        .pairing-card {
+            @apply bg-white border border-slate-200 rounded-sm shadow-sm transition-all;
+        }
+        .form-label {
+            @apply block text-[10px] font-bold text-slate-500 uppercase mb-1.5 tracking-wider;
+        }
+        .form-input {
+            @apply w-full h-9 px-3 bg-white border border-slate-300 rounded-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all;
+        }
+        .btn-inline {
+            @apply text-[10px] font-bold text-blue-600 uppercase hover:underline flex items-center gap-1;
+        }
+        .mode-btn {
+            @apply px-4 py-1.5 text-xs font-bold uppercase rounded-sm transition-all;
+        }
+        .mode-btn.active {
+            @apply bg-slate-800 text-white;
+        }
+        .mode-btn.inactive {
+            @apply text-slate-500 hover:bg-slate-100;
+        }
+        .empty-state-dash {
+            @apply border-2 border-dashed border-slate-200 rounded-sm p-4 flex flex-col items-center justify-center text-slate-400;
+        }
+    </style>
+</head>
+<body class="text-slate-900 antialiased overflow-hidden">
+<div class="flex h-screen">
+<aside class="w-64 bg-[var(--sidebar-bg)] flex flex-col fixed h-screen z-20">
+<div class="p-6 flex items-center gap-3 border-b border-slate-800/50 mb-2">
+<div class="bg-blue-600 p-1.5 rounded-sm text-white">
+<span class="material-symbols-outlined text-xl leading-none">settings_input_component</span>
+</div>
+<span class="text-white font-bold tracking-tight uppercase text-sm">Industrial Hub</span>
+</div>
+<nav class="flex-1 overflow-y-auto">
+<div class="sidebar-group-title">Operação</div>
+<a class="sidebar-item" href="#"><span class="material-symbols-outlined text-lg">dashboard</span><span>Dashboard</span></a>
+<a class="sidebar-item active" href="#"><span class="material-symbols-outlined text-lg">settings_input_hdmi</span><span>Hardware &amp; Kit</span></a>
+<div class="sidebar-group-title">Logística</div>
+<a class="sidebar-item" href="#"><span class="material-symbols-outlined text-lg">inventory_2</span><span>Estoque</span></a>
+<a class="sidebar-item" href="#"><span class="material-symbols-outlined text-lg">local_shipping</span><span>Expedição</span></a>
+</nav>
+<div class="p-4 border-t border-slate-800/50">
+<div class="flex items-center gap-3 px-2 py-3 text-slate-400">
+<div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-white">JD</div>
+<div class="flex flex-col overflow-hidden">
+<span class="text-xs text-white font-medium truncate">João Operador</span>
+<span class="text-[10px] uppercase tracking-tighter">Admin Almoxarifado</span>
+</div>
+</div>
+</div>
+</aside>
+<main class="flex-1 ml-64 flex flex-col h-screen overflow-hidden">
+<header class="h-16 bg-white border-b border-[var(--border-subtle)] flex items-center justify-between px-8 shrink-0 z-10">
+<div class="flex items-center gap-6">
+<div>
+<h1 class="text-base font-bold text-slate-800 uppercase tracking-tight">Pareamento de Equipamentos</h1>
+</div>
+<div class="h-8 w-px bg-slate-200"></div>
+<div class="flex bg-slate-100 p-1 rounded-sm">
+<button class="mode-btn active">Individual</button>
+<button class="mode-btn inactive">Em Lote (Batch)</button>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 text-slate-500">
+<span class="material-symbols-outlined text-lg">help_outline</span>
+<span class="text-xs font-medium underline cursor-pointer">Guia de Pareamento</span>
+</div>
+</div>
+</header>
+<div class="flex-1 overflow-y-auto p-6 bg-slate-50/50">
+<div class="grid grid-cols-12 gap-6 max-w-[1600px] mx-auto pb-24">
+<div class="col-span-8 space-y-6">
+<div class="grid grid-cols-2 gap-4">
+<div class="pairing-card">
+<div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-white">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-blue-600 text-xl">sensors</span>
+<h3 class="text-xs font-bold text-slate-700 uppercase">Rastreador</h3>
+</div>
+<span class="text-[10px] font-bold text-slate-400">PASSO 01</span>
+</div>
+<div class="p-5 space-y-4">
+<div>
+<div class="flex justify-between items-end mb-1.5">
+<label class="form-label mb-0">IMEI do Equipamento</label>
+<button class="btn-inline">
+<span class="material-symbols-outlined text-xs">add</span> Criar Manual
+                                        </button>
+</div>
+<div class="relative">
+<input class="form-input pr-10" placeholder="Ex: 35894210..." type="text"/>
+<span class="material-symbols-outlined absolute right-2.5 top-2 text-slate-300">barcode_scanner</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3 opacity-50 pointer-events-none">
+<div>
+<label class="form-label">Marca</label>
+<input class="form-input bg-slate-50" disabled="" type="text" value="--"/>
+</div>
+<div>
+<label class="form-label">Modelo</label>
+<input class="form-input bg-slate-50" disabled="" type="text" value="--"/>
+</div>
+</div>
+</div>
+</div>
+<div class="pairing-card">
+<div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-white">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-blue-600 text-xl">sim_card</span>
+<h3 class="text-xs font-bold text-slate-700 uppercase">SIMCARD</h3>
+</div>
+<span class="text-[10px] font-bold text-slate-400">PASSO 02</span>
+</div>
+<div class="p-5 space-y-4">
+<div>
+<div class="flex justify-between items-end mb-1.5">
+<label class="form-label mb-0">ICCID / Linha</label>
+<button class="btn-inline">
+<span class="material-symbols-outlined text-xs">add</span> Criar Manual
+                                        </button>
+</div>
+<div class="relative">
+<input class="form-input pr-10" placeholder="Ex: 8955..." type="text"/>
+<span class="material-symbols-outlined absolute right-2.5 top-2 text-slate-300">search</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-3 opacity-50 pointer-events-none">
+<div>
+<label class="form-label">Operadora</label>
+<input class="form-input bg-slate-50" disabled="" type="text" value="--"/>
+</div>
+<div>
+<label class="form-label">Plano</label>
+<input class="form-input bg-slate-50" disabled="" type="text" value="--"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="pairing-card bg-blue-50/30 border-dashed border-blue-200">
+<div class="px-4 py-3 border-b border-blue-100 flex items-center gap-2">
+<span class="material-symbols-outlined text-blue-600 text-lg">lan</span>
+<h3 class="text-[10px] font-bold text-blue-800 uppercase tracking-widest">Visualização da Unidade Lógica</h3>
+</div>
+<div class="p-6">
+<div class="flex items-center justify-center gap-8 text-slate-400 italic text-sm">
+<div class="flex flex-col items-center gap-1">
+<span class="material-symbols-outlined text-3xl">sensors</span>
+<span class="text-[10px] font-bold uppercase">Aguardando IMEI</span>
+</div>
+<span class="material-symbols-outlined text-2xl">link</span>
+<div class="flex flex-col items-center gap-1">
+<span class="material-symbols-outlined text-3xl">sim_card</span>
+<span class="text-[10px] font-bold uppercase">Aguardando ICCID</span>
+</div>
+</div>
+</div>
+</div>
+<div class="pairing-card">
+<div class="p-5 flex items-center justify-between border-b border-slate-100">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
+<span class="material-symbols-outlined text-slate-600">inventory</span>
+</div>
+<div>
+<h3 class="text-sm font-bold text-slate-800">Vinculação a Kit</h3>
+<p class="text-[10px] text-slate-500 uppercase font-medium">Opcional: Associar este par a um kit de instalação</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+<span class="ml-3 text-[10px] font-bold text-slate-600 uppercase">Ativar Vínculo</span>
+</label>
+</div>
+<div class="p-5 grid grid-cols-2 gap-6 bg-slate-50/30">
+<div>
+<label class="form-label">Buscar Kit Existente</label>
+<div class="relative">
+<input class="form-input pl-10" placeholder="Pesquise por ID do Kit ou TAG..." type="text"/>
+<span class="material-symbols-outlined absolute left-3 top-2 text-slate-400 text-lg">search</span>
+</div>
+</div>
+<div class="flex flex-col justify-end">
+<button class="h-9 border border-blue-200 text-blue-600 bg-blue-50/50 text-[10px] font-bold uppercase rounded-sm hover:bg-blue-100 transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-lg">add_box</span>
+                                    Criar Novo Kit para Pareamento
+                                </button>
+</div>
+</div>
+</div>
+</div>
+<div class="col-span-4">
+<div class="sticky top-6 space-y-4">
+<div class="bg-slate-900 rounded-sm shadow-xl overflow-hidden text-white">
+<div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+<h3 class="text-xs font-bold uppercase tracking-widest text-slate-400">Resumo da Configuração</h3>
+<span class="text-[10px] bg-blue-500 text-white px-2 py-0.5 rounded-sm font-bold">RASCUNHO</span>
+</div>
+<div class="p-6 space-y-6">
+<div>
+<label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Equipamento de Rastreio</label>
+<div class="flex items-center gap-3 bg-slate-800/50 p-3 rounded-sm border border-slate-800">
+<span class="material-symbols-outlined text-slate-500">sensors</span>
+<span class="text-xs text-slate-300 font-mono">-- PENDENTE --</span>
+</div>
+</div>
+<div>
+<label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Comunicação (SIMCARD)</label>
+<div class="flex items-center gap-3 bg-slate-800/50 p-3 rounded-sm border border-slate-800">
+<span class="material-symbols-outlined text-slate-500">sim_card</span>
+<span class="text-xs text-slate-300 font-mono">-- PENDENTE --</span>
+</div>
+</div>
+<div class="pt-4 border-t border-slate-800">
+<div class="flex justify-between items-center mb-2">
+<span class="text-[10px] text-slate-500 font-bold uppercase">Status do Vínculo</span>
+<span class="text-[10px] text-yellow-500 font-bold uppercase">Incompleto</span>
+</div>
+<div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+<div class="bg-blue-600 h-full w-1/3"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-white border border-slate-200 p-4 rounded-sm">
+<h4 class="text-[10px] font-bold text-slate-700 uppercase mb-3 border-b pb-2">Últimos Pareamentos</h4>
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-medium text-slate-600">IMEI ...2341</span>
+<span class="material-symbols-outlined text-green-500 text-sm">check_circle</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-medium text-slate-600">IMEI ...9870</span>
+<span class="material-symbols-outlined text-green-500 text-sm">check_circle</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<footer class="h-16 bg-white border-t border-slate-200 fixed bottom-0 left-64 right-0 z-30 px-8 flex items-center justify-end gap-3 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
+<button class="h-10 px-5 text-[11px] font-bold text-slate-500 uppercase hover:bg-slate-50 border border-slate-200 rounded-sm transition-colors">
+                Limpar Campos
+            </button>
+<button class="h-10 px-8 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold uppercase rounded-sm shadow-md shadow-blue-500/10 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">link</span>
+                Confirmar Pareamento
+            </button>
+</footer>
+</main>
+</div>
+
+</body></html>

@@ -298,6 +298,15 @@ model Operadora {
   @@map("operadoras")
 }
 
+model Kit {
+  id         Int        @id @default(autoincrement())
+  nome       String     @unique @db.VarChar(100)
+  criadoEm   DateTime   @default(now()) @map("criado_em")
+  aparelhos  Aparelho[]
+
+  @@map("kits")
+}
+
 model Aparelho {
   id              Int               @id @default(autoincrement())
   tipo            TipoAparelho
@@ -317,6 +326,7 @@ model Aparelho {
   atualizadoEm    DateTime          @updatedAt @map("atualizado_em")
   
   cliente         Cliente?          @relation(fields: [clienteId], references: [id])
+  kit             Kit?              @relation(fields: [kitId], references: [id])
   lote            LoteAparelho?     @relation(fields: [loteId], references: [id])
   tecnico         Tecnico?          @relation(fields: [tecnicoId], references: [id])
   simVinculado    Aparelho?         @relation("SimVinculo", fields: [simVinculadoId], references: [id])
@@ -324,6 +334,7 @@ model Aparelho {
   historico       AparelhoHistorico[]
 
   @@index([clienteId])
+  @@index([kitId])
   @@index([loteId])
   @@index([tecnicoId])
   @@index([simVinculadoId])

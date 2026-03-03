@@ -351,7 +351,7 @@ export function EquipamentosConfigPage() {
       <header className="h-20 shrink-0 flex items-center justify-between border-b border-[#E2E8F0] bg-white px-8">
         <div className="flex items-center gap-4">
           <Link
-            to="/configuracoes"
+            to="/equipamentos"
             className="flex h-9 w-9 items-center justify-center rounded-sm border border-slate-200 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
           >
             <ArrowLeft className="h-4 w-4" />
