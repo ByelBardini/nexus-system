@@ -7,12 +7,13 @@ import { UpdateClienteDto } from './dto/update-cliente.dto';
 export class ClientesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll() {
+  async findAll(opts?: { includeSubclientes?: boolean }) {
     return this.prisma.cliente.findMany({
       orderBy: { nome: 'asc' },
       include: {
         contatos: true,
         _count: { select: { ordensServico: true } },
+        ...(opts?.includeSubclientes ? { subclientes: true } : {}),
       },
     });
   }

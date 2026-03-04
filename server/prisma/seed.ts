@@ -3,6 +3,8 @@ import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 
+import { PERMISSION_CODES } from './permission-codes';
+
 dotenv.config();
 
 function parseDatabaseUrl(url: string): {
@@ -52,38 +54,7 @@ async function main() {
     create: { code: 'CONFIGURACAO', nome: 'Configuração' },
   });
 
-  // Permissões: LISTAR, CRIAR, EDITAR, EXCLUIR para cada área
-  const permissionCodes = [
-    // Administrativo
-    'ADMINISTRATIVO.USUARIO.LISTAR',
-    'ADMINISTRATIVO.USUARIO.CRIAR',
-    'ADMINISTRATIVO.USUARIO.EDITAR',
-    'ADMINISTRATIVO.USUARIO.EXCLUIR',
-    'ADMINISTRATIVO.CARGO.LISTAR',
-    'ADMINISTRATIVO.CARGO.CRIAR',
-    'ADMINISTRATIVO.CARGO.EDITAR',
-    'ADMINISTRATIVO.CARGO.EXCLUIR',
-    // Configuração
-    'CONFIGURACAO.APARELHO.LISTAR',
-    'CONFIGURACAO.APARELHO.CRIAR',
-    'CONFIGURACAO.APARELHO.EDITAR',
-    'CONFIGURACAO.APARELHO.EXCLUIR',
-    // Agendamento & Ordens
-    'AGENDAMENTO.CLIENTE.LISTAR',
-    'AGENDAMENTO.CLIENTE.CRIAR',
-    'AGENDAMENTO.CLIENTE.EDITAR',
-    'AGENDAMENTO.CLIENTE.EXCLUIR',
-    'AGENDAMENTO.TECNICO.LISTAR',
-    'AGENDAMENTO.TECNICO.CRIAR',
-    'AGENDAMENTO.TECNICO.EDITAR',
-    'AGENDAMENTO.TECNICO.EXCLUIR',
-    'AGENDAMENTO.OS.LISTAR',
-    'AGENDAMENTO.OS.CRIAR',
-    'AGENDAMENTO.OS.EDITAR',
-    'AGENDAMENTO.OS.EXCLUIR',
-  ];
-
-  for (const code of permissionCodes) {
+  for (const code of PERMISSION_CODES) {
     await prisma.permissao.upsert({
       where: { code },
       update: {},

@@ -101,3 +101,60 @@ export function formatarCPFCNPJ(val: string): string {
 export function cpfCnpjApenasDigitos(val: string): string {
   return val.replace(/\D/g, '')
 }
+
+/**
+ * Converte string de data para Date no fuso local.
+ * Strings só com data (YYYY-MM-DD) são interpretadas como UTC midnight pelo JS,
+ * causando dia errado em fusos como Brasil. Esta função garante parse correto.
+ */
+export function parseDataLocal(str: string): Date {
+  if (str.includes('T')) {
+    return new Date(str)
+  }
+  // YYYY-MM-DD: usar meio-dia local para evitar deslocamento de dia
+  const [y, m, d] = str.split('-').map(Number)
+  return new Date(y, (m ?? 1) - 1, d ?? 1, 12, 0, 0)
+}
+
+/**
+ * Formata data curta para exibição: "12 Out"
+ */
+export function formatarDataCurta(data: string): string {
+  const d = parseDataLocal(data)
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+}
+
+/**
+ * Formata data/hora relativa: "2h atrás", "3 dias atrás", etc.
+ */
+export function formatarFromNow(dataOuIso: string): string {
+  const d = parseDataLocal(dataOuIso)
+  const now = new Date()
+  const diffMs = now.getTime() - d.getTime()
+  const diffMin = Math.floor(diffMs / 60_000)
+  const diffH = Math.floor(diffMs / 3_600_000)
+  const diffD = Math.floor(diffMs / 86_400_000)
+
+  if (diffMin < 1) return 'agora'
+  if (diffMin < 60) return `${diffMin} min atrás`
+  if (diffH < 24) return `${diffH}h atrás`
+  if (diffD < 7) return `${diffD} dias atrás`
+  if (diffD < 30) return `${Math.floor(diffD / 7)} sem atrás`
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+}
+
+/**
+ * Calcula duração entre duas datas: "4 dias", "1 dia e 2h", etc.
+ */
+export function formatarDuracao(dataInicio: string, dataFim: string): string {
+  const ini = parseDataLocal(dataInicio)
+  const fim = parseDataLocal(dataFim)
+  const diffMs = fim.getTime() - ini.getTime()
+  const diffD = Math.floor(diffMs / 86_400_000)
+  const diffH = Math.floor((diffMs % 86_400_000) / 3_600_000)
+
+  if (diffD === 0 && diffH === 0) return 'menos de 1h'
+  if (diffD === 0) return `${diffH}h`
+  if (diffH === 0) return `${diffD} ${diffD === 1 ? 'dia' : 'dias'}`
+  return `${diffD} ${diffD === 1 ? 'dia' : 'dias'} e ${diffH}h`
+}

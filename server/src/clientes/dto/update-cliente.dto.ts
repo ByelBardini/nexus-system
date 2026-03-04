@@ -67,6 +67,41 @@ export class UpdateClienteDto {
   @IsEnum(StatusCliente)
   status?: StatusCliente;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  cep?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  logradouro?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  numero?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  complemento?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  bairro?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  cidade?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  estado?: string;
+
   @ApiPropertyOptional({ type: [UpdateContatoDto] })
   @IsOptional()
   @IsArray()

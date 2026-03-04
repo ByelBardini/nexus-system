@@ -27,6 +27,9 @@ const PareamentoPage = lazy(() =>
   import('@/pages/equipamentos/PareamentoPage').then((m) => ({ default: m.PareamentoPage }))
 )
 const CadastroIndividualPage = lazy(() => import('@/pages/aparelhos/CadastroIndividualPage').then((m) => ({ default: m.CadastroIndividualPage })))
+const PedidosRastreadoresPage = lazy(() =>
+  import('@/pages/pedidos/PedidosRastreadoresPage').then((m) => ({ default: m.PedidosRastreadoresPage }))
+)
 
 function PageLoader() {
   return (
@@ -53,6 +56,14 @@ function App() {
           element={
             <Suspense fallback={<PageLoader />}>
               <OrdensServicoPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="pedidos-rastreadores"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <PedidosRastreadoresPage />
             </Suspense>
           }
         />

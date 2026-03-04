@@ -70,6 +70,41 @@ export class CreateClienteDto {
   @IsEnum(StatusCliente)
   status?: StatusCliente;
 
+  @ApiPropertyOptional({ example: '01310-100' })
+  @IsOptional()
+  @IsString()
+  cep?: string;
+
+  @ApiPropertyOptional({ example: 'Av. Paulista' })
+  @IsOptional()
+  @IsString()
+  logradouro?: string;
+
+  @ApiPropertyOptional({ example: '1000' })
+  @IsOptional()
+  @IsString()
+  numero?: string;
+
+  @ApiPropertyOptional({ example: 'Sala 101' })
+  @IsOptional()
+  @IsString()
+  complemento?: string;
+
+  @ApiPropertyOptional({ example: 'Bela Vista' })
+  @IsOptional()
+  @IsString()
+  bairro?: string;
+
+  @ApiPropertyOptional({ example: 'São Paulo' })
+  @IsOptional()
+  @IsString()
+  cidade?: string;
+
+  @ApiPropertyOptional({ example: 'SP' })
+  @IsOptional()
+  @IsString()
+  estado?: string;
+
   @ApiPropertyOptional({ type: [ContatoDto] })
   @IsOptional()
   @IsArray()

@@ -1,4 +1,4 @@
-import { useState, useMemo, Fragment } from 'react'
+import { useState, useMemo, Fragment, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -19,6 +19,7 @@ import {
   Mail,
   User,
   Trash2,
+  MapPin,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -41,10 +42,15 @@ import {
 } from '@/components/ui/select'
 import { InputTelefone } from '@/components/InputTelefone'
 import { InputCNPJ } from '@/components/InputCNPJ'
+import { InputCEP } from '@/components/InputCEP'
+import { SelectUF } from '@/components/SelectUF'
+import { SelectCidade } from '@/components/SelectCidade'
+import { useUFs, useMunicipios } from '@/hooks/useBrasilAPI'
+import type { EnderecoCEP } from '@/hooks/useBrasilAPI'
 import { api } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
-import { formatarTelefone, formatarCNPJ } from '@/lib/format'
+import { formatarTelefone, formatarCNPJ, formatarCEP } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 const contatoSchema = z.object({
@@ -61,6 +67,13 @@ const schema = z.object({
   tipoContrato: z.enum(['COMODATO', 'AQUISICAO']),
   estoqueProprio: z.boolean(),
   status: z.enum(['ATIVO', 'PENDENTE', 'INATIVO']),
+  cep: z.string().optional(),
+  logradouro: z.string().optional(),
+  numero: z.string().optional(),
+  complemento: z.string().optional(),
+  bairro: z.string().optional(),
+  cidade: z.string().optional(),
+  estado: z.string().optional(),
   contatos: z.array(contatoSchema),
 })
 
@@ -81,6 +94,13 @@ interface Cliente {
   tipoContrato: 'COMODATO' | 'AQUISICAO'
   estoqueProprio: boolean
   status: 'ATIVO' | 'PENDENTE' | 'INATIVO'
+  cep?: string | null
+  logradouro?: string | null
+  numero?: string | null
+  complemento?: string | null
+  bairro?: string | null
+  cidade?: string | null
+  estado?: string | null
   contatos: Contato[]
   _count?: { ordensServico: number }
 }
@@ -142,9 +162,31 @@ export function ClientesPage() {
       tipoContrato: 'COMODATO',
       estoqueProprio: false,
       status: 'ATIVO',
+      cep: '',
+      logradouro: '',
+      numero: '',
+      complemento: '',
+      bairro: '',
+      cidade: '',
+      estado: '',
       contatos: [],
     },
   })
+
+  const estadoEndereco = form.watch('estado')
+  const { data: ufs = [] } = useUFs()
+  const { data: municipios = [] } = useMunicipios(estadoEndereco || null)
+
+  const handleAddressFound = useCallback(
+    (endereco: EnderecoCEP) => {
+      form.setValue('logradouro', endereco.logradouro)
+      form.setValue('bairro', endereco.bairro)
+      form.setValue('cidade', endereco.localidade)
+      form.setValue('estado', endereco.uf)
+      if (endereco.complemento) form.setValue('complemento', endereco.complemento)
+    },
+    [form]
+  )
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -157,6 +199,13 @@ export function ClientesPage() {
         method: 'POST',
         body: JSON.stringify({
           ...data,
+          cep: data.cep || undefined,
+          logradouro: data.logradouro || undefined,
+          numero: data.numero || undefined,
+          complemento: data.complemento || undefined,
+          bairro: data.bairro || undefined,
+          cidade: data.cidade || undefined,
+          estado: data.estado || undefined,
           contatos: data.contatos.map((c) => ({
             nome: c.nome,
             celular: c.celular || undefined,
@@ -178,6 +227,13 @@ export function ClientesPage() {
         method: 'PATCH',
         body: JSON.stringify({
           ...data,
+          cep: data.cep || undefined,
+          logradouro: data.logradouro || undefined,
+          numero: data.numero || undefined,
+          complemento: data.complemento || undefined,
+          bairro: data.bairro || undefined,
+          cidade: data.cidade || undefined,
+          estado: data.estado || undefined,
           contatos: data.contatos.map((c) => ({
             id: c.id,
             nome: c.nome,
@@ -203,6 +259,13 @@ export function ClientesPage() {
       tipoContrato: 'COMODATO',
       estoqueProprio: false,
       status: 'ATIVO',
+      cep: '',
+      logradouro: '',
+      numero: '',
+      complemento: '',
+      bairro: '',
+      cidade: '',
+      estado: '',
       contatos: [],
     })
     setModalOpen(true)
@@ -217,6 +280,13 @@ export function ClientesPage() {
       tipoContrato: c.tipoContrato,
       estoqueProprio: c.estoqueProprio,
       status: c.status,
+      cep: c.cep ?? '',
+      logradouro: c.logradouro ?? '',
+      numero: c.numero ?? '',
+      complemento: c.complemento ?? '',
+      bairro: c.bairro ?? '',
+      cidade: c.cidade ?? '',
+      estado: c.estado ?? '',
       contatos: c.contatos.map((ct) => ({
         id: ct.id,
         nome: ct.nome,
@@ -474,6 +544,21 @@ export function ClientesPage() {
                                   </Button>
                                 )}
                               </div>
+                              {(c.cep || c.logradouro || c.cidade) && (
+                                <div className="mb-4 p-3 bg-white border border-slate-200 rounded flex items-start gap-2">
+                                  <MapPin className="h-4 w-4 text-slate-400 mt-0.5 shrink-0" />
+                                  <div className="text-sm text-slate-700">
+                                    {[c.logradouro, c.numero && `nº ${c.numero}`, c.complemento]
+                                      .filter(Boolean)
+                                      .join(', ')}
+                                    {c.bairro && ` - ${c.bairro}`}
+                                    {(c.cidade || c.estado) && (
+                                      <> - {[c.cidade, c.estado].filter(Boolean).join('/')}</>
+                                    )}
+                                    {c.cep && ` - CEP ${formatarCEP(c.cep)}`}
+                                  </div>
+                                </div>
+                              )}
                               {c.contatos.length === 0 ? (
                                 <p className="text-sm text-slate-500 italic">
                                   Nenhum contato cadastrado
@@ -738,9 +823,113 @@ export function ClientesPage() {
                 </section>
 
                 <section>
+                  <div className="flex items-center gap-2 mb-4 border-b border-slate-200 pb-2">
+                    <span className="text-[11px] font-black uppercase text-slate-800 tracking-widest">
+                      02. Endereço (opcional)
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                        CEP
+                      </label>
+                      <Controller
+                        name="cep"
+                        control={form.control}
+                        render={({ field }) => (
+                          <InputCEP
+                            value={field.value ?? ''}
+                            onChange={field.onChange}
+                            onAddressFound={handleAddressFound}
+                            placeholder="00000-000"
+                            className="h-9 font-mono"
+                          />
+                        )}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                        Logradouro
+                      </label>
+                      <Input
+                        {...form.register('logradouro')}
+                        placeholder="Rua, Av., etc."
+                        className="h-9"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                        Número
+                      </label>
+                      <Input
+                        {...form.register('numero')}
+                        placeholder="Nº"
+                        className="h-9"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                        Complemento
+                      </label>
+                      <Input
+                        {...form.register('complemento')}
+                        placeholder="Sala, andar, etc."
+                        className="h-9"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                        Bairro
+                      </label>
+                      <Input
+                        {...form.register('bairro')}
+                        placeholder="Bairro"
+                        className="h-9"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                        Estado
+                      </label>
+                      <Controller
+                        name="estado"
+                        control={form.control}
+                        render={({ field }) => (
+                          <SelectUF
+                            ufs={ufs}
+                            value={field.value ?? ''}
+                            onChange={field.onChange}
+                            placeholder="UF"
+                            className="h-9"
+                          />
+                        )}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                        Cidade
+                      </label>
+                      <Controller
+                        name="cidade"
+                        control={form.control}
+                        render={({ field }) => (
+                          <SelectCidade
+                            municipios={municipios}
+                            value={field.value ?? ''}
+                            onChange={field.onChange}
+                            placeholder="Cidade"
+                            className="h-9"
+                          />
+                        )}
+                      />
+                    </div>
+                  </div>
+                </section>
+
+                <section>
                   <div className="flex items-center justify-between gap-2 mb-4 border-b border-slate-200 pb-2">
                     <span className="text-[11px] font-black uppercase text-slate-800 tracking-widest">
-                      02. Contatos
+                      03. Contatos
                     </span>
                     <Button
                       type="button"
@@ -867,6 +1056,21 @@ export function ClientesPage() {
                       {watchedValues.tipoContrato === 'COMODATO' ? 'Comodato' : 'Aquisição'}
                     </span>
                   </div>
+                  {(watchedValues.cep || watchedValues.logradouro || watchedValues.cidade) && (
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                        Endereço
+                      </label>
+                      <p className="text-sm text-slate-700">
+                        {[watchedValues.logradouro, watchedValues.numero, watchedValues.bairro]
+                          .filter(Boolean)
+                          .join(', ')}
+                        {(watchedValues.cidade || watchedValues.estado) && (
+                          <> — {[watchedValues.cidade, watchedValues.estado].filter(Boolean).join('/')}</>
+                        )}
+                      </p>
+                    </div>
+                  )}
                   <div className="pt-4 border-t border-slate-200">
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2">
                       Contatos

@@ -7,6 +7,7 @@ const navSections = [
     title: 'Agendamento',
     items: [
       { to: '/', label: 'Ordens de Serviço', icon: 'list_alt' },
+      { to: '/pedidos-rastreadores', label: 'Pedidos de Rastreadores', icon: 'package_2' },
     ],
   },
   {

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
@@ -16,8 +16,10 @@ export class ClientesController {
   @Get()
   @RequirePermissions('AGENDAMENTO.CLIENTE.LISTAR')
   @ApiOperation({ summary: 'Listar clientes' })
-  findAll() {
-    return this.clientesService.findAll();
+  findAll(@Query('subclientes') subclientes?: string) {
+    return this.clientesService.findAll({
+      includeSubclientes: subclientes === '1' || subclientes === 'true',
+    });
   }
 
   @Get(':id')

@@ -16,8 +16,9 @@ model Usuario {
   ultimoAcesso  DateTime?      @map("ultimo_acesso")
   createdAt     DateTime       @default(now()) @map("created_at")
   updatedAt     DateTime       @updatedAt @map("updated_at")
-  ordensServico OrdemServico[]
-  usuarioCargos UsuarioCargo[]
+  ordensServico      OrdemServico[]
+  usuarioCargos      UsuarioCargo[]
+  pedidosRastreadores PedidoRastreador[]
 
   @@map("usuarios")
 }
@@ -102,18 +103,27 @@ model RegistroAuditoria {
 }
 
 model Cliente {
-  id             Int              @id @default(autoincrement())
-  nome           String           @db.VarChar(200)
-  nomeFantasia   String?          @map("nome_fantasia") @db.VarChar(200)
-  cnpj           String?          @db.VarChar(20)
-  tipoContrato   TipoContrato     @default(COMODATO) @map("tipo_contrato")
-  estoqueProprio Boolean          @default(false) @map("estoque_proprio")
-  status         StatusCliente    @default(ATIVO)
-  contatos       ContatoCliente[]
-  ordensServico  OrdemServico[]
-  subclientes    Subcliente[]
-  aparelhos      Aparelho[]
-  lotesAparelhos LoteAparelho[]
+  id                         Int                @id @default(autoincrement())
+  nome                       String             @db.VarChar(200)
+  nomeFantasia               String?            @map("nome_fantasia") @db.VarChar(200)
+  cnpj                       String?            @db.VarChar(20)
+  tipoContrato               TipoContrato       @default(COMODATO) @map("tipo_contrato")
+  estoqueProprio             Boolean            @default(false) @map("estoque_proprio")
+  status                     StatusCliente      @default(ATIVO)
+  cep                        String?            @db.VarChar(10)
+  logradouro                 String?            @db.VarChar(255)
+  numero                     String?            @db.VarChar(20)
+  complemento                String?            @db.VarChar(100)
+  bairro                     String?            @db.VarChar(100)
+  cidade                     String?            @db.VarChar(100)
+  estado                     String?            @db.VarChar(2)
+  contatos                   ContatoCliente[]
+  ordensServico              OrdemServico[]
+  subclientes                Subcliente[]
+  aparelhos                  Aparelho[]
+  lotesAparelhos             LoteAparelho[]
+  pedidosRastreadoresDestino   PedidoRastreador[] @relation("ClienteDestino")
+  pedidosRastreadoresDeCliente PedidoRastreador[] @relation("ClienteRemetente")
 
   @@map("clientes")
 }
@@ -152,8 +162,9 @@ model Subcliente {
   email         String?        @db.VarChar(255)
   telefone      String?        @db.VarChar(20)
   cobrancaTipo  String?        @map("cobranca_tipo") @db.VarChar(20)
-  ordensServico OrdemServico[]
-  cliente       Cliente        @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  ordensServico      OrdemServico[]
+  pedidosRastreadores PedidoRastreador[]
+  cliente            Cliente        @relation(fields: [clienteId], references: [id], onDelete: Cascade)
 
   @@index([clienteId], map: "subclientes_cliente_id_fkey")
   @@map("subclientes")
@@ -174,9 +185,10 @@ model Tecnico {
   cidadeEndereco  String?        @map("cidade_endereco") @db.VarChar(100)
   estadoEndereco  String?        @map("estado_endereco") @db.VarChar(2)
   ativo           Boolean        @default(true)
-  ordensServico   OrdemServico[]
-  precos          PrecoTecnico?
-  aparelhos       Aparelho[]
+  ordensServico      OrdemServico[]
+  precos             PrecoTecnico?
+  aparelhos          Aparelho[]
+  pedidosRastreadores PedidoRastreador[]
 
   @@map("tecnicos")
 }
@@ -267,22 +279,24 @@ enum StatusOS {
 // ============= APARELHOS / EQUIPAMENTOS =============
 
 model MarcaEquipamento {
-  id        Int               @id @default(autoincrement())
-  nome      String            @unique @db.VarChar(100)
-  ativo     Boolean           @default(true)
-  criadoEm  DateTime          @default(now()) @map("criado_em")
-  modelos   ModeloEquipamento[]
+  id                   Int                @id @default(autoincrement())
+  nome                 String             @unique @db.VarChar(100)
+  ativo                Boolean            @default(true)
+  criadoEm             DateTime           @default(now()) @map("criado_em")
+  modelos              ModeloEquipamento[]
+  pedidosRastreadores  PedidoRastreador[]
 
   @@map("marcas_equipamentos")
 }
 
 model ModeloEquipamento {
-  id        Int               @id @default(autoincrement())
-  nome      String            @db.VarChar(100)
-  marcaId   Int               @map("marca_id")
-  ativo     Boolean           @default(true)
-  criadoEm  DateTime          @default(now()) @map("criado_em")
-  marca     MarcaEquipamento  @relation(fields: [marcaId], references: [id], onDelete: Cascade)
+  id                   Int                @id @default(autoincrement())
+  nome                 String             @db.VarChar(100)
+  marcaId              Int                @map("marca_id")
+  ativo                Boolean            @default(true)
+  criadoEm             DateTime           @default(now()) @map("criado_em")
+  marca                MarcaEquipamento   @relation(fields: [marcaId], references: [id], onDelete: Cascade)
+  pedidosRastreadores  PedidoRastreador[]
 
   @@unique([marcaId, nome])
   @@index([marcaId])
@@ -290,10 +304,11 @@ model ModeloEquipamento {
 }
 
 model Operadora {
-  id        Int       @id @default(autoincrement())
-  nome      String    @unique @db.VarChar(100)
-  ativo     Boolean   @default(true)
-  criadoEm  DateTime  @default(now()) @map("criado_em")
+  id                   Int                @id @default(autoincrement())
+  nome                 String             @unique @db.VarChar(100)
+  ativo                Boolean            @default(true)
+  criadoEm             DateTime           @default(now()) @map("criado_em")
+  pedidosRastreadores  PedidoRastreador[]
 
   @@map("operadoras")
 }
@@ -394,4 +409,84 @@ enum StatusAparelho {
 enum ProprietarioTipo {
   INFINITY
   CLIENTE
+}
+
+// ============= PEDIDOS DE RASTREADORES (AGENDAMENTO) =============
+
+enum TipoDestinoPedido {
+  TECNICO
+  CLIENTE
+}
+
+enum StatusPedidoRastreador {
+  SOLICITADO
+  EM_CONFIGURACAO
+  CONFIGURADO
+  DESPACHADO
+  ENTREGUE
+}
+
+enum UrgenciaPedido {
+  BAIXA
+  MEDIA
+  ALTA
+  URGENTE
+}
+
+model PedidoRastreador {
+  id                   Int                     @id @default(autoincrement())
+  codigo               String                  @unique @db.VarChar(20)
+  tipoDestino          TipoDestinoPedido
+  tecnicoId            Int?                    @map("tecnico_id")
+  clienteId            Int?                    @map("cliente_id")
+  subclienteId         Int?                    @map("subcliente_id")
+  deClienteId          Int?                    @map("de_cliente_id")
+  quantidade           Int
+  status               StatusPedidoRastreador  @default(SOLICITADO)
+  urgencia             UrgenciaPedido          @default(MEDIA)
+  dataSolicitacao      DateTime                @map("data_solicitacao")
+  marcaEquipamentoId   Int?                    @map("marca_equipamento_id")
+  modeloEquipamentoId  Int?                    @map("modelo_equipamento_id")
+  operadoraId          Int?                    @map("operadora_id")
+  criadoPorId          Int?                    @map("criado_por_id")
+  observacao           String?                 @db.Text
+  criadoEm             DateTime                @default(now()) @map("criado_em")
+  atualizadoEm         DateTime                @updatedAt @map("atualizado_em")
+  entregueEm           DateTime?               @map("entregue_em")
+
+  tecnico              Tecnico?                @relation(fields: [tecnicoId], references: [id])
+  cliente              Cliente?                @relation("ClienteDestino", fields: [clienteId], references: [id])
+  subcliente           Subcliente?             @relation(fields: [subclienteId], references: [id])
+  deCliente            Cliente?                @relation("ClienteRemetente", fields: [deClienteId], references: [id])
+  marcaEquipamento     MarcaEquipamento?       @relation(fields: [marcaEquipamentoId], references: [id])
+  modeloEquipamento    ModeloEquipamento?      @relation(fields: [modeloEquipamentoId], references: [id])
+  operadora            Operadora?              @relation(fields: [operadoraId], references: [id])
+  criadoPor            Usuario?                @relation(fields: [criadoPorId], references: [id])
+  historico            PedidoRastreadorHistorico[]
+
+  @@index([tecnicoId])
+  @@index([clienteId])
+  @@index([subclienteId])
+  @@index([deClienteId])
+  @@index([criadoPorId])
+  @@index([status])
+  @@index([dataSolicitacao])
+  @@index([marcaEquipamentoId])
+  @@index([modeloEquipamentoId])
+  @@index([operadoraId])
+  @@map("pedidos_rastreadores")
+}
+
+model PedidoRastreadorHistorico {
+  id                 Int                   @id @default(autoincrement())
+  pedidoRastreadorId Int                   @map("pedido_rastreador_id")
+  statusAnterior     StatusPedidoRastreador @map("status_anterior")
+  statusNovo         StatusPedidoRastreador @map("status_novo")
+  observacao         String?               @db.VarChar(500)
+  criadoEm           DateTime              @default(now()) @map("criado_em")
+
+  pedidoRastreador   PedidoRastreador      @relation(fields: [pedidoRastreadorId], references: [id], onDelete: Cascade)
+
+  @@index([pedidoRastreadorId])
+  @@map("pedidos_rastreadores_historico")
 }

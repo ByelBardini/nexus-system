@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { Checkbox } from '@/components/ui/checkbox'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { Loader2, MoreVertical, Search, ChevronDown, ChevronRight, Check, ArrowLeft } from 'lucide-react'
@@ -120,6 +121,7 @@ const NOMES_ITEM: Record<string, string> = {
   APARELHO: 'Aparelhos',
   CLIENTE: 'Clientes',
   OS: 'Ordens de Serviço',
+  PEDIDO_RASTREADOR: 'Pedidos de Rastreadores',
   TECNICO: 'Técnicos',
 }
 
@@ -134,7 +136,7 @@ const ORDEM_SETORES = ['ADMINISTRATIVO', 'CONFIGURACAO', 'AGENDAMENTO']
 const ORDEM_ITENS: Record<string, string[]> = {
   ADMINISTRATIVO: ['CARGO', 'USUARIO'],
   CONFIGURACAO: ['APARELHO'],
-  AGENDAMENTO: ['CLIENTE', 'OS', 'TECNICO'],
+  AGENDAMENTO: ['CLIENTE', 'OS', 'PEDIDO_RASTREADOR', 'TECNICO'],
 }
 const ORDEM_ACOES = ['LISTAR', 'CRIAR', 'EDITAR', 'EXCLUIR']
 
@@ -174,6 +176,7 @@ function CargoModal({ cargo, isNew, onClose, permissoes, setores }: CargoModalPr
   const [nome, setNome] = useState('')
   const [descricao, setDescricao] = useState('')
   const [categoria, setCategoria] = useState<CategoriaCargo>('OPERACIONAL')
+  const [ativo, setAtivo] = useState(true)
   const [setorId, setSetorId] = useState<number>(0)
   const [selectedPermIds, setSelectedPermIds] = useState<number[]>([])
   const [expandedSectors, setExpandedSectors] = useState<string[]>(['ADMINISTRATIVO', 'CONFIGURACAO', 'AGENDAMENTO'])
@@ -183,12 +186,14 @@ function CargoModal({ cargo, isNew, onClose, permissoes, setores }: CargoModalPr
       setNome(cargo.nome)
       setDescricao(cargo.descricao || '')
       setCategoria(cargo.categoria)
+      setAtivo(cargo.ativo)
       setSetorId(cargo.setor.id)
       setSelectedPermIds(cargo.cargoPermissoes.map((cp) => cp.permissaoId))
     } else {
       setNome('')
       setDescricao('')
       setCategoria('OPERACIONAL')
+      setAtivo(true)
       setSetorId(setores[0]?.id || 0)
       setSelectedPermIds([])
     }
@@ -224,13 +229,14 @@ function CargoModal({ cargo, isNew, onClose, permissoes, setores }: CargoModalPr
   })
 
   const updateMutation = useMutation({
-    mutationFn: async (data: { id: number; nome: string; descricao: string; categoria: CategoriaCargo; permissionIds: number[] }) => {
+    mutationFn: async (data: { id: number; nome: string; descricao: string; categoria: CategoriaCargo; ativo: boolean; permissionIds: number[] }) => {
       await api(`/roles/${data.id}`, {
         method: 'PATCH',
         body: JSON.stringify({
           nome: data.nome,
           descricao: data.descricao,
           categoria: data.categoria,
+          ativo: data.ativo,
         }),
       })
       await api(`/roles/${data.id}/permissions`, {
@@ -320,6 +326,7 @@ function CargoModal({ cargo, isNew, onClose, permissoes, setores }: CargoModalPr
         nome,
         descricao,
         categoria,
+        ativo,
         permissionIds: selectedPermIds,
       })
     }
@@ -371,6 +378,18 @@ function CargoModal({ cargo, isNew, onClose, permissoes, setores }: CargoModalPr
                 onChange={(e) => setDescricao(e.target.value)}
               />
             </div>
+            {!isNew && (
+              <div className="col-span-12 flex items-center gap-2 pt-2">
+                <Checkbox
+                  id="cargoAtivo"
+                  checked={ativo}
+                  onCheckedChange={(checked) => setAtivo(checked === true)}
+                />
+                <Label htmlFor="cargoAtivo" className="text-sm font-medium cursor-pointer">
+                  Cargo ativo (desmarque para inativar)
+                </Label>
+              </div>
+            )}
           </div>
         </header>
 
