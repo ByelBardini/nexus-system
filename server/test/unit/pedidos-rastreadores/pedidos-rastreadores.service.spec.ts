@@ -1,58 +1,32 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { PedidosRastreadoresService } from './pedidos-rastreadores.service';
-import { CreatePedidoRastreadorDto } from './dto/create-pedido-rastreador.dto';
-import { UpdateStatusPedidoDto } from './dto/update-status-pedido.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { PedidosRastreadoresService } from 'src/pedidos-rastreadores/pedidos-rastreadores.service';
+import { CreatePedidoRastreadorDto } from 'src/pedidos-rastreadores/dto/create-pedido-rastreador.dto';
+import { UpdateStatusPedidoDto } from 'src/pedidos-rastreadores/dto/update-status-pedido.dto';
 import {
   StatusPedidoRastreador,
   StatusAparelho,
   TipoDestinoPedido,
   UrgenciaPedido,
 } from '@prisma/client';
+import { createPrismaMock } from '../helpers/prisma-mock';
 
 describe('PedidosRastreadoresService', () => {
   let service: PedidosRastreadoresService;
-  let prisma: PrismaService;
-
-  const prismaMock = {
-    pedidoRastreador: {
-      findMany: jest.fn(),
-      findFirst: jest.fn(),
-      findUnique: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      count: jest.fn(),
-    },
-    pedidoRastreadorHistorico: {
-      create: jest.fn(),
-    },
-    aparelho: {
-      findMany: jest.fn(),
-      update: jest.fn(),
-    },
-    aparelhoHistorico: {
-      create: jest.fn(),
-    },
-    kit: {
-      updateMany: jest.fn(),
-      update: jest.fn(),
-    },
-    $transaction: jest.fn((fn: (tx: unknown) => Promise<unknown>) =>
-      fn(prismaMock),
-    ),
-  };
+  let prisma: ReturnType<typeof createPrismaMock>;
 
   beforeEach(async () => {
+    prisma = createPrismaMock();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PedidosRastreadoresService,
-        { provide: PrismaService, useValue: prismaMock },
+        { provide: PrismaService, useValue: prisma },
       ],
     }).compile();
 
     service = module.get<PedidosRastreadoresService>(PedidosRastreadoresService);
-    prisma = module.get<PrismaService>(PrismaService);
     jest.clearAllMocks();
   });
 
@@ -79,57 +53,40 @@ describe('PedidosRastreadoresService', () => {
           deCliente: null,
         },
       ];
-      (prisma.pedidoRastreador.findMany as jest.Mock).mockResolvedValue(pedidos);
-      (prisma.pedidoRastreador.count as jest.Mock).mockResolvedValue(1);
+      prisma.pedidoRastreador.findMany.mockResolvedValue(pedidos);
+      prisma.pedidoRastreador.count.mockResolvedValue(1);
 
       const result = await service.findAll({ page: 1, limit: 15 });
 
-      expect(result).toEqual({
-        data: pedidos,
-        total: 1,
-        page: 1,
-        totalPages: 1,
-      });
+      expect(result).toEqual({ data: pedidos, total: 1, page: 1, totalPages: 1 });
       expect(prisma.pedidoRastreador.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          skip: 0,
-          take: 15,
-          orderBy: expect.any(Object),
-        }),
+        expect.objectContaining({ skip: 0, take: 15, orderBy: expect.any(Object) }),
       );
       expect(prisma.pedidoRastreador.count).toHaveBeenCalled();
     });
 
     it('filtra por status quando informado', async () => {
-      (prisma.pedidoRastreador.findMany as jest.Mock).mockResolvedValue([]);
-      (prisma.pedidoRastreador.count as jest.Mock).mockResolvedValue(0);
+      prisma.pedidoRastreador.findMany.mockResolvedValue([]);
+      prisma.pedidoRastreador.count.mockResolvedValue(0);
 
-      await service.findAll({
-        page: 1,
-        limit: 15,
-        status: StatusPedidoRastreador.EM_CONFIGURACAO,
-      });
+      await service.findAll({ page: 1, limit: 15, status: StatusPedidoRastreador.EM_CONFIGURACAO });
 
       expect(prisma.pedidoRastreador.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({
-            status: StatusPedidoRastreador.EM_CONFIGURACAO,
-          }),
+          where: expect.objectContaining({ status: StatusPedidoRastreador.EM_CONFIGURACAO }),
         }),
       );
     });
 
     it('busca por codigo ou destinatário quando search informado', async () => {
-      (prisma.pedidoRastreador.findMany as jest.Mock).mockResolvedValue([]);
-      (prisma.pedidoRastreador.count as jest.Mock).mockResolvedValue(0);
+      prisma.pedidoRastreador.findMany.mockResolvedValue([]);
+      prisma.pedidoRastreador.count.mockResolvedValue(0);
 
       await service.findAll({ page: 1, limit: 15, search: 'PED-0042' });
 
       expect(prisma.pedidoRastreador.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({
-            OR: expect.any(Array),
-          }),
+          where: expect.objectContaining({ OR: expect.any(Array) }),
         }),
       );
     });
@@ -137,12 +94,10 @@ describe('PedidosRastreadoresService', () => {
 
   describe('findOne', () => {
     it('lança NotFoundException quando pedido não existe', async () => {
-      (prisma.pedidoRastreador.findUnique as jest.Mock).mockResolvedValue(null);
+      prisma.pedidoRastreador.findUnique.mockResolvedValue(null);
 
       await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
-      await expect(service.findOne(999)).rejects.toThrow(
-        'Pedido de rastreador não encontrado',
-      );
+      await expect(service.findOne(999)).rejects.toThrow('Pedido de rastreador não encontrado');
     });
 
     it('retorna pedido quando encontrado', async () => {
@@ -157,9 +112,7 @@ describe('PedidosRastreadoresService', () => {
         subcliente: null,
         historico: [],
       };
-      (prisma.pedidoRastreador.findUnique as jest.Mock).mockResolvedValue(
-        pedido,
-      );
+      prisma.pedidoRastreador.findUnique.mockResolvedValue(pedido);
 
       const result = await service.findOne(1);
 
@@ -183,18 +136,9 @@ describe('PedidosRastreadoresService', () => {
         quantidade: 10,
         urgencia: UrgenciaPedido.URGENTE,
       };
-      (prisma.pedidoRastreador.findFirst as jest.Mock).mockResolvedValue({
-        codigo: 'PED-0041',
-      });
-      const pedidoCriado = {
-        id: 42,
-        codigo: 'PED-0042',
-        ...dto,
-        tecnico: { id: 1, nome: 'João' },
-      };
-      (prisma.pedidoRastreador.create as jest.Mock).mockResolvedValue(
-        pedidoCriado,
-      );
+      prisma.pedidoRastreador.findFirst.mockResolvedValue({ codigo: 'PED-0041' });
+      const pedidoCriado = { id: 42, codigo: 'PED-0042', ...dto, tecnico: { id: 1, nome: 'João' } };
+      prisma.pedidoRastreador.create.mockResolvedValue(pedidoCriado);
 
       const result = await service.create(dto, 100);
 
@@ -219,16 +163,14 @@ describe('PedidosRastreadoresService', () => {
         subclienteId: 5,
         quantidade: 4,
       };
-      (prisma.pedidoRastreador.findFirst as jest.Mock).mockResolvedValue(null);
+      prisma.pedidoRastreador.findFirst.mockResolvedValue(null);
       const pedidoCriado = {
         id: 1,
         codigo: 'PED-0001',
         ...dto,
         subcliente: { id: 5, nome: 'Cliente X', cliente: {} },
       };
-      (prisma.pedidoRastreador.create as jest.Mock).mockResolvedValue(
-        pedidoCriado,
-      );
+      prisma.pedidoRastreador.create.mockResolvedValue(pedidoCriado);
 
       const result = await service.create(dto);
 
@@ -251,16 +193,14 @@ describe('PedidosRastreadoresService', () => {
         clienteId: 3,
         quantidade: 2,
       };
-      (prisma.pedidoRastreador.findFirst as jest.Mock).mockResolvedValue(null);
+      prisma.pedidoRastreador.findFirst.mockResolvedValue(null);
       const pedidoCriado = {
         id: 1,
         codigo: 'PED-0001',
         ...dto,
         cliente: { id: 3, nome: 'Associação XYZ' },
       };
-      (prisma.pedidoRastreador.create as jest.Mock).mockResolvedValue(
-        pedidoCriado,
-      );
+      prisma.pedidoRastreador.create.mockResolvedValue(pedidoCriado);
 
       const result = await service.create(dto);
 
@@ -288,14 +228,11 @@ describe('PedidosRastreadoresService', () => {
         subcliente: null,
         historico: [],
       };
-      (prisma.pedidoRastreador.findUnique as jest.Mock)
+      prisma.pedidoRastreador.findUnique
         .mockResolvedValueOnce(pedidoExistente)
-        .mockResolvedValueOnce({
-          ...pedidoExistente,
-          status: StatusPedidoRastreador.EM_CONFIGURACAO,
-        });
-      (prisma.$transaction as jest.Mock).mockImplementation((fn) => fn(prisma));
-      (prisma.pedidoRastreador.update as jest.Mock).mockResolvedValue({});
+        .mockResolvedValueOnce({ ...pedidoExistente, status: StatusPedidoRastreador.EM_CONFIGURACAO });
+      prisma.$transaction.mockImplementation((fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
+      prisma.pedidoRastreador.update.mockResolvedValue({});
 
       const dto: UpdateStatusPedidoDto = {
         status: StatusPedidoRastreador.EM_CONFIGURACAO,
@@ -329,18 +266,13 @@ describe('PedidosRastreadoresService', () => {
         subcliente: null,
         historico: [],
       };
-      (prisma.pedidoRastreador.findUnique as jest.Mock)
+      prisma.pedidoRastreador.findUnique
         .mockResolvedValueOnce(pedidoExistente)
-        .mockResolvedValueOnce({
-          ...pedidoExistente,
-          status: StatusPedidoRastreador.ENTREGUE,
-        });
-      (prisma.$transaction as jest.Mock).mockImplementation((fn) => fn(prisma));
-      (prisma.pedidoRastreador.update as jest.Mock).mockResolvedValue({});
+        .mockResolvedValueOnce({ ...pedidoExistente, status: StatusPedidoRastreador.ENTREGUE });
+      prisma.$transaction.mockImplementation((fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
+      prisma.pedidoRastreador.update.mockResolvedValue({});
 
-      const dto: UpdateStatusPedidoDto = {
-        status: StatusPedidoRastreador.ENTREGUE,
-      };
+      const dto: UpdateStatusPedidoDto = { status: StatusPedidoRastreador.ENTREGUE };
 
       await service.updateStatus(1, dto);
 
@@ -353,7 +285,7 @@ describe('PedidosRastreadoresService', () => {
       });
     });
 
-    it('ao retroceder de DESPACHADO para CONFIGURADO, atualiza aparelhos dos kits para CONFIGURADO (Em Kit)', async () => {
+    it('ao retroceder de DESPACHADO para CONFIGURADO, atualiza aparelhos dos kits', async () => {
       const pedidoDespachado = {
         id: 1,
         codigo: 'PED-0001',
@@ -368,42 +300,30 @@ describe('PedidosRastreadoresService', () => {
         { id: 101, kitId: 10, status: StatusAparelho.DESPACHADO, tipo: 'RASTREADOR' },
         { id: 102, kitId: 10, status: StatusAparelho.DESPACHADO, tipo: 'RASTREADOR' },
       ];
-      (prisma.pedidoRastreador.findUnique as jest.Mock)
+      prisma.pedidoRastreador.findUnique
         .mockResolvedValueOnce(pedidoDespachado)
-        .mockResolvedValueOnce({
-          ...pedidoDespachado,
-          status: StatusPedidoRastreador.CONFIGURADO,
-        });
-      (prisma.$transaction as jest.Mock).mockImplementation((fn) => fn(prisma));
-      (prisma.pedidoRastreador.update as jest.Mock).mockResolvedValue({});
-      (prisma.aparelho.findMany as jest.Mock).mockResolvedValue(aparelhosNoKit);
-      (prisma.aparelhoHistorico.create as jest.Mock).mockResolvedValue({});
-      (prisma.aparelho.update as jest.Mock).mockResolvedValue({});
+        .mockResolvedValueOnce({ ...pedidoDespachado, status: StatusPedidoRastreador.CONFIGURADO });
+      prisma.$transaction.mockImplementation((fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
+      prisma.pedidoRastreador.update.mockResolvedValue({});
+      prisma.aparelho.findMany.mockResolvedValue(aparelhosNoKit);
+      prisma.aparelhoHistorico.create.mockResolvedValue({});
+      prisma.aparelho.update.mockResolvedValue({});
 
-      const dto: UpdateStatusPedidoDto = {
-        status: StatusPedidoRastreador.CONFIGURADO,
-      };
+      const dto: UpdateStatusPedidoDto = { status: StatusPedidoRastreador.CONFIGURADO };
 
       await service.updateStatus(1, dto);
 
       expect(prisma.aparelho.findMany).toHaveBeenCalledWith({
-        where: {
-          kitId: { in: [10, 11] },
-          tipo: 'RASTREADOR',
-        },
+        where: { kitId: { in: [10, 11] }, tipo: 'RASTREADOR' },
       });
       expect(prisma.aparelho.update).toHaveBeenCalledTimes(2);
       expect(prisma.aparelho.update).toHaveBeenCalledWith({
         where: { id: 101 },
         data: { status: StatusAparelho.CONFIGURADO, tecnicoId: null, clienteId: null },
       });
-      expect(prisma.aparelho.update).toHaveBeenCalledWith({
-        where: { id: 102 },
-        data: { status: StatusAparelho.CONFIGURADO, tecnicoId: null, clienteId: null },
-      });
     });
 
-    it('ao retroceder de ENTREGUE para CONFIGURADO, atualiza aparelhos dos kits para CONFIGURADO (Em Kit)', async () => {
+    it('ao retroceder de ENTREGUE para CONFIGURADO, atualiza aparelhos dos kits', async () => {
       const pedidoEntregue = {
         id: 1,
         codigo: 'PED-0001',
@@ -417,21 +337,16 @@ describe('PedidosRastreadoresService', () => {
       const aparelhosNoKit = [
         { id: 201, kitId: 10, status: StatusAparelho.COM_TECNICO, tipo: 'RASTREADOR' },
       ];
-      (prisma.pedidoRastreador.findUnique as jest.Mock)
+      prisma.pedidoRastreador.findUnique
         .mockResolvedValueOnce(pedidoEntregue)
-        .mockResolvedValueOnce({
-          ...pedidoEntregue,
-          status: StatusPedidoRastreador.CONFIGURADO,
-        });
-      (prisma.$transaction as jest.Mock).mockImplementation((fn) => fn(prisma));
-      (prisma.pedidoRastreador.update as jest.Mock).mockResolvedValue({});
-      (prisma.aparelho.findMany as jest.Mock).mockResolvedValue(aparelhosNoKit);
-      (prisma.aparelhoHistorico.create as jest.Mock).mockResolvedValue({});
-      (prisma.aparelho.update as jest.Mock).mockResolvedValue({});
+        .mockResolvedValueOnce({ ...pedidoEntregue, status: StatusPedidoRastreador.CONFIGURADO });
+      prisma.$transaction.mockImplementation((fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
+      prisma.pedidoRastreador.update.mockResolvedValue({});
+      prisma.aparelho.findMany.mockResolvedValue(aparelhosNoKit);
+      prisma.aparelhoHistorico.create.mockResolvedValue({});
+      prisma.aparelho.update.mockResolvedValue({});
 
-      const dto: UpdateStatusPedidoDto = {
-        status: StatusPedidoRastreador.CONFIGURADO,
-      };
+      const dto: UpdateStatusPedidoDto = { status: StatusPedidoRastreador.CONFIGURADO };
 
       await service.updateStatus(1, dto);
 

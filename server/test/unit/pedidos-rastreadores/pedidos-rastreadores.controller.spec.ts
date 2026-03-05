@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PedidosRastreadoresController } from './pedidos-rastreadores.controller';
-import { PedidosRastreadoresService } from './pedidos-rastreadores.service';
-import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { PedidosRastreadoresController } from 'src/pedidos-rastreadores/pedidos-rastreadores.controller';
+import { PedidosRastreadoresService } from 'src/pedidos-rastreadores/pedidos-rastreadores.service';
+import { PermissionsGuard } from 'src/auth/guards/permissions.guard';
 import { StatusPedidoRastreador, TipoDestinoPedido } from '@prisma/client';
 
 describe('PedidosRastreadoresController', () => {
@@ -24,20 +24,14 @@ describe('PedidosRastreadoresController', () => {
       .useValue({ canActivate: () => true })
       .compile();
 
-    controller = module.get<PedidosRastreadoresController>(
-      PedidosRastreadoresController,
-    );
+    controller = module.get<PedidosRastreadoresController>(PedidosRastreadoresController);
     service = module.get<PedidosRastreadoresService>(PedidosRastreadoresService);
     jest.clearAllMocks();
   });
 
   describe('findOne', () => {
     it('converte id de string para número com unary plus e chama o service', async () => {
-      const pedido = {
-        id: 1,
-        codigo: 'PED-0001',
-        tipoDestino: TipoDestinoPedido.TECNICO,
-      };
+      const pedido = { id: 1, codigo: 'PED-0001', tipoDestino: TipoDestinoPedido.TECNICO };
       (service.findOne as jest.Mock).mockResolvedValue(pedido);
 
       const result = await controller.findOne('1');
@@ -86,11 +80,7 @@ describe('PedidosRastreadoresController', () => {
 
   describe('create', () => {
     it('chama o service create com o DTO e criadoPorId do usuário logado', async () => {
-      const dto = {
-        tipoDestino: TipoDestinoPedido.TECNICO,
-        tecnicoId: 1,
-        quantidade: 5,
-      };
+      const dto = { tipoDestino: TipoDestinoPedido.TECNICO, tecnicoId: 1, quantidade: 5 };
       const criado = { id: 1, codigo: 'PED-0001', ...dto };
       (service.create as jest.Mock).mockResolvedValue(criado);
 
