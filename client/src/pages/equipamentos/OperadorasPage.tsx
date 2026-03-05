@@ -5,6 +5,7 @@ import { Loader2, MoreVertical, Search, ArrowLeft, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -250,48 +251,44 @@ export function OperadorasPage() {
       </div>
 
       {/* Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-sm shadow-2xl overflow-hidden">
-            <header className="bg-white border-b border-slate-200 p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <MaterialIcon name="sim_card" className="text-blue-600" />
-                  <h2 className="text-lg font-bold text-slate-800">
-                    {editingOperadora ? 'Editar Operadora' : 'Nova Operadora'}
-                  </h2>
-                </div>
-                <button onClick={closeModal} className="text-slate-400 hover:text-slate-600">
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </header>
-            <div className="p-6">
-              <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                Nome da Operadora <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                placeholder="Ex: Vivo"
-                className="h-10"
-              />
+      <Dialog open={modalOpen} onOpenChange={(o) => !o && closeModal()}>
+        <DialogContent hideClose className="max-w-md p-0 gap-0 overflow-hidden rounded-sm">
+          <header className="bg-white border-b border-slate-200 p-6 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MaterialIcon name="sim_card" className="text-blue-600" />
+              <h2 className="text-lg font-bold text-slate-800">
+                {editingOperadora ? 'Editar Operadora' : 'Nova Operadora'}
+              </h2>
             </div>
-            <footer className="bg-slate-50 border-t border-slate-200 p-4 flex justify-end gap-3">
-              <Button variant="ghost" onClick={closeModal} disabled={isPending}>
-                Cancelar
-              </Button>
-              <Button
-                className="bg-blue-600 hover:bg-blue-700"
-                onClick={handleSave}
-                disabled={isPending}
-              >
-                {isPending ? 'Salvando...' : 'Salvar'}
-              </Button>
-            </footer>
+            <button onClick={closeModal} className="text-slate-400 hover:text-slate-600">
+              <X className="h-5 w-5" />
+            </button>
+          </header>
+          <div className="p-6">
+            <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+              Nome da Operadora <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              placeholder="Ex: Vivo"
+              className="h-10"
+            />
           </div>
-        </div>
-      )}
+          <footer className="bg-slate-50 border-t border-slate-200 p-4 flex justify-end gap-3">
+            <Button variant="ghost" onClick={closeModal} disabled={isPending}>
+              Cancelar
+            </Button>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={handleSave}
+              disabled={isPending}
+            >
+              {isPending ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </footer>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

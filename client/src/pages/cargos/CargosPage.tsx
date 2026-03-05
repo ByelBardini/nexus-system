@@ -2,10 +2,11 @@ import { useState, useEffect, useMemo } from 'react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Loader2, MoreVertical, Search, ChevronDown, ChevronRight, Check, ArrowLeft } from 'lucide-react'
+import { Loader2, MoreVertical, Search, ChevronDown, ChevronRight, Check, ArrowLeft, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -163,6 +164,7 @@ function agruparPermissoes(permissoes: Permission[]) {
 }
 
 interface CargoModalProps {
+  open: boolean
   cargo: Cargo | null
   isNew: boolean
   onClose: () => void
@@ -170,7 +172,7 @@ interface CargoModalProps {
   setores: Setor[]
 }
 
-function CargoModal({ cargo, isNew, onClose, permissoes, setores }: CargoModalProps) {
+function CargoModal({ open, cargo, isNew, onClose, permissoes, setores }: CargoModalProps) {
   const queryClient = useQueryClient()
 
   const [nome, setNome] = useState('')
@@ -336,15 +338,20 @@ function CargoModal({ cargo, isNew, onClose, permissoes, setores }: CargoModalPr
   const categoriaConfig = CATEGORIA_CONFIG[categoria]
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-[1000px] h-[90vh] rounded-sm shadow-2xl flex flex-col overflow-hidden">
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent hideClose className="max-w-[1000px] h-[90vh] p-0 gap-0 flex flex-col overflow-hidden rounded-sm">
         {/* Header */}
         <header className="bg-white border-b border-slate-200 p-6 shrink-0">
-          <div className="flex items-center gap-2 mb-6">
-            <MaterialIcon name="add_moderator" className="text-blue-600 font-bold" />
-            <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">
-              {isNew ? 'Novo Cargo' : 'Editar Cargo'}
-            </h2>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <MaterialIcon name="add_moderator" className="text-blue-600 font-bold" />
+              <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">
+                {isNew ? 'Novo Cargo' : 'Editar Cargo'}
+              </h2>
+            </div>
+            <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
+              <X className="h-5 w-5" />
+            </button>
           </div>
           <div className="grid grid-cols-12 gap-4">
             <div className="col-span-4">
@@ -592,21 +599,21 @@ function CargoModal({ cargo, isNew, onClose, permissoes, setores }: CargoModalPr
             </Button>
           </div>
         </footer>
-      </div>
 
-      <style>{`
-        .custom-scroll::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scroll::-webkit-scrollbar-track {
-          background: #f1f1f1;
-        }
-        .custom-scroll::-webkit-scrollbar-thumb {
-          background: #cbd5e1;
-          border-radius: 3px;
-        }
-      `}</style>
-    </div>
+        <style>{`
+          .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+          }
+          .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+          }
+          .custom-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+          }
+        `}</style>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -881,15 +888,14 @@ export function CargosPage() {
       </div>
 
       {/* Modal Unificado */}
-      {modalOpen && (
-        <CargoModal
-          cargo={editingCargo}
-          isNew={!editingCargo}
-          onClose={closeModal}
-          permissoes={permissoes}
-          setores={setores}
-        />
-      )}
+      <CargoModal
+        open={modalOpen}
+        cargo={editingCargo}
+        isNew={!editingCargo}
+        onClose={closeModal}
+        permissoes={permissoes}
+        setores={setores}
+      />
     </div>
   )
 }

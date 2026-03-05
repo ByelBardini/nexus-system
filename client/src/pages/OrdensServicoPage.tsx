@@ -3,17 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Loader2 } from 'lucide-react'
+import { Loader2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
@@ -471,13 +465,20 @@ export function OrdensServicoPage() {
       </div>
 
       <Dialog open={openCreate} onOpenChange={setOpenCreate}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto border-slate-300">
-          <DialogHeader>
-            <DialogTitle className="font-condensed">Nova Ordem de Serviço</DialogTitle>
-          </DialogHeader>
-          <form
+        <DialogContent hideClose className="max-w-lg p-0 gap-0 flex flex-col overflow-hidden rounded-sm max-h-[90vh]">
+          <header className="bg-white border-b border-slate-200 p-6 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2">
+              <MaterialIcon name="assignment" className="text-blue-600" />
+              <h2 className="text-lg font-bold text-slate-800">Nova Ordem de Serviço</h2>
+            </div>
+            <button onClick={() => setOpenCreate(false)} className="text-slate-400 hover:text-slate-600">
+              <X className="h-5 w-5" />
+            </button>
+          </header>
+          <div className="flex-1 overflow-y-auto">
+          <form id="os-form"
             onSubmit={form.handleSubmit(handleCreateSubmit as (d: FormData) => void)}
-            className="space-y-4"
+            className="p-6 space-y-4"
           >
             <div>
               <Label>Tipo</Label>
@@ -620,15 +621,16 @@ export function OrdensServicoPage() {
                 placeholder="Observações"
               />
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpenCreate(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? 'Salvando...' : 'Criar'}
-              </Button>
-            </DialogFooter>
           </form>
+          </div>
+          <footer className="bg-slate-50 border-t border-slate-200 p-4 flex justify-end gap-3 shrink-0">
+            <Button type="button" variant="ghost" onClick={() => setOpenCreate(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" form="os-form" className="bg-blue-600 hover:bg-blue-700" disabled={createMutation.isPending}>
+              {createMutation.isPending ? 'Salvando...' : 'Criar OS'}
+            </Button>
+          </footer>
         </DialogContent>
       </Dialog>
     </div>

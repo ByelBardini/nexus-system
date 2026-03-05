@@ -5,6 +5,7 @@ import { Loader2, MoreVertical, ArrowLeft, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
@@ -714,181 +715,164 @@ export function EquipamentosConfigPage() {
       </div>
 
       {/* Modal Marca */}
-      {modalMarcaOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-sm shadow-2xl overflow-hidden">
-            <header className="bg-white border-b border-slate-200 p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <MaterialIcon name="precision_manufacturing" className="text-blue-600" />
-                  <h2 className="text-lg font-bold text-slate-800">
-                    {editingMarca ? 'Editar Marca' : 'Nova Marca'}
-                  </h2>
-                </div>
-                <button onClick={closeModalMarca} className="text-slate-400 hover:text-slate-600">
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </header>
-            <div className="p-6">
-              <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                Nome da Marca <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                value={nomeMarca}
-                onChange={(e) => setNomeMarca(e.target.value)}
-                placeholder="Ex: Teltonika"
-                className="h-10"
-              />
+      <Dialog open={modalMarcaOpen} onOpenChange={(o) => !o && closeModalMarca()}>
+        <DialogContent hideClose className="max-w-md p-0 gap-0 overflow-hidden rounded-sm">
+          <header className="bg-white border-b border-slate-200 p-6 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MaterialIcon name="precision_manufacturing" className="text-blue-600" />
+              <h2 className="text-lg font-bold text-slate-800">
+                {editingMarca ? 'Editar Marca' : 'Nova Marca'}
+              </h2>
             </div>
-            <footer className="bg-slate-50 border-t border-slate-200 p-4 flex justify-end gap-3">
-              <Button variant="ghost" onClick={closeModalMarca}>
-                Cancelar
-              </Button>
-              <Button
-                className="bg-blue-600 hover:bg-blue-700"
-                onClick={handleSaveMarca}
-                disabled={createMarcaMutation.isPending || updateMarcaMutation.isPending}
-              >
-                {createMarcaMutation.isPending || updateMarcaMutation.isPending
-                  ? 'Salvando...'
-                  : 'Salvar'}
-              </Button>
-            </footer>
+            <button onClick={closeModalMarca} className="text-slate-400 hover:text-slate-600">
+              <X className="h-5 w-5" />
+            </button>
+          </header>
+          <div className="p-6">
+            <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+              Nome da Marca <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              value={nomeMarca}
+              onChange={(e) => setNomeMarca(e.target.value)}
+              placeholder="Ex: Teltonika"
+              className="h-10"
+            />
           </div>
-        </div>
-      )}
+          <footer className="bg-slate-50 border-t border-slate-200 p-4 flex justify-end gap-3">
+            <Button variant="ghost" onClick={closeModalMarca}>
+              Cancelar
+            </Button>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={handleSaveMarca}
+              disabled={createMarcaMutation.isPending || updateMarcaMutation.isPending}
+            >
+              {createMarcaMutation.isPending || updateMarcaMutation.isPending
+                ? 'Salvando...'
+                : 'Salvar'}
+            </Button>
+          </footer>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal Modelo */}
-      {modalModeloOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-sm shadow-2xl overflow-hidden">
-            <header className="bg-white border-b border-slate-200 p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <MaterialIcon name="devices" className="text-blue-600" />
-                  <h2 className="text-lg font-bold text-slate-800">
-                    {editingModelo ? 'Editar Modelo' : 'Novo Modelo'}
-                  </h2>
-                </div>
-                <button onClick={closeModalModelo} className="text-slate-400 hover:text-slate-600">
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </header>
-            <div className="p-6 space-y-4">
-              {!editingModelo && (
-                <div>
-                  <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                    Marca <span className="text-red-500">*</span>
-                  </Label>
-                  <Select
-                    value={marcaIdForModelo}
-                    onValueChange={setMarcaIdForModelo}
-                  >
-                    <SelectTrigger className="h-10">
-                      <SelectValue placeholder="Selecione uma marca..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {marcasAtivas.map((m) => (
-                        <SelectItem key={m.id} value={String(m.id)}>
-                          {m.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              {editingModelo && (
-                <div>
-                  <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                    Marca
-                  </Label>
-                  <div className="h-10 px-3 flex items-center bg-slate-50 border border-slate-200 rounded-md text-sm text-slate-600">
-                    {editingModelo.marca.nome}
-                  </div>
-                </div>
-              )}
+      <Dialog open={modalModeloOpen} onOpenChange={(o) => !o && closeModalModelo()}>
+        <DialogContent hideClose className="max-w-md p-0 gap-0 overflow-hidden rounded-sm">
+          <header className="bg-white border-b border-slate-200 p-6 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MaterialIcon name="devices" className="text-blue-600" />
+              <h2 className="text-lg font-bold text-slate-800">
+                {editingModelo ? 'Editar Modelo' : 'Novo Modelo'}
+              </h2>
+            </div>
+            <button onClick={closeModalModelo} className="text-slate-400 hover:text-slate-600">
+              <X className="h-5 w-5" />
+            </button>
+          </header>
+          <div className="p-6 space-y-4">
+            {!editingModelo && (
               <div>
                 <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                  Nome do Modelo <span className="text-red-500">*</span>
+                  Marca <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  value={nomeModelo}
-                  onChange={(e) => setNomeModelo(e.target.value)}
-                  placeholder="Ex: FMB920"
-                  className="h-10"
-                />
-              </div>
-            </div>
-            <footer className="bg-slate-50 border-t border-slate-200 p-4 flex justify-end gap-3">
-              <Button variant="ghost" onClick={closeModalModelo}>
-                Cancelar
-              </Button>
-              <Button
-                className="bg-blue-600 hover:bg-blue-700"
-                onClick={handleSaveModelo}
-                disabled={createModeloMutation.isPending || updateModeloMutation.isPending}
-              >
-                {createModeloMutation.isPending || updateModeloMutation.isPending
-                  ? 'Salvando...'
-                  : 'Salvar'}
-              </Button>
-            </footer>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Operadora */}
-      {modalOperadoraOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-sm shadow-2xl overflow-hidden">
-            <header className="bg-white border-b border-slate-200 p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <MaterialIcon name="signal_cellular_alt" className="text-blue-600" />
-                  <h2 className="text-lg font-bold text-slate-800">
-                    {editingOperadora ? 'Editar Operadora' : 'Nova Operadora'}
-                  </h2>
-                </div>
-                <button
-                  onClick={closeModalOperadora}
-                  className="text-slate-400 hover:text-slate-600"
+                <Select
+                  value={marcaIdForModelo}
+                  onValueChange={setMarcaIdForModelo}
                 >
-                  <X className="h-5 w-5" />
-                </button>
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="Selecione uma marca..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {marcasAtivas.map((m) => (
+                      <SelectItem key={m.id} value={String(m.id)}>
+                        {m.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </header>
-            <div className="p-6">
+            )}
+            {editingModelo && (
+              <div>
+                <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                  Marca
+                </Label>
+                <div className="h-10 px-3 flex items-center bg-slate-50 border border-slate-200 rounded-md text-sm text-slate-600">
+                  {editingModelo.marca.nome}
+                </div>
+              </div>
+            )}
+            <div>
               <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                Nome da Operadora <span className="text-red-500">*</span>
+                Nome do Modelo <span className="text-red-500">*</span>
               </Label>
               <Input
-                value={nomeOperadora}
-                onChange={(e) => setNomeOperadora(e.target.value)}
-                placeholder="Ex: Vivo"
+                value={nomeModelo}
+                onChange={(e) => setNomeModelo(e.target.value)}
+                placeholder="Ex: FMB920"
                 className="h-10"
               />
             </div>
-            <footer className="bg-slate-50 border-t border-slate-200 p-4 flex justify-end gap-3">
-              <Button variant="ghost" onClick={closeModalOperadora}>
-                Cancelar
-              </Button>
-              <Button
-                className="bg-blue-600 hover:bg-blue-700"
-                onClick={handleSaveOperadora}
-                disabled={
-                  createOperadoraMutation.isPending || updateOperadoraMutation.isPending
-                }
-              >
-                {createOperadoraMutation.isPending || updateOperadoraMutation.isPending
-                  ? 'Salvando...'
-                  : 'Salvar'}
-              </Button>
-            </footer>
           </div>
-        </div>
-      )}
+          <footer className="bg-slate-50 border-t border-slate-200 p-4 flex justify-end gap-3">
+            <Button variant="ghost" onClick={closeModalModelo}>
+              Cancelar
+            </Button>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={handleSaveModelo}
+              disabled={createModeloMutation.isPending || updateModeloMutation.isPending}
+            >
+              {createModeloMutation.isPending || updateModeloMutation.isPending
+                ? 'Salvando...'
+                : 'Salvar'}
+            </Button>
+          </footer>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Operadora */}
+      <Dialog open={modalOperadoraOpen} onOpenChange={(o) => !o && closeModalOperadora()}>
+        <DialogContent hideClose className="max-w-md p-0 gap-0 overflow-hidden rounded-sm">
+          <header className="bg-white border-b border-slate-200 p-6 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MaterialIcon name="sim_card" className="text-blue-600" />
+              <h2 className="text-lg font-bold text-slate-800">
+                {editingOperadora ? 'Editar Operadora' : 'Nova Operadora'}
+              </h2>
+            </div>
+            <button onClick={closeModalOperadora} className="text-slate-400 hover:text-slate-600">
+              <X className="h-5 w-5" />
+            </button>
+          </header>
+          <div className="p-6">
+            <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+              Nome da Operadora <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              value={nomeOperadora}
+              onChange={(e) => setNomeOperadora(e.target.value)}
+              placeholder="Ex: Vivo"
+              className="h-10"
+            />
+          </div>
+          <footer className="bg-slate-50 border-t border-slate-200 p-4 flex justify-end gap-3">
+            <Button variant="ghost" onClick={closeModalOperadora}>
+              Cancelar
+            </Button>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={handleSaveOperadora}
+              disabled={createOperadoraMutation.isPending || updateOperadoraMutation.isPending}
+            >
+              {createOperadoraMutation.isPending || updateOperadoraMutation.isPending
+                ? 'Salvando...'
+                : 'Salvar'}
+            </Button>
+          </footer>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

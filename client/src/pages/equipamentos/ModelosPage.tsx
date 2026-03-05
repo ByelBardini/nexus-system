@@ -5,6 +5,7 @@ import { Loader2, MoreVertical, Search, ArrowLeft, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
@@ -313,77 +314,73 @@ export function ModelosPage() {
       </div>
 
       {/* Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-sm shadow-2xl overflow-hidden">
-            <header className="bg-white border-b border-slate-200 p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <MaterialIcon name="devices" className="text-blue-600" />
-                  <h2 className="text-lg font-bold text-slate-800">
-                    {editingModelo ? 'Editar Modelo' : 'Novo Modelo'}
-                  </h2>
-                </div>
-                <button onClick={closeModal} className="text-slate-400 hover:text-slate-600">
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </header>
-            <div className="p-6 space-y-4">
-              {!editingModelo && (
-                <div>
-                  <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                    Marca <span className="text-red-500">*</span>
-                  </Label>
-                  <Select value={marcaId} onValueChange={setMarcaId}>
-                    <SelectTrigger className="h-10">
-                      <SelectValue placeholder="Selecione uma marca..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {marcasAtivas.map((m) => (
-                        <SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              {editingModelo && (
-                <div>
-                  <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                    Marca
-                  </Label>
-                  <div className="h-10 px-3 flex items-center bg-slate-50 border border-slate-200 rounded-md text-sm text-slate-600">
-                    {editingModelo.marca.nome}
-                  </div>
-                </div>
-              )}
+      <Dialog open={modalOpen} onOpenChange={(o) => !o && closeModal()}>
+        <DialogContent hideClose className="max-w-md p-0 gap-0 overflow-hidden rounded-sm">
+          <header className="bg-white border-b border-slate-200 p-6 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MaterialIcon name="devices" className="text-blue-600" />
+              <h2 className="text-lg font-bold text-slate-800">
+                {editingModelo ? 'Editar Modelo' : 'Novo Modelo'}
+              </h2>
+            </div>
+            <button onClick={closeModal} className="text-slate-400 hover:text-slate-600">
+              <X className="h-5 w-5" />
+            </button>
+          </header>
+          <div className="p-6 space-y-4">
+            {!editingModelo && (
               <div>
                 <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                  Nome do Modelo <span className="text-red-500">*</span>
+                  Marca <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  value={nome}
-                  onChange={(e) => setNome(e.target.value)}
-                  placeholder="Ex: ST310UC"
-                  className="h-10"
-                />
+                <Select value={marcaId} onValueChange={setMarcaId}>
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="Selecione uma marca..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {marcasAtivas.map((m) => (
+                      <SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+            )}
+            {editingModelo && (
+              <div>
+                <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                  Marca
+                </Label>
+                <div className="h-10 px-3 flex items-center bg-slate-50 border border-slate-200 rounded-md text-sm text-slate-600">
+                  {editingModelo.marca.nome}
+                </div>
+              </div>
+            )}
+            <div>
+              <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                Nome do Modelo <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                placeholder="Ex: ST310UC"
+                className="h-10"
+              />
             </div>
-            <footer className="bg-slate-50 border-t border-slate-200 p-4 flex justify-end gap-3">
-              <Button variant="ghost" onClick={closeModal} disabled={isPending}>
-                Cancelar
-              </Button>
-              <Button
-                className="bg-blue-600 hover:bg-blue-700"
-                onClick={handleSave}
-                disabled={isPending}
-              >
-                {isPending ? 'Salvando...' : 'Salvar'}
-              </Button>
-            </footer>
           </div>
-        </div>
-      )}
+          <footer className="bg-slate-50 border-t border-slate-200 p-4 flex justify-end gap-3">
+            <Button variant="ghost" onClick={closeModal} disabled={isPending}>
+              Cancelar
+            </Button>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={handleSave}
+              disabled={isPending}
+            >
+              {isPending ? 'Salvando...' : 'Salvar'}
+            </Button>
+          </footer>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

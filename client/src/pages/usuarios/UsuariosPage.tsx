@@ -798,7 +798,7 @@ export function UsuariosPage() {
         <DialogContent className="max-w-6xl h-[90vh] p-0 gap-0 flex flex-col overflow-hidden">
           <div className="h-16 border-b border-slate-200 px-8 flex items-center justify-between shrink-0 bg-white">
             <div className="flex items-center gap-4">
-              <MaterialIcon name="person_add" className="text-slate-400 text-xl" />
+              <MaterialIcon name="person_add" className="text-blue-600 text-xl" />
               <span className="text-base font-bold text-slate-800 uppercase tracking-tight">
                 Configuração de Novo Usuário
               </span>
@@ -1073,7 +1073,7 @@ export function UsuariosPage() {
         <DialogContent className="max-w-6xl h-[90vh] p-0 gap-0 flex flex-col overflow-hidden">
           <div className="h-16 border-b border-slate-200 px-8 flex items-center justify-between shrink-0 bg-white">
             <div className="flex items-center gap-4">
-              <MaterialIcon name="edit" className="text-slate-400 text-xl" />
+              <MaterialIcon name="edit" className="text-blue-600 text-xl" />
               <span className="text-base font-bold text-slate-800 uppercase tracking-tight">
                 Editar Usuário
               </span>

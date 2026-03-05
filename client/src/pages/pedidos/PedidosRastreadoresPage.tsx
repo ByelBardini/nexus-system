@@ -3,7 +3,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Loader2 } from 'lucide-react'
+import { Loader2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -481,13 +481,16 @@ function ModalNovoPedido({
         onOpenChange(o)
       }}
     >
-      <DialogContent className="p-0 max-w-[600px] gap-0 overflow-hidden border-slate-200">
-        <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white">
-          <div className="flex items-center gap-2 text-erp-blue">
-            <MaterialIcon name="add_circle" className="text-xl" />
+      <DialogContent hideClose className="p-0 max-w-[600px] gap-0 overflow-hidden rounded-sm border-slate-200">
+        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <MaterialIcon name="add_circle" className="text-xl text-blue-600" />
             <h2 className="text-base font-bold text-slate-800">Novo Pedido de Rastreador</h2>
           </div>
-        </div>
+          <button onClick={handleClose} className="text-slate-400 hover:text-slate-600">
+            <X className="h-5 w-5" />
+          </button>
+        </header>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <div className="p-6 space-y-6 overflow-y-auto max-h-[75vh]">
             <div className="grid grid-cols-3 gap-4">
@@ -811,7 +814,7 @@ function ModalNovoPedido({
 
               {destinatarioSelecionado && (
                 <div className="bg-slate-50 border border-slate-200 rounded p-4 flex items-start gap-4">
-                  <div className="bg-blue-100 text-erp-blue p-2 rounded shrink-0">
+                  <div className="bg-blue-100 text-blue-600 p-2 rounded shrink-0">
                     <MaterialIcon
                       name={tipoDestino === 'TECNICO' ? 'engineering' : 'business'}
                       className="text-lg"
@@ -921,19 +924,18 @@ function ModalNovoPedido({
             )}
           </div>
 
-          <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-3">
+          <footer className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-3 shrink-0">
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               onClick={handleClose}
-              className="text-xs font-bold uppercase tracking-wide"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
               disabled={createMutation.isPending}
-              className="bg-erp-blue hover:bg-blue-700 text-xs font-bold uppercase tracking-wide px-6"
+              className="bg-blue-600 hover:bg-blue-700"
             >
               {createMutation.isPending ? (
                 <>
@@ -944,7 +946,7 @@ function ModalNovoPedido({
                 'Enviar Solicitação'
               )}
             </Button>
-          </div>
+          </footer>
         </form>
       </DialogContent>
     </Dialog>

@@ -8,6 +8,8 @@ import { Dialog, DialogContent } from '@/components/ui/dialog'
 import {
   Sheet,
   SheetContent,
+  SheetHeader,
+  SheetTitle,
 } from '@/components/ui/sheet'
 import { MaterialIcon } from '@/components/MaterialIcon'
 import { api } from '@/lib/api'
@@ -516,13 +518,11 @@ function ModalSelecaoEKit({
       >
         {step === 'selecao' ? (
           <>
-            <div className="px-6 py-5 border-b border-slate-200 flex justify-between items-center">
+            <header className="bg-white border-b border-slate-200 px-6 py-5 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
-                <div className="bg-blue-50 p-2 rounded text-erp-blue">
-                  <MaterialIcon name="hub" />
-                </div>
+                <MaterialIcon name="hub" className="text-blue-600" />
                 <div>
-                  <h2 className="text-base font-bold text-slate-800 uppercase tracking-tight font-condensed">
+                  <h2 className="text-base font-bold text-slate-800 uppercase tracking-tight">
                     Seleção de Kit
                   </h2>
                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
@@ -533,13 +533,13 @@ function ModalSelecaoEKit({
               <div className="flex items-center gap-4">
                 <Button
                   onClick={() => setShowCriarNovo(true)}
-                  className="bg-erp-blue hover:bg-blue-700 text-xs font-bold uppercase"
+                  className="bg-blue-600 hover:bg-blue-700 text-xs font-bold uppercase"
                 >
                   <MaterialIcon name="add_box" className="text-lg" />
                   Criar Novo Kit
                 </Button>
               </div>
-            </div>
+            </header>
             {showCriarNovo && (
               <div className="px-6 py-3 bg-slate-50 border-b flex gap-2 items-center">
                 <Input
@@ -642,13 +642,11 @@ function ModalSelecaoEKit({
           </>
         ) : (
           <>
-            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+            <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
-                <div className="bg-slate-100 p-2 rounded text-slate-600">
-                  <MaterialIcon name="inventory" />
-                </div>
+                <MaterialIcon name="inventory" className="text-blue-600" />
                 <div>
-                  <h2 className="text-base font-bold text-slate-800 uppercase tracking-tight font-condensed">
+                  <h2 className="text-base font-bold text-slate-800 uppercase tracking-tight">
                     Editar Kit — {kitSelecionado?.nome}
                   </h2>
                   <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
@@ -659,7 +657,7 @@ function ModalSelecaoEKit({
               <Button variant="ghost" size="sm" onClick={handleVoltar}>
                 <MaterialIcon name="arrow_back" /> Voltar
               </Button>
-            </div>
+            </header>
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {pedido && (
                 <section>
@@ -883,7 +881,7 @@ function ModalSelecaoEKit({
                 </div>
               </section>
             </div>
-            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+            <footer className="bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-between items-center shrink-0">
               <span
                 className={cn(
                   'text-[10px] font-bold px-3 py-1 rounded-full border uppercase flex items-center gap-1.5',
@@ -896,18 +894,18 @@ function ModalSelecaoEKit({
                 {progressQtd >= qtdEsperada ? 'Kit Completo' : `Em andamento (${progressQtd}/${qtdEsperada})`}
               </span>
               <div className="flex gap-3">
-                <Button variant="outline" size="sm" onClick={handleClose}>
+                <Button variant="ghost" size="sm" onClick={handleClose}>
                   Cancelar
                 </Button>
                 <Button
                   size="sm"
                   onClick={handleSalvarEVincular}
-                  className="bg-erp-blue hover:bg-blue-700"
+                  className="bg-blue-600 hover:bg-blue-700"
                 >
                   Salvar e Vincular ao Pedido
                 </Button>
               </div>
-            </div>
+            </footer>
           </>
         )}
       </DialogContent>
@@ -1109,7 +1107,7 @@ function SidePanel({
         side="right"
         className="w-[580px] max-w-[95vw] sm:max-w-[580px] p-0 flex flex-col overflow-y-auto"
       >
-        <div className="p-6 border-b border-slate-100 bg-slate-50/50">
+        <SheetHeader className="p-6 border-b border-slate-100 bg-slate-50/50">
           <div className="mb-4">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
@@ -1132,7 +1130,7 @@ function SidePanel({
                 </span>
               )}
             </div>
-            <h2 className="text-xl font-bold text-slate-900">{pedido.codigo}</h2>
+            <SheetTitle className="text-xl font-bold text-slate-900">{pedido.codigo}</SheetTitle>
           </div>
           <div className="grid grid-cols-2 gap-4 text-xs">
             <div>
@@ -1189,7 +1187,7 @@ function SidePanel({
               </div>
             )}
           </div>
-        </div>
+        </SheetHeader>
 
         <div className="p-6 border-b border-slate-100">
           {estaConcluido ? (
@@ -1485,7 +1483,7 @@ function SidePanel({
               <Label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">
                 Tipo de envio
               </Label>
-              <div className="flex gap-2 flex-wrap">
+              <div className="grid grid-cols-3 gap-2">
                 {[
                   { value: 'TRANSPORTADORA' as const, label: 'Transportadora', icon: 'local_shipping' },
                   { value: 'CORREIOS' as const, label: 'Correios', icon: 'mail' },
@@ -1496,7 +1494,7 @@ function SidePanel({
                     type="button"
                     onClick={() => onTipoDespachoChange(opt.value)}
                     className={cn(
-                      'flex items-center gap-1.5 px-3 py-2 rounded-sm text-[11px] font-bold uppercase border transition-colors',
+                      'flex items-center justify-center gap-1.5 px-3 py-2 rounded-sm text-[11px] font-bold uppercase border transition-colors w-full',
                       tipoDespacho === opt.value
                         ? 'bg-erp-blue text-white border-erp-blue'
                         : 'bg-white text-slate-600 border-slate-300 hover:border-slate-400'

@@ -28,6 +28,8 @@ import { InputTelefone } from '@/components/InputTelefone'
 import { InputCEP } from '@/components/InputCEP'
 import { SelectUF } from '@/components/SelectUF'
 import { SelectCidade } from '@/components/SelectCidade'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { MaterialIcon } from '@/components/MaterialIcon'
 import { api } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
@@ -605,26 +607,24 @@ export function TecnicosPage() {
       </div>
 
       {/* Modal de Cadastro/Edição */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)' }}>
-          <div className="bg-white w-full max-w-[900px] h-[90vh] flex flex-col shadow-2xl rounded-sm overflow-hidden border border-slate-300">
-            {/* Header */}
-            <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white shrink-0">
-              <div>
-                <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                  <Plus className="h-5 w-5 text-blue-600" />
-                  {editingTecnico ? 'Editar Técnico' : 'Novo Técnico'}
-                </h2>
-                <p className="text-xs text-slate-500">Cadastro de prestador para execução de serviços</p>
-              </div>
-              <button
-                type="button"
-                onClick={closeModal}
-                className="text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
+      <Dialog open={modalOpen} onOpenChange={(o) => !o && closeModal()}>
+        <DialogContent hideClose className="max-w-[900px] h-[90vh] p-0 gap-0 flex flex-col overflow-hidden rounded-sm">
+          {/* Header */}
+          <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-2">
+              <MaterialIcon name="engineering" className="text-blue-600" />
+              <h2 className="text-lg font-bold text-slate-800">
+                {editingTecnico ? 'Editar Técnico' : 'Novo Técnico'}
+              </h2>
             </div>
+            <button
+              type="button"
+              onClick={closeModal}
+              className="text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </header>
 
             {/* Content */}
             <div className="flex flex-1 overflow-hidden">
@@ -923,39 +923,27 @@ export function TecnicosPage() {
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="px-6 py-4 border-t border-slate-200 flex justify-end gap-3 bg-white shrink-0">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={closeModal}
-                className="px-6 uppercase text-sm font-bold"
-                disabled={isSubmitting}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                form="tecnico-form"
-                className="px-8 uppercase text-sm font-bold gap-2"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Salvando...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="h-4 w-4" />
-                    Salvar Técnico
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+          {/* Footer */}
+          <footer className="bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-end gap-3 shrink-0">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={closeModal}
+              disabled={isSubmitting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              form="tecnico-form"
+              className="bg-blue-600 hover:bg-blue-700"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Salvando...' : 'Salvar Técnico'}
+            </Button>
+          </footer>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
