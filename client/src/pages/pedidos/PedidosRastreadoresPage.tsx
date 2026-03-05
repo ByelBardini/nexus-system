@@ -397,14 +397,14 @@ function ModalNovoPedido({
     const opts: Array<{ tipo: 'cliente' | 'subcliente'; id: number; label: string; item: ClienteComSubclientes | SubclienteResumo & { cliente?: ClienteResumo } }> = []
     clientes.forEach((c) => {
       opts.push({ tipo: 'cliente', id: c.id, label: c.nome, item: c })
-      ;(c.subclientes ?? []).forEach((s) => {
-        opts.push({
-          tipo: 'subcliente',
-          id: s.id,
-          label: `${s.nome} — ${c.nome}`,
-          item: { ...s, cliente: c },
+        ; (c.subclientes ?? []).forEach((s) => {
+          opts.push({
+            tipo: 'subcliente',
+            id: s.id,
+            label: `${s.nome} — ${c.nome}`,
+            item: { ...s, cliente: c },
+          })
         })
-      })
     })
     return opts
   }, [clientes])
@@ -734,15 +734,15 @@ function ModalNovoPedido({
                         <SelectContent>
                           {tipoDestino === 'TECNICO'
                             ? tecnicos.map((t) => (
-                                <SelectItem key={t.id} value={String(t.id)}>
-                                  {t.nome} (Técnico)
-                                </SelectItem>
-                              ))
+                              <SelectItem key={t.id} value={String(t.id)}>
+                                {t.nome} (Técnico)
+                              </SelectItem>
+                            ))
                             : opcoesCliente.map((o) => (
-                                <SelectItem key={`${o.tipo}-${o.id}`} value={`${o.tipo}-${o.id}`}>
-                                  {o.label}
-                                </SelectItem>
-                              ))}
+                              <SelectItem key={`${o.tipo}-${o.id}`} value={`${o.tipo}-${o.id}`}>
+                                {o.label}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -1027,10 +1027,10 @@ function DrawerDetalhes({
                 <p className="text-xs font-semibold text-slate-700">
                   {pedido.dataSolicitacao
                     ? new Date(pedido.dataSolicitacao).toLocaleDateString('pt-BR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                      })
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                    })
                     : '-'}
                 </p>
               </div>

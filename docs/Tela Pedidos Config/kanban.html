@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Configuration &amp; Kit Assembly Workspace - Industrial ERP</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <style type="text/tailwindcss">
+        :root {
+            --sidebar-bg: #1E293B;
+            --sidebar-hover: #334155;
+            --background-gray: #F1F5F9;
+            --border-subtle: #E2E8F0;
+            --primary-blue: #2563EB;
+            --industrial-dark: #0F172A;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-gray);
+        }
+        .sidebar-item {
+            @apply flex items-center gap-3 px-4 py-2 text-slate-300 hover:bg-[var(--sidebar-hover)] hover:text-white transition-all text-sm;
+        }
+        .sidebar-item.active {
+            @apply bg-[var(--sidebar-hover)] text-white border-r-4 border-blue-500;
+        }
+        .sidebar-group-title {
+            @apply px-4 py-2 mt-4 text-[10px] font-bold uppercase tracking-wider text-slate-500;
+        }
+        .kanban-column {
+            @apply flex-1 min-w-[280px] max-w-[320px] flex flex-col h-full bg-slate-200/50 rounded-sm p-3;
+        }
+        .kanban-header {
+            @apply flex items-center gap-2 mb-4 px-1;
+        }
+        .kanban-title {
+            @apply text-[11px] font-bold uppercase tracking-wider text-slate-600;
+        }
+        .kanban-card {
+            @apply bg-white border border-slate-200 p-4 mb-3 rounded shadow-sm hover:ring-2 hover:ring-blue-500/30 transition-all cursor-pointer;
+        }
+        .kanban-card.active {
+            @apply ring-2 ring-blue-500 border-blue-200 bg-blue-50/30;
+        }
+        .input-search {
+            @apply h-9 px-3 border border-slate-300 rounded-sm text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white;
+        }
+        .side-panel {
+            @apply w-[450px] bg-white border-l border-slate-200 h-full overflow-y-auto flex flex-col shadow-2xl;
+        }
+        .panel-section {
+            @apply p-6 border-b border-slate-100;
+        }
+        .progress-bar-bg {
+            @apply h-1.5 w-full bg-slate-100 rounded-full overflow-hidden;
+        }
+        .progress-bar-fill {
+            @apply h-full bg-blue-600 rounded-full;
+        }
+        .timeline-item {
+            @apply relative pl-6 pb-4 border-l border-slate-200 last:border-0;
+        }
+        .timeline-dot {
+            @apply absolute -left-[5px] top-1 w-2.5 h-2.5 rounded-full bg-slate-300 border-2 border-white;
+        }
+    </style>
+</head>
+
+<body class="text-slate-900 antialiased overflow-hidden">
+    <div class="flex h-screen">
+        <aside class="w-64 bg-[var(--sidebar-bg)] flex flex-col fixed h-screen z-20 overflow-y-auto">
+            <div class="p-6 flex items-center gap-3 border-b border-slate-700/50 mb-2">
+                <div class="bg-blue-600 p-1.5 rounded-sm">
+                    <span
+                        class="material-symbols-outlined text-white text-xl leading-none">precision_manufacturing</span>
+                </div>
+                <span class="text-white font-bold tracking-tight uppercase text-sm">Industrial Hub</span>
+            </div>
+            <nav class="flex-1">
+                <div class="sidebar-group-title">Operação</div>
+                <a class="sidebar-item" href="#">
+                    <span class="material-symbols-outlined text-lg">dashboard</span>
+                    <span>Dashboard</span>
+                </a>
+                <a class="sidebar-item" href="#">
+                    <span class="material-symbols-outlined text-lg">list_alt</span>
+                    <span>Ordens de Serviço</span>
+                </a>
+                <div class="sidebar-group-title">Logística &amp; Kits</div>
+                <a class="sidebar-item active" href="#">
+                    <span class="material-symbols-outlined text-lg">settings_suggest</span>
+                    <span>Workspace Config.</span>
+                </a>
+                <a class="sidebar-item" href="#">
+                    <span class="material-symbols-outlined text-lg">package_2</span>
+                    <span>Kits Prontos</span>
+                </a>
+                <div class="sidebar-group-title">Gestão</div>
+                <a class="sidebar-item" href="#">
+                    <span class="material-symbols-outlined text-lg">inventory_2</span>
+                    <span>Estoque</span>
+                </a>
+            </nav>
+            <div class="p-4 border-t border-slate-700/50">
+                <div class="flex items-center gap-3 px-2 py-3 text-slate-400">
+                    <div
+                        class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-white">
+                        JD</div>
+                    <div class="flex flex-col overflow-hidden">
+                        <span class="text-xs text-white font-medium truncate">João D. Operador</span>
+                        <span class="text-[10px] uppercase font-bold text-slate-500 tracking-tighter">Técnico Nível
+                            2</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        <main class="flex-1 ml-64 flex flex-col h-screen overflow-hidden">
+            <header
+                class="h-20 bg-white border-b border-[var(--border-subtle)] flex items-center justify-between px-8 shrink-0 z-10">
+                <div>
+                    <h1 class="text-lg font-bold text-slate-800">Configuration &amp; Kit Assembly</h1>
+                    <p class="text-xs text-slate-500">Workspace de montagem e parametrização de equipamentos</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="relative">
+                        <span
+                            class="material-symbols-outlined absolute left-2.5 top-2 text-slate-400 text-lg">search</span>
+                        <input class="input-search pl-9 w-64" placeholder="Buscar por PED, Técnico ou IMEI..."
+                            type="text" />
+                    </div>
+                </div>
+            </header>
+            <div class="flex flex-1 overflow-hidden">
+                <div class="flex-1 overflow-x-auto p-6 overflow-y-hidden bg-slate-50">
+                    <div class="flex h-full gap-4 min-w-max">
+                        <div class="kanban-column">
+                            <div class="kanban-header">
+                                <div class="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
+                                <span class="kanban-title">Solicitado</span>
+                                <span
+                                    class="ml-auto text-[10px] font-bold text-slate-400 bg-white px-1.5 py-0.5 rounded border border-slate-200">1</span>
+                            </div>
+                            <div class="flex-1 overflow-y-auto">
+                                <div class="kanban-card">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <span
+                                            class="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">PED-0045</span>
+                                    </div>
+                                    <h3 class="text-sm font-bold text-slate-800 mb-1 leading-tight">Logística
+                                        Transnacional</h3>
+                                    <div class="text-[11px] text-slate-500 mb-3">Técnico: Terceirizado</div>
+                                    <div class="space-y-1.5">
+                                        <div class="flex justify-between text-[10px] font-bold text-slate-600">
+                                            <span>Progresso de Montagem</span>
+                                            <span>0 / 04</span>
+                                        </div>
+                                        <div class="progress-bar-bg">
+                                            <div class="progress-bar-fill w-0"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="kanban-column">
+                            <div class="kanban-header">
+                                <div class="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
+                                <span class="kanban-title">Em Configuração</span>
+                                <span
+                                    class="ml-auto text-[10px] font-bold text-slate-400 bg-white px-1.5 py-0.5 rounded border border-slate-200">1</span>
+                            </div>
+                            <div class="flex-1 overflow-y-auto">
+                                <div class="kanban-card active">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <span
+                                            class="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">PED-0038</span>
+                                    </div>
+                                    <h3 class="text-sm font-bold text-slate-800 mb-1 leading-tight">Agro Cerrado Unidade
+                                        II</h3>
+                                    <div class="text-[11px] text-slate-500 mb-3">Técnico: Carlos Mendes</div>
+                                    <div class="space-y-1.5">
+                                        <div class="flex justify-between text-[10px] font-bold text-slate-600">
+                                            <span>Progresso de Montagem</span>
+                                            <span class="text-blue-600">6 / 15</span>
+                                        </div>
+                                        <div class="progress-bar-bg">
+                                            <div class="progress-bar-fill w-[40%]"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="kanban-column">
+                            <div class="kanban-header">
+                                <div class="w-2.5 h-2.5 rounded-full bg-purple-500"></div>
+                                <span class="kanban-title">Configurado</span>
+                                <span
+                                    class="ml-auto text-[10px] font-bold text-slate-400 bg-white px-1.5 py-0.5 rounded border border-slate-200">0</span>
+                            </div>
+                            <div
+                                class="flex-1 border-2 border-dashed border-slate-300 rounded m-2 flex flex-col items-center justify-center text-slate-400 italic text-[11px]">
+                                Aguardando finalização
+                            </div>
+                        </div>
+                        <div class="kanban-column">
+                            <div class="kanban-header">
+                                <div class="w-2.5 h-2.5 rounded-full bg-orange-500"></div>
+                                <span class="kanban-title">Despachado</span>
+                                <span
+                                    class="ml-auto text-[10px] font-bold text-slate-400 bg-white px-1.5 py-0.5 rounded border border-slate-200">0</span>
+                            </div>
+                        </div>
+                        <div class="kanban-column">
+                            <div class="kanban-header">
+                                <div class="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                                <span class="kanban-title">Entregue</span>
+                                <span
+                                    class="ml-auto text-[10px] font-bold text-slate-400 bg-white px-1.5 py-0.5 rounded border border-slate-200">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <aside class="side-panel">
+                    <div class="panel-section bg-slate-50/50">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pedido em
+                                    Foco</span>
+                                <h2 class="text-xl font-bold text-slate-900">PED-0038</h2>
+                            </div>
+                            <button class="text-slate-400 hover:text-slate-600">
+                                <span class="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 text-xs">
+                            <div>
+                                <p class="text-slate-500 mb-1">Destinatário</p>
+                                <p class="font-semibold">Agro Cerrado Unidade II</p>
+                                <p class="text-slate-400">Técnico: Carlos Mendes</p>
+                            </div>
+                            <div>
+                                <p class="text-slate-500 mb-1">Prazo</p>
+                                <p class="font-semibold">18 Out, 2023</p>
+                            </div>
+                            <div class="col-span-2 p-3 bg-white border border-slate-200 rounded-sm">
+                                <p class="text-[10px] font-bold text-slate-500 uppercase mb-2">Requisitos de Hardware
+                                </p>
+                                <div class="flex flex-wrap gap-2">
+                                    <span
+                                        class="bg-slate-100 px-2 py-1 rounded text-[10px] font-medium text-slate-700">MARCA:
+                                        TELTONIKA</span>
+                                    <span
+                                        class="bg-slate-100 px-2 py-1 rounded text-[10px] font-medium text-slate-700">MODELO:
+                                        FMC130</span>
+                                    <span
+                                        class="bg-slate-100 px-2 py-1 rounded text-[10px] font-medium text-slate-700">OP:
+                                        VIVO M2M</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <div class="flex items-end justify-between mb-2">
+                            <span class="text-xs font-bold text-slate-700 uppercase">Progresso da Configuração</span>
+                            <div class="text-right">
+                                <span class="text-3xl font-bold text-blue-600 leading-none">6</span>
+                                <span class="text-slate-400 font-medium">/ 15</span>
+                            </div>
+                        </div>
+                        <div class="progress-bar-bg h-3">
+                            <div class="progress-bar-fill w-[40%] bg-blue-600"></div>
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-xs font-bold text-slate-700 uppercase">Kits Vinculados</h3>
+                            <button class="text-[10px] font-bold text-blue-600 flex items-center gap-1 hover:underline">
+                                <span class="material-symbols-outlined text-sm">add</span> CRIAR KIT
+                            </button>
+                        </div>
+                        <table class="w-full text-[11px]">
+                            <thead>
+                                <tr class="text-left text-slate-400 border-b border-slate-100">
+                                    <th class="pb-2 font-semibold">KIT ID</th>
+                                    <th class="pb-2 font-semibold text-center">QTD</th>
+                                    <th class="pb-2 font-semibold">STATUS</th>
+                                    <th class="pb-2"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-50">
+                                <tr class="hover:bg-slate-50 group">
+                                    <td class="py-2.5 font-bold text-slate-700">KIT-A01</td>
+                                    <td class="py-2.5 text-center">05</td>
+                                    <td class="py-2.5"><span
+                                            class="text-emerald-600 font-bold uppercase text-[9px]">Completo</span></td>
+                                    <td class="py-2.5 text-right"><span
+                                            class="material-symbols-outlined text-slate-300 group-hover:text-blue-500 cursor-pointer">chevron_right</span>
+                                    </td>
+                                </tr>
+                                <tr class="bg-blue-50/50">
+                                    <td class="py-2.5 font-bold text-slate-700">KIT-A02</td>
+                                    <td class="py-2.5 text-center">01</td>
+                                    <td class="py-2.5"><span class="text-blue-500 font-bold uppercase text-[9px]">Em
+                                            Montagem</span></td>
+                                    <td class="py-2.5 text-right"><span
+                                            class="material-symbols-outlined text-blue-500">expand_more</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="panel-section bg-slate-50">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-[10px] font-bold text-slate-500 uppercase">Itens do KIT-A02</span>
+                            <button
+                                class="bg-white border border-slate-300 text-slate-700 px-2 py-1 rounded text-[10px] font-bold flex items-center gap-1 hover:bg-white/80">
+                                <span class="material-symbols-outlined text-sm">add_circle</span> ADICIONAR EQUIPAMENTOS
+                            </button>
+                        </div>
+                        <div class="space-y-2">
+                            <div
+                                class="bg-white p-2 border border-slate-200 rounded flex justify-between items-center text-[10px]">
+                                <div>
+                                    <p class="font-bold text-slate-800">IMEI: 861234567890123</p>
+                                    <p class="text-slate-500">ICCID: 8955100000012345678</p>
+                                </div>
+                                <button class="text-red-400 hover:text-red-600">
+                                    <span class="material-symbols-outlined text-base">delete</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-section border-t-2 border-t-blue-100 bg-blue-50/20">
+                        <h3 class="text-xs font-bold text-slate-700 uppercase mb-4 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-blue-500">local_shipping</span>
+                            Despacho de Carga
+                        </h3>
+                        <div class="space-y-3 opacity-50 pointer-events-none">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label
+                                        class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Transportadora</label>
+                                    <input class="w-full text-[11px] p-2 border border-slate-300 rounded-sm"
+                                        placeholder="Ex: Braspress" type="text" />
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Cód.
+                                        Rastreio</label>
+                                    <input class="w-full text-[11px] p-2 border border-slate-300 rounded-sm"
+                                        placeholder="BR12345678" type="text" />
+                                </div>
+                            </div>
+                            <button
+                                class="w-full bg-slate-300 text-white font-bold py-2 rounded-sm text-xs uppercase tracking-wide cursor-not-allowed">
+                                Despachar Kits
+                            </button>
+                            <p class="text-[9px] text-center text-slate-500 italic">Disponível após 15/15 itens
+                                configurados</p>
+                        </div>
+                    </div>
+                    <div class="panel-section">
+                        <h3 class="text-xs font-bold text-slate-700 uppercase mb-4">Histórico do Pedido</h3>
+                        <div class="text-[11px]">
+                            <div class="timeline-item">
+                                <div class="timeline-dot bg-blue-500 border-blue-200"></div>
+                                <div class="flex justify-between items-start">
+                                    <span class="font-bold text-slate-800">Equipamento adicionado ao KIT-A02</span>
+                                    <span class="text-slate-400">14:20</span>
+                                </div>
+                                <p class="text-slate-500">Por João D. Operador</p>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-dot bg-emerald-500 border-emerald-200"></div>
+                                <div class="flex justify-between items-start">
+                                    <span class="font-bold text-slate-800">KIT-A01 finalizado</span>
+                                    <span class="text-slate-400">11:05</span>
+                                </div>
+                                <p class="text-slate-500">5 unidades vinculadas com sucesso</p>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-dot"></div>
+                                <div class="flex justify-between items-start">
+                                    <span class="font-bold text-slate-800">Pedido em Configuração</span>
+                                    <span class="text-slate-400">Ontem</span>
+                                </div>
+                                <p class="text-slate-500">Movido para etapa de montagem</p>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </main>
+    </div>
+
+</body>
+
+</html>

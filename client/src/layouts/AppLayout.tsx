@@ -13,6 +13,7 @@ const navSections = [
   {
     title: 'Configuração',
     items: [
+      { to: '/pedidos-config', label: 'Config. Pedidos', icon: 'settings_suggest' },
       { to: '/equipamentos', label: 'Equipamentos', icon: 'settings_input_component' },
       { to: '/aparelhos', label: 'Rastreadores/Simcards', icon: 'router' },
     ],

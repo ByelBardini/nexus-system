@@ -26,6 +26,7 @@ export interface TecnicoResumo {
   cidadeEndereco?: string | null
   estadoEndereco?: string | null
   cep?: string | null
+  cpfCnpj?: string | null
 }
 
 export interface ClienteResumo {
@@ -40,12 +41,14 @@ export interface SubclienteResumo {
   estado?: string | null
   telefone?: string | null
   email?: string | null
+  cpf?: string | null
   cliente?: ClienteResumo
 }
 
 export interface ClienteApi {
   id: number
   nome: string
+  cnpj?: string | null
 }
 
 export interface MarcaEquipamentoResumo {
@@ -88,6 +91,7 @@ export interface PedidoRastreadorApi {
   operadora?: { id: number; nome: string } | null
   deCliente?: ClienteResumo | null
   criadoPor?: { id: number; nome: string } | null
+  kitIds?: number[] | null
   historico?: Array<{
     statusAnterior: StatusPedidoRastreador
     statusNovo: StatusPedidoRastreador
@@ -134,7 +138,9 @@ export interface PedidoRastreadorView {
   solicitadoEm?: string
   entregueEm?: string | null
   urgencia?: string
+  cidadeEstado?: string
   endereco?: string
+  cpfCnpj?: string
   contato?: { nome: string; telefone?: string; email?: string }
   historico?: Array<{ titulo: string; descricao: string; concluido: boolean }>
 }
@@ -166,6 +172,26 @@ export function mapPedidoToView(p: PedidoRastreadorApi): PedidoRastreadorView {
   const operadora = p.operadora?.nome
   const deCliente = p.deCliente?.nome
 
+  const cidadeEstado =
+    p.tipoDestino === 'TECNICO'
+      ? (() => {
+          const t = p.tecnico
+          if (!t) return undefined
+          const cidade = t.cidadeEndereco ?? t.cidade
+          const estado = t.estadoEndereco ?? t.estado
+          if (cidade && estado) return `${cidade} - ${estado}`
+          if (cidade) return cidade
+          if (estado) return estado
+          return undefined
+        })()
+      : (() => {
+          if (p.subcliente?.cidade && p.subcliente?.estado)
+            return `${p.subcliente.cidade} - ${p.subcliente.estado}`
+          if (p.subcliente?.cidade) return p.subcliente.cidade
+          if (p.subcliente?.estado) return p.subcliente.estado
+          return undefined
+        })()
+
   const endereco =
     p.tipoDestino === 'TECNICO'
       ? (() => {
@@ -188,6 +214,11 @@ export function mapPedidoToView(p: PedidoRastreadorApi): PedidoRastreadorView {
       : p.subcliente?.cidade && p.subcliente?.estado
         ? `${p.subcliente.cidade}, ${p.subcliente.estado}`
         : p.subcliente?.cidade ?? undefined
+
+  const cpfCnpj =
+    p.tipoDestino === 'TECNICO'
+      ? p.tecnico?.cpfCnpj ?? undefined
+      : p.subcliente?.cpf ?? p.cliente?.cnpj ?? undefined
 
   const contato =
     p.tipoDestino === 'TECNICO'
@@ -228,7 +259,9 @@ export function mapPedidoToView(p: PedidoRastreadorApi): PedidoRastreadorView {
     solicitadoEm: p.criadoEm,
     entregueEm: p.entregueEm,
     urgencia: urgenciaLabel,
+    cidadeEstado: cidadeEstado ?? undefined,
     endereco,
+    cpfCnpj: cpfCnpj ?? undefined,
     contato,
     historico,
   }

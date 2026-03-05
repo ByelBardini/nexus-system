@@ -4,8 +4,10 @@ import { CreatePedidoRastreadorDto } from './dto/create-pedido-rastreador.dto';
 import { UpdateStatusPedidoDto } from './dto/update-status-pedido.dto';
 import {
   StatusPedidoRastreador,
+  StatusAparelho,
   TipoDestinoPedido,
   UrgenciaPedido,
+  Prisma,
 } from '@prisma/client';
 
 const includeBase = {
@@ -133,12 +135,74 @@ export class PedidosRastreadoresService {
     const statusAnterior = pedido.status;
     if (statusAnterior === dto.status) return this.findOne(id);
 
-    const dataUpdate: { status: StatusPedidoRastreador; entregueEm?: Date } = {
+    const dataUpdate: Prisma.PedidoRastreadorUncheckedUpdateInput = {
       status: dto.status,
     };
     if (dto.status === StatusPedidoRastreador.ENTREGUE) {
       dataUpdate.entregueEm = new Date();
+    } else if (dto.status === StatusPedidoRastreador.CONFIGURADO) {
+      dataUpdate.entregueEm = null;
     }
+
+    // Regra de negócio: ao retroceder para CONFIGURADO (Despachado/Entregue → Configurado),
+    // equipamentos vinculados aos kits do pedido voltam para CONFIGURADO ("Em Kit" no frontend)
+    const novoStatusAparelho: StatusAparelho | null =
+      dto.status === StatusPedidoRastreador.DESPACHADO
+        ? StatusAparelho.DESPACHADO
+        : dto.status === StatusPedidoRastreador.ENTREGUE
+          ? StatusAparelho.COM_TECNICO
+          : (statusAnterior === StatusPedidoRastreador.DESPACHADO ||
+              statusAnterior === StatusPedidoRastreador.ENTREGUE) &&
+            dto.status === StatusPedidoRastreador.CONFIGURADO
+            ? StatusAparelho.CONFIGURADO
+            : null;
+
+    let kitIds: number[] =
+      dto.kitIds && dto.kitIds.length > 0
+        ? dto.kitIds.map((id) => Number(id))
+        : [];
+
+    if (kitIds.length === 0 && novoStatusAparelho !== null) {
+      const salvos = pedido.kitIds;
+      if (Array.isArray(salvos) && salvos.length > 0) {
+        kitIds = salvos.map((id: unknown) => Number(id));
+      }
+    }
+
+    // Salva kitIds para CONFIGURADO, DESPACHADO e ENTREGUE (permite filtrar kits em uso no pareamento)
+    // Limpa kitIds ao retroceder para SOLICITADO ou EM_CONFIGURACAO
+    if (
+      dto.status === StatusPedidoRastreador.CONFIGURADO ||
+      dto.status === StatusPedidoRastreador.DESPACHADO ||
+      dto.status === StatusPedidoRastreador.ENTREGUE
+    ) {
+      dataUpdate.kitIds = kitIds.length > 0 ? kitIds : Prisma.DbNull;
+    } else if (dto.status === StatusPedidoRastreador.SOLICITADO || dto.status === StatusPedidoRastreador.EM_CONFIGURACAO) {
+      dataUpdate.kitIds = Prisma.DbNull;
+    }
+
+    const statusRestritivos = [
+      StatusPedidoRastreador.CONFIGURADO,
+      StatusPedidoRastreador.DESPACHADO,
+      StatusPedidoRastreador.ENTREGUE,
+    ];
+
+    const extrairKitIds = (val: unknown): number[] => {
+      if (val == null) return [];
+      let arr: unknown;
+      if (typeof val === 'string') {
+        try {
+          arr = JSON.parse(val) as unknown;
+        } catch {
+          return [];
+        }
+      } else {
+        arr = val;
+      }
+      return Array.isArray(arr) ? arr.filter((x): x is number => typeof x === 'number') : [];
+    };
+
+    const kitIdsAntigos = extrairKitIds(pedido.kitIds);
 
     await this.prisma.$transaction(async (tx) => {
       await tx.pedidoRastreadorHistorico.create({
@@ -153,6 +217,95 @@ export class PedidosRastreadoresService {
         where: { id },
         data: dataUpdate,
       });
+
+      // Atualiza kit_concluido: true quando avança para CONFIGURADO/DESPACHADO/ENTREGUE
+      if (
+        (dto.status === StatusPedidoRastreador.CONFIGURADO ||
+          dto.status === StatusPedidoRastreador.DESPACHADO ||
+          dto.status === StatusPedidoRastreador.ENTREGUE) &&
+        kitIds.length > 0
+      ) {
+        await tx.kit.updateMany({
+          where: { id: { in: kitIds } },
+          data: { kitConcluido: true },
+        });
+      }
+
+      // Ao retroceder para SOLICITADO/EM_CONFIGURACAO, libera kits que não estão em outros pedidos restritivos
+      if (
+        (dto.status === StatusPedidoRastreador.SOLICITADO || dto.status === StatusPedidoRastreador.EM_CONFIGURACAO) &&
+        kitIdsAntigos.length > 0
+      ) {
+        const outrosPedidos = await tx.pedidoRastreador.findMany({
+          where: {
+            id: { not: id },
+            status: { in: statusRestritivos },
+            kitIds: { not: Prisma.DbNull },
+          },
+          select: { kitIds: true },
+        });
+        const kitIdsAindaEmUso = new Set(
+          outrosPedidos.flatMap((p) => extrairKitIds(p.kitIds)),
+        );
+        for (const kitId of kitIdsAntigos) {
+          if (!kitIdsAindaEmUso.has(kitId)) {
+            await tx.kit.update({ where: { id: kitId }, data: { kitConcluido: false } });
+          }
+        }
+      }
+
+      if (novoStatusAparelho && kitIds.length > 0) {
+        const aparelhos = await tx.aparelho.findMany({
+          where: {
+            kitId: { in: kitIds },
+            tipo: 'RASTREADOR',
+          },
+        });
+
+        const dataAparelho: {
+          status: StatusAparelho;
+          tecnicoId?: number | null;
+          clienteId?: number | null;
+        } = {
+          status: novoStatusAparelho,
+        };
+        if (novoStatusAparelho === StatusAparelho.COM_TECNICO) {
+          if (pedido.tipoDestino === TipoDestinoPedido.CLIENTE) {
+            // Pedido para cliente: vincular ao cliente destino (cliente principal ou pai do subcliente)
+            const targetClienteId =
+              pedido.clienteId ??
+              (pedido.subclienteId && pedido.subcliente
+                ? pedido.subcliente.clienteId
+                : null);
+            dataAparelho.clienteId = targetClienteId ?? null;
+            dataAparelho.tecnicoId = null;
+          } else {
+            // Pedido para técnico: vincular ao técnico e à empresa remetente (deCliente)
+            // dto.deClienteId permite informar no momento de concluir, para pedidos criados sem "De Cliente"
+            const empresaId = dto.deClienteId ?? pedido.deClienteId ?? null;
+            dataAparelho.tecnicoId = pedido.tecnicoId ?? null;
+            dataAparelho.clienteId = empresaId;
+          }
+        } else if (novoStatusAparelho === StatusAparelho.CONFIGURADO || novoStatusAparelho === StatusAparelho.DESPACHADO) {
+          dataAparelho.tecnicoId = null;
+          dataAparelho.clienteId = null;
+        }
+
+        for (const ap of aparelhos) {
+          await tx.aparelhoHistorico.create({
+            data: {
+              aparelhoId: ap.id,
+              statusAnterior: ap.status,
+              statusNovo: novoStatusAparelho,
+              observacao: `Pedido ${pedido.codigo} ${dto.status}`,
+            },
+          });
+          await tx.aparelho.update({
+            where: { id: ap.id },
+            data: dataAparelho,
+          });
+        }
+      }
     });
 
     return this.findOne(id);

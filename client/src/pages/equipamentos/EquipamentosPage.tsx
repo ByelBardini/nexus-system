@@ -37,6 +37,7 @@ interface Aparelho {
   cliente?: { id: number; nome: string } | null
   simVinculado?: { id: number; identificador: string; operadora?: string | null } | null
   kitId?: number | null
+  kit?: { id: number; nome: string } | null
   tecnico?: { id: number; nome: string } | null
   lote?: { id: number; referencia: string } | null
   criadoEm: string
@@ -59,8 +60,8 @@ const STATUS_CONFIG: Record<StatusAparelho, { label: string; color: string; dotC
   },
   DESPACHADO: {
     label: 'Despachado',
-    color: 'text-purple-700',
-    dotColor: 'bg-purple-500',
+    color: 'text-amber-700',
+    dotColor: 'bg-amber-500',
   },
   COM_TECNICO: {
     label: 'Com Técnico',
@@ -105,6 +106,13 @@ export function EquipamentosPage() {
     queryKey: ['aparelhos'],
     queryFn: () => api('/aparelhos'),
   })
+
+  const { data: kits = [] } = useQuery<{ id: number; nome: string }[]>({
+    queryKey: ['aparelhos', 'pareamento', 'kits'],
+    queryFn: () => api('/aparelhos/pareamento/kits'),
+  })
+
+  const kitsPorId = useMemo(() => new Map(kits.map((k) => [k.id, k.nome])), [kits])
 
   // Equipamentos = rastreadores com SIM vinculado
   const equipamentos = useMemo(() => {
@@ -422,9 +430,9 @@ export function EquipamentosPage() {
                         </div>
                       </TableCell>
                       <TableCell className="px-3 py-3">
-                        {equip.kitId ? (
-                          <span className="text-[11px] text-blue-600 font-bold hover:underline">
-                            KIT-{equip.kitId}
+                        {(equip.kit?.nome ?? (equip.kitId ? kitsPorId.get(equip.kitId) : null)) ? (
+                          <span className="text-[11px] text-violet-600 font-bold">
+                            {equip.kit?.nome ?? kitsPorId.get(equip.kitId!)}
                           </span>
                         ) : (
                           <span className="text-slate-400">-</span>
@@ -432,7 +440,7 @@ export function EquipamentosPage() {
                       </TableCell>
                       <TableCell className="px-3 py-3">
                         <span className="text-[11px] text-slate-400">
-                          {equip.tecnico?.nome || '-'}
+                          {equip.cliente?.nome ?? equip.tecnico?.nome ?? '-'}
                         </span>
                       </TableCell>
                       <TableCell className="px-3 py-3">
@@ -511,7 +519,7 @@ export function EquipamentosPage() {
                                     Kit / Nota Fiscal
                                   </label>
                                   <span className="text-xs font-bold text-slate-700">
-                                    {equip.kitId ? `KIT-${equip.kitId}` : '-'}
+                                    {equip.kit?.nome ?? (equip.kitId ? kitsPorId.get(equip.kitId) : null) ?? '-'}
                                   </span>
                                 </div>
                                 <div>
@@ -529,12 +537,14 @@ export function EquipamentosPage() {
                               <div className="space-y-3">
                                 <div>
                                   <label className="block text-[10px] text-slate-500 uppercase font-medium">
-                                    Técnico Responsável
+                                    Técnico / Empresa
                                   </label>
                                   <span className="text-xs font-bold text-slate-700">
-                                    {equip.tecnico
-                                      ? `${equip.tecnico.nome} (ID: ${equip.tecnico.id})`
-                                      : '-'}
+                                    {equip.cliente?.nome
+                                      ? equip.cliente.nome
+                                      : equip.tecnico
+                                        ? `${equip.tecnico.nome} (ID: ${equip.tecnico.id})`
+                                        : '-'}
                                   </span>
                                 </div>
                                 <div>

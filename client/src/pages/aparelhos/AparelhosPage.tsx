@@ -46,6 +46,7 @@ interface Aparelho {
   cliente?: { id: number; nome: string } | null
   simVinculado?: { id: number; identificador: string; operadora?: string | null } | null
   kitId?: number | null
+  kit?: { id: number; nome: string } | null
   tecnico?: { id: number; nome: string } | null
   lote?: { id: number; referencia: string } | null
   valorUnitario?: number | null
@@ -85,10 +86,10 @@ const STATUS_CONFIG: Record<StatusAparelho, StatusConfig> = {
   },
   DESPACHADO: {
     label: 'Despachado',
-    color: 'text-purple-700',
-    bgColor: 'bg-purple-50',
-    borderColor: 'border-purple-200',
-    icon: '🟣',
+    color: 'text-amber-700',
+    bgColor: 'bg-amber-50',
+    borderColor: 'border-amber-200',
+    icon: '🟠',
   },
   COM_TECNICO: {
     label: 'Com Técnico',
@@ -166,6 +167,13 @@ export function AparelhosPage() {
     queryKey: ['aparelhos'],
     queryFn: () => api('/aparelhos'),
   })
+
+  const { data: kits = [] } = useQuery<{ id: number; nome: string }[]>({
+    queryKey: ['aparelhos', 'pareamento', 'kits'],
+    queryFn: () => api('/aparelhos/pareamento/kits'),
+  })
+
+  const kitsPorId = useMemo(() => new Map(kits.map((k) => [k.id, k.nome])), [kits])
 
   const marcas = useMemo(() => {
     const set = new Set<string>()
@@ -282,11 +290,11 @@ export function AparelhosPage() {
         <button
           onClick={() => handleStatusClick('DESPACHADO')}
           className={cn(
-            'pipeline-item flex-1 bg-purple-100 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors',
-            statusFilter === 'DESPACHADO' && 'border-t-2 border-b-2 border-t-purple-500 border-b-purple-500'
+            'pipeline-item flex-1 bg-amber-100 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors',
+            statusFilter === 'DESPACHADO' && 'border-t-2 border-b-2 border-t-amber-500 border-b-amber-500'
           )}
         >
-          <div className="flex justify-between items-center border-l-4 border-erp-purple pl-2">
+          <div className="flex justify-between items-center border-l-4 border-amber-500 pl-2">
             <span className="text-[10px] font-bold text-slate-600 uppercase font-condensed">
               Despachado
             </span>
@@ -554,16 +562,16 @@ export function AparelhosPage() {
                         )}
                       </TableCell>
                       <TableCell className="px-4 py-3">
-                        {aparelho.kitId ? (
+                        {(aparelho.kit?.nome ?? (aparelho.kitId ? kitsPorId.get(aparelho.kitId) : null)) ? (
                           <span className="rounded-sm bg-violet-50 px-2 py-0.5 text-[10px] font-bold text-violet-700 border border-violet-200">
-                            KIT-{aparelho.kitId}
+                            {aparelho.kit?.nome ?? kitsPorId.get(aparelho.kitId!)}
                           </span>
                         ) : (
                           <span className="text-slate-400">-</span>
                         )}
                       </TableCell>
                       <TableCell className="px-4 py-3 text-sm text-slate-600">
-                        {aparelho.tecnico?.nome || '-'}
+                        {aparelho.cliente?.nome ?? aparelho.tecnico?.nome ?? '-'}
                       </TableCell>
                       <TableCell className="px-4 py-3">
                         {aparelho.lote ? (
@@ -652,14 +660,14 @@ export function AparelhosPage() {
                                   </div>
                                   <div className="flex justify-between text-[11px] border-b border-slate-100 pb-2">
                                     <span className="text-slate-500">Kit</span>
-                                    <span className={cn('font-bold', aparelho.kitId ? 'text-violet-600' : 'text-slate-400')}>
-                                      {aparelho.kitId ? `KIT-${aparelho.kitId}` : '-'}
+                                    <span className={cn('font-bold', (aparelho.kit?.nome ?? (aparelho.kitId ? kitsPorId.get(aparelho.kitId) : null)) ? 'text-violet-600' : 'text-slate-400')}>
+                                      {aparelho.kit?.nome ?? (aparelho.kitId ? kitsPorId.get(aparelho.kitId) : null) ?? '-'}
                                     </span>
                                   </div>
                                   <div className="flex justify-between text-[11px] border-b border-slate-100 pb-2">
                                     <span className="text-slate-500">Técnico</span>
-                                    <span className={cn('font-bold', aparelho.tecnico ? 'text-slate-700' : 'text-slate-400')}>
-                                      {aparelho.tecnico?.nome || '-'}
+                                    <span className={cn('font-bold', (aparelho.cliente ?? aparelho.tecnico) ? 'text-slate-700' : 'text-slate-400')}>
+                                      {aparelho.cliente?.nome ?? aparelho.tecnico?.nome ?? '-'}
                                     </span>
                                   </div>
                                   <div className="flex justify-between text-[11px]">

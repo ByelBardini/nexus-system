@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `kits` ADD COLUMN `kit_concluido` TINYINT NOT NULL DEFAULT 0;

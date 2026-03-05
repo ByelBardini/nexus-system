@@ -6,6 +6,7 @@ import { CreatePedidoRastreadorDto } from './dto/create-pedido-rastreador.dto';
 import { UpdateStatusPedidoDto } from './dto/update-status-pedido.dto';
 import {
   StatusPedidoRastreador,
+  StatusAparelho,
   TipoDestinoPedido,
   UrgenciaPedido,
 } from '@prisma/client';
@@ -25,6 +26,17 @@ describe('PedidosRastreadoresService', () => {
     },
     pedidoRastreadorHistorico: {
       create: jest.fn(),
+    },
+    aparelho: {
+      findMany: jest.fn(),
+      update: jest.fn(),
+    },
+    aparelhoHistorico: {
+      create: jest.fn(),
+    },
+    kit: {
+      updateMany: jest.fn(),
+      update: jest.fn(),
     },
     $transaction: jest.fn((fn: (tx: unknown) => Promise<unknown>) =>
       fn(prismaMock),
@@ -338,6 +350,94 @@ describe('PedidosRastreadoresService', () => {
           status: StatusPedidoRastreador.ENTREGUE,
           entregueEm: expect.any(Date),
         }),
+      });
+    });
+
+    it('ao retroceder de DESPACHADO para CONFIGURADO, atualiza aparelhos dos kits para CONFIGURADO (Em Kit)', async () => {
+      const pedidoDespachado = {
+        id: 1,
+        codigo: 'PED-0001',
+        status: StatusPedidoRastreador.DESPACHADO,
+        kitIds: [10, 11],
+        tecnicoId: null,
+        tecnico: null,
+        subcliente: null,
+        historico: [],
+      };
+      const aparelhosNoKit = [
+        { id: 101, kitId: 10, status: StatusAparelho.DESPACHADO, tipo: 'RASTREADOR' },
+        { id: 102, kitId: 10, status: StatusAparelho.DESPACHADO, tipo: 'RASTREADOR' },
+      ];
+      (prisma.pedidoRastreador.findUnique as jest.Mock)
+        .mockResolvedValueOnce(pedidoDespachado)
+        .mockResolvedValueOnce({
+          ...pedidoDespachado,
+          status: StatusPedidoRastreador.CONFIGURADO,
+        });
+      (prisma.$transaction as jest.Mock).mockImplementation((fn) => fn(prisma));
+      (prisma.pedidoRastreador.update as jest.Mock).mockResolvedValue({});
+      (prisma.aparelho.findMany as jest.Mock).mockResolvedValue(aparelhosNoKit);
+      (prisma.aparelhoHistorico.create as jest.Mock).mockResolvedValue({});
+      (prisma.aparelho.update as jest.Mock).mockResolvedValue({});
+
+      const dto: UpdateStatusPedidoDto = {
+        status: StatusPedidoRastreador.CONFIGURADO,
+      };
+
+      await service.updateStatus(1, dto);
+
+      expect(prisma.aparelho.findMany).toHaveBeenCalledWith({
+        where: {
+          kitId: { in: [10, 11] },
+          tipo: 'RASTREADOR',
+        },
+      });
+      expect(prisma.aparelho.update).toHaveBeenCalledTimes(2);
+      expect(prisma.aparelho.update).toHaveBeenCalledWith({
+        where: { id: 101 },
+        data: { status: StatusAparelho.CONFIGURADO, tecnicoId: null, clienteId: null },
+      });
+      expect(prisma.aparelho.update).toHaveBeenCalledWith({
+        where: { id: 102 },
+        data: { status: StatusAparelho.CONFIGURADO, tecnicoId: null, clienteId: null },
+      });
+    });
+
+    it('ao retroceder de ENTREGUE para CONFIGURADO, atualiza aparelhos dos kits para CONFIGURADO (Em Kit)', async () => {
+      const pedidoEntregue = {
+        id: 1,
+        codigo: 'PED-0001',
+        status: StatusPedidoRastreador.ENTREGUE,
+        kitIds: [10],
+        tecnicoId: 5,
+        tecnico: { id: 5 },
+        subcliente: null,
+        historico: [],
+      };
+      const aparelhosNoKit = [
+        { id: 201, kitId: 10, status: StatusAparelho.COM_TECNICO, tipo: 'RASTREADOR' },
+      ];
+      (prisma.pedidoRastreador.findUnique as jest.Mock)
+        .mockResolvedValueOnce(pedidoEntregue)
+        .mockResolvedValueOnce({
+          ...pedidoEntregue,
+          status: StatusPedidoRastreador.CONFIGURADO,
+        });
+      (prisma.$transaction as jest.Mock).mockImplementation((fn) => fn(prisma));
+      (prisma.pedidoRastreador.update as jest.Mock).mockResolvedValue({});
+      (prisma.aparelho.findMany as jest.Mock).mockResolvedValue(aparelhosNoKit);
+      (prisma.aparelhoHistorico.create as jest.Mock).mockResolvedValue({});
+      (prisma.aparelho.update as jest.Mock).mockResolvedValue({});
+
+      const dto: UpdateStatusPedidoDto = {
+        status: StatusPedidoRastreador.CONFIGURADO,
+      };
+
+      await service.updateStatus(1, dto);
+
+      expect(prisma.aparelho.update).toHaveBeenCalledWith({
+        where: { id: 201 },
+        data: { status: StatusAparelho.CONFIGURADO, tecnicoId: null, clienteId: null },
       });
     });
   });

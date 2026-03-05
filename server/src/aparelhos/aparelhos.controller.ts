@@ -102,4 +102,42 @@ export class AparelhosController {
   getKits() {
     return this.aparelhosService.getKits();
   }
+
+  @Get('pareamento/kits/detalhes')
+  @RequirePermissions('CONFIGURACAO.APARELHO.LISTAR')
+  @ApiOperation({ summary: 'Listar kits com detalhes (nome, data, quantidade, modelos)' })
+  getKitsComDetalhes() {
+    return this.aparelhosService.getKitsComDetalhes();
+  }
+
+  @Get('pareamento/kits/:id')
+  @RequirePermissions('CONFIGURACAO.APARELHO.LISTAR')
+  @ApiOperation({ summary: 'Buscar kit por ID com aparelhos' })
+  getKitById(@Param('id') id: string) {
+    return this.aparelhosService.getKitById(+id);
+  }
+
+  @Patch('pareamento/aparelho/:id/kit')
+  @RequirePermissions('CONFIGURACAO.APARELHO.EDITAR')
+  @ApiOperation({ summary: 'Adicionar ou remover aparelho do kit' })
+  updateAparelhoKit(
+    @Param('id') id: string,
+    @Body() dto: { kitId: number | null },
+  ) {
+    return this.aparelhosService.updateAparelhoKit(+id, dto.kitId);
+  }
+
+  @Get('pareamento/aparelhos-disponiveis')
+  @RequirePermissions('CONFIGURACAO.APARELHO.LISTAR')
+  @ApiOperation({ summary: 'Listar aparelhos disponíveis para adicionar ao kit' })
+  getAparelhosDisponiveisParaKit() {
+    return this.aparelhosService.getAparelhosDisponiveisParaKit();
+  }
+
+  @Post('pareamento/kits')
+  @RequirePermissions('CONFIGURACAO.APARELHO.CRIAR')
+  @ApiOperation({ summary: 'Criar ou buscar kit por nome' })
+  createKit(@Body() dto: { nome: string }) {
+    return this.aparelhosService.criarOuBuscarKitPorNome(dto.nome?.trim() ?? '');
+  }
 }

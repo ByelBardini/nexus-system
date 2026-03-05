@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Logistics Kit Management - Industrial ERP</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <style type="text/tailwindcss">
+        :root {
+            --sidebar-bg: #0F172A;
+            --sidebar-hover: #1E293B;
+            --background-gray: #F1F5F9;
+            --border-subtle: #E2E8F0;
+            --primary-blue: #2563EB;
+            --industrial-dark: #0F172A;
+            --kanban-column: #E2E8F0;
+            --success-green: #10B981;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-gray);
+        }
+        .sidebar-item {
+            @apply flex items-center gap-3 px-4 py-2.5 text-slate-400 hover:bg-[var(--sidebar-hover)] hover:text-white transition-all text-sm;
+        }
+        .sidebar-item.active {
+            @apply bg-[var(--sidebar-hover)] text-white border-r-4 border-blue-500;
+        }
+        .sidebar-group-title {
+            @apply px-4 py-2 mt-4 text-[10px] font-bold uppercase tracking-wider text-slate-500;
+        }
+        .input-field {
+            @apply w-full border border-slate-300 rounded-sm text-xs px-3 py-2 bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all;
+        }
+        .input-read-only {
+            @apply bg-slate-50 border border-slate-200 rounded-sm text-xs px-3 py-2 text-slate-600 font-semibold;
+        }
+        .table-header {
+            @apply bg-slate-100 text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 py-2 text-left;
+        }
+        .table-cell {
+            @apply px-3 py-2 text-xs text-slate-700 border-b border-slate-100;
+        }
+        .btn-primary {
+            @apply bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-sm hover:bg-blue-700 transition-colors uppercase tracking-wide flex items-center gap-2;
+        }
+        .btn-outline {
+            @apply border border-slate-300 text-slate-600 text-xs font-bold px-4 py-2 rounded-sm hover:bg-slate-50 transition-colors uppercase tracking-wide;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body class="text-slate-900 antialiased overflow-hidden">
+    <div class="flex h-screen">
+        <aside class="w-64 bg-[var(--sidebar-bg)] flex flex-col fixed h-screen z-20 overflow-y-auto">
+            <div class="p-6 flex items-center gap-3 border-b border-slate-800 mb-2">
+                <div class="bg-blue-600 p-1.5 rounded-sm">
+                    <span
+                        class="material-symbols-outlined text-white text-xl leading-none">precision_manufacturing</span>
+                </div>
+                <span class="text-white font-bold tracking-tight uppercase text-sm">Industrial Hub</span>
+            </div>
+            <nav class="flex-1">
+                <div class="sidebar-group-title">Operação</div>
+                <a class="sidebar-item" href="#">
+                    <span class="material-symbols-outlined text-lg">dashboard</span>
+                    <span>Dashboard Operacional</span>
+                </a>
+                <a class="sidebar-item active" href="#">
+                    <span class="material-symbols-outlined text-lg">package_2</span>
+                    <span>Expedição de Dispositivos</span>
+                </a>
+                <div class="sidebar-group-title">Configuração</div>
+                <a class="sidebar-item" href="#">
+                    <span class="material-symbols-outlined text-lg">inventory_2</span>
+                    <span>Estoque Técnico</span>
+                </a>
+                <a class="sidebar-item" href="#">
+                    <span class="material-symbols-outlined text-lg">local_shipping</span>
+                    <span>Logística Reversa</span>
+                </a>
+            </nav>
+        </aside>
+        <main class="flex-1 ml-64 flex flex-col h-screen overflow-hidden">
+            <header
+                class="h-20 bg-white border-b border-[var(--border-subtle)] flex items-center justify-between px-8 shrink-0 z-10">
+                <div>
+                    <h1 class="text-lg font-bold text-slate-800">Expedição e Logística</h1>
+                    <p class="text-xs text-slate-500">Gestão de kits e equipamentos para técnicos de campo</p>
+                </div>
+            </header>
+            <div class="flex-1 p-6 bg-slate-50">
+            </div>
+        </main>
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <div
+                class="bg-white w-full max-w-[850px] max-h-[90vh] rounded shadow-2xl border border-slate-200 flex flex-col overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-slate-100 p-2 rounded text-slate-600">
+                            <span class="material-symbols-outlined">inventory</span>
+                        </div>
+                        <div>
+                            <h2 class="text-base font-bold text-slate-800 uppercase tracking-tight">Editar Kit — KIT-012
+                            </h2>
+                            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Gestão de
+                                Configuração Industrial</p>
+                        </div>
+                    </div>
+                    <button class="text-slate-400 hover:text-slate-600 transition-colors">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+                <div class="flex-1 overflow-y-auto custom-scrollbar">
+                    <div class="p-6 space-y-6">
+                        <section>
+                            <h3
+                                class="text-[11px] font-bold text-slate-800 uppercase tracking-widest border-l-4 border-blue-600 pl-2 mb-4">
+                                Informações do Kit</h3>
+                            <div class="grid grid-cols-3 gap-4 bg-slate-50 p-4 rounded border border-slate-200">
+                                <div>
+                                    <label
+                                        class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Pedido</label>
+                                    <div class="text-xs font-bold text-slate-700">PED-0001</div>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Destino
+                                        (Técnico)</label>
+                                    <div class="text-xs font-bold text-slate-700 flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[14px]">engineering</span>
+                                        TESTE DA SILVA
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-400 uppercase block mb-1">Quantidade
+                                        Esperada</label>
+                                    <div
+                                        class="text-xs font-bold text-blue-600 bg-blue-50 inline-block px-2 py-0.5 rounded">
+                                        5 Unidades</div>
+                                </div>
+                            </div>
+                        </section>
+                        <section>
+                            <div class="flex justify-between items-end mb-3">
+                                <div>
+                                    <h3
+                                        class="text-[11px] font-bold text-slate-800 uppercase tracking-widest border-l-4 border-amber-500 pl-2">
+                                        Rastreadores no Kit</h3>
+                                </div>
+                                <div class="text-right w-48">
+                                    <div
+                                        class="flex justify-between text-[10px] font-bold text-slate-500 mb-1 uppercase">
+                                        <span>Progresso</span>
+                                        <span>3 / 5 Equipamentos</span>
+                                    </div>
+                                    <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                                        <div class="bg-amber-500 h-full" style="width: 60%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="border border-slate-200 rounded overflow-hidden">
+                                <table class="w-full border-collapse">
+                                    <thead>
+                                        <tr>
+                                            <th class="table-header">EQ-ID</th>
+                                            <th class="table-header">IMEI</th>
+                                            <th class="table-header">ICCID</th>
+                                            <th class="table-header">Marca / Modelo</th>
+                                            <th class="table-header text-right">Ação</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="table-cell font-bold">EQ-7721</td>
+                                            <td class="table-cell">358291029384756</td>
+                                            <td class="table-cell">8955123456789012345</td>
+                                            <td class="table-cell">Suntech / ST310U</td>
+                                            <td class="table-cell text-right">
+                                                <button
+                                                    class="text-red-500 hover:text-red-700 font-bold text-[10px] uppercase">Remover</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="table-cell font-bold">EQ-7725</td>
+                                            <td class="table-cell">358291029384992</td>
+                                            <td class="table-cell">8955123456789012988</td>
+                                            <td class="table-cell">Suntech / ST310U</td>
+                                            <td class="table-cell text-right">
+                                                <button
+                                                    class="text-red-500 hover:text-red-700 font-bold text-[10px] uppercase">Remover</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="table-cell font-bold">EQ-7729</td>
+                                            <td class="table-cell">358291029384110</td>
+                                            <td class="table-cell">8955123456789012112</td>
+                                            <td class="table-cell">Queclink / GV300</td>
+                                            <td class="table-cell text-right">
+                                                <button
+                                                    class="text-red-500 hover:text-red-700 font-bold text-[10px] uppercase">Remover</button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                        <section class="bg-slate-50 p-5 rounded-lg border border-slate-200 border-dashed">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3
+                                    class="text-[11px] font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-sm">search</span>
+                                    Selecionar Novos Rastreadores
+                                </h3>
+                                <button class="btn-primary">
+                                    <span class="material-symbols-outlined text-sm">add</span>
+                                    Adicionar ao Kit
+                                </button>
+                            </div>
+                            <div class="grid grid-cols-4 gap-3 mb-4">
+                                <div>
+                                    <label
+                                        class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Marca/Modelo</label>
+                                    <select class="input-field py-1.5">
+                                        <option>Todos os Modelos</option>
+                                        <option>Suntech ST310U</option>
+                                        <option>Queclink GV300</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label
+                                        class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Operadora</label>
+                                    <select class="input-field py-1.5">
+                                        <option>Todas</option>
+                                        <option>Vivo</option>
+                                        <option>Claro</option>
+                                        <option>Tim</option>
+                                    </select>
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase block mb-1">Buscar por
+                                        ID ou IMEI</label>
+                                    <div class="relative">
+                                        <span
+                                            class="material-symbols-outlined absolute left-2 top-1.5 text-slate-400 text-sm">search</span>
+                                        <input class="input-field pl-8 py-1.5" placeholder="Digite o identificador..."
+                                            type="text" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div
+                                class="bg-white border border-slate-200 rounded max-h-48 overflow-y-auto custom-scrollbar shadow-sm">
+                                <table class="w-full border-collapse">
+                                    <thead class="sticky top-0 z-10">
+                                        <tr>
+                                            <th class="table-header w-10"><input
+                                                    class="rounded-sm border-slate-300 text-blue-600 focus:ring-blue-500"
+                                                    type="checkbox" /></th>
+                                            <th class="table-header">EQ-ID</th>
+                                            <th class="table-header">IMEI</th>
+                                            <th class="table-header">Marca/Modelo</th>
+                                            <th class="table-header">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        <tr>
+                                            <td class="table-cell"><input
+                                                    class="rounded-sm border-slate-300 text-blue-600 focus:ring-blue-500"
+                                                    type="checkbox" /></td>
+                                            <td class="table-cell font-medium">EQ-9001</td>
+                                            <td class="table-cell">358291029300001</td>
+                                            <td class="table-cell">Suntech / ST310U</td>
+                                            <td class="table-cell"><span
+                                                    class="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded border border-emerald-200">CONFIGURADO</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="table-cell"><input
+                                                    class="rounded-sm border-slate-300 text-blue-600 focus:ring-blue-500"
+                                                    type="checkbox" /></td>
+                                            <td class="table-cell font-medium">EQ-9002</td>
+                                            <td class="table-cell">358291029300002</td>
+                                            <td class="table-cell">Suntech / ST310U</td>
+                                            <td class="table-cell"><span
+                                                    class="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded border border-emerald-200">CONFIGURADO</span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="table-cell"><input
+                                                    class="rounded-sm border-slate-300 text-blue-600 focus:ring-blue-500"
+                                                    type="checkbox" /></td>
+                                            <td class="table-cell font-medium">EQ-9003</td>
+                                            <td class="table-cell">358291029300003</td>
+                                            <td class="table-cell">Queclink / GV55</td>
+                                            <td class="table-cell"><span
+                                                    class="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded border border-emerald-200">CONFIGURADO</span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+                <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+                    <div>
+                        <span
+                            class="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-3 py-1 rounded-full border border-emerald-300 flex items-center gap-1.5 uppercase">
+                            <span class="material-symbols-outlined text-[14px]">check_circle</span>
+                            Kit Completo (3/5 - Em andamento)
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button class="btn-outline">Cancelar</button>
+                        <button
+                            class="bg-blue-600 text-white text-xs font-bold px-8 py-2 rounded-sm hover:bg-blue-700 transition-colors uppercase tracking-wide shadow-lg shadow-blue-200/50">
+                            Salvar Kit
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

@@ -30,6 +30,9 @@ const CadastroIndividualPage = lazy(() => import('@/pages/aparelhos/CadastroIndi
 const PedidosRastreadoresPage = lazy(() =>
   import('@/pages/pedidos/PedidosRastreadoresPage').then((m) => ({ default: m.PedidosRastreadoresPage }))
 )
+const PedidosConfigPage = lazy(() =>
+  import('@/pages/pedidos/PedidosConfigPage').then((m) => ({ default: m.PedidosConfigPage }))
+)
 
 function PageLoader() {
   return (
@@ -64,6 +67,14 @@ function App() {
           element={
             <Suspense fallback={<PageLoader />}>
               <PedidosRastreadoresPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="pedidos-config"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <PedidosConfigPage />
             </Suspense>
           }
         />

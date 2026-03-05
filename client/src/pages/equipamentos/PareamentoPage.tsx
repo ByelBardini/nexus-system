@@ -185,7 +185,8 @@ export function PareamentoPage() {
   const paresIndividual = useMemo(() => {
     const imei = imeiIndividual.replace(/\D/g, '')
     const iccid = iccidIndividual.replace(/\D/g, '')
-    if (imei.length < 14 || iccid.length < 18) return []
+    // Alinhado com backend: IMEI 14-16 dígitos, ICCID 18-21 dígitos
+    if (imei.length < 14 || imei.length > 16 || iccid.length < 18 || iccid.length > 21) return []
     return [{ imei: imeiIndividual.trim(), iccid: iccidIndividual.trim() }]
   }, [imeiIndividual, iccidIndividual])
 
@@ -306,7 +307,8 @@ export function PareamentoPage() {
   const podeConfirmarIndividual = useMemo(() => {
     const imei = imeiIndividual.replace(/\D/g, '')
     const iccid = iccidIndividual.replace(/\D/g, '')
-    return imei.length >= 14 && iccid.length >= 18
+    // Alinhado com backend: IMEI 14-16, ICCID 18-21
+    return imei.length >= 14 && imei.length <= 16 && iccid.length >= 18 && iccid.length <= 21
   }, [imeiIndividual, iccidIndividual])
 
   const loteRastreadorSelecionado = useMemo(
@@ -942,16 +944,74 @@ export function PareamentoPage() {
                             }}
                           />
                         </div>
-                        {!podeConfirmarPareamentoIndividual && podeConfirmarIndividual && (
+                        {!podeConfirmarPareamentoIndividual && !podeConfirmarIndividual &&
+                          (imeiIndividual.replace(/\D/g, '').length > 0 || iccidIndividual.replace(/\D/g, '').length > 0) && (
                           <p className="mt-2 text-[10px] text-amber-400">
-                            {!preview
-                              ? 'Verificando...'
-                              : preview.contadores.exigemLote > 0
-                                ? 'Selecione os lotes ou informe marca/modelo e operadora para itens novos.'
-                                : preview.contadores.erros > 0
-                                  ? 'Corrija os erros indicados no preview.'
-                                  : 'Clique em Verificar para validar os dados.'}
+                            IMEI deve ter 14–16 dígitos. ICCID deve ter 18–21 dígitos.
                           </p>
+                        )}
+                        {!podeConfirmarPareamentoIndividual && podeConfirmarIndividual && (
+                          <div className="mt-2 space-y-1.5">
+                            {!preview ? (
+                              <p className="text-[10px] text-amber-400">Verificando...</p>
+                            ) : preview.contadores.exigemLote > 0 ? (
+                              <p className="text-[10px] text-amber-400">
+                                Selecione os lotes ou informe marca/modelo e operadora para itens novos.
+                              </p>
+                            ) : preview.contadores.erros > 0 ? (
+                              <>
+                                <p className="text-[10px] text-amber-400">
+                                  Corrija os erros abaixo:
+                                </p>
+                                {preview.linhas[0] && (
+                                  <div className="flex flex-wrap gap-2">
+                                    {preview.linhas[0].tracker_status === 'INVALID_FORMAT' && (
+                                      <span
+                                        className={cn(
+                                          'rounded px-2 py-0.5 text-[10px] font-bold',
+                                          TRACKER_STATUS_LABELS.INVALID_FORMAT.className
+                                        )}
+                                      >
+                                        Rastreador: Formato inválido (IMEI deve ter 14-16 dígitos)
+                                      </span>
+                                    )}
+                                    {preview.linhas[0].tracker_status === 'FOUND_ALREADY_LINKED' && (
+                                      <span
+                                        className={cn(
+                                          'rounded px-2 py-0.5 text-[10px] font-bold',
+                                          TRACKER_STATUS_LABELS.FOUND_ALREADY_LINKED.className
+                                        )}
+                                      >
+                                        Rastreador: Em uso (já vinculado)
+                                      </span>
+                                    )}
+                                    {preview.linhas[0].sim_status === 'INVALID_FORMAT' && (
+                                      <span
+                                        className={cn(
+                                          'rounded px-2 py-0.5 text-[10px] font-bold',
+                                          TRACKER_STATUS_LABELS.INVALID_FORMAT.className
+                                        )}
+                                      >
+                                        SIM: Formato inválido (ICCID deve ter 18-21 dígitos)
+                                      </span>
+                                    )}
+                                    {preview.linhas[0].sim_status === 'FOUND_ALREADY_LINKED' && (
+                                      <span
+                                        className={cn(
+                                          'rounded px-2 py-0.5 text-[10px] font-bold',
+                                          TRACKER_STATUS_LABELS.FOUND_ALREADY_LINKED.className
+                                        )}
+                                      >
+                                        SIM: Em uso (já vinculado)
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <p className="text-[10px] text-amber-400">Clique em Verificar para validar os dados.</p>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
