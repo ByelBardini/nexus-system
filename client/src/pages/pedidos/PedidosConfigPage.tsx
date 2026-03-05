@@ -18,13 +18,6 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { formatarDataCurta } from '@/lib/format'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
   mapPedidoToView,
   type PedidoRastreadorView,
   type PedidoRastreadorApi,
@@ -74,23 +67,21 @@ interface WorkspacePersisted {
   tipoDespachoPorPedido: Record<string, TipoDespacho>
   transportadoraPorPedido: Record<string, string>
   numeroNfPorPedido: Record<string, string>
-  deClienteIdPorPedido: Record<string, number>
 }
 
 function loadWorkspaceFromStorage(): WorkspacePersisted {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY)
-    if (!raw) return { kitsPorPedido: {}, tipoDespachoPorPedido: {}, transportadoraPorPedido: {}, numeroNfPorPedido: {}, deClienteIdPorPedido: {} }
+    if (!raw) return { kitsPorPedido: {}, tipoDespachoPorPedido: {}, transportadoraPorPedido: {}, numeroNfPorPedido: {} }
     const parsed = JSON.parse(raw) as WorkspacePersisted
     return {
       kitsPorPedido: parsed.kitsPorPedido ?? {},
       tipoDespachoPorPedido: parsed.tipoDespachoPorPedido ?? {},
       transportadoraPorPedido: parsed.transportadoraPorPedido ?? {},
       numeroNfPorPedido: parsed.numeroNfPorPedido ?? {},
-      deClienteIdPorPedido: parsed.deClienteIdPorPedido ?? {},
     }
   } catch {
-    return { kitsPorPedido: {}, tipoDespachoPorPedido: {}, transportadoraPorPedido: {}, numeroNfPorPedido: {}, deClienteIdPorPedido: {} }
+    return { kitsPorPedido: {}, tipoDespachoPorPedido: {}, transportadoraPorPedido: {}, numeroNfPorPedido: {} }
   }
 }
 
@@ -928,8 +919,6 @@ function SidePanel({
   numeroNf,
   onTransportadoraChange,
   onNumeroNfChange,
-  deClienteIdSelecionado,
-  onDeClienteIdChange,
 }: {
   pedido: PedidoRastreadorView | null
   pedidoApi: PedidoRastreadorApi | null
@@ -945,18 +934,11 @@ function SidePanel({
   numeroNf: string
   onTransportadoraChange: (valor: string) => void
   onNumeroNfChange: (valor: string) => void
-  deClienteIdSelecionado: number | undefined
-  onDeClienteIdChange: (id: number | undefined) => void
 }) {
   const queryClient = useQueryClient()
   const { hasPermission } = useAuth()
   const [kitExpandidoId, setKitExpandidoId] = useState<number | null>(null)
 
-  const { data: clientes = [] } = useQuery<{ id: number; nome: string }[]>({
-    queryKey: ['clientes'],
-    queryFn: () => api('/clientes'),
-    enabled: open && pedido?.tipo === 'tecnico',
-  })
   const [detalhesKitId, setDetalhesKitId] = useState<number | null>(null)
   const [modalSelecaoKit, setModalSelecaoKit] = useState(false)
   const [kitParaEditar, setKitParaEditar] = useState<{ id: number; nome: string } | null>(null)
@@ -974,16 +956,14 @@ function SidePanel({
       id,
       status,
       kitIds,
-      deClienteId,
     }: {
       id: number
       status: StatusPedidoRastreador
       kitIds?: number[]
-      deClienteId?: number
     }) =>
       api(`/pedidos-rastreadores/${id}/status`, {
         method: 'PATCH',
-        body: JSON.stringify({ status, kitIds, deClienteId }),
+        body: JSON.stringify({ status, kitIds }),
       }),
     onSuccess: (_, variables) => {
       const status = variables.status
@@ -1034,13 +1014,10 @@ function SidePanel({
     const novoStatus = STATUS_TO_API[proximoStatus]
     const precisaKitIds =
       novoStatus === 'CONFIGURADO' || novoStatus === 'DESPACHADO' || novoStatus === 'ENTREGUE'
-    const payload: { id: number; status: StatusPedidoRastreador; kitIds?: number[]; deClienteId?: number } = {
+    const payload = {
       id: pedido.id,
       status: novoStatus,
       kitIds: precisaKitIds && kitsVinculados.length > 0 ? kitsVinculados.map((k) => k.id) : undefined,
-    }
-    if (novoStatus === 'ENTREGUE' && pedido.tipo === 'tecnico' && deClienteIdSelecionado) {
-      payload.deClienteId = deClienteIdSelecionado
     }
     statusMutation.mutate(payload)
   }
@@ -1250,51 +1227,6 @@ function SidePanel({
             <p className="text-[10px] text-amber-600 mt-1.5">
               Vincule todos os rastreadores ({progress}/{total}) para avançar
             </p>
-          )}
-          {pedido.tipo === 'tecnico' && (mostraConcluir || pedido.status === 'despachado') && podeEditar && !estaConcluido && (
-            <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-sm">
-              <Label className="text-[10px] font-bold text-amber-800 uppercase mb-2 block">
-                Cliente / Empresa (vincula aos rastreadores ao concluir)
-              </Label>
-              <Select
-                value={deClienteIdSelecionado ? String(deClienteIdSelecionado) : ''}
-                onValueChange={(v) => onDeClienteIdChange(v ? +v : undefined)}
-              >
-                <SelectTrigger className="h-9 text-[11px] bg-white">
-                  <SelectValue placeholder="Selecione a empresa" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clientes.map((c) => (
-                    <SelectItem key={c.id} value={String(c.id)}>
-                      {c.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-[10px] text-amber-700 mt-1">
-                Selecione a empresa dona dos rastreadores para vincular ao concluir
-              </p>
-            </div>
-          )}
-          {pedido.tipo === 'cliente' && (mostraConcluir || pedido.status === 'despachado') && podeEditar && !estaConcluido && (
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-sm">
-              <Label className="text-[10px] font-bold text-blue-800 uppercase mb-2 block">
-                Cliente Destinatário (vincula aos rastreadores ao concluir)
-              </Label>
-              <div className="bg-white border border-blue-100 rounded-sm px-3 py-2">
-                <p className="text-[11px] font-semibold text-slate-700">
-                  {pedidoApi?.subcliente?.nome ?? pedidoApi?.cliente?.nome ?? '-'}
-                </p>
-                {pedidoApi?.subcliente?.cliente?.nome && (
-                  <p className="text-[10px] text-slate-500 mt-0.5">
-                    {pedidoApi.subcliente.cliente.nome}
-                  </p>
-                )}
-              </div>
-              <p className="text-[10px] text-blue-700 mt-1">
-                Os rastreadores serão vinculados a este cliente ao concluir
-              </p>
-            </div>
           )}
         </div>
 
@@ -1625,15 +1557,6 @@ export function PedidosConfigPage() {
     })
     return out
   })
-  const [deClienteIdPorPedido, setDeClienteIdPorPedido] = useState<Record<number, number>>(() => {
-    const s = loadWorkspaceFromStorage()
-    const out: Record<number, number> = {}
-    Object.entries(s.deClienteIdPorPedido ?? {}).forEach(([k, v]) => {
-      if (typeof v === 'number' && v > 0) out[Number(k)] = v
-    })
-    return out
-  })
-
   useEffect(() => {
     const raw: WorkspacePersisted = {
       kitsPorPedido: Object.fromEntries(
@@ -1648,12 +1571,9 @@ export function PedidosConfigPage() {
       numeroNfPorPedido: Object.fromEntries(
         Object.entries(numeroNfPorPedido).map(([k, v]) => [String(k), v])
       ),
-      deClienteIdPorPedido: Object.fromEntries(
-        Object.entries(deClienteIdPorPedido).map(([k, v]) => [String(k), v])
-      ),
     }
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(raw))
-  }, [kitsPorPedido, tipoDespachoPorPedido, transportadoraPorPedido, numeroNfPorPedido, deClienteIdPorPedido])
+  }, [kitsPorPedido, tipoDespachoPorPedido, transportadoraPorPedido, numeroNfPorPedido])
 
   const { data: lista, isLoading } = useQuery({
     queryKey: ['pedidos-rastreadores', 'config', busca],
@@ -1706,8 +1626,8 @@ export function PedidosConfigPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4">
+    <div className="flex flex-col h-[calc(100vh-2rem)] min-h-0">
+      <div className="flex items-center justify-between gap-4 shrink-0 pb-4">
         <div className="relative flex-1 max-w-xs">
           <MaterialIcon
             name="search"
@@ -1722,8 +1642,8 @@ export function PedidosConfigPage() {
         </div>
       </div>
 
-      <div className="bg-white border border-slate-300 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto bg-slate-100 p-4 min-h-[450px]">
+      <div className="bg-white border border-slate-300 shadow-sm overflow-hidden flex-1 min-h-0 flex flex-col">
+        <div className="overflow-auto bg-slate-100 p-4 flex-1 min-h-0">
           <div className="flex gap-4 min-w-max min-h-[420px]">
             {STATUS_ORDER.map((status) => (
               <KanbanColumn
@@ -1772,21 +1692,6 @@ export function PedidosConfigPage() {
         onNumeroNfChange={(valor) => {
           if (pedidoSelecionado) {
             setNumeroNfPorPedido((prev) => ({ ...prev, [pedidoSelecionado.id]: valor }))
-          }
-        }}
-        deClienteIdSelecionado={
-          pedidoSelecionado
-            ? (deClienteIdPorPedido[pedidoSelecionado.id] ?? pedidoApiSelecionado?.deClienteId ?? undefined)
-            : undefined
-        }
-        onDeClienteIdChange={(id) => {
-          if (pedidoSelecionado) {
-            setDeClienteIdPorPedido((prev) => {
-              const next = { ...prev }
-              if (id != null) next[pedidoSelecionado!.id] = id
-              else delete next[pedidoSelecionado!.id]
-              return next
-            })
           }
         }}
       />
