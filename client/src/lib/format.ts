@@ -55,6 +55,23 @@ export function cepApenasDigitos(val: string): string {
 }
 
 /**
+ * Formata placa: Mercosul XXX-9X99 ou antiga XXX-1234
+ * Aceita letras e números, formata automaticamente
+ */
+export function formatarPlaca(val: string): string {
+  const s = val.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 7)
+  if (s.length <= 3) return s
+  return `${s.slice(0, 3)}-${s.slice(3)}`
+}
+
+/**
+ * Remove formatação da placa (apenas letras e números)
+ */
+export function placaApenasAlfanumericos(val: string): string {
+  return val.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()
+}
+
+/**
  * Formata CNPJ: 00.000.000/0001-00
  */
 export function formatarCNPJ(val: string): string {

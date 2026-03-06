@@ -31,6 +31,7 @@ export function InputCPFCNPJ({
       className={className}
       disabled={disabled}
       maxLength={18}
+      autoComplete="off"
     />
   )
 }

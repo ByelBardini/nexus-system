@@ -6,6 +6,11 @@ import { Login } from '@/pages/Login'
 import { Loader2 } from 'lucide-react'
 
 const OrdensServicoPage = lazy(() => import('@/pages/OrdensServicoPage').then((m) => ({ default: m.OrdensServicoPage })))
+const OrdensServicoCriacaoPage = lazy(() =>
+  import('@/pages/ordens-servico/OrdensServicoCriacaoPage').then((m) => ({
+    default: m.OrdensServicoCriacaoPage,
+  }))
+)
 const ConfiguracoesPage = lazy(() => import('@/pages/configuracoes/ConfiguracoesPage').then((m) => ({ default: m.ConfiguracoesPage })))
 const UsuariosPage = lazy(() => import('@/pages/usuarios/UsuariosPage').then((m) => ({ default: m.UsuariosPage })))
 const CargosPage = lazy(() => import('@/pages/cargos/CargosPage').then((m) => ({ default: m.CargosPage })))
@@ -59,6 +64,14 @@ function App() {
           element={
             <Suspense fallback={<PageLoader />}>
               <OrdensServicoPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="ordens-servico/nova"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <OrdensServicoCriacaoPage />
             </Suspense>
           }
         />

@@ -74,7 +74,7 @@ export function AppLayout() {
             <p className="text-[9px] uppercase tracking-widest text-slate-500 font-bold">Agend. e Conf.</p>
           </div>
         </div>
-        <nav className="flex-1 px-2 py-4 flex flex-col gap-4 overflow-y-auto">
+        <nav className="flex-1 min-h-0 px-2 py-4 flex flex-col gap-4 overflow-y-auto">
           {navSections.map((section) => (
             <div key={section.title}>
               <p className="px-3 mb-2 text-[9px] font-bold uppercase tracking-widest text-slate-500">
@@ -89,7 +89,8 @@ export function AppLayout() {
                     icon={icon}
                     isActive={
                       location.pathname === to ||
-                      (to !== '/' && location.pathname.startsWith(to + '/'))
+                      (to !== '/' && location.pathname.startsWith(to + '/')) ||
+                      (to === '/' && location.pathname.startsWith('/ordens-servico'))
                     }
                   />
                 ))}
@@ -127,8 +128,8 @@ export function AppLayout() {
           </div>
         </div>
       </aside>
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto pt-4 px-4 pb-4">
+      <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden pt-4 px-4 pb-4">
           <Outlet />
         </div>
       </main>

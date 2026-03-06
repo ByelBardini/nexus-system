@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html class="light" lang="pt-br">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Nova Ordem de Serviço - ERP OPS</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;family=Roboto+Condensed:wght@400;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0f172a",
+                        "erp-yellow": "#eab308",
+                        "erp-blue": "#2563eb",
+                        "erp-purple": "#8b5cf6",
+                        "erp-orange": "#f97316",
+                        "erp-green": "#16a34a",
+                        "background-light": "#f1f5f9",
+                    },
+                    fontFamily: {
+                        "sans": ["Inter", "sans-serif"],
+                        "condensed": ["Roboto Condensed", "sans-serif"]
+                    },
+                },
+            },
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer base {
+            body { @apply bg-background-light text-slate-900 font-sans text-sm overflow-hidden; }
+            h1, h2, h3, h4 { @apply font-condensed uppercase tracking-tight; }
+        }
+        .form-card { @apply bg-white border border-slate-300 shadow-sm mb-4 overflow-hidden; }
+        .form-card-header { @apply bg-slate-50 border-b border-slate-300 px-4 py-2 flex items-center gap-2; }
+        .form-card-body { @apply p-4; }
+        .label-sm { @apply text-[10px] font-bold text-slate-500 uppercase mb-1 block; }
+        .input-erp { @apply w-full bg-white border border-slate-300 px-3 py-1.5 text-xs focus:ring-1 focus:ring-slate-950 focus:border-slate-950 transition-all rounded-none; }
+        .select-erp { @apply w-full bg-white border border-slate-300 px-3 py-1.5 text-xs focus:ring-1 focus:ring-slate-950 focus:border-slate-950 transition-all rounded-none appearance-none; }
+        .badge-erp { @apply text-[9px] font-bold px-1.5 py-0.5 border uppercase; }.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+
+<body>
+    <div class="flex h-screen overflow-hidden">
+        <aside class="w-60 bg-slate-950 text-slate-300 flex flex-col border-r border-slate-800 shrink-0">
+            <div class="p-4 flex items-center gap-3 border-b border-slate-800">
+                <div class="size-7 bg-white flex items-center justify-center text-slate-950 rounded-sm">
+                    <span class="material-symbols-outlined text-xl">precision_manufacturing</span>
+                </div>
+                <div>
+                    <h1 class="text-white text-base font-bold leading-none">ERP OPS</h1>
+                    <p class="text-[9px] uppercase tracking-widest text-slate-500 font-bold">Industrial Terminal</p>
+                </div>
+            </div>
+            <nav class="flex-1 px-2 py-4 flex flex-col gap-0.5">
+                <a class="flex items-center gap-3 px-3 py-2 hover:bg-slate-900 transition-colors" href="#">
+                    <span class="material-symbols-outlined text-lg text-slate-500">dashboard</span>
+                    <span class="text-xs font-semibold uppercase">Monitor</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 bg-white/10 text-white border-l-4 border-erp-blue" href="#">
+                    <span class="material-symbols-outlined text-lg text-erp-blue">list_alt</span>
+                    <span class="text-xs font-semibold uppercase">Ordens de Serviço</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 hover:bg-slate-900 transition-colors" href="#">
+                    <span class="material-symbols-outlined text-lg text-slate-500">inventory</span>
+                    <span class="text-xs font-semibold uppercase">Controle de Estoque</span>
+                </a>
+                <a class="flex items-center gap-3 px-3 py-2 hover:bg-slate-900 transition-colors" href="#">
+                    <span class="material-symbols-outlined text-lg text-slate-500">engineering</span>
+                    <span class="text-xs font-semibold uppercase">Equipe Técnica</span>
+                </a>
+            </nav>
+            <div class="p-4 mt-auto border-t border-slate-800 bg-slate-900/50">
+                <div class="flex items-center gap-3">
+                    <div class="size-8 bg-slate-700 overflow-hidden">
+                        <img alt="User avatar" class="w-full h-full object-cover"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuARpg0-nt6W056FdqFH-rqKxSZ8Ii_hgt8bbU-oUEoL12CgEjywVmDMjGev9-WYUmxOqscYdxvY3NSpwo7twntcWKMFqBqooNNFNXU_x1ywIt_7x4Ren86RLRx3HnLf01UTLTN0XAwJfqFGpArbsE6Oev8q1Shm-o8L3C3w9T0XESL_nWwLf9dMsRbKJtY5ARFOM_lhRO4bFP4RGaLLlVMafRzOymbDAzlHS84emuOxa8Y8lJvyFUUQRlMGDdYwWiMRXOHL9SYNato" />
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[11px] font-bold text-slate-100 uppercase truncate">M. Vinicius</p>
+                        <p class="text-[9px] text-slate-500 uppercase font-bold">Terminal Admin</p>
+                    </div>
+                    <button class="text-slate-500 hover:text-white"><span
+                            class="material-symbols-outlined text-lg">logout</span></button>
+                </div>
+            </div>
+        </aside>
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <header
+                class="h-14 bg-white border-b border-slate-300 flex items-center justify-between px-6 shrink-0 shadow-sm z-10">
+                <div class="flex items-center gap-4">
+                    <div class="flex flex-col">
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-base font-black text-slate-900 uppercase">Nova Ordem de Serviço</h2>
+                            <span
+                                class="bg-erp-yellow/10 text-yellow-700 border border-erp-yellow/30 px-2 py-0.5 text-[10px] font-bold flex items-center gap-1">
+                                <span class="size-2 bg-erp-yellow rounded-full"></span> EM ABERTO
+                            </span>
+                        </div>
+                        <p class="text-[9px] text-slate-400 font-bold uppercase">Criado por: <span
+                                class="text-slate-700">M. Vinicius</span> • <span
+                                class="text-slate-400 font-medium">24/05/2024</span></p>
+                    </div>
+                    <div class="h-8 w-px bg-slate-200 mx-2"></div>
+                    <div class="flex flex-col">
+                        <label class="text-[9px] text-slate-400 font-bold uppercase">Data da OS</label>
+                        <input class="text-[11px] font-bold border-none p-0 focus:ring-0 cursor-pointer" type="date"
+                            value="2024-05-24" />
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button
+                        class="px-4 py-2 border border-slate-300 text-[11px] font-bold uppercase hover:bg-slate-50 transition-all">Salvar
+                        Rascunho</button>
+                    <button
+                        class="px-4 py-2 text-red-600 text-[11px] font-bold uppercase hover:bg-red-50 transition-all">Cancelar</button>
+                    <button
+                        class="px-5 py-2 bg-erp-blue text-white text-[11px] font-bold uppercase hover:bg-blue-700 shadow-md transition-all flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm font-bold">send</span>
+                        Emitir Ordem
+                    </button>
+                </div>
+            </header>
+            <div class="flex-1 flex overflow-hidden">
+                <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                    <section class="form-card">
+                        <div class="form-card-header">
+                            <span class="material-symbols-outlined text-slate-400 text-lg">corporate_fare</span>
+                            <h3 class="text-xs font-bold text-slate-700">Cliente / Associação</h3>
+                        </div>
+                        <div class="form-card-body space-y-4">
+                            <div class="grid grid-cols-12 gap-4">
+                                <div class="col-span-8">
+                                    <label class="label-sm">Buscar Cliente</label>
+                                    <div class="relative">
+                                        <select class="select-erp pr-10">
+                                            <option>Selecione o cliente...</option>
+                                            <option selected="">TRANS-LOGISTICS S.A.</option>
+                                            <option>GLOBAL TRANS-ASSOCIATION</option>
+                                        </select>
+                                        <span
+                                            class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">search</span>
+                                    </div>
+                                </div>
+                                <div class="col-span-4 flex items-end gap-2 pb-1.5">
+                                    <span
+                                        class="badge-erp bg-erp-blue/10 border-erp-blue/30 text-erp-blue">Comodato</span>
+                                    <span
+                                        class="badge-erp bg-slate-100 border-slate-300 text-slate-400">Aquisição</span>
+                                </div>
+                            </div>
+                            <div class="bg-slate-50 border border-slate-200 p-4 mt-2">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <div class="h-px flex-1 bg-slate-200"></div>
+                                    <span class="text-[10px] font-black text-slate-400 uppercase">Dados do
+                                        Subcliente</span>
+                                    <div class="h-px flex-1 bg-slate-200"></div>
+                                </div>
+                                <div class="grid grid-cols-12 gap-3">
+                                    <div class="col-span-8">
+                                        <label class="label-sm">Nome do Subcliente</label>
+                                        <input class="input-erp" placeholder="Ex: Filial Norte" type="text" />
+                                    </div>
+                                    <div class="col-span-4">
+                                        <label class="label-sm">CEP</label>
+                                        <input class="input-erp" placeholder="00000-000" type="text" />
+                                    </div>
+                                    <div class="col-span-12">
+                                        <label class="label-sm">Endereço Completo</label>
+                                        <input class="input-erp" placeholder="Rua, Número, Bairro, Cidade - UF"
+                                            type="text" />
+                                    </div>
+                                    <div class="col-span-4">
+                                        <label class="label-sm">CPF/CNPJ</label>
+                                        <input class="input-erp" type="text" />
+                                    </div>
+                                    <div class="col-span-4">
+                                        <label class="label-sm">E-mail</label>
+                                        <input class="input-erp" type="email" />
+                                    </div>
+                                    <div class="col-span-4">
+                                        <label class="label-sm">Telefone</label>
+                                        <input class="input-erp" type="tel" />
+                                    </div>
+                                    <div class="col-span-12">
+                                        <label class="label-sm">Tipo de Faturamento</label>
+                                        <div class="flex gap-4">
+                                            <label class="flex items-center gap-2 cursor-pointer">
+                                                <input checked="" class="text-erp-blue focus:ring-0" name="billing"
+                                                    type="radio" />
+                                                <span class="text-[11px] font-bold text-slate-700">Infinity
+                                                    (Padrão)</span>
+                                            </label>
+                                            <label class="flex items-center gap-2 cursor-pointer">
+                                                <input class="text-erp-blue focus:ring-0" name="billing" type="radio" />
+                                                <span class="text-[11px] font-bold text-slate-700">Direto Cliente</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="form-card">
+                        <div class="form-card-header">
+                            <span class="material-symbols-outlined text-slate-400 text-lg">engineering</span>
+                            <h3 class="text-xs font-bold text-slate-700">Técnico Responsável</h3>
+                        </div>
+                        <div class="form-card-body">
+                            <div class="grid grid-cols-12 gap-4">
+                                <div class="col-span-6">
+                                    <label class="label-sm">Selecionar Técnico</label>
+                                    <select class="select-erp">
+                                        <option>Selecione...</option>
+                                        <option selected="">RICARDO SANTOS (ID: 442)</option>
+                                        <option>MARCOS SILVA (ID: 102)</option>
+                                    </select>
+                                </div>
+                                <div class="col-span-6">
+                                    <div
+                                        class="bg-blue-50/50 border border-blue-100 p-3 flex items-center justify-between">
+                                        <div>
+                                            <p class="text-[9px] font-bold text-slate-400 uppercase leading-tight">
+                                                Localização Base</p>
+                                            <p class="text-[11px] font-black text-slate-800 uppercase">SÃO PAULO - SP
+                                            </p>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-[9px] font-bold text-slate-400 uppercase leading-tight">
+                                                Status</p>
+                                            <span
+                                                class="text-[10px] font-bold text-erp-green uppercase">Disponível</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-span-12">
+                                    <label class="label-sm">Tabela de Preços Atribuída</label>
+                                    <table class="w-full border border-slate-200">
+                                        <thead class="bg-slate-50 border-b border-slate-200">
+                                            <tr>
+                                                <th class="text-left p-2 text-[9px] font-bold text-slate-500 uppercase">
+                                                    Tipo Serviço</th>
+                                                <th
+                                                    class="text-right p-2 text-[9px] font-bold text-slate-500 uppercase">
+                                                    Valor Repasse</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="text-[11px] font-medium">
+                                            <tr class="border-b border-slate-100">
+                                                <td class="p-2">Instalação</td>
+                                                <td class="p-2 text-right font-bold text-slate-700">R$ 150,00</td>
+                                            </tr>
+                                            <tr class="border-b border-slate-100">
+                                                <td class="p-2">Revisão</td>
+                                                <td class="p-2 text-right font-bold text-slate-700">R$ 80,00</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="p-2">Retirada</td>
+                                                <td class="p-2 text-right font-bold text-slate-700">R$ 120,00</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="form-card">
+                        <div class="form-card-header justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-slate-400 text-lg">local_shipping</span>
+                                <h3 class="text-xs font-bold text-slate-700">Veículo</h3>
+                            </div>
+                            <button class="text-[9px] font-black uppercase text-erp-blue hover:underline">Reutilizar
+                                dados últimos serviços</button>
+                        </div>
+                        <div class="form-card-body">
+                            <div class="grid grid-cols-12 gap-3">
+                                <div class="col-span-3">
+                                    <label class="label-sm">Placa</label>
+                                    <input class="input-erp font-black text-center text-sm" placeholder="ABC-1234"
+                                        type="text" />
+                                </div>
+                                <div class="col-span-3">
+                                    <label class="label-sm">Marca</label>
+                                    <input class="input-erp" type="text" />
+                                </div>
+                                <div class="col-span-3">
+                                    <label class="label-sm">Modelo</label>
+                                    <input class="input-erp" type="text" />
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="label-sm">Ano</label>
+                                    <input class="input-erp" type="text" />
+                                </div>
+                                <div class="col-span-1">
+                                    <label class="label-sm">Cor</label>
+                                    <input class="input-erp" type="text" />
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="form-card">
+                        <div class="form-card-header">
+                            <span class="material-symbols-outlined text-slate-400 text-lg">build</span>
+                            <h3 class="text-xs font-bold text-slate-700">Detalhes do Serviço</h3>
+                        </div>
+                        <div class="form-card-body">
+                            <div class="grid grid-cols-12 gap-4">
+                                <div class="col-span-12">
+                                    <label class="label-sm">Tipo de Serviço</label>
+                                    <select class="select-erp font-bold text-erp-blue">
+                                        <option>Selecione...</option>
+                                        <option>INSTALAÇÃO</option>
+                                        <option selected="">REVISÃO</option>
+                                        <option>RETIRADA</option>
+                                    </select>
+                                </div>
+                                <div
+                                    class="col-span-12 grid grid-cols-12 gap-3 p-4 bg-orange-50/50 border border-orange-100">
+                                    <div class="col-span-4">
+                                        <label class="label-sm">ID do Aparelho (Instalado)</label>
+                                        <input class="input-erp" type="text" value="672901-A" />
+                                    </div>
+                                    <div class="col-span-4">
+                                        <label class="label-sm">Local de Instalação</label>
+                                        <input class="input-erp" type="text" value="PAINEL FRONTAL" />
+                                    </div>
+                                    <div class="col-span-4">
+                                        <label class="label-sm">Status Pós Chave</label>
+                                        <select class="select-erp">
+                                            <option>SIM</option>
+                                            <option>NÃO</option>
+                                            <option selected="">INCONSISTENTE</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="form-card">
+                        <div class="form-card-header">
+                            <span class="material-symbols-outlined text-slate-400 text-lg">chat_bubble</span>
+                            <h3 class="text-xs font-bold text-slate-700">Observações Internas</h3>
+                        </div>
+                        <div class="form-card-body">
+                            <textarea class="input-erp h-24 resize-none"
+                                placeholder="Detalhes técnicos adicionais para o serviço em campo..."></textarea>
+                        </div>
+                    </section>
+                </div>
+                <div
+                    class="w-80 bg-white border-l border-slate-300 flex flex-col shrink-0 overflow-y-auto custom-scrollbar">
+                    <div class="p-5 border-b border-slate-200">
+                        <h4 class="text-xs font-black text-slate-950 flex items-center gap-2 mb-4">
+                            <span class="material-symbols-outlined text-erp-blue">analytics</span>
+                            Resumo da Ordem
+                        </h4>
+                        <div class="space-y-4">
+                            <div class="flex flex-col gap-1">
+                                <span class="text-[10px] text-slate-400 font-bold uppercase">Cliente Selecionado</span>
+                                <p class="text-[11px] font-black text-slate-800 truncate">TRANS-LOGISTICS S.A.</p>
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <span class="text-[10px] text-slate-400 font-bold uppercase">Técnico Atribuído</span>
+                                <p class="text-[11px] font-black text-slate-800 uppercase">Ricardo Santos</p>
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <span class="text-[10px] text-slate-400 font-bold uppercase">Veículo</span>
+                                <p class="text-[11px] font-black text-slate-800 uppercase">ABC-1234 • Volvo FH</p>
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <span class="text-[10px] text-slate-400 font-bold uppercase">Tipo de Serviço</span>
+                                <p class="text-[11px] font-black text-erp-blue uppercase">Revisão Técnica</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-5 flex-1">
+                        <h4 class="text-xs font-black text-slate-950 flex items-center gap-2 mb-4">
+                            <span class="material-symbols-outlined text-slate-400">fact_check</span>
+                            Checklist de Validação
+                        </h4>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="font-bold text-slate-600">Dados do Cliente</span>
+                                <span class="material-symbols-outlined text-erp-green text-lg">check_circle</span>
+                            </div>
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="font-bold text-slate-600">Técnico Selecionado</span>
+                                <span class="material-symbols-outlined text-erp-green text-lg">check_circle</span>
+                            </div>
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="font-bold text-slate-600">Dados do Veículo</span>
+                                <span
+                                    class="material-symbols-outlined text-slate-300 text-lg">radio_button_unchecked</span>
+                            </div>
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="font-bold text-slate-600">Tipo de Serviço</span>
+                                <span class="material-symbols-outlined text-erp-green text-lg">check_circle</span>
+                            </div>
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="font-bold text-slate-600">Faturamento</span>
+                                <span class="material-symbols-outlined text-red-500 text-lg">error</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-5 bg-slate-50 border-t border-slate-200">
+                        <button
+                            class="w-full bg-erp-blue text-white py-3 text-xs font-black uppercase hover:bg-blue-700 shadow-sm transition-all flex items-center justify-center gap-2">
+                            <span class="material-symbols-outlined text-sm">send</span>
+                            Emitir Ordem
+                        </button>
+                        <p class="text-[9px] text-slate-400 text-center mt-3 font-bold uppercase">Aguardando campos
+                            obrigatórios</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+</body>
+
+</html>

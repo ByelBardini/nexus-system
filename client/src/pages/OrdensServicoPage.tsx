@@ -1,13 +1,9 @@
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm, Controller } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Loader2, X } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { Loader2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
@@ -18,7 +14,6 @@ import {
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
-import { toast } from 'sonner'
 import { MaterialIcon } from '@/components/MaterialIcon'
 
 const tipoLabels: Record<string, string> = {
@@ -75,22 +70,6 @@ interface PaginatedResult {
   totalPages: number
 }
 
-interface Cliente {
-  id: number
-  nome: string
-  subclientes?: { id: number; nome: string }[]
-}
-
-const schema = z.object({
-  tipo: z.string().min(1, 'Tipo obrigatório'),
-  clienteId: z.number().min(1, 'Cliente obrigatório'),
-  subclienteId: z.number().optional(),
-  veiculoId: z.number().optional(),
-  tecnicoId: z.number().optional(),
-  observacoes: z.string().optional(),
-})
-
-type FormData = z.infer<typeof schema>
 
 function formatDate(s: string) {
   const d = new Date(s)
@@ -103,27 +82,12 @@ function formatDate(s: string) {
 }
 
 export function OrdensServicoPage() {
-  const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const { hasPermission } = useAuth()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('TODOS')
-  const [openCreate, setOpenCreate] = useState(false)
   const canCreate = hasPermission('AGENDAMENTO.OS.CRIAR')
-
-  const defaultFormValues = {
-    tipo: '',
-    clienteId: 0,
-    subclienteId: 0,
-    veiculoId: 0,
-    tecnicoId: 0,
-    observacoes: '',
-  }
-
-  const form = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: defaultFormValues,
-  })
 
   const { data: resumo, isLoading: loadingResumo } = useQuery<Resumo>({
     queryKey: ['ordens-servico', 'resumo'],
@@ -142,66 +106,7 @@ export function OrdensServicoPage() {
     },
   })
 
-  const { data: clientes = [] } = useQuery<Cliente[]>({
-    queryKey: ['clientes'],
-    queryFn: () => api('/clientes'),
-  })
 
-  const selectedClienteId = form.watch('clienteId')
-  const { data: clienteDetalhe } = useQuery<Cliente>({
-    queryKey: ['clientes', selectedClienteId],
-    queryFn: () => api(`/clientes/${selectedClienteId}`),
-    enabled: !!selectedClienteId && selectedClienteId > 0,
-  })
-
-  const { data: tecnicos = [] } = useQuery<{ id: number; nome: string }[]>({
-    queryKey: ['tecnicos'],
-    queryFn: () => api('/tecnicos'),
-  })
-
-  const { data: veiculos = [] } = useQuery<{ id: number; placa: string }[]>({
-    queryKey: ['veiculos'],
-    queryFn: () => api('/veiculos'),
-    enabled: openCreate,
-  })
-
-  const createMutation = useMutation({
-    mutationFn: (data: FormData) =>
-      api('/ordens-servico', {
-        method: 'POST',
-        body: JSON.stringify({
-          tipo: data.tipo,
-          clienteId: data.clienteId,
-          subclienteId: data.subclienteId || undefined,
-          veiculoId: data.veiculoId || undefined,
-          tecnicoId: data.tecnicoId || undefined,
-          observacoes: data.observacoes || undefined,
-        }),
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ordens-servico'] })
-      setOpenCreate(false)
-      form.reset(defaultFormValues)
-      toast.success('Ordem de serviço criada')
-    },
-    onError: (err) => toast.error(err instanceof Error ? err.message : 'Erro'),
-  })
-
-  const subclientes = clienteDetalhe?.subclientes ?? []
-
-  const handleCreateSubmit = (data: FormData) => {
-    createMutation.mutate({
-      ...data,
-      subclienteId: data.subclienteId && data.subclienteId > 0 ? data.subclienteId : undefined,
-      veiculoId: data.veiculoId && data.veiculoId > 0 ? data.veiculoId : undefined,
-      tecnicoId: data.tecnicoId && data.tecnicoId > 0 ? data.tecnicoId : undefined,
-    })
-  }
-
-  const handleOpenCreate = () => {
-    form.reset(defaultFormValues)
-    setOpenCreate(true)
-  }
 
   if (loadingResumo) {
     return (
@@ -345,7 +250,7 @@ export function OrdensServicoPage() {
           </Select>
           {canCreate && (
             <Button
-              onClick={handleOpenCreate}
+              onClick={() => navigate('/ordens-servico/nova')}
               className="bg-erp-blue hover:bg-blue-700 text-[11px] font-bold uppercase"
             >
               <MaterialIcon name="add" className="text-sm mr-1" />
@@ -463,176 +368,6 @@ export function OrdensServicoPage() {
           </div>
         </div>
       </div>
-
-      <Dialog open={openCreate} onOpenChange={setOpenCreate}>
-        <DialogContent hideClose className="max-w-lg p-0 gap-0 flex flex-col overflow-hidden rounded-sm max-h-[90vh]">
-          <header className="bg-white border-b border-slate-200 p-6 flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-2">
-              <MaterialIcon name="assignment" className="text-blue-600" />
-              <h2 className="text-lg font-bold text-slate-800">Nova Ordem de Serviço</h2>
-            </div>
-            <button onClick={() => setOpenCreate(false)} className="text-slate-400 hover:text-slate-600">
-              <X className="h-5 w-5" />
-            </button>
-          </header>
-          <div className="flex-1 overflow-y-auto">
-          <form id="os-form"
-            onSubmit={form.handleSubmit(handleCreateSubmit as (d: FormData) => void)}
-            className="p-6 space-y-4"
-          >
-            <div>
-              <Label>Tipo</Label>
-              <Controller
-                name="tipo"
-                control={form.control}
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(tipoLabels).map(([k, v]) => (
-                        <SelectItem key={k} value={k}>
-                          {v}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {form.formState.errors.tipo && (
-                <p className="text-sm text-destructive">{form.formState.errors.tipo.message}</p>
-              )}
-            </div>
-            <div>
-              <Label>Cliente</Label>
-              <Controller
-                name="clienteId"
-                control={form.control}
-                render={({ field }) => (
-                  <Select
-                    value={field.value ? String(field.value) : ''}
-                    onValueChange={(v) => {
-                      field.onChange(+v)
-                      form.setValue('subclienteId', 0)
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o cliente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clientes.map((c) => (
-                        <SelectItem key={c.id} value={String(c.id)}>
-                          {c.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {form.formState.errors.clienteId && (
-                <p className="text-sm text-destructive">{form.formState.errors.clienteId.message}</p>
-              )}
-            </div>
-            {subclientes.length > 0 && (
-              <div>
-                <Label>Subcliente</Label>
-                <Controller
-                  name="subclienteId"
-                  control={form.control}
-                  render={({ field }) => (
-                    <Select
-                      value={field.value ? String(field.value) : ''}
-                      onValueChange={(v) => field.onChange(+v)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o subcliente" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {subclientes.map((s) => (
-                          <SelectItem key={s.id} value={String(s.id)}>
-                            {s.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
-            )}
-            <div>
-              <Label>Veículo (placa)</Label>
-              <Controller
-                name="veiculoId"
-                control={form.control}
-                render={({ field }) => (
-                  <Select
-                    value={field.value ? String(field.value) : ''}
-                    onValueChange={(v) => field.onChange(+v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o veículo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {veiculos.map((v) => (
-                        <SelectItem key={v.id} value={String(v.id)}>
-                          {v.placa}
-                        </SelectItem>
-                      ))}
-                      {veiculos.length === 0 && (
-                        <div className="px-2 py-1 text-[11px] text-slate-500">
-                          Nenhum veículo cadastrado
-                        </div>
-                      )}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-            <div>
-              <Label>Técnico</Label>
-              <Controller
-                name="tecnicoId"
-                control={form.control}
-                render={({ field }) => (
-                  <Select
-                    value={field.value ? String(field.value) : ''}
-                    onValueChange={(v) => field.onChange(+v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o técnico" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tecnicos.map((t) => (
-                        <SelectItem key={t.id} value={String(t.id)}>
-                          {t.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-            <div>
-              <Label>Observações</Label>
-              <Input
-                {...form.register('observacoes')}
-                className="resize-none"
-                placeholder="Observações"
-              />
-            </div>
-          </form>
-          </div>
-          <footer className="bg-slate-50 border-t border-slate-200 p-4 flex justify-end gap-3 shrink-0">
-            <Button type="button" variant="ghost" onClick={() => setOpenCreate(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" form="os-form" className="bg-blue-600 hover:bg-blue-700" disabled={createMutation.isPending}>
-              {createMutation.isPending ? 'Salvando...' : 'Criar OS'}
-            </Button>
-          </footer>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
