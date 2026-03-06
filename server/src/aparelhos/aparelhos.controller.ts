@@ -10,7 +10,7 @@ import { StatusAparelho } from '@prisma/client';
 @Controller('aparelhos')
 @UseGuards(PermissionsGuard)
 export class AparelhosController {
-  constructor(private readonly aparelhosService: AparelhosService) {}
+  constructor(private readonly aparelhosService: AparelhosService) { }
 
   @Get()
   @RequirePermissions('CONFIGURACAO.APARELHO.LISTAR')

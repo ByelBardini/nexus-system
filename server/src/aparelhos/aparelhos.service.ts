@@ -34,7 +34,7 @@ interface CreateIndividualDto {
 
 @Injectable()
 export class AparelhosService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAll() {
     return this.prisma.aparelho.findMany({
@@ -112,7 +112,7 @@ export class AparelhosService {
       });
 
       const aparelhosData: Prisma.AparelhoCreateManyInput[] = [];
-      
+
       if (temIdentificadores) {
         for (const identificador of identificadores) {
           aparelhosData.push({

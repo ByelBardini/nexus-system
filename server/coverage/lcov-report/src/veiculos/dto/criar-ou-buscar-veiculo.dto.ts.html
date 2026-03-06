@@ -3,7 +3,7 @@
 <html lang="en">
 
 <head>
-    <title>Code coverage report for src/users/dto/create-user.dto.ts</title>
+    <title>Code coverage report for src/veiculos/dto/criar-ou-buscar-veiculo.dto.ts</title>
     <meta charset="utf-8" />
     <link rel="stylesheet" href="../../../prettify.css" />
     <link rel="stylesheet" href="../../../base.css" />
@@ -19,7 +19,7 @@
 <body>
 <div class='wrapper'>
     <div class='pad1'>
-        <h1><a href="../../../index.html">All files</a> / <a href="index.html">src/users/dto</a> create-user.dto.ts</h1>
+        <h1><a href="../../../index.html">All files</a> / <a href="index.html">src/veiculos/dto</a> criar-ou-buscar-veiculo.dto.ts</h1>
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
@@ -90,8 +90,7 @@
 <a name='L25'></a><a href='#L25'>25</a>
 <a name='L26'></a><a href='#L26'>26</a>
 <a name='L27'></a><a href='#L27'>27</a>
-<a name='L28'></a><a href='#L28'>28</a>
-<a name='L29'></a><a href='#L29'>29</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L28'></a><a href='#L28'>28</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
@@ -103,7 +102,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -120,32 +118,31 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsEmail, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsOptional, IsString, MinLength } from 'class-validator';
 &nbsp;
-export class CreateUserDto {
-  @ApiProperty()
+export class CriarOuBuscarVeiculoDto {
+  @ApiProperty({ example: 'ABC1D23' })
   @IsString()
-  @MinLength(1)
-  nome: string;
+  @MinLength(7, { message: 'Placa deve ter 7 caracteres' })
+  placa: string;
 &nbsp;
-  @ApiProperty()
-  @IsEmail()
-  email: string;
-&nbsp;
-  @ApiProperty({ minLength: 4 })
+  @ApiProperty({ example: 'Fiat' })
   @IsString()
-  @MinLength(4)
-  password: string;
+  marca: string;
 &nbsp;
-  @ApiProperty({ required: false, default: true })
-  @IsOptional()
-  @IsBoolean()
-  ativo?: boolean;
+  @ApiProperty({ example: 'Uno' })
+  @IsString()
+  modelo: string;
 &nbsp;
-  @ApiPropertyOptional({ enum: ['AGENDAMENTO', 'CONFIGURACAO', 'ADMINISTRATIVO'] })
+  @ApiPropertyOptional({ example: '2020' })
   @IsOptional()
-  @IsEnum(['AGENDAMENTO', 'CONFIGURACAO', 'ADMINISTRATIVO'])
-  setor?: string | null;
+  @IsString()
+  ano?: string;
+&nbsp;
+  @ApiPropertyOptional({ example: 'Branco' })
+  @IsOptional()
+  @IsString()
+  cor?: string;
 }
 &nbsp;</pre></td></tr></table></pre>
 

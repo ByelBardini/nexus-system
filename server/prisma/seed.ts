@@ -132,6 +132,20 @@ async function main() {
     create: { usuarioId: usuarioAdmin.id, cargoId: cargoAdmin.id },
   });
 
+  // Cliente Infinity (empresa dona do sistema) - usado em ordens no modo Infinity
+  const clienteInfinity = await prisma.cliente.findFirst({
+    where: { nome: 'Infinity' },
+  });
+  if (!clienteInfinity) {
+    await prisma.cliente.create({
+      data: {
+        nome: 'Infinity',
+        nomeFantasia: 'Infinity',
+      },
+    });
+    console.log('Cliente Infinity criado');
+  }
+
   console.log('Seed concluído: admin@admin.com / 12345');
 }
 

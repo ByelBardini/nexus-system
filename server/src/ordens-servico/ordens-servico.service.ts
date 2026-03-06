@@ -8,6 +8,23 @@ import { UpdateStatusDto } from './dto/update-status.dto';
 export class OrdensServicoService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private static readonly INFINITY_NOME = 'Infinity';
+
+  async getClienteInfinityOuCriar() {
+    let cliente = await this.prisma.cliente.findFirst({
+      where: { nome: OrdensServicoService.INFINITY_NOME },
+    });
+    if (!cliente) {
+      cliente = await this.prisma.cliente.create({
+        data: {
+          nome: OrdensServicoService.INFINITY_NOME,
+          nomeFantasia: OrdensServicoService.INFINITY_NOME,
+        },
+      });
+    }
+    return cliente.id;
+  }
+
   async getResumo() {
     const [agendado, emTestes, testesRealizados, agCadastro, finalizado] = await Promise.all([
       this.prisma.ordemServico.count({ where: { status: StatusOS.AGENDADO } }),
@@ -85,6 +102,47 @@ export class OrdensServicoService {
   }
 
   async create(dto: CreateOrdemServicoDto, criadoPorId?: number) {
+    const include = {
+      cliente: true,
+      subcliente: true,
+      veiculo: true,
+      tecnico: true,
+    };
+
+    if (dto.subclienteCreate) {
+      return this.prisma.$transaction(async (tx) => {
+        const sub = await tx.subcliente.create({
+          data: {
+            clienteId: dto.clienteId,
+            nome: dto.subclienteCreate!.nome,
+            cep: dto.subclienteCreate!.cep,
+            cidade: dto.subclienteCreate!.cidade,
+            estado: dto.subclienteCreate!.estado,
+            cpf: dto.subclienteCreate!.cpf ?? null,
+            email: dto.subclienteCreate!.email ?? null,
+            telefone: dto.subclienteCreate!.telefone ?? null,
+            cobrancaTipo: dto.subclienteCreate!.cobrancaTipo ?? null,
+          },
+        });
+        const max = await tx.ordemServico.aggregate({ _max: { numero: true } });
+        const numero = (max._max.numero ?? 0) + 1;
+        return tx.ordemServico.create({
+          data: {
+            numero,
+            tipo: dto.tipo,
+            status: dto.status ?? StatusOS.AGENDADO,
+            clienteId: dto.clienteId,
+            subclienteId: sub.id,
+            veiculoId: dto.veiculoId,
+            tecnicoId: dto.tecnicoId,
+            criadoPorId,
+            observacoes: dto.observacoes,
+          },
+          include,
+        });
+      });
+    }
+
     const max = await this.prisma.ordemServico.aggregate({ _max: { numero: true } });
     const numero = (max._max.numero ?? 0) + 1;
 
@@ -100,12 +158,7 @@ export class OrdensServicoService {
         criadoPorId,
         observacoes: dto.observacoes,
       },
-      include: {
-        cliente: true,
-        subcliente: true,
-        veiculo: true,
-        tecnico: true,
-      },
+      include,
     });
   }
 

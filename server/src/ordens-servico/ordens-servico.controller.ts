@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { OrdensServicoService } from './ordens-servico.service';
@@ -19,6 +20,14 @@ export class OrdensServicoController {
   @ApiOperation({ summary: 'Resumo de contagens por status' })
   getResumo() {
     return this.service.getResumo();
+  }
+
+  @Get('cliente-infinity')
+  @RequirePermissions('AGENDAMENTO.OS.CRIAR')
+  @ApiOperation({ summary: 'Retorna o ID do cliente Infinity (empresa dona do sistema, hardcoded)' })
+  async getClienteInfinity() {
+    const clienteId = await this.service.getClienteInfinityOuCriar();
+    return { clienteId };
   }
 
   @Get()
@@ -48,8 +57,8 @@ export class OrdensServicoController {
   @Post()
   @RequirePermissions('AGENDAMENTO.OS.CRIAR')
   @ApiOperation({ summary: 'Criar ordem de serviço' })
-  create(@Body() dto: CreateOrdemServicoDto) {
-    return this.service.create(dto);
+  create(@Body() dto: CreateOrdemServicoDto, @CurrentUser('id') criadoPorId?: number) {
+    return this.service.create(dto, criadoPorId);
   }
 
   @Patch(':id/status')
