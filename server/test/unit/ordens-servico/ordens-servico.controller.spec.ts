@@ -9,6 +9,7 @@ describe('OrdensServicoController', () => {
   let service: OrdensServicoService;
 
   const serviceMock = {
+    getClienteInfinityOuCriar: jest.fn(),
     getResumo: jest.fn(),
     findAll: jest.fn(),
     findOne: jest.fn(),
@@ -28,6 +29,17 @@ describe('OrdensServicoController', () => {
     controller = module.get<OrdensServicoController>(OrdensServicoController);
     service = module.get<OrdensServicoService>(OrdensServicoService);
     jest.clearAllMocks();
+  });
+
+  describe('getClienteInfinity', () => {
+    it('delega para service.getClienteInfinityOuCriar e retorna clienteId', async () => {
+      (service.getClienteInfinityOuCriar as jest.Mock).mockResolvedValue(5);
+
+      const result = await controller.getClienteInfinity();
+
+      expect(service.getClienteInfinityOuCriar).toHaveBeenCalled();
+      expect(result).toEqual({ clienteId: 5 });
+    });
   });
 
   describe('getResumo', () => {
@@ -83,13 +95,13 @@ describe('OrdensServicoController', () => {
   });
 
   describe('create', () => {
-    it('chama service.create com o DTO sem criadoPorId', async () => {
+    it('chama service.create com o DTO e criadoPorId (undefined quando sem auth)', async () => {
       const dto = { tipo: 'INSTALACAO', clienteId: 1 };
       (service.create as jest.Mock).mockResolvedValue({ id: 1, numero: 1 });
 
       await controller.create(dto as any);
 
-      expect(service.create).toHaveBeenCalledWith(dto);
+      expect(service.create).toHaveBeenCalledWith(dto, undefined);
     });
   });
 

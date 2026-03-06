@@ -23,6 +23,29 @@ describe('OrdensServicoService', () => {
     jest.clearAllMocks();
   });
 
+  describe('getClienteInfinityOuCriar', () => {
+    it('retorna id do cliente Infinity existente', async () => {
+      prisma.cliente.findFirst.mockResolvedValue({ id: 7, nome: 'Infinity' });
+
+      const result = await service.getClienteInfinityOuCriar();
+
+      expect(result).toBe(7);
+      expect(prisma.cliente.create).not.toHaveBeenCalled();
+    });
+
+    it('cria cliente Infinity quando não existe e retorna o id', async () => {
+      prisma.cliente.findFirst.mockResolvedValue(null);
+      prisma.cliente.create.mockResolvedValue({ id: 3, nome: 'Infinity' });
+
+      const result = await service.getClienteInfinityOuCriar();
+
+      expect(result).toBe(3);
+      expect(prisma.cliente.create).toHaveBeenCalledWith({
+        data: { nome: 'Infinity', nomeFantasia: 'Infinity' },
+      });
+    });
+  });
+
   describe('getResumo', () => {
     it('retorna contagens por status', async () => {
       prisma.ordemServico.count
@@ -178,6 +201,130 @@ describe('OrdensServicoService', () => {
       expect(prisma.ordemServico.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ status: StatusOS.AGENDADO }),
+        }),
+      );
+    });
+
+    it('cria OS com subclienteId, tecnicoId, veiculoId e observacoes quando informados', async () => {
+      prisma.ordemServico.aggregate.mockResolvedValue({ _max: { numero: 10 } });
+      const created = {
+        id: 1,
+        numero: 11,
+        clienteId: 1,
+        subclienteId: 2,
+        tecnicoId: 3,
+        veiculoId: 4,
+        observacoes: 'Obs da OS',
+      };
+      prisma.ordemServico.create.mockResolvedValue(created);
+
+      const result = await service.create({
+        tipo: 'INSTALACAO_COM_BLOQUEIO',
+        clienteId: 1,
+        subclienteId: 2,
+        tecnicoId: 3,
+        veiculoId: 4,
+        observacoes: 'Obs da OS',
+      } as any);
+
+      expect(prisma.ordemServico.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            numero: 11,
+            tipo: 'INSTALACAO_COM_BLOQUEIO',
+            clienteId: 1,
+            subclienteId: 2,
+            tecnicoId: 3,
+            veiculoId: 4,
+            observacoes: 'Obs da OS',
+          }),
+        }),
+      );
+      expect(result).toEqual(created);
+    });
+
+    it('cria subcliente e OS na mesma transação quando subclienteCreate é informado', async () => {
+      const createdSub = { id: 10, clienteId: 1, nome: 'Sub Novo' };
+      const createdOS = {
+        id: 1,
+        numero: 6,
+        clienteId: 1,
+        subclienteId: 10,
+        cliente: {},
+        subcliente: { id: 10, nome: 'Sub Novo' },
+        veiculo: null,
+        tecnico: null,
+      };
+      prisma.subcliente.create.mockResolvedValue(createdSub);
+      prisma.ordemServico.aggregate.mockResolvedValue({ _max: { numero: 5 } });
+      prisma.ordemServico.create.mockResolvedValue(createdOS);
+
+      const result = await service.create(
+        {
+          tipo: 'INSTALACAO',
+          clienteId: 1,
+          subclienteCreate: {
+            nome: 'Sub Novo',
+            cep: '12345-678',
+            cidade: 'São Paulo',
+            estado: 'SP',
+            telefone: '11999999999',
+            cobrancaTipo: 'INFINITY',
+          },
+        } as any,
+      );
+
+      expect(prisma.$transaction).toHaveBeenCalled();
+      expect(prisma.subcliente.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          clienteId: 1,
+          nome: 'Sub Novo',
+          cep: '12345-678',
+          cidade: 'São Paulo',
+          estado: 'SP',
+          telefone: '11999999999',
+          cobrancaTipo: 'INFINITY',
+        }),
+      });
+      expect(prisma.ordemServico.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            numero: 6,
+            subclienteId: 10,
+          }),
+        }),
+      );
+      expect(result).toEqual(createdOS);
+    });
+
+    it('inclui cliente, subcliente, veiculo e tecnico no retorno', async () => {
+      prisma.ordemServico.aggregate.mockResolvedValue({ _max: { numero: 0 } });
+      const created = {
+        id: 1,
+        numero: 1,
+        cliente: { id: 1, nome: 'Cliente A' },
+        subcliente: { id: 1, nome: 'Sub A' },
+        veiculo: { id: 1, placa: 'ABC-1234' },
+        tecnico: { id: 1, nome: 'Técnico X' },
+      };
+      prisma.ordemServico.create.mockResolvedValue(created);
+
+      const result = await service.create({ tipo: 'RETIRADA', clienteId: 1 } as any);
+
+      expect(result).toMatchObject({
+        cliente: { nome: 'Cliente A' },
+        subcliente: { nome: 'Sub A' },
+        veiculo: { placa: 'ABC-1234' },
+        tecnico: { nome: 'Técnico X' },
+      });
+      expect(prisma.ordemServico.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({
+            cliente: true,
+            subcliente: true,
+            veiculo: true,
+            tecnico: true,
+          }),
         }),
       );
     });
