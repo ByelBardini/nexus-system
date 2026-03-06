@@ -25,6 +25,7 @@ export function createPrismaMock() {
     cargoPermissao: createTableMock(),
     usuarioCargo: createTableMock(),
     cliente: createTableMock(),
+    subcliente: createTableMock(),
     contatoCliente: createTableMock(),
     tecnico: createTableMock(),
     precoTecnico: createTableMock(),
