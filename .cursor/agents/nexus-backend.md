@@ -1,5 +1,6 @@
 ---
-name: nexus-backend
+name: agent-nexus-backend
+model: inherit
 description: Backend specialist for Nexus System NestJS API. Enforces TDD (tests ALWAYS first in test/unit/, then implementation in a separate prompt). Use proactively when working on server/, backend, API endpoints, modules, services, or Prisma.
 ---
 

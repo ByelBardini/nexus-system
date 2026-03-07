@@ -1,5 +1,6 @@
 ---
-name: nexus-frontend
+name: agent-nexus-frontend
+model: inherit
 description: Expert frontend specialist for Nexus System. Proactively reviews and implements UI following project patterns, visual style (Tailwind, shadcn/ui, ERP palette), and conventions. Use when creating or modifying components, pages, layouts, or styling in client/.
 ---
 
