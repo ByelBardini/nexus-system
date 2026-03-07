@@ -1,58 +1,69 @@
 # Nexus Backend — Referência Detalhada
 
+## Helper de Mock do Prisma
+
+O projeto usa um mock centralizado em `test/unit/helpers/prisma-mock.ts`.
+**NUNCA crie mocks do Prisma inline nos testes.** Sempre importe `createPrismaMock`.
+
+```typescript
+import { createPrismaMock } from '../helpers/prisma-mock';
+
+// Uso nos testes:
+let prisma: ReturnType<typeof createPrismaMock>;
+prisma = createPrismaMock();
+```
+
+O `createPrismaMock()` expõe todas as tabelas do Prisma com `jest.fn()` para cada método
+(`findMany`, `findUnique`, `findFirst`, `create`, `update`, `delete`, `count`, etc.)
+e um `$transaction` que executa o callback com o próprio mock.
+
 ## Templates de Testes
 
-### Unit — Service com PrismaService mock
+### Unit — Service
 
 ```typescript
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { ClientesService } from './clientes.service';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { ClientesService } from 'src/clientes/clientes.service';
+import { createPrismaMock } from '../helpers/prisma-mock';
 
 describe('ClientesService', () => {
   let service: ClientesService;
-  let prisma: PrismaService;
-
-  const prismaMock = {
-    cliente: {
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-    },
-  };
+  let prisma: ReturnType<typeof createPrismaMock>;
 
   beforeEach(async () => {
+    prisma = createPrismaMock();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ClientesService,
-        { provide: PrismaService, useValue: prismaMock },
+        { provide: PrismaService, useValue: prisma },
       ],
     }).compile();
 
     service = module.get<ClientesService>(ClientesService);
-    prisma = module.get<PrismaService>(PrismaService);
     jest.clearAllMocks();
   });
 
   describe('findOne', () => {
     it('lança NotFoundException quando cliente não existe', async () => {
-      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(null);
+      prisma.cliente.findUnique.mockResolvedValue(null);
 
       await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
       await expect(service.findOne(999)).rejects.toThrow('Cliente não encontrado');
     });
 
     it('retorna cliente quando encontrado', async () => {
-      const cliente = { id: 1, nome: 'Cliente Teste' };
-      (prisma.cliente.findUnique as jest.Mock).mockResolvedValue(cliente);
+      const cliente = { id: 1, nome: 'Cliente Teste', contatos: [], subclientes: [] };
+      prisma.cliente.findUnique.mockResolvedValue(cliente);
 
       const result = await service.findOne(1);
+
       expect(result).toEqual(cliente);
       expect(prisma.cliente.findUnique).toHaveBeenCalledWith({
         where: { id: 1 },
-        include: expect.any(Object),
+        include: { contatos: true, subclientes: true },
       });
     });
   });
@@ -63,9 +74,9 @@ describe('ClientesService', () => {
 
 ```typescript
 import { Test, TestingModule } from '@nestjs/testing';
-import { ClientesController } from './clientes.controller';
-import { ClientesService } from './clientes.service';
-import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { ClientesController } from 'src/clientes/clientes.controller';
+import { ClientesService } from 'src/clientes/clientes.service';
+import { PermissionsGuard } from 'src/auth/guards/permissions.guard';
 
 describe('ClientesController', () => {
   let controller: ClientesController;
@@ -81,9 +92,7 @@ describe('ClientesController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ClientesController],
-      providers: [
-        { provide: ClientesService, useValue: serviceMock },
-      ],
+      providers: [{ provide: ClientesService, useValue: serviceMock }],
     })
       .overrideGuard(PermissionsGuard)
       .useValue({ canActivate: () => true })
@@ -95,11 +104,12 @@ describe('ClientesController', () => {
   });
 
   describe('findOne', () => {
-    it('converte id de string para número e chama o service', async () => {
+    it('converte id para número e chama service.findOne', async () => {
       const cliente = { id: 1, nome: 'Teste' };
       (service.findOne as jest.Mock).mockResolvedValue(cliente);
 
       const result = await controller.findOne('1');
+
       expect(service.findOne).toHaveBeenCalledWith(1);
       expect(result).toEqual(cliente);
     });
@@ -136,33 +146,26 @@ describe('Clientes (e2e)', () => {
   it('GET /clientes retorna 401 sem token', () => {
     return request(app.getHttpServer()).get('/clientes').expect(401);
   });
-
-  it('GET /clientes/:id com id inválido retorna 400', () => {
-    return request(app.getHttpServer())
-      .get('/clientes/abc')
-      .set('Authorization', 'Bearer <token>')
-      .expect(400);
-  });
 });
 ```
 
-## Padrões de Mock — PrismaService
-
-Para métodos usados no service, mockar apenas o que é necessário:
+## Padrões de Mock — $transaction
 
 ```typescript
-const prismaMock = {
-  cliente: {
-    findMany: jest.fn(),
-    findUnique: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-  },
-  $transaction: jest.fn((fn) => fn(prismaMock)), // passa o mock como tx
-};
-```
+// createPrismaMock() já configura $transaction corretamente:
+mock.$transaction.mockImplementation((arg: unknown) => {
+  if (typeof arg === 'function') return arg(mock); // callback recebe o mock como tx
+  if (Array.isArray(arg)) return Promise.all(arg); // array de promises
+  return Promise.resolve();
+});
 
-Para `$transaction`, o padrão é chamar o callback com o próprio mock quando a transação é síncrona no teste.
+// Nos testes, verificar chamada:
+expect(prisma.$transaction).toHaveBeenCalled();
+
+// Para operações dentro da transação, mockar antes:
+prisma.contatoCliente.deleteMany.mockResolvedValue({ count: 0 });
+prisma.contatoCliente.create.mockResolvedValue({ id: 1, nome: 'Novo' });
+```
 
 ## Padrões de DTO
 
@@ -180,13 +183,6 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-// Enums para status/tipo
-export enum StatusCliente {
-  ATIVO = 'ATIVO',
-  PENDENTE = 'PENDENTE',
-  INATIVO = 'INATIVO',
-}
-
 export class CreateClienteDto {
   @ApiProperty({ example: 'Empresa ABC' })
   @IsString()
@@ -197,11 +193,6 @@ export class CreateClienteDto {
   @IsOptional()
   @IsString()
   cnpj?: string;
-
-  @ApiPropertyOptional({ enum: StatusCliente })
-  @IsOptional()
-  @IsEnum(StatusCliente)
-  status?: StatusCliente;
 
   @ApiPropertyOptional({ type: [ContatoDto] })
   @IsOptional()
@@ -218,50 +209,44 @@ export class CreateClienteDto {
 
 ## Padrões de Tratamento de Erro
 
-| Situação            | Exceção                | Exemplo de mensagem        |
-|---------------------|------------------------|----------------------------|
-| Recurso não existe  | `NotFoundException`    | `'Cliente não encontrado'` |
-| Duplicidade         | `ConflictException`    | `'Email já cadastrado'`    |
-| Dados inválidos     | `BadRequestException`  | `'Quantidade deve ser maior que zero'` |
-| Sem permissão       | `ForbiddenException`   | `'Sem permissão para esta ação'`       |
-| Credenciais inválidas | `UnauthorizedException` | `'Credenciais inválidas'` |
+| Situação              | Exceção                  | Exemplo de mensagem                    |
+|-----------------------|--------------------------|----------------------------------------|
+| Recurso não existe    | `NotFoundException`      | `'Cliente não encontrado'`             |
+| Duplicidade           | `ConflictException`      | `'Email já cadastrado'`                |
+| Dados inválidos       | `BadRequestException`    | `'Quantidade deve ser maior que zero'` |
+| Sem permissão         | `ForbiddenException`     | `'Sem permissão para esta ação'`       |
+| Credenciais inválidas | `UnauthorizedException`  | `'Credenciais inválidas'`              |
 
 Mensagens sempre em português brasileiro.
 
 ## Padrão de Paginação
 
+O retorno padrão de listas paginadas usa `{ items, total, page, limit, totalPages }`:
+
 ```typescript
-async findAllPaginated(params: {
-  search?: string;
-  page?: number;
-  limit?: number;
-}) {
+async findAll(params: { search?: string; page?: number; limit?: number }) {
   const { search, page = 1, limit = 15 } = params;
   const skip = (page - 1) * limit;
 
-  const where = {};
-  if (search) {
-    where.OR = [
-      { nome: { contains: search, mode: 'insensitive' } },
-      { email: { contains: search, mode: 'insensitive' } },
-    ];
-  }
+  const where = search
+    ? { OR: [{ nome: { contains: search } }] }
+    : {};
 
-  const [data, total] = await Promise.all([
+  const [items, total] = await Promise.all([
     this.prisma.entidade.findMany({
       where,
       orderBy: { nome: 'asc' },
       skip,
       take: limit,
-      include: { /* ... */ },
     }),
     this.prisma.entidade.count({ where }),
   ]);
 
   return {
-    data,
+    items,
     total,
     page,
+    limit,
     totalPages: Math.ceil(total / limit),
   };
 }
@@ -271,11 +256,11 @@ async findAllPaginated(params: {
 
 Padrão: `SETOR.ENTIDADE.ACAO`
 
-| Setor           | Entidades típicas | Ações           |
-|-----------------|-------------------|-----------------|
-| AGENDAMENTO     | CLIENTE, TECNICO, ORDEM_SERVICO | LISTAR, CRIAR, EDITAR |
-| ADMINISTRATIVO  | USUARIO, CARGO    | LISTAR, CRIAR, EDITAR |
-| CONFIGURACAO    | EQUIPAMENTO       | LISTAR, CRIAR, EDITAR |
+| Setor          | Entidades típicas                      | Ações                    |
+|----------------|----------------------------------------|--------------------------|
+| AGENDAMENTO    | CLIENTE, TECNICO, ORDEM_SERVICO        | LISTAR, CRIAR, EDITAR    |
+| ADMINISTRATIVO | USUARIO, CARGO                         | LISTAR, CRIAR, EDITAR    |
+| CONFIGURACAO   | EQUIPAMENTO, APARELHO, OPERADORA       | LISTAR, CRIAR, EDITAR    |
 
 Exemplo no controller:
 
@@ -286,4 +271,23 @@ Exemplo no controller:
 findAll() {
   return this.clientesService.findAll();
 }
+```
+
+## Comandos Úteis
+
+```bash
+# Rodar testes unitários
+npm run test
+
+# Rodar em modo watch
+npm run test:watch
+
+# Gerar relatório de cobertura
+npm run test:cov
+
+# Rodar testes E2E
+npm run test:e2e
+
+# Lint
+npm run lint
 ```
