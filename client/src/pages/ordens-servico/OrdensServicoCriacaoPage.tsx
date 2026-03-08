@@ -78,6 +78,10 @@ interface SubclienteAutocompleteItem {
   id: number
   nome: string
   cep?: string | null
+  logradouro?: string | null
+  numero?: string | null
+  complemento?: string | null
+  bairro?: string | null
   cidade?: string | null
   estado?: string | null
   cpf?: string | null
@@ -359,7 +363,19 @@ const schema = z.object({
   localInstalacao: z.string().optional(),
   posChave: z.string().optional(),
   observacoes: z.string().optional(),
-})
+}).refine(
+  (data) => {
+    const placa = (data.veiculoPlaca ?? '').trim()
+    if (!placa) return true
+    return !!(
+      (data.veiculoMarca ?? '').trim() &&
+      (data.veiculoModelo ?? '').trim() &&
+      (data.veiculoAno ?? '').trim() &&
+      (data.veiculoCor ?? '').trim()
+    )
+  },
+  { message: 'Marca, modelo, ano e cor são obrigatórios quando o veículo é informado', path: ['veiculoMarca'] }
+)
 
 type FormData = z.infer<typeof schema>
 
@@ -367,6 +383,10 @@ interface SubclienteFull {
   id: number
   nome: string
   cep?: string | null
+  logradouro?: string | null
+  numero?: string | null
+  complemento?: string | null
+  bairro?: string | null
   cidade?: string | null
   estado?: string | null
   cpf?: string | null
@@ -545,6 +565,24 @@ export function OrdensServicoCriacaoPage() {
       subclienteCreate?: {
         nome: string
         cep: string
+        logradouro?: string
+        numero?: string
+        complemento?: string
+        bairro?: string
+        cidade: string
+        estado: string
+        cpf?: string
+        email?: string
+        telefone?: string
+        cobrancaTipo?: string
+      }
+      subclienteUpdate?: {
+        nome: string
+        cep: string
+        logradouro?: string
+        numero?: string
+        complemento?: string
+        bairro?: string
         cidade: string
         estado: string
         cpf?: string
@@ -555,6 +593,9 @@ export function OrdensServicoCriacaoPage() {
       tecnicoId?: number
       veiculoId?: number
       observacoes?: string
+      idAparelho?: string
+      localInstalacao?: string
+      posChave?: string
     }) => {
       const res = await api<{ id: number; numero: number }>('/ordens-servico', {
         method: 'POST',
@@ -562,8 +603,11 @@ export function OrdensServicoCriacaoPage() {
       })
       return res
     },
-    onSuccess: (data: { id: number; numero: number }) => {
+    onSuccess: (data: { id: number; numero: number }, variables) => {
       queryClient.invalidateQueries({ queryKey: ['ordens-servico'] })
+      if (variables.subclienteUpdate) {
+        queryClient.invalidateQueries({ queryKey: ['clientes'] })
+      }
       toast.success(`Ordem de serviço #${data.numero} criada`)
       navigate('/')
     },
@@ -576,50 +620,56 @@ export function OrdensServicoCriacaoPage() {
   const handleSubmit = (data: FormData) => {
     if (!canCreate) return
 
-    const partesObs: string[] = []
-    if (data.observacoes) partesObs.push(data.observacoes)
-    if (data.veiculoPlaca?.trim()) {
-      const veiculoInfo = [data.veiculoPlaca, data.veiculoTipo, data.veiculoMarca, data.veiculoModelo, data.veiculoAno, data.veiculoCor]
-        .filter(Boolean)
-        .join(' | ')
-      if (veiculoInfo) partesObs.push(`Veículo: ${veiculoInfo}`)
-    }
-    if (data.ordemInstalacao === 'CLIENTE' && data.clienteOrdemId) {
-      const c = clientes.find((x) => x.id === data.clienteOrdemId)
-      if (c) partesObs.push(`Ordem Instalação Cliente: ${c.nome} (ID: ${c.id})`)
-    }
-    if (data.ordemInstalacao === 'INFINITY' && clienteInfinityId) {
-      const c = clientes.find((x) => x.id === clienteInfinityId)
-      if (c) partesObs.push(`Ordem Instalação: ${c.nome} (Infinity)`)
-    }
-    if (showDetalhesRevisaoRetirada) {
-      if (data.idAparelho) partesObs.push(`ID Aparelho: ${data.idAparelho}`)
-      if (data.localInstalacao) partesObs.push(`Local: ${data.localInstalacao}`)
-      if (data.posChave) partesObs.push(`Pós Chave: ${data.posChave}`)
-    }
-    const observacoes = partesObs.length > 0 ? partesObs.join('\n') : undefined
+    const observacoes = data.observacoes?.trim() || undefined
 
     const subclienteId =
       !data.isNovoSubcliente && data.subclienteId && data.subclienteId > 0
         ? data.subclienteId
         : undefined
 
-    const subclienteCreate =
-      data.isNovoSubcliente &&
+    const dadosSubclienteCompletos =
       data.subclienteNome?.trim() &&
       data.subclienteCep?.trim() &&
       data.subclienteCidade?.trim() &&
       data.subclienteEstado?.trim() &&
       telefoneApenasDigitos(data.subclienteTelefone ?? '').length >= 10
+
+    const subclienteCreate =
+      data.isNovoSubcliente && dadosSubclienteCompletos
         ? {
             nome: data.subclienteNome!.trim(),
             cep: data.subclienteCep!.trim(),
+            logradouro: data.subclienteLogradouro?.trim() || undefined,
+            numero: data.subclienteNumero?.trim() || undefined,
+            complemento: data.subclienteComplemento?.trim() || undefined,
+            bairro: data.subclienteBairro?.trim() || undefined,
             cidade: data.subclienteCidade!.trim(),
             estado: data.subclienteEstado!.trim(),
             cpf: data.subclienteCpf?.trim() || undefined,
             email: data.subclienteEmail?.trim() || undefined,
             telefone: telefoneApenasDigitos(data.subclienteTelefone ?? ''),
-            cobrancaTipo: data.subclienteCobranca || undefined,
+            cobrancaTipo: data.ordemInstalacao === 'INFINITY' ? 'INFINITY' : (data.subclienteCobranca || undefined),
+          }
+        : undefined
+
+    // Ao editar subcliente existente: atualiza o cadastro e grava snapshot na OS (não afeta OS já existentes)
+    const subclienteUpdate =
+      !data.isNovoSubcliente &&
+      subclienteId &&
+      dadosSubclienteCompletos
+        ? {
+            nome: data.subclienteNome!.trim(),
+            cep: data.subclienteCep!.trim(),
+            logradouro: data.subclienteLogradouro?.trim() || undefined,
+            numero: data.subclienteNumero?.trim() || undefined,
+            complemento: data.subclienteComplemento?.trim() || undefined,
+            bairro: data.subclienteBairro?.trim() || undefined,
+            cidade: data.subclienteCidade!.trim(),
+            estado: data.subclienteEstado!.trim(),
+            cpf: data.subclienteCpf?.trim() || undefined,
+            email: data.subclienteEmail?.trim() || undefined,
+            telefone: telefoneApenasDigitos(data.subclienteTelefone ?? ''),
+            cobrancaTipo: data.ordemInstalacao === 'INFINITY' ? 'INFINITY' : (data.subclienteCobranca || undefined),
           }
         : undefined
 
@@ -639,7 +689,13 @@ export function OrdensServicoCriacaoPage() {
     const runCreate = async () => {
       let veiculoId: number | undefined
       const placa = placaApenasAlfanumericos(data.veiculoPlaca ?? '')
-      if (placa.length >= 7 && data.veiculoMarca?.trim() && data.veiculoModelo?.trim()) {
+      if (
+        placa.length >= 7 &&
+        data.veiculoMarca?.trim() &&
+        data.veiculoModelo?.trim() &&
+        data.veiculoAno?.trim() &&
+        data.veiculoCor?.trim()
+      ) {
         try {
           const veiculo = await api<{ id: number }>('/veiculos/criar-ou-buscar', {
             method: 'POST',
@@ -647,8 +703,8 @@ export function OrdensServicoCriacaoPage() {
               placa,
               marca: data.veiculoMarca.trim(),
               modelo: data.veiculoModelo.trim(),
-              ano: data.veiculoAno?.trim() || undefined,
-              cor: data.veiculoCor?.trim() || undefined,
+              ano: data.veiculoAno!.trim(),
+              cor: data.veiculoCor!.trim(),
             }),
           })
           veiculoId = veiculo?.id
@@ -662,9 +718,13 @@ export function OrdensServicoCriacaoPage() {
         clienteId: clienteIdFinal,
         subclienteId: subclienteCreate ? undefined : subclienteId,
         subclienteCreate,
+        subclienteUpdate,
         tecnicoId: data.tecnicoId && data.tecnicoId > 0 ? data.tecnicoId : undefined,
         veiculoId,
         observacoes,
+        idAparelho: data.idAparelho?.trim() || undefined,
+        localInstalacao: data.localInstalacao?.trim() || undefined,
+        posChave: data.posChave || undefined,
       })
     }
 
@@ -840,6 +900,10 @@ export function OrdensServicoCriacaoPage() {
                           form.setValue('subclienteId', s.id)
                           form.setValue('subclienteNome', s.nome)
                           form.setValue('subclienteCep', s.cep ?? '')
+                          form.setValue('subclienteLogradouro', s.logradouro ?? '')
+                          form.setValue('subclienteNumero', s.numero ?? '')
+                          form.setValue('subclienteComplemento', s.complemento ?? '')
+                          form.setValue('subclienteBairro', s.bairro ?? '')
                           form.setValue('subclienteCidade', s.cidade ?? '')
                           form.setValue('subclienteEstado', s.estado ?? '')
                           form.setValue('subclienteCpf', s.cpf ?? '')
@@ -1015,34 +1079,36 @@ export function OrdensServicoCriacaoPage() {
                         )}
                       />
                     </div>
-                    <div className="col-span-6">
-                      <Label className="text-[10px] font-bold uppercase text-slate-500 mb-2 block">
-                        Cobrança
-                      </Label>
-                      <Controller
-                        name="subclienteCobranca"
-                        control={form.control}
-                        render={({ field }) => (
-                          <div className="flex justify-center gap-4">
-                            {cobrancaOptions.map((opt) => (
-                              <Button
-                                key={opt.value}
-                                type="button"
-                                variant={field.value === opt.value ? 'default' : 'outline'}
-                                size="sm"
-                                className={cn(
-                                  'h-9 text-[11px] font-bold uppercase',
-                                  field.value === opt.value && 'bg-erp-blue hover:bg-blue-700'
-                                )}
-                                onClick={() => field.onChange(opt.value)}
-                              >
-                                {opt.label}
-                              </Button>
-                            ))}
-                          </div>
-                        )}
-                      />
-                    </div>
+                    {ordemInstalacao === 'CLIENTE' && (
+                      <div className="col-span-6">
+                        <Label className="text-[10px] font-bold uppercase text-slate-500 mb-2 block">
+                          Cobrança
+                        </Label>
+                        <Controller
+                          name="subclienteCobranca"
+                          control={form.control}
+                          render={({ field }) => (
+                            <div className="flex justify-center gap-4">
+                              {cobrancaOptions.map((opt) => (
+                                <Button
+                                  key={opt.value}
+                                  type="button"
+                                  variant={field.value === opt.value ? 'default' : 'outline'}
+                                  size="sm"
+                                  className={cn(
+                                    'h-9 text-[11px] font-bold uppercase',
+                                    field.value === opt.value && 'bg-erp-blue hover:bg-blue-700'
+                                  )}
+                                  onClick={() => field.onChange(opt.value)}
+                                >
+                                  {opt.label}
+                                </Button>
+                              ))}
+                            </div>
+                          )}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
