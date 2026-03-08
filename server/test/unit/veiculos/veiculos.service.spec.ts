@@ -166,6 +166,8 @@ describe('VeiculosService', () => {
         placa: 'ABC12',
         marca: 'Fiat',
         modelo: 'Uno',
+        ano: '2020',
+        cor: 'Branco',
       });
 
       expect(result).toBeNull();
@@ -174,13 +176,15 @@ describe('VeiculosService', () => {
     });
 
     it('retorna veículo existente quando placa já cadastrada', async () => {
-      const existing = { id: 1, placa: 'ABC1D23', marca: 'Fiat', modelo: 'Uno' };
+      const existing = { id: 1, placa: 'ABC1D23', marca: 'Fiat', modelo: 'Uno', ano: 2020, cor: 'Branco' };
       prisma.veiculo.findUnique.mockResolvedValue(existing);
 
       const result = await service.criarOuBuscarPorPlaca({
         placa: 'ABC-1D23',
         marca: 'Fiat',
         modelo: 'Uno',
+        ano: '2020',
+        cor: 'Branco',
       });
 
       expect(result).toEqual(existing);
@@ -213,20 +217,25 @@ describe('VeiculosService', () => {
       });
     });
 
-    it('usa valores padrão para marca e modelo quando vazios', async () => {
+    it('armazena marca, modelo, ano e cor nos campos próprios do veículo', async () => {
       prisma.veiculo.findUnique.mockResolvedValue(null);
-      prisma.veiculo.create.mockResolvedValue({ id: 1, placa: 'ABC1D23' });
+      prisma.veiculo.create.mockResolvedValue({ id: 5, placa: 'ABC1D23', marca: 'Fiat', modelo: 'Uno', ano: 2020, cor: 'Prata' });
 
       await service.criarOuBuscarPorPlaca({
         placa: 'ABC1D23',
-        marca: '',
-        modelo: '',
+        marca: 'Fiat',
+        modelo: 'Uno',
+        ano: '2020',
+        cor: 'Prata',
       });
 
       expect(prisma.veiculo.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          marca: 'Não informado',
-          modelo: 'Não informado',
+          placa: 'ABC1D23',
+          marca: 'Fiat',
+          modelo: 'Uno',
+          ano: 2020,
+          cor: 'Prata',
         }),
       });
     });

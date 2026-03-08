@@ -1,3 +1,4 @@
+import { StreamableFile } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrdensServicoController } from 'src/ordens-servico/ordens-servico.controller';
 import { OrdensServicoService } from 'src/ordens-servico/ordens-servico.service';
@@ -15,6 +16,8 @@ describe('OrdensServicoController', () => {
     findOne: jest.fn(),
     create: jest.fn(),
     updateStatus: jest.fn(),
+    gerarHtmlImpressao: jest.fn(),
+    gerarPdf: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -113,6 +116,30 @@ describe('OrdensServicoController', () => {
       await controller.updateStatus('3', dto);
 
       expect(service.updateStatus).toHaveBeenCalledWith(3, dto);
+    });
+  });
+
+  describe('getHtmlImpressao', () => {
+    it('converte id para número e chama service.gerarHtmlImpressao', async () => {
+      const html = '<html>OS</html>';
+      (service.gerarHtmlImpressao as jest.Mock).mockResolvedValue(html);
+
+      const result = await controller.getHtmlImpressao('5');
+
+      expect(service.gerarHtmlImpressao).toHaveBeenCalledWith(5);
+      expect(result).toBe(html);
+    });
+  });
+
+  describe('getPdf', () => {
+    it('converte id para número, chama service.gerarPdf e retorna StreamableFile', async () => {
+      const buffer = Buffer.from('fake-pdf');
+      (service.gerarPdf as jest.Mock).mockResolvedValue({ buffer, numero: 42 });
+
+      const result = await controller.getPdf('5');
+
+      expect(service.gerarPdf).toHaveBeenCalledWith(5);
+      expect(result).toBeInstanceOf(StreamableFile);
     });
   });
 });

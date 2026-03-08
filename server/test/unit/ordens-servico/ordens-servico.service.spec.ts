@@ -2,20 +2,28 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { OrdensServicoService } from 'src/ordens-servico/ordens-servico.service';
+import { HtmlOrdemServicoGenerator } from 'src/ordens-servico/html-ordem-servico.generator';
+import { PdfOrdemServicoGenerator } from 'src/ordens-servico/pdf-ordem-servico.generator';
 import { StatusOS } from '@prisma/client';
 import { createPrismaMock } from '../helpers/prisma-mock';
 
 describe('OrdensServicoService', () => {
   let service: OrdensServicoService;
   let prisma: ReturnType<typeof createPrismaMock>;
+  let htmlGenerator: jest.Mocked<HtmlOrdemServicoGenerator>;
+  let pdfGenerator: jest.Mocked<PdfOrdemServicoGenerator>;
 
   beforeEach(async () => {
     prisma = createPrismaMock();
+    htmlGenerator = { gerar: jest.fn() } as unknown as jest.Mocked<HtmlOrdemServicoGenerator>;
+    pdfGenerator = { gerar: jest.fn() } as unknown as jest.Mocked<PdfOrdemServicoGenerator>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OrdensServicoService,
         { provide: PrismaService, useValue: prisma },
+        { provide: HtmlOrdemServicoGenerator, useValue: htmlGenerator },
+        { provide: PdfOrdemServicoGenerator, useValue: pdfGenerator },
       ],
     }).compile();
 
@@ -361,6 +369,82 @@ describe('OrdensServicoService', () => {
 
       expect(prisma.$transaction).toHaveBeenCalled();
       expect(result).toMatchObject({ status: StatusOS.EM_TESTES });
+    });
+  });
+
+  describe('gerarHtmlImpressao', () => {
+    it('lança NotFoundException quando OS não existe', async () => {
+      prisma.ordemServico.findUnique.mockResolvedValue(null);
+
+      await expect(service.gerarHtmlImpressao(999)).rejects.toThrow(NotFoundException);
+      await expect(service.gerarHtmlImpressao(999)).rejects.toThrow('Ordem de serviço não encontrada');
+      expect(htmlGenerator.gerar).not.toHaveBeenCalled();
+    });
+
+    it('chama findOne, repassa OS ao gerador e retorna o HTML', async () => {
+      const os = {
+        id: 1,
+        numero: 42,
+        tipo: 'INSTALACAO_COM_BLOQUEIO' as const,
+        status: StatusOS.AGENDADO,
+        cliente: { id: 1, nome: 'Cliente ABC' },
+        subcliente: { id: 1, nome: 'Subcliente X' },
+        veiculo: { id: 1, placa: 'ABC1D23', marca: 'Fiat', modelo: 'Uno' },
+        tecnico: { id: 1, nome: 'João Silva' },
+        historico: [],
+      };
+      prisma.ordemServico.findUnique.mockResolvedValue(os);
+      const html = '<html>OS 42</html>';
+      htmlGenerator.gerar.mockReturnValue(html);
+
+      const result = await service.gerarHtmlImpressao(1);
+
+      expect(prisma.ordemServico.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 1 },
+          include: expect.objectContaining({
+            cliente: true,
+            subcliente: true,
+            veiculo: true,
+            tecnico: true,
+          }),
+        }),
+      );
+      expect(htmlGenerator.gerar).toHaveBeenCalledWith(os);
+      expect(result).toBe(html);
+      expect(typeof result).toBe('string');
+    });
+  });
+
+  describe('gerarPdf', () => {
+    it('lança NotFoundException quando OS não existe', async () => {
+      prisma.ordemServico.findUnique.mockResolvedValue(null);
+
+      await expect(service.gerarPdf(999)).rejects.toThrow(NotFoundException);
+      expect(pdfGenerator.gerar).not.toHaveBeenCalled();
+    });
+
+    it('chama findOne, repassa OS ao gerador PDF e retorna buffer e numero', async () => {
+      const os = {
+        id: 1,
+        numero: 42,
+        tipo: 'INSTALACAO_COM_BLOQUEIO' as const,
+        status: StatusOS.AGENDADO,
+        cliente: { id: 1, nome: 'Cliente ABC' },
+        subcliente: null,
+        veiculo: null,
+        tecnico: null,
+        historico: [],
+      };
+      prisma.ordemServico.findUnique.mockResolvedValue(os);
+      const buffer = Buffer.from('fake-pdf');
+      pdfGenerator.gerar.mockResolvedValue(buffer);
+
+      const result = await service.gerarPdf(1);
+
+      expect(prisma.ordemServico.findUnique).toHaveBeenCalled();
+      expect(pdfGenerator.gerar).toHaveBeenCalledWith(os);
+      expect(result).toEqual({ buffer, numero: 42 });
     });
   });
 });

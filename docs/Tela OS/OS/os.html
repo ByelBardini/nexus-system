@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+
+<html lang="pt-br">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Ordem de Serviço - Infinity System</title>
+    <!-- Tailwind CSS v3 CDN -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <style data-purpose="typography">
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #1a202c;
+            background-color: #f3f4f6;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .label-title {
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #1e40af;
+            /* Brand Blue */
+            letter-spacing: 0.025em;
+        }
+
+        .field-value {
+            font-size: 0.85rem;
+            font-weight: 400;
+            color: #374151;
+        }
+    </style>
+    <style data-purpose="layout">
+        /* A4 Vertical Print Styles */
+        @page {
+            size: A4;
+            margin: 10mm;
+        }
+
+        .a4-container {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 15mm;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        @media print {
+            body {
+                background: none;
+            }
+
+            .a4-container {
+                box-shadow: none;
+                margin: 0;
+                width: 100%;
+                min-height: auto;
+            }
+
+            .no-print {
+                display: none;
+            }
+        }
+
+        .divider {
+            height: 1px;
+            background-color: #e5e7eb;
+            margin: 8px 0;
+        }
+
+        .grid-tight {
+            display: grid;
+            gap: 0.5rem;
+        }
+    </style>
+</head>
+
+<body class="py-10">
+    <!-- BEGIN: OS Document Container -->
+    <main class="a4-container flex flex-col" data-purpose="os-document">
+        <!-- BEGIN: MainHeader -->
+        <header class="flex justify-between items-start mb-6" data-purpose="header-section">
+            <!-- Left Side: Brand Info -->
+            <div class="flex-1">
+                <h1 class="text-2xl font-bold text-blue-800 tracking-tight">Infinity System</h1>
+                <p class="text-sm font-semibold text-gray-700">Assistência Veicular Ltda.</p>
+                <div class="mt-2 text-xs text-gray-500 leading-relaxed">
+                    <p>Rua Vidal Ramos, 66, Centro – Orleans / SC</p>
+                    <p>CNPJ: 21.110.777/0001-89</p>
+                </div>
+            </div>
+            <!-- Right Side: Admin Card -->
+            <div class="w-64 border-2 border-gray-100 rounded-lg p-3 bg-gray-50" data-purpose="admin-card">
+                <h2
+                    class="text-xs font-bold text-blue-900 border-b border-gray-200 pb-1 mb-2 uppercase tracking-widest text-center">
+                    Ordem de Serviço</h2>
+                <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-[10px]">
+                    <span class="font-semibold text-gray-500 uppercase">OS Nº:</span>
+                    <span class="font-bold text-gray-900 text-right">00000036</span>
+                    <span class="font-semibold text-gray-500 uppercase">Data:</span>
+                    <span class="text-gray-900 text-right">02/02/2026</span>
+                    <span class="font-semibold text-gray-500 uppercase">Criado por:</span>
+                    <span class="text-gray-900 text-right">Igor</span>
+                    <span class="font-semibold text-gray-500 uppercase">Cliente:</span>
+                    <span class="text-gray-900 text-right font-medium">Infinity</span>
+                </div>
+            </div>
+        </header>
+        <!-- END: MainHeader -->
+        <!-- BEGIN: ClientSection -->
+        <section class="mb-4" data-purpose="client-details">
+            <h3 class="label-title mb-2 border-l-4 border-blue-600 pl-2">Informações do Cliente / Beneficiário</h3>
+            <div class="grid grid-cols-2 gap-x-8 gap-y-3 p-3 border border-gray-100 rounded">
+                <div>
+                    <label class="label-title block">Nome</label>
+                    <span class="field-value">João da Silva</span>
+                </div>
+                <div>
+                    <label class="label-title block">Telefone</label>
+                    <span class="field-value">(48) 99999-9999</span>
+                </div>
+                <div>
+                    <label class="label-title block">Endereço</label>
+                    <span class="field-value">Rua X, 123</span>
+                </div>
+                <div>
+                    <label class="label-title block">Cidade</label>
+                    <span class="field-value">Orleans / SC</span>
+                </div>
+                <div>
+                    <label class="label-title block">E-mail</label>
+                    <span class="field-value">joao@email.com</span>
+                </div>
+                <div>
+                    <label class="label-title block">CPF</label>
+                    <span class="field-value">000.000.000-00</span>
+                </div>
+                <div class="col-span-2">
+                    <label class="label-title block">Faturamento</label>
+                    <span class="field-value">Infinity</span>
+                </div>
+            </div>
+        </section>
+        <!-- END: ClientSection -->
+        <!-- BEGIN: TechnicianSection -->
+        <section class="mb-4" data-purpose="technician-details">
+            <h3 class="label-title mb-2 border-l-4 border-blue-600 pl-2">Técnico Responsável</h3>
+            <div class="grid grid-cols-3 gap-x-4 p-3 border border-gray-100 rounded bg-gray-50/50">
+                <div>
+                    <label class="label-title block">Nome</label>
+                    <span class="field-value">Marcos Santos</span>
+                </div>
+                <div>
+                    <label class="label-title block">Cidade</label>
+                    <span class="field-value">Criciúma / SC</span>
+                </div>
+                <div>
+                    <label class="label-title block">Telefone</label>
+                    <span class="field-value">(48) 99999-0000</span>
+                </div>
+            </div>
+        </section>
+        <!-- END: TechnicianSection -->
+        <!-- BEGIN: VehicleSection -->
+        <section class="mb-4" data-purpose="vehicle-details">
+            <h3 class="label-title mb-2 border-l-4 border-blue-600 pl-2">Dados do Veículo</h3>
+            <div class="grid grid-cols-4 gap-4 p-3 border border-gray-100 rounded">
+                <div>
+                    <label class="label-title block text-gray-400">Placa</label>
+                    <span class="field-value font-bold">ABC-1234</span>
+                </div>
+                <div>
+                    <label class="label-title block text-gray-400">Marca/Modelo</label>
+                    <span class="field-value">VW Gol</span>
+                </div>
+                <div>
+                    <label class="label-title block text-gray-400">Ano</label>
+                    <span class="field-value">2019</span>
+                </div>
+                <div>
+                    <label class="label-title block text-gray-400">Cor</label>
+                    <span class="field-value">Branco</span>
+                </div>
+            </div>
+        </section>
+        <!-- END: VehicleSection -->
+        <!-- BEGIN: ServiceTypeSection -->
+        <section class="mb-4" data-purpose="service-selection">
+            <h3 class="label-title mb-2 border-l-4 border-blue-600 pl-2">Tipo de Serviço</h3>
+            <div class="flex items-center gap-8 p-3 border border-gray-100 rounded">
+                <div class="flex items-center gap-2">
+                    <div
+                        class="w-4 h-4 border border-blue-600 rounded-sm flex items-center justify-center text-[10px] font-bold text-blue-800">
+                        X</div>
+                    <span class="field-value">Instalação</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 border border-gray-300 rounded-sm"></div>
+                    <span class="field-value text-gray-400">Revisão</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 border border-gray-300 rounded-sm"></div>
+                    <span class="field-value text-gray-400">Retirada</span>
+                </div>
+                <div class="ml-auto border-l pl-8 h-6 flex items-center">
+                    <span class="label-title mr-2">Info:</span>
+                    <span class="field-value italic">Equipamento novo</span>
+                </div>
+            </div>
+        </section>
+        <!-- END: ServiceTypeSection -->
+        <!-- BEGIN: ObservationSection -->
+        <section class="mb-6" data-purpose="observations">
+            <h3 class="label-title mb-2 border-l-4 border-blue-600 pl-2">Observações</h3>
+            <div class="p-3 border border-gray-100 rounded min-h-[60px] bg-gray-50/30">
+                <p class="field-value">01 equipamento instalado. Cliente solicitou ocultação do rastreador.</p>
+            </div>
+        </section>
+        <!-- END: ObservationSection -->
+        <!-- BEGIN: ExecutionAndSignature -->
+        <section class="mt-auto grid grid-cols-2 gap-10" data-purpose="execution-footer">
+            <div class="space-y-6">
+                <div>
+                    <h3 class="label-title mb-4">Execução do Serviço</h3>
+                    <p class="field-value">Data da execução do serviço: ____ / ____ / ______</p>
+                </div>
+            </div>
+            <div class="space-y-8">
+                <div class="text-center pt-10">
+                    <div class="border-t border-gray-400 w-full mb-1"></div>
+                    <span class="label-title text-[10px]">Assinatura do cliente</span>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="border-b border-gray-300 pb-1">
+                        <span class="label-title block text-[8px]">Nome do responsável</span>
+                    </div>
+                    <div class="border-b border-gray-300 pb-1">
+                        <span class="label-title block text-[8px]">Documento (RG/CPF)</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- END: ExecutionAndSignature -->
+        <!-- BEGIN: Footer -->
+        <footer
+            class="mt-12 pt-4 border-t border-gray-100 flex justify-between items-center text-[9px] text-gray-400 uppercase tracking-widest"
+            data-purpose="system-footer">
+            <div>Documento gerado automaticamente pelo sistema Infinity</div>
+            <div class="font-medium">Versão FOR 021</div>
+        </footer>
+        <!-- END: Footer -->
+    </main>
+    <!-- END: OS Document Container -->
+</body>
+
+</html>
