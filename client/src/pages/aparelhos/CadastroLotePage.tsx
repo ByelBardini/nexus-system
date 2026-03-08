@@ -131,6 +131,8 @@ export function CadastroLotePage() {
   const [loteMarca, setLoteMarca] = useState('')
   const [loteModelo, setLoteModelo] = useState('')
   const [loteOperadora, setLoteOperadora] = useState('')
+  const [loteMarcaSimcard, setLoteMarcaSimcard] = useState('')
+  const [lotePlanoSimcard, setLotePlanoSimcard] = useState('')
   const [loteQuantidade, setLoteQuantidade] = useState<number>(0)
   const [loteDefinirIds, setLoteDefinirIds] = useState(true)
   const [loteIdsTexto, setLoteIdsTexto] = useState('')
@@ -158,8 +160,22 @@ export function CadastroLotePage() {
     queryFn: () => api('/equipamentos/operadoras'),
   })
 
+  const { data: marcasSimcard = [] } = useQuery<
+    { id: number; nome: string; operadoraId: number; temPlanos: boolean; operadora: { id: number; nome: string }; planos?: { id: number; planoMb: number; ativo: boolean }[] }[]
+  >({
+    queryKey: ['marcas-simcard', loteOperadora || 'all'],
+    queryFn: () =>
+      loteOperadora
+        ? api(`/equipamentos/marcas-simcard?operadoraId=${loteOperadora}`)
+        : api('/equipamentos/marcas-simcard'),
+  })
+
   const marcasAtivas = useMemo(() => marcas.filter((m) => m.ativo), [marcas])
   const operadorasAtivas = useMemo(() => operadoras.filter((o) => o.ativo), [operadoras])
+  const marcasSimcardFiltradas = useMemo(
+    () => marcasSimcard.filter((m) => !loteOperadora || m.operadoraId === Number(loteOperadora)),
+    [marcasSimcard, loteOperadora]
+  )
 
   const { data: aparelhosExistentes = [] } = useQuery<{ identificador: string }[]>({
     queryKey: ['aparelhos-ids'],
@@ -205,8 +221,14 @@ export function CadastroLotePage() {
       setLoteModelo('')
     } else {
       setLoteOperadora('')
+      setLoteMarcaSimcard('')
+      setLotePlanoSimcard('')
     }
   }, [loteTipo])
+
+  useEffect(() => {
+    setLotePlanoSimcard('')
+  }, [loteMarcaSimcard])
 
   const valorTotal = useMemo(() => {
     const qtd = loteDefinirIds && idValidation.validos.length > 0
@@ -277,6 +299,8 @@ export function CadastroLotePage() {
         marca: loteTipo === 'RASTREADOR' ? marcaSelecionada?.nome : null,
         modelo: loteTipo === 'RASTREADOR' ? modeloSelecionado?.nome : null,
         operadora: loteTipo === 'SIM' ? operadoraSelecionada?.nome : null,
+        marcaSimcardId: loteTipo === 'SIM' && loteMarcaSimcard ? Number(loteMarcaSimcard) : null,
+        planoSimcardId: loteTipo === 'SIM' && lotePlanoSimcard ? Number(lotePlanoSimcard) : null,
         quantidade: quantidadeFinal,
         valorUnitario: loteValorUnitario / 100,
         identificadores: loteDefinirIds ? idValidation.validos : [],
@@ -538,20 +562,73 @@ export function CadastroLotePage() {
                   </div>
                 </div>
               ) : (
-                <div className="w-1/2">
-                  <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                    Operadora <span className="text-red-500">*</span>
-                  </Label>
-                  <Select value={loteOperadora} onValueChange={setLoteOperadora}>
-                    <SelectTrigger className="h-10">
-                      <SelectValue placeholder="Selecione..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {operadorasAtivas.map((o) => (
-                        <SelectItem key={o.id} value={String(o.id)}>{o.nome}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                      Operadora <span className="text-red-500">*</span>
+                    </Label>
+                    <Select
+                      value={loteOperadora}
+                      onValueChange={(v) => {
+                        setLoteOperadora(v)
+                        setLoteMarcaSimcard('')
+                      }}
+                    >
+                      <SelectTrigger className="h-10">
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {operadorasAtivas.map((o) => (
+                          <SelectItem key={o.id} value={String(o.id)}>{o.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                      Marca do Simcard
+                    </Label>
+                    <Select
+                      value={loteMarcaSimcard}
+                      onValueChange={setLoteMarcaSimcard}
+                      disabled={!loteOperadora}
+                    >
+                      <SelectTrigger className="h-10">
+                        <SelectValue placeholder={loteOperadora ? 'Ex: Getrak, 1nce...' : 'Selecione operadora'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {marcasSimcardFiltradas.map((m) => (
+                          <SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {loteMarcaSimcard && (() => {
+                    const marcaSel = marcasSimcardFiltradas.find((m) => String(m.id) === loteMarcaSimcard)
+                    const planos = (marcaSel?.planos ?? []).filter((p) => p.ativo)
+                    return marcaSel?.temPlanos && planos.length > 0 ? (
+                      <div>
+                        <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                          Plano
+                        </Label>
+                        <Select
+                          value={lotePlanoSimcard}
+                          onValueChange={setLotePlanoSimcard}
+                        >
+                          <SelectTrigger className="h-10">
+                            <SelectValue placeholder="Selecione o plano..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {planos.map((p) => (
+                              <SelectItem key={p.id} value={String(p.id)}>
+                                {p.planoMb} MB
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : null
+                  })()}
                 </div>
               )}
             </div>

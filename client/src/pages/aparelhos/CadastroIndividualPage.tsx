@@ -121,6 +121,8 @@ export function CadastroIndividualPage() {
   const [marca, setMarca] = useState('')
   const [modelo, setModelo] = useState('')
   const [operadora, setOperadora] = useState('')
+  const [marcaSimcardId, setMarcaSimcardId] = useState('')
+  const [planoSimcardId, setPlanoSimcardId] = useState('')
 
   const [origem, setOrigem] = useState<OrigemItem>('DEVOLUCAO_TECNICO')
   const [responsavelEntrega, setResponsavelEntrega] = useState('')
@@ -153,6 +155,22 @@ export function CadastroIndividualPage() {
   const { data: operadoras = [] } = useQuery<Operadora[]>({
     queryKey: ['operadoras'],
     queryFn: () => api('/equipamentos/operadoras'),
+  })
+
+  const operadoraIdParaMarca = useMemo(
+    () => operadoras.find((o) => o.nome === operadora)?.id ?? null,
+    [operadoras, operadora]
+  )
+
+  const { data: marcasSimcard = [] } = useQuery<
+    { id: number; nome: string; operadoraId: number; temPlanos: boolean; operadora: { id: number; nome: string }; planos?: { id: number; planoMb: number; ativo: boolean }[] }[]
+  >({
+    queryKey: ['marcas-simcard', operadoraIdParaMarca ?? 'all'],
+    queryFn: () =>
+      operadoraIdParaMarca
+        ? api(`/equipamentos/marcas-simcard?operadoraId=${operadoraIdParaMarca}`)
+        : api('/equipamentos/marcas-simcard'),
+    enabled: tipo === 'SIM',
   })
 
   const marcasAtivas = useMemo(() => marcas.filter((m) => m.ativo), [marcas])
@@ -196,14 +214,35 @@ export function CadastroIndividualPage() {
     setModelo('')
   }, [marca])
 
+  const marcasSimcardFiltradas = useMemo(
+    () =>
+      marcasSimcard.filter(
+        (m) => !operadoraIdParaMarca || m.operadoraId === operadoraIdParaMarca
+      ),
+    [marcasSimcard, operadoraIdParaMarca]
+  )
+
   useEffect(() => {
     if (tipo === 'SIM') {
       setMarca('')
       setModelo('')
     } else {
       setOperadora('')
+      setMarcaSimcardId('')
+      setPlanoSimcardId('')
     }
   }, [tipo])
+
+  useEffect(() => {
+    if (tipo === 'SIM') {
+      setMarcaSimcardId('')
+      setPlanoSimcardId('')
+    }
+  }, [operadora, tipo])
+
+  useEffect(() => {
+    setPlanoSimcardId('')
+  }, [marcaSimcardId])
 
   const idValido = useMemo(() => {
     if (!identificador.trim()) return false
@@ -238,6 +277,8 @@ export function CadastroIndividualPage() {
       setMarca('')
       setModelo('')
       setOperadora('')
+      setMarcaSimcardId('')
+      setPlanoSimcardId('')
       setOrigem('DEVOLUCAO_TECNICO')
       setResponsavelEntrega('')
       setBuscaResponsavel('')
@@ -258,6 +299,8 @@ export function CadastroIndividualPage() {
         marca: tipo === 'RASTREADOR' ? marca : null,
         modelo: tipo === 'RASTREADOR' ? modelo : null,
         operadora: tipo === 'SIM' ? operadora : null,
+        marcaSimcardId: tipo === 'SIM' && marcaSimcardId ? Number(marcaSimcardId) : undefined,
+        planoSimcardId: tipo === 'SIM' && planoSimcardId ? Number(planoSimcardId) : undefined,
         origem,
         responsavelEntrega: origem === 'DEVOLUCAO_TECNICO' 
           ? tecnicoSelecionado?.nome 
@@ -427,20 +470,70 @@ export function CadastroIndividualPage() {
                   </div>
                 </div>
               ) : (
-                <div>
-                  <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                    Operadora <span className="text-red-500">*</span>
-                  </Label>
-                  <Select value={operadora} onValueChange={setOperadora}>
-                    <SelectTrigger className="h-10">
-                      <SelectValue placeholder="Selecione..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {operadorasAtivas.map((o) => (
-                        <SelectItem key={o.id} value={o.nome}>{o.nome}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                      Operadora <span className="text-red-500">*</span>
+                    </Label>
+                    <Select
+                      value={operadora}
+                      onValueChange={(v) => {
+                        setOperadora(v)
+                        setMarcaSimcardId('')
+                      }}
+                    >
+                      <SelectTrigger className="h-10">
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {operadorasAtivas.map((o) => (
+                          <SelectItem key={o.id} value={o.nome}>{o.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                      Marca do Simcard
+                    </Label>
+                    <Select
+                      value={marcaSimcardId}
+                      onValueChange={setMarcaSimcardId}
+                      disabled={!operadora}
+                    >
+                      <SelectTrigger className="h-10">
+                        <SelectValue placeholder={operadora ? 'Ex: Getrak, 1nce...' : 'Selecione operadora'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {marcasSimcardFiltradas.map((m) => (
+                          <SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {marcaSimcardId && (() => {
+                    const marcaSel = marcasSimcardFiltradas.find((m) => String(m.id) === marcaSimcardId)
+                    const planos = (marcaSel?.planos ?? []).filter((p) => p.ativo)
+                    return marcaSel?.temPlanos && planos.length > 0 ? (
+                      <div>
+                        <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                          Plano
+                        </Label>
+                        <Select value={planoSimcardId} onValueChange={setPlanoSimcardId}>
+                          <SelectTrigger className="h-10">
+                            <SelectValue placeholder="Selecione o plano..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {planos.map((p) => (
+                              <SelectItem key={p.id} value={String(p.id)}>
+                                {p.planoMb} MB
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : null
+                  })()}
                 </div>
               )}
             </div>

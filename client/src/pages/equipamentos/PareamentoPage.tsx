@@ -102,6 +102,8 @@ export function PareamentoPage() {
   const [marcaRastreador, setMarcaRastreador] = useState('')
   const [modeloRastreador, setModeloRastreador] = useState('')
   const [operadoraSim, setOperadoraSim] = useState('')
+  const [marcaSimcardIdSim, setMarcaSimcardIdSim] = useState('')
+  const [planoSimcardIdSim, setPlanoSimcardIdSim] = useState('')
   const [adicionarKit, setAdicionarKit] = useState(false)
   const [kitModo, setKitModo] = useState<'existente' | 'novo'>('existente')
   const [kitIdExistente, setKitIdExistente] = useState<string>('')
@@ -120,6 +122,8 @@ export function PareamentoPage() {
   const [marcaRastreadorMassa, setMarcaRastreadorMassa] = useState('')
   const [modeloRastreadorMassa, setModeloRastreadorMassa] = useState('')
   const [operadoraSimMassa, setOperadoraSimMassa] = useState('')
+  const [marcaSimcardIdSimMassa, setMarcaSimcardIdSimMassa] = useState('')
+  const [planoSimcardIdSimMassa, setPlanoSimcardIdSimMassa] = useState('')
   const [adicionarKitMassa, setAdicionarKitMassa] = useState(false)
   const [kitModoMassa, setKitModoMassa] = useState<'existente' | 'novo'>('existente')
   const [kitIdExistenteMassa, setKitIdExistenteMassa] = useState<string>('')
@@ -160,6 +164,13 @@ export function PareamentoPage() {
     queryFn: () => api('/equipamentos/operadoras'),
     enabled: modo === 'individual' || modo === 'massa',
   })
+  const { data: marcasSimcard = [] } = useQuery<
+    { id: number; nome: string; operadoraId: number; temPlanos: boolean; operadora: { id: number; nome: string }; planos?: { id: number; planoMb: number; ativo: boolean }[] }[]
+  >({
+    queryKey: ['marcas-simcard'],
+    queryFn: () => api('/equipamentos/marcas-simcard'),
+    enabled: modo === 'individual' || modo === 'massa',
+  })
   const { data: kits = [] } = useQuery<{ id: number; nome: string }[]>({
     queryKey: ['kits'],
     queryFn: () => api('/aparelhos/pareamento/kits'),
@@ -181,6 +192,18 @@ export function PareamentoPage() {
     if (!marcaEncontrada) return []
     return modelos.filter((m) => m.marca.id === marcaEncontrada.id)
   }, [marcaRastreadorMassa, marcasAtivas, modelos])
+
+  const marcasSimcardPorOperadora = useMemo(() => {
+    const opId = operadorasAtivas.find((o) => o.nome === operadoraSim)?.id
+    if (!opId) return []
+    return marcasSimcard.filter((m) => m.operadoraId === opId)
+  }, [marcasSimcard, operadoraSim, operadorasAtivas])
+
+  const marcasSimcardPorOperadoraMassa = useMemo(() => {
+    const opId = operadorasAtivas.find((o) => o.nome === operadoraSimMassa)?.id
+    if (!opId) return []
+    return marcasSimcard.filter((m) => m.operadoraId === opId)
+  }, [marcasSimcard, operadoraSimMassa, operadorasAtivas])
 
   const paresIndividual = useMemo(() => {
     const imei = imeiIndividual.replace(/\D/g, '')
@@ -258,10 +281,14 @@ export function PareamentoPage() {
                 ? { marca: marcaRastreadorMassa, modelo: modeloRastreadorMassa }
                 : undefined,
           simManual:
-            modo === 'individual' && !pertenceLoteSim && operadoraSim
-              ? { operadora: operadoraSim }
-              : modo === 'massa' && !pertenceLoteSimMassa && operadoraSimMassa
-                ? { operadora: operadoraSimMassa }
+            modo === 'individual' && !pertenceLoteSim && (marcaSimcardIdSim || operadoraSim)
+              ? marcaSimcardIdSim
+                ? { marcaSimcardId: +marcaSimcardIdSim, planoSimcardId: planoSimcardIdSim ? +planoSimcardIdSim : undefined }
+                : { operadora: operadoraSim }
+              : modo === 'massa' && !pertenceLoteSimMassa && (marcaSimcardIdSimMassa || operadoraSimMassa)
+                ? marcaSimcardIdSimMassa
+                  ? { marcaSimcardId: +marcaSimcardIdSimMassa, planoSimcardId: planoSimcardIdSimMassa ? +planoSimcardIdSimMassa : undefined }
+                  : { operadora: operadoraSimMassa }
                 : undefined,
           ...kitPayload,
         }),
@@ -280,6 +307,8 @@ export function PareamentoPage() {
         setMarcaRastreador('')
         setModeloRastreador('')
         setOperadoraSim('')
+        setMarcaSimcardIdSim('')
+        setPlanoSimcardIdSim('')
         setLoteRastreadorId('')
         setLoteSimId('')
         setKitIdExistente('')
@@ -295,6 +324,8 @@ export function PareamentoPage() {
         setMarcaRastreadorMassa('')
         setModeloRastreadorMassa('')
         setOperadoraSimMassa('')
+        setMarcaSimcardIdSimMassa('')
+        setPlanoSimcardIdSimMassa('')
         setAdicionarKitMassa(false)
         setKitModoMassa('existente')
         setKitIdExistenteMassa('')
@@ -336,7 +367,7 @@ export function PareamentoPage() {
     const rastreadorOk = pertenceLoteRastreador
       ? loteRastreadorSelecionado
       : !!(marcaRastreador && modeloRastreador)
-    const simOk = pertenceLoteSim ? loteSimSelecionado : !!operadoraSim
+    const simOk = pertenceLoteSim ? loteSimSelecionado : !!(marcaSimcardIdSim || operadoraSim)
     const itensCompletos =
       (imeiOk ? 1 : 0) + (iccidOk ? 1 : 0) + (rastreadorOk ? 1 : 0) + (simOk ? 1 : 0)
     return (itensCompletos / 4) * 100
@@ -349,6 +380,7 @@ export function PareamentoPage() {
     loteSimSelecionado,
     marcaRastreador,
     modeloRastreador,
+    marcaSimcardIdSim,
     operadoraSim,
   ])
 
@@ -365,7 +397,7 @@ export function PareamentoPage() {
       }
       if (needSim) {
         const temLote = pertenceLoteSim && loteSimId
-        const temManual = !pertenceLoteSim && operadoraSim
+        const temManual = !pertenceLoteSim && (marcaSimcardIdSim || operadoraSim)
         if (!temLote && !temManual) return false
       }
       return true
@@ -380,6 +412,7 @@ export function PareamentoPage() {
     pertenceLoteSim,
     marcaRastreador,
     modeloRastreador,
+    marcaSimcardIdSim,
     operadoraSim,
   ])
 
@@ -400,7 +433,7 @@ export function PareamentoPage() {
       }
       if (needSim) {
         const temLote = pertenceLoteSimMassa && loteSimId
-        const temManual = !pertenceLoteSimMassa && operadoraSimMassa
+        const temManual = !pertenceLoteSimMassa && (marcaSimcardIdSimMassa || operadoraSimMassa)
         if (!temLote && !temManual) return false
       }
     }
@@ -415,6 +448,7 @@ export function PareamentoPage() {
     pertenceLoteSimMassa,
     marcaRastreadorMassa,
     modeloRastreadorMassa,
+    marcaSimcardIdSimMassa,
     operadoraSimMassa,
   ])
 
@@ -727,20 +761,70 @@ export function PareamentoPage() {
                           </Select>
                         </div>
                       ) : (
-                        <div>
-                          <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-500">
-                            Operadora (se criar novo)
-                          </Label>
-                          <Select value={operadoraSim} onValueChange={setOperadoraSim}>
-                            <SelectTrigger className="h-9">
-                              <SelectValue placeholder="Selecione..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {operadorasAtivas.map((o) => (
-                                <SelectItem key={o.id} value={o.nome}>{o.nome}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                        <div className="space-y-3">
+                          <div>
+                            <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">
+                              Operadora
+                            </Label>
+                            <Select
+                              value={operadoraSim}
+                              onValueChange={(v) => {
+                                setOperadoraSim(v)
+                                setMarcaSimcardIdSim('')
+                                setPlanoSimcardIdSim('')
+                              }}
+                            >
+                              <SelectTrigger className="h-9">
+                                <SelectValue placeholder="Selecione..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {operadorasAtivas.map((o) => (
+                                  <SelectItem key={o.id} value={o.nome}>{o.nome}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">
+                              Marca do Simcard
+                            </Label>
+                            <Select
+                              value={marcaSimcardIdSim}
+                              onValueChange={(v) => {
+                                setMarcaSimcardIdSim(v)
+                                setPlanoSimcardIdSim('')
+                              }}
+                              disabled={!operadoraSim}
+                            >
+                              <SelectTrigger className="h-9">
+                                <SelectValue placeholder={operadoraSim ? 'Ex: Getrak, 1nce...' : 'Selecione operadora'} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {marcasSimcardPorOperadora.map((m) => (
+                                  <SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {marcaSimcardIdSim && (() => {
+                            const marcaSel = marcasSimcardPorOperadora.find((m) => String(m.id) === marcaSimcardIdSim)
+                            const planos = (marcaSel?.planos ?? []).filter((p) => p.ativo)
+                            return marcaSel?.temPlanos && planos.length > 0 ? (
+                              <div>
+                                <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">Plano</Label>
+                                <Select value={planoSimcardIdSim} onValueChange={setPlanoSimcardIdSim}>
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Selecione o plano..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {planos.map((p) => (
+                                      <SelectItem key={p.id} value={String(p.id)}>{p.planoMb} MB</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            ) : null
+                          })()}
                         </div>
                       )}
                       {preview?.linhas[0]?.sim_status === 'FOUND_AVAILABLE' && (
@@ -1208,18 +1292,66 @@ export function PareamentoPage() {
                             </SelectContent>
                           </Select>
                         ) : (
-                          <div>
-                            <Label className="mb-1 block text-[10px] font-bold text-slate-500">Operadora</Label>
-                            <Select value={operadoraSimMassa} onValueChange={setOperadoraSimMassa}>
-                              <SelectTrigger className="h-9">
-                                <SelectValue placeholder="Selecione..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {operadorasAtivas.map((o) => (
-                                  <SelectItem key={o.id} value={o.nome}>{o.nome}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                          <div className="space-y-3">
+                            <div>
+                              <Label className="mb-1 block text-[10px] font-bold text-slate-500">Operadora</Label>
+                              <Select
+                                value={operadoraSimMassa}
+                                onValueChange={(v) => {
+                                  setOperadoraSimMassa(v)
+                                  setMarcaSimcardIdSimMassa('')
+                                  setPlanoSimcardIdSimMassa('')
+                                }}
+                              >
+                                <SelectTrigger className="h-9">
+                                  <SelectValue placeholder="Selecione..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {operadorasAtivas.map((o) => (
+                                    <SelectItem key={o.id} value={o.nome}>{o.nome}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label className="mb-1 block text-[10px] font-bold text-slate-500">Marca do Simcard</Label>
+                              <Select
+                                value={marcaSimcardIdSimMassa}
+                                onValueChange={(v) => {
+                                  setMarcaSimcardIdSimMassa(v)
+                                  setPlanoSimcardIdSimMassa('')
+                                }}
+                                disabled={!operadoraSimMassa}
+                              >
+                                <SelectTrigger className="h-9">
+                                  <SelectValue placeholder={operadoraSimMassa ? 'Ex: Getrak, 1nce...' : 'Selecione operadora'} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {marcasSimcardPorOperadoraMassa.map((m) => (
+                                    <SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            {marcaSimcardIdSimMassa && (() => {
+                              const marcaSel = marcasSimcardPorOperadoraMassa.find((m) => String(m.id) === marcaSimcardIdSimMassa)
+                              const planos = (marcaSel?.planos ?? []).filter((p) => p.ativo)
+                              return marcaSel?.temPlanos && planos.length > 0 ? (
+                                <div>
+                                  <Label className="mb-1 block text-[10px] font-bold text-slate-500">Plano</Label>
+                                  <Select value={planoSimcardIdSimMassa} onValueChange={setPlanoSimcardIdSimMassa}>
+                                    <SelectTrigger className="h-9">
+                                      <SelectValue placeholder="Selecione o plano..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {planos.map((p) => (
+                                        <SelectItem key={p.id} value={String(p.id)}>{p.planoMb} MB</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              ) : null
+                            })()}
                           </div>
                         )}
                       </div>

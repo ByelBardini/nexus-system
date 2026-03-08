@@ -191,6 +191,10 @@ function App() {
           path="equipamentos/operadoras"
           element={<Navigate to="/equipamentos/config" replace />}
         />
+        <Route
+          path="equipamentos/marcas-simcard"
+          element={<Navigate to="/equipamentos/config" replace />}
+        />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

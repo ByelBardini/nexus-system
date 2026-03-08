@@ -44,6 +44,23 @@ interface Operadora {
   ativo: boolean
 }
 
+interface PlanoSimcard {
+  id: number
+  marcaSimcardId: number
+  planoMb: number
+  ativo: boolean
+}
+
+interface MarcaSimcard {
+  id: number
+  nome: string
+  operadoraId: number
+  temPlanos: boolean
+  ativo: boolean
+  operadora: { id: number; nome: string }
+  planos?: PlanoSimcard[]
+}
+
 export function EquipamentosConfigPage() {
   const queryClient = useQueryClient()
   const [searchMarcas, setSearchMarcas] = useState('')
@@ -65,6 +82,17 @@ export function EquipamentosConfigPage() {
   const [modalOperadoraOpen, setModalOperadoraOpen] = useState(false)
   const [editingOperadora, setEditingOperadora] = useState<Operadora | null>(null)
   const [nomeOperadora, setNomeOperadora] = useState('')
+
+  const [modalMarcaSimcardOpen, setModalMarcaSimcardOpen] = useState(false)
+  const [editingMarcaSimcard, setEditingMarcaSimcard] = useState<MarcaSimcard | null>(null)
+  const [nomeMarcaSimcard, setNomeMarcaSimcard] = useState('')
+  const [operadoraIdMarcaSimcard, setOperadoraIdMarcaSimcard] = useState<string>('')
+  const [temPlanosMarcaSimcard, setTemPlanosMarcaSimcard] = useState(false)
+  const [expandedMarcasSimcardIds, setExpandedMarcasSimcardIds] = useState<Set<number>>(new Set())
+  const [modalPlanoSimcardOpen, setModalPlanoSimcardOpen] = useState(false)
+  const [editingPlanoSimcard, setEditingPlanoSimcard] = useState<PlanoSimcard | null>(null)
+  const [planoMbPlanoSimcard, setPlanoMbPlanoSimcard] = useState<number | ''>('')
+  const [marcaSimcardIdForPlano, setMarcaSimcardIdForPlano] = useState<number | null>(null)
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearchMarcas(searchMarcas), 300)
@@ -90,7 +118,13 @@ export function EquipamentosConfigPage() {
     queryFn: () => api('/equipamentos/operadoras'),
   })
 
+  const { data: marcasSimcard = [], isLoading: loadingMarcasSimcard } = useQuery<MarcaSimcard[]>({
+    queryKey: ['marcas-simcard'],
+    queryFn: () => api('/equipamentos/marcas-simcard'),
+  })
+
   const marcasAtivas = useMemo(() => marcas.filter((m) => m.ativo), [marcas])
+  const operadorasAtivas = useMemo(() => operadoras.filter((o) => o.ativo), [operadoras])
 
   const filteredMarcas = useMemo(() => {
     const q = debouncedSearchMarcas.toLowerCase()
@@ -109,6 +143,23 @@ export function EquipamentosConfigPage() {
         o.nome.toLowerCase().includes(debouncedSearchOperadoras.toLowerCase())
       ),
     [operadoras, debouncedSearchOperadoras]
+  )
+
+  const [searchMarcasSimcard, setSearchMarcasSimcard] = useState('')
+  const [debouncedSearchMarcasSimcard, setDebouncedSearchMarcasSimcard] = useState('')
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearchMarcasSimcard(searchMarcasSimcard), 300)
+    return () => clearTimeout(t)
+  }, [searchMarcasSimcard])
+
+  const filteredMarcasSimcard = useMemo(
+    () =>
+      marcasSimcard.filter(
+        (m) =>
+          m.nome.toLowerCase().includes(debouncedSearchMarcasSimcard.toLowerCase()) ||
+          m.operadora.nome.toLowerCase().includes(debouncedSearchMarcasSimcard.toLowerCase())
+      ),
+    [marcasSimcard, debouncedSearchMarcasSimcard]
   )
 
   const modelosByMarca = useMemo(() => {
@@ -336,7 +387,175 @@ export function EquipamentosConfigPage() {
     updateOperadoraMutation.mutate({ id: operadora.id, ativo: !operadora.ativo })
   }
 
-  const isLoading = loadingMarcas || loadingModelos || loadingOperadoras
+  // Marca Simcard mutations
+  const createMarcaSimcardMutation = useMutation({
+    mutationFn: (data: { nome: string; operadoraId: number; temPlanos?: boolean }) =>
+      api('/equipamentos/marcas-simcard', { method: 'POST', body: JSON.stringify(data) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['marcas-simcard'] })
+      closeModalMarcaSimcard()
+      toast.success('Marca de simcard criada com sucesso')
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : 'Erro ao criar marca de simcard'),
+  })
+
+  const updateMarcaSimcardMutation = useMutation({
+    mutationFn: ({
+      id,
+      ...data
+    }: { id: number; nome?: string; operadoraId?: number; temPlanos?: boolean; ativo?: boolean }) =>
+      api(`/equipamentos/marcas-simcard/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['marcas-simcard'] })
+      closeModalMarcaSimcard()
+      toast.success('Marca de simcard atualizada com sucesso')
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : 'Erro ao atualizar marca de simcard'),
+  })
+
+  const deleteMarcaSimcardMutation = useMutation({
+    mutationFn: (id: number) => api(`/equipamentos/marcas-simcard/${id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['marcas-simcard'] })
+      toast.success('Marca de simcard excluída com sucesso')
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : 'Erro ao excluir marca de simcard'),
+  })
+
+  function openCreateMarcaSimcard() {
+    setEditingMarcaSimcard(null)
+    setNomeMarcaSimcard('')
+    setOperadoraIdMarcaSimcard('')
+    setTemPlanosMarcaSimcard(false)
+    setModalMarcaSimcardOpen(true)
+  }
+
+  function openEditMarcaSimcard(m: MarcaSimcard) {
+    setEditingMarcaSimcard(m)
+    setNomeMarcaSimcard(m.nome)
+    setOperadoraIdMarcaSimcard(String(m.operadoraId))
+    setTemPlanosMarcaSimcard(m.temPlanos)
+    setModalMarcaSimcardOpen(true)
+  }
+
+  function closeModalMarcaSimcard() {
+    setModalMarcaSimcardOpen(false)
+    setEditingMarcaSimcard(null)
+    setNomeMarcaSimcard('')
+    setOperadoraIdMarcaSimcard('')
+    setTemPlanosMarcaSimcard(false)
+  }
+
+  function handleSaveMarcaSimcard() {
+    if (!nomeMarcaSimcard.trim()) {
+      toast.error('Nome é obrigatório')
+      return
+    }
+    if (!editingMarcaSimcard && !operadoraIdMarcaSimcard) {
+      toast.error('Selecione uma operadora')
+      return
+    }
+    if (editingMarcaSimcard) {
+      updateMarcaSimcardMutation.mutate({
+        id: editingMarcaSimcard.id,
+        nome: nomeMarcaSimcard,
+        operadoraId: operadoraIdMarcaSimcard ? Number(operadoraIdMarcaSimcard) : undefined,
+        temPlanos: temPlanosMarcaSimcard,
+      })
+    } else {
+      createMarcaSimcardMutation.mutate({
+        nome: nomeMarcaSimcard,
+        operadoraId: Number(operadoraIdMarcaSimcard),
+        temPlanos: temPlanosMarcaSimcard,
+      })
+    }
+  }
+
+  function toggleMarcaSimcard(marcaId: number) {
+    setExpandedMarcasSimcardIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(marcaId)) next.delete(marcaId)
+      else next.add(marcaId)
+      return next
+    })
+  }
+
+  const createPlanoSimcardMutation = useMutation({
+    mutationFn: (data: { marcaSimcardId: number; planoMb: number }) =>
+      api('/equipamentos/planos-simcard', { method: 'POST', body: JSON.stringify(data) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['marcas-simcard'] })
+      closeModalPlanoSimcard()
+      toast.success('Plano criado com sucesso')
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : 'Erro ao criar plano'),
+  })
+
+  const updatePlanoSimcardMutation = useMutation({
+    mutationFn: ({ id, ...data }: { id: number; planoMb?: number; ativo?: boolean }) =>
+      api(`/equipamentos/planos-simcard/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['marcas-simcard'] })
+      closeModalPlanoSimcard()
+      toast.success('Plano atualizado com sucesso')
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : 'Erro ao atualizar plano'),
+  })
+
+  const deletePlanoSimcardMutation = useMutation({
+    mutationFn: (id: number) => api(`/equipamentos/planos-simcard/${id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['marcas-simcard'] })
+      toast.success('Plano desativado com sucesso')
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : 'Erro ao desativar plano'),
+  })
+
+  function openCreatePlanoSimcard(marcaId: number) {
+    setEditingPlanoSimcard(null)
+    setPlanoMbPlanoSimcard('')
+    setMarcaSimcardIdForPlano(marcaId)
+    setModalPlanoSimcardOpen(true)
+  }
+
+  function openEditPlanoSimcard(plano: PlanoSimcard) {
+    setEditingPlanoSimcard(plano)
+    setPlanoMbPlanoSimcard(plano.planoMb)
+    setMarcaSimcardIdForPlano(plano.marcaSimcardId)
+    setModalPlanoSimcardOpen(true)
+  }
+
+  function closeModalPlanoSimcard() {
+    setModalPlanoSimcardOpen(false)
+    setEditingPlanoSimcard(null)
+    setPlanoMbPlanoSimcard('')
+    setMarcaSimcardIdForPlano(null)
+  }
+
+  function handleSavePlanoSimcard() {
+    if (planoMbPlanoSimcard === '' || Number(planoMbPlanoSimcard) <= 0) {
+      toast.error('Informe o valor em MB')
+      return
+    }
+    if (!marcaSimcardIdForPlano) return
+    if (editingPlanoSimcard) {
+      updatePlanoSimcardMutation.mutate({
+        id: editingPlanoSimcard.id,
+        planoMb: Number(planoMbPlanoSimcard),
+      })
+    } else {
+      createPlanoSimcardMutation.mutate({
+        marcaSimcardId: marcaSimcardIdForPlano,
+        planoMb: Number(planoMbPlanoSimcard),
+      })
+    }
+  }
+
+  function toggleAtivoMarcaSimcard(m: MarcaSimcard) {
+    updateMarcaSimcardMutation.mutate({ id: m.id, ativo: !m.ativo })
+  }
+
+  const isLoading = loadingMarcas || loadingModelos || loadingOperadoras || loadingMarcasSimcard
 
   if (isLoading) {
     return (
@@ -711,6 +930,209 @@ export function EquipamentosConfigPage() {
               </div>
             </div>
           </div>
+
+          {/* Marcas Simcard - full width */}
+          <div className="col-span-12 flex flex-col">
+            <div className="bg-white border border-slate-200 rounded-sm shadow-sm flex flex-col flex-1 min-h-0">
+              <div className="p-4 border-b border-slate-100 flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <MaterialIcon name="sim_card" className="text-blue-600" />
+                    Marcas de Simcard
+                  </h2>
+                  <Button
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold h-8 px-3 rounded-sm flex items-center gap-1.5 uppercase"
+                    onClick={openCreateMarcaSimcard}
+                  >
+                    <MaterialIcon name="add" className="text-base" />
+                    Nova Marca
+                  </Button>
+                </div>
+                <div className="relative">
+                  <MaterialIcon
+                    name="search"
+                    className="absolute left-3 top-2 text-slate-400 text-lg"
+                  />
+                  <Input
+                    className="h-9 pl-9 pr-3 w-full bg-slate-100 border-transparent focus:bg-white focus:ring-1 focus:ring-blue-500 text-xs rounded-sm"
+                    placeholder="Filtrar por marca ou operadora..."
+                    value={searchMarcasSimcard}
+                    onChange={(e) => setSearchMarcasSimcard(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto max-h-64">
+                {filteredMarcasSimcard.map((m) => {
+                  const isExpanded = expandedMarcasSimcardIds.has(m.id)
+                  const planosDaMarca = (m.planos ?? []).filter((p) => p.ativo)
+                  return (
+                    <div
+                      key={m.id}
+                      className="border-b border-slate-50 last:border-b-0"
+                    >
+                      <div
+                        className={cn(
+                          'flex items-center justify-between p-4 cursor-pointer transition-colors',
+                          isExpanded ? 'bg-slate-50/50' : 'hover:bg-slate-50'
+                        )}
+                        onClick={() => toggleMarcaSimcard(m.id)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <MaterialIcon
+                            name={isExpanded ? 'expand_more' : 'chevron_right'}
+                            className="text-slate-400"
+                          />
+                          <span
+                            className={cn(
+                              'text-xs font-bold',
+                              m.ativo ? 'text-slate-800' : 'text-slate-500'
+                            )}
+                          >
+                            {m.nome}
+                          </span>
+                          <span className="text-xs text-slate-500">•</span>
+                          <span className="text-xs text-slate-600">{m.operadora.nome}</span>
+                          <span
+                            className={cn(
+                              'text-[10px] px-1.5 py-0.5 rounded font-bold',
+                              m.temPlanos ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'
+                            )}
+                          >
+                            {m.temPlanos ? 'Tem planos' : 'Sem planos'}
+                          </span>
+                          <span
+                            className={cn(
+                              'text-[10px] px-1.5 py-0.5 rounded font-bold',
+                              m.ativo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                            )}
+                          >
+                            {m.ativo ? 'Ativo' : 'Inativo'}
+                          </span>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-slate-400 hover:text-slate-600"
+                            >
+                              <MaterialIcon name="settings" className="text-lg" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                            <DropdownMenuItem onClick={() => openEditMarcaSimcard(m)}>
+                              <MaterialIcon name="edit" className="mr-2 text-base" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => toggleAtivoMarcaSimcard(m)}>
+                              <MaterialIcon
+                                name={m.ativo ? 'visibility_off' : 'visibility'}
+                                className="mr-2 text-base"
+                              />
+                              {m.ativo ? 'Desativar' : 'Ativar'}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => deleteMarcaSimcardMutation.mutate(m.id)}
+                              className="text-red-600"
+                            >
+                              <MaterialIcon name="delete" className="mr-2 text-base" />
+                              Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      {isExpanded && (
+                        <div className="bg-white">
+                          {m.temPlanos ? (
+                            planosDaMarca.length === 0 ? (
+                              <div className="py-4 pl-10 pr-4 text-xs text-slate-500 flex items-center justify-between">
+                                <span>Nenhum plano cadastrado</span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-[10px] h-7"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    openCreatePlanoSimcard(m.id)
+                                  }}
+                                >
+                                  <MaterialIcon name="add" className="text-sm mr-1" />
+                                  Adicionar Plano
+                                </Button>
+                              </div>
+                            ) : (
+                              <>
+                                {planosDaMarca.map((plano) => (
+                                  <div
+                                    key={plano.id}
+                                    className="flex items-center justify-between py-3 pl-10 pr-4 hover:bg-blue-50/30 border-l-2 border-transparent hover:border-blue-400 transition-all"
+                                  >
+                                    <span className="text-xs font-medium text-slate-600">
+                                      {plano.planoMb} MB
+                                    </span>
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <button
+                                          onClick={(e) => e.stopPropagation()}
+                                          className="text-slate-300 hover:text-slate-500"
+                                        >
+                                          <MoreVertical className="h-5 w-5" />
+                                        </button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => openEditPlanoSimcard(plano)}>
+                                          <MaterialIcon name="edit" className="mr-2 text-base" />
+                                          Editar
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onClick={() => deletePlanoSimcardMutation.mutate(plano.id)}
+                                          className="text-red-600"
+                                        >
+                                          <MaterialIcon name="delete" className="mr-2 text-base" />
+                                          Excluir
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </div>
+                                ))}
+                                <div className="py-2 pl-10 pr-4">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-[10px] h-7 text-blue-600"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      openCreatePlanoSimcard(m.id)
+                                    }}
+                                  >
+                                    <MaterialIcon name="add" className="text-sm mr-1" />
+                                    Adicionar Plano
+                                  </Button>
+                                </div>
+                              </>
+                            )
+                          ) : (
+                            <div className="py-4 pl-10 pr-4 text-xs text-slate-500">
+                              Marca sem planos cadastrados. Edite a marca e marque &quot;Tem planos&quot; para adicionar.
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+                {filteredMarcasSimcard.length === 0 && (
+                  <div className="p-8 text-center text-sm text-slate-500">
+                    Nenhuma marca de simcard encontrada
+                  </div>
+                )}
+              </div>
+              <div className="p-3 border-t border-slate-100 bg-slate-50 text-center">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                  Total: {filteredMarcasSimcard.length} Marcas de Simcard
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -867,6 +1289,159 @@ export function EquipamentosConfigPage() {
               disabled={createOperadoraMutation.isPending || updateOperadoraMutation.isPending}
             >
               {createOperadoraMutation.isPending || updateOperadoraMutation.isPending
+                ? 'Salvando...'
+                : 'Salvar'}
+            </Button>
+          </footer>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Marca Simcard */}
+      <Dialog open={modalMarcaSimcardOpen} onOpenChange={(o) => !o && closeModalMarcaSimcard()}>
+        <DialogContent hideClose className="max-w-md p-0 gap-0 overflow-hidden rounded-sm">
+          <header className="bg-white border-b border-slate-200 p-6 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MaterialIcon name="sim_card" className="text-blue-600" />
+              <h2 className="text-lg font-bold text-slate-800">
+                {editingMarcaSimcard ? 'Editar Marca de Simcard' : 'Nova Marca de Simcard'}
+              </h2>
+            </div>
+            <button onClick={closeModalMarcaSimcard} className="text-slate-400 hover:text-slate-600">
+              <X className="h-5 w-5" />
+            </button>
+          </header>
+          <div className="p-6 space-y-4">
+            {!editingMarcaSimcard && (
+              <div>
+                <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                  Operadora <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={operadoraIdMarcaSimcard}
+                  onValueChange={setOperadoraIdMarcaSimcard}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="Selecione uma operadora..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {operadorasAtivas.map((o) => (
+                      <SelectItem key={o.id} value={String(o.id)}>
+                        {o.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {editingMarcaSimcard && (
+              <div>
+                <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                  Operadora
+                </Label>
+                <Select
+                  value={operadoraIdMarcaSimcard}
+                  onValueChange={setOperadoraIdMarcaSimcard}
+                >
+                  <SelectTrigger className="h-10">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {operadorasAtivas.map((o) => (
+                      <SelectItem key={o.id} value={String(o.id)}>
+                        {o.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div>
+              <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                Nome da Marca <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                value={nomeMarcaSimcard}
+                onChange={(e) => setNomeMarcaSimcard(e.target.value)}
+                placeholder="Ex: Getrak, Virtueyes, 1nce"
+                className="h-10"
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="temPlanos"
+                checked={temPlanosMarcaSimcard}
+                onChange={(e) => setTemPlanosMarcaSimcard(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300"
+              />
+              <Label htmlFor="temPlanos" className="text-sm font-medium text-slate-700 cursor-pointer">
+                Tem planos (500 MB, 1 GB, etc.)
+              </Label>
+            </div>
+          </div>
+          <footer className="bg-slate-50 border-t border-slate-200 p-4 flex justify-end gap-3">
+            <Button variant="ghost" onClick={closeModalMarcaSimcard}>
+              Cancelar
+            </Button>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={handleSaveMarcaSimcard}
+              disabled={
+                createMarcaSimcardMutation.isPending || updateMarcaSimcardMutation.isPending
+              }
+            >
+              {createMarcaSimcardMutation.isPending || updateMarcaSimcardMutation.isPending
+                ? 'Salvando...'
+                : 'Salvar'}
+            </Button>
+          </footer>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Plano Simcard */}
+      <Dialog open={modalPlanoSimcardOpen} onOpenChange={(o) => !o && closeModalPlanoSimcard()}>
+        <DialogContent hideClose className="max-w-md p-0 gap-0 overflow-hidden rounded-sm">
+          <header className="bg-white border-b border-slate-200 p-6 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MaterialIcon name="sim_card" className="text-blue-600" />
+              <h2 className="text-lg font-bold text-slate-800">
+                {editingPlanoSimcard ? 'Editar Plano' : 'Novo Plano'}
+              </h2>
+            </div>
+            <button onClick={closeModalPlanoSimcard} className="text-slate-400 hover:text-slate-600">
+              <X className="h-5 w-5" />
+            </button>
+          </header>
+          <div className="p-6 space-y-4">
+            <div>
+              <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                Plano (MB) <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                type="number"
+                min={1}
+                placeholder="Ex: 500, 1024"
+                value={planoMbPlanoSimcard}
+                onChange={(e) => {
+                  const v = e.target.value
+                  setPlanoMbPlanoSimcard(v === '' ? '' : Math.max(0, parseInt(v, 10) || 0))
+                }}
+                className="h-10"
+              />
+            </div>
+          </div>
+          <footer className="bg-slate-50 border-t border-slate-200 p-4 flex justify-end gap-3">
+            <Button variant="ghost" onClick={closeModalPlanoSimcard}>
+              Cancelar
+            </Button>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={handleSavePlanoSimcard}
+              disabled={
+                createPlanoSimcardMutation.isPending || updatePlanoSimcardMutation.isPending
+              }
+            >
+              {createPlanoSimcardMutation.isPending || updatePlanoSimcardMutation.isPending
                 ? 'Salvando...'
                 : 'Salvar'}
             </Button>
