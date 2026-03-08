@@ -12,6 +12,8 @@ interface CreateLoteDto {
   marca?: string | null;
   modelo?: string | null;
   operadora?: string | null;
+  marcaSimcardId?: number | null;
+  planoSimcardId?: number | null;
   quantidade: number;
   valorUnitario: number;
   identificadores?: string[];
@@ -23,6 +25,8 @@ interface CreateIndividualDto {
   marca?: string | null;
   modelo?: string | null;
   operadora?: string | null;
+  marcaSimcardId?: number | null;
+  planoSimcardId?: number | null;
   origem: 'RETIRADA_CLIENTE' | 'DEVOLUCAO_TECNICO' | 'COMPRA_AVULSA';
   responsavelEntrega?: string | null;
   tecnicoId?: number | null;
@@ -44,6 +48,8 @@ export class AparelhosService {
         lote: { select: { id: true, referencia: true } },
         tecnico: { select: { id: true, nome: true } },
         kit: { select: { id: true, nome: true } },
+        marcaSimcard: { select: { id: true, nome: true, operadora: { select: { id: true, nome: true } } } },
+        planoSimcard: { select: { id: true, planoMb: true } },
         simVinculado: { select: { id: true, identificador: true, operadora: true } },
         historico: {
           orderBy: { criadoEm: 'desc' },
@@ -61,6 +67,8 @@ export class AparelhosService {
         lote: true,
         tecnico: true,
         kit: { select: { id: true, nome: true } },
+        marcaSimcard: { include: { operadora: true } },
+        planoSimcard: true,
         simVinculado: true,
         historico: { orderBy: { criadoEm: 'desc' } },
       },
@@ -80,6 +88,8 @@ export class AparelhosService {
       marca,
       modelo,
       operadora,
+      marcaSimcardId,
+      planoSimcardId,
       quantidade,
       valorUnitario,
       identificadores,
@@ -87,6 +97,16 @@ export class AparelhosService {
 
     if (quantidade <= 0) {
       throw new BadRequestException('Quantidade deve ser maior que zero');
+    }
+
+    let operadoraSim = operadora;
+    if (tipo === 'SIM' && marcaSimcardId) {
+      const marcaSim = await this.prisma.marcaSimcard.findUnique({
+        where: { id: marcaSimcardId },
+        include: { operadora: true },
+      });
+      if (!marcaSim) throw new BadRequestException('Marca de simcard não encontrada');
+      operadoraSim = marcaSim.operadora.nome;
     }
 
     const temIdentificadores = identificadores && identificadores.length > 0;
@@ -104,7 +124,9 @@ export class AparelhosService {
           clienteId: proprietarioTipo === 'CLIENTE' ? clienteId : null,
           marca: tipo === 'RASTREADOR' ? marca : null,
           modelo: tipo === 'RASTREADOR' ? modelo : null,
-          operadora: tipo === 'SIM' ? operadora : null,
+          operadora: tipo === 'SIM' ? operadoraSim : null,
+          marcaSimcardId: tipo === 'SIM' ? marcaSimcardId ?? null : null,
+          planoSimcardId: tipo === 'SIM' ? planoSimcardId ?? null : null,
           quantidade: qtdFinal,
           valorUnitario,
           valorTotal,
@@ -112,6 +134,12 @@ export class AparelhosService {
       });
 
       const aparelhosData: Prisma.AparelhoCreateManyInput[] = [];
+
+      const baseSimData = {
+        operadora: operadoraSim,
+        marcaSimcardId: marcaSimcardId ?? undefined,
+        planoSimcardId: planoSimcardId ?? undefined,
+      };
 
       if (temIdentificadores) {
         for (const identificador of identificadores) {
@@ -123,7 +151,7 @@ export class AparelhosService {
             clienteId: proprietarioTipo === 'CLIENTE' ? clienteId : null,
             marca: tipo === 'RASTREADOR' ? marca : null,
             modelo: tipo === 'RASTREADOR' ? modelo : null,
-            operadora: tipo === 'SIM' ? operadora : null,
+            ...(tipo === 'SIM' ? baseSimData : { operadora: null }),
             loteId: lote.id,
             valorUnitario,
           });
@@ -138,7 +166,7 @@ export class AparelhosService {
             clienteId: proprietarioTipo === 'CLIENTE' ? clienteId : null,
             marca: tipo === 'RASTREADOR' ? marca : null,
             modelo: tipo === 'RASTREADOR' ? modelo : null,
-            operadora: tipo === 'SIM' ? operadora : null,
+            ...(tipo === 'SIM' ? baseSimData : { operadora: null }),
             loteId: lote.id,
             valorUnitario,
           });
@@ -214,6 +242,8 @@ export class AparelhosService {
       marca,
       modelo,
       operadora,
+      marcaSimcardId,
+      planoSimcardId,
       origem,
       responsavelEntrega,
       tecnicoId,
@@ -233,6 +263,16 @@ export class AparelhosService {
       );
     }
 
+    let operadoraSim = operadora;
+    if (tipo === 'SIM' && marcaSimcardId) {
+      const marcaSim = await this.prisma.marcaSimcard.findUnique({
+        where: { id: marcaSimcardId },
+        include: { operadora: true },
+      });
+      if (!marcaSim) throw new BadRequestException('Marca de simcard não encontrada');
+      operadoraSim = marcaSim.operadora.nome;
+    }
+
     let statusAparelho: StatusAparelho = 'EM_ESTOQUE';
     if (statusEntrada === 'EM_MANUTENCAO') {
       statusAparelho = 'EM_ESTOQUE';
@@ -248,7 +288,9 @@ export class AparelhosService {
         proprietario: 'INFINITY',
         marca: tipo === 'RASTREADOR' ? marca : null,
         modelo: tipo === 'RASTREADOR' ? modelo : null,
-        operadora: tipo === 'SIM' ? operadora : null,
+        operadora: tipo === 'SIM' ? operadoraSim : null,
+        marcaSimcardId: tipo === 'SIM' ? marcaSimcardId ?? null : null,
+        planoSimcardId: tipo === 'SIM' ? planoSimcardId ?? null : null,
         tecnicoId: tecnicoId || null,
       },
       include: {
@@ -320,6 +362,8 @@ export class AparelhosService {
     status: 'FOUND_AVAILABLE' | 'FOUND_ALREADY_LINKED' | 'NEEDS_CREATE' | 'INVALID_FORMAT';
     simId?: number;
     operadora?: string;
+    marcaSimcardId?: number;
+    planoSimcardId?: number;
   }> {
     const clean = iccid.replace(/\D/g, '');
     if (clean.length < 18 || clean.length > 21) {
@@ -338,6 +382,8 @@ export class AparelhosService {
       status: 'FOUND_AVAILABLE',
       simId: sim.id,
       operadora: sim.operadora ?? undefined,
+      marcaSimcardId: sim.marcaSimcardId ?? undefined,
+      planoSimcardId: sim.planoSimcardId ?? undefined,
     };
   }
 
@@ -411,7 +457,7 @@ export class AparelhosService {
     loteRastreadorId?: number;
     loteSimId?: number;
     rastreadorManual?: { marca: string; modelo: string };
-    simManual?: { operadora: string };
+    simManual?: { operadora?: string; marcaSimcardId?: number; planoSimcardId?: number };
     kitId?: number;
     kitNome?: string;
   }) {
@@ -427,7 +473,7 @@ export class AparelhosService {
     const temLoteTracker = !!loteRastreadorId;
     const temManualTracker = !!(rastreadorManual?.marca && rastreadorManual?.modelo);
     const temLoteSim = !!loteSimId;
-    const temManualSim = !!simManual?.operadora;
+    const temManualSim = !!simManual?.operadora || !!simManual?.marcaSimcardId;
 
     if (linhasNeedTracker.length > 0 && !temLoteTracker && !temManualTracker) {
       throw new BadRequestException(
@@ -516,15 +562,26 @@ export class AparelhosService {
             data: { identificador: cleanIccid },
           });
           simId = aparelhoSemId.id;
-        } else if (linha.sim_status === 'NEEDS_CREATE' && simManual?.operadora) {
+        } else if (linha.sim_status === 'NEEDS_CREATE' && (simManual?.operadora || simManual?.marcaSimcardId)) {
           const cleanIccid = linha.iccid.replace(/\D/g, '');
+          let operadoraNome = simManual.operadora;
+          if (simManual.marcaSimcardId) {
+            const marcaSim = await tx.marcaSimcard.findUnique({
+              where: { id: simManual.marcaSimcardId },
+              include: { operadora: true },
+            });
+            if (!marcaSim) throw new BadRequestException('Marca de simcard não encontrada');
+            operadoraNome = marcaSim.operadora.nome;
+          }
           const novo = await tx.aparelho.create({
             data: {
               tipo: 'SIM',
               identificador: cleanIccid,
               status: 'EM_ESTOQUE',
               proprietario: 'INFINITY',
-              operadora: simManual.operadora,
+              operadora: operadoraNome ?? null,
+              marcaSimcardId: simManual.marcaSimcardId ?? null,
+              planoSimcardId: simManual.planoSimcardId ?? null,
             },
           });
           simId = novo.id;

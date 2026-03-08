@@ -327,9 +327,44 @@ model Operadora {
   nome                 String             @unique @db.VarChar(100)
   ativo                Boolean            @default(true)
   criadoEm             DateTime           @default(now()) @map("criado_em")
+  marcasSimcard        MarcaSimcard[]
   pedidosRastreadores  PedidoRastreador[]
 
   @@map("operadoras")
+}
+
+model MarcaSimcard {
+  id           Int           @id @default(autoincrement())
+  nome         String        @db.VarChar(100)
+  operadoraId  Int           @map("operadora_id")
+  temPlanos    Boolean       @default(false) @map("tem_planos")
+  ativo        Boolean       @default(true)
+  criadoEm     DateTime      @default(now()) @map("criado_em")
+  operadora    Operadora     @relation(fields: [operadoraId], references: [id], onDelete: Cascade)
+
+  planos       PlanoSimcard[]
+  aparelhos    Aparelho[]
+  lotesAparelhos LoteAparelho[]
+
+  @@unique([operadoraId, nome])
+  @@index([operadoraId])
+  @@map("marcas_simcard")
+}
+
+model PlanoSimcard {
+  id             Int            @id @default(autoincrement())
+  marcaSimcardId Int            @map("marca_simcard_id")
+  planoMb        Int            @map("plano_mb")
+  ativo          Boolean        @default(true)
+  criadoEm       DateTime       @default(now()) @map("criado_em")
+  marcaSimcard   MarcaSimcard   @relation(fields: [marcaSimcardId], references: [id], onDelete: Cascade)
+
+  aparelhos      Aparelho[]
+  lotesAparelhos LoteAparelho[]
+
+  @@unique([marcaSimcardId, planoMb])
+  @@index([marcaSimcardId])
+  @@map("planos_simcard")
 }
 
 model Kit {
@@ -352,6 +387,8 @@ model Aparelho {
   marca           String?           @db.VarChar(100)
   modelo          String?           @db.VarChar(100)
   operadora       String?           @db.VarChar(50)
+  marcaSimcardId  Int?              @map("marca_simcard_id")
+  planoSimcardId  Int?              @map("plano_simcard_id")
   loteId          Int?              @map("lote_id")
   valorUnitario   Decimal?          @map("valor_unitario") @db.Decimal(10, 2)
   tecnicoId       Int?              @map("tecnico_id")
@@ -363,6 +400,8 @@ model Aparelho {
   cliente         Cliente?          @relation(fields: [clienteId], references: [id])
   kit             Kit?              @relation(fields: [kitId], references: [id])
   lote            LoteAparelho?     @relation(fields: [loteId], references: [id])
+  marcaSimcard    MarcaSimcard?     @relation(fields: [marcaSimcardId], references: [id])
+  planoSimcard    PlanoSimcard?     @relation(fields: [planoSimcardId], references: [id])
   tecnico         Tecnico?          @relation(fields: [tecnicoId], references: [id])
   simVinculado    Aparelho?         @relation("SimVinculo", fields: [simVinculadoId], references: [id])
   aparelhosVinculados Aparelho[]    @relation("SimVinculo")
@@ -373,6 +412,8 @@ model Aparelho {
   @@index([loteId])
   @@index([tecnicoId])
   @@index([simVinculadoId])
+  @@index([marcaSimcardId])
+  @@index([planoSimcardId])
   @@map("aparelhos")
 }
 
@@ -387,15 +428,21 @@ model LoteAparelho {
   marca           String?           @db.VarChar(100)
   modelo          String?           @db.VarChar(100)
   operadora       String?           @db.VarChar(50)
+  marcaSimcardId  Int?              @map("marca_simcard_id")
+  planoSimcardId  Int?              @map("plano_simcard_id")
   quantidade      Int
   valorUnitario   Decimal           @map("valor_unitario") @db.Decimal(10, 2)
   valorTotal      Decimal           @map("valor_total") @db.Decimal(10, 2)
   criadoEm        DateTime          @default(now()) @map("criado_em")
   
   cliente         Cliente?          @relation(fields: [clienteId], references: [id])
+  marcaSimcard    MarcaSimcard?     @relation(fields: [marcaSimcardId], references: [id])
+  planoSimcard    PlanoSimcard?     @relation(fields: [planoSimcardId], references: [id])
   aparelhos       Aparelho[]
 
   @@index([clienteId])
+  @@index([marcaSimcardId])
+  @@index([planoSimcardId])
   @@map("lotes_aparelhos")
 }
 

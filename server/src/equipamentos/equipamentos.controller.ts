@@ -7,6 +7,10 @@ import { CreateModeloDto } from './dto/create-modelo.dto';
 import { UpdateModeloDto } from './dto/update-modelo.dto';
 import { CreateOperadoraDto } from './dto/create-operadora.dto';
 import { UpdateOperadoraDto } from './dto/update-operadora.dto';
+import { CreateMarcaSimcardDto } from './dto/create-marca-simcard.dto';
+import { UpdateMarcaSimcardDto } from './dto/update-marca-simcard.dto';
+import { CreatePlanoSimcardDto } from './dto/create-plano-simcard.dto';
+import { UpdatePlanoSimcardDto } from './dto/update-plano-simcard.dto';
 
 @ApiTags('equipamentos')
 @ApiBearerAuth()
@@ -109,5 +113,71 @@ export class EquipamentosController {
   @ApiOperation({ summary: 'Deletar operadora' })
   deleteOperadora(@Param('id') id: string) {
     return this.equipamentosService.deleteOperadora(+id);
+  }
+
+  // ============= MARCAS SIMCARD =============
+
+  @Get('marcas-simcard')
+  @ApiOperation({ summary: 'Listar marcas de simcard' })
+  @ApiQuery({ name: 'operadoraId', required: false, type: Number })
+  findAllMarcasSimcard(@Query('operadoraId') operadoraId?: string) {
+    return this.equipamentosService.findAllMarcasSimcard(operadoraId ? +operadoraId : undefined);
+  }
+
+  @Get('marcas-simcard/:id')
+  @ApiOperation({ summary: 'Buscar marca de simcard por ID' })
+  findOneMarcaSimcard(@Param('id') id: string) {
+    return this.equipamentosService.findOneMarcaSimcard(+id);
+  }
+
+  @Post('marcas-simcard')
+  @ApiOperation({ summary: 'Criar marca de simcard' })
+  createMarcaSimcard(@Body() dto: CreateMarcaSimcardDto) {
+    return this.equipamentosService.createMarcaSimcard(dto);
+  }
+
+  @Patch('marcas-simcard/:id')
+  @ApiOperation({ summary: 'Atualizar marca de simcard' })
+  updateMarcaSimcard(@Param('id') id: string, @Body() dto: UpdateMarcaSimcardDto) {
+    return this.equipamentosService.updateMarcaSimcard(+id, dto);
+  }
+
+  @Delete('marcas-simcard/:id')
+  @ApiOperation({ summary: 'Deletar marca de simcard' })
+  deleteMarcaSimcard(@Param('id') id: string) {
+    return this.equipamentosService.deleteMarcaSimcard(+id);
+  }
+
+  // ============= PLANOS SIMCARD =============
+
+  @Get('planos-simcard')
+  @ApiOperation({ summary: 'Listar planos de simcard' })
+  @ApiQuery({ name: 'marcaSimcardId', required: false, type: Number })
+  findAllPlanosSimcard(@Query('marcaSimcardId') marcaSimcardId?: string) {
+    return this.equipamentosService.findAllPlanosSimcard(marcaSimcardId ? +marcaSimcardId : undefined);
+  }
+
+  @Get('planos-simcard/:id')
+  @ApiOperation({ summary: 'Buscar plano de simcard por ID' })
+  findOnePlanoSimcard(@Param('id') id: string) {
+    return this.equipamentosService.findOnePlanoSimcard(+id);
+  }
+
+  @Post('planos-simcard')
+  @ApiOperation({ summary: 'Criar plano de simcard' })
+  createPlanoSimcard(@Body() dto: CreatePlanoSimcardDto) {
+    return this.equipamentosService.createPlanoSimcard(dto);
+  }
+
+  @Patch('planos-simcard/:id')
+  @ApiOperation({ summary: 'Atualizar plano de simcard' })
+  updatePlanoSimcard(@Param('id') id: string, @Body() dto: UpdatePlanoSimcardDto) {
+    return this.equipamentosService.updatePlanoSimcard(+id, dto);
+  }
+
+  @Delete('planos-simcard/:id')
+  @ApiOperation({ summary: 'Desativar plano de simcard' })
+  deletePlanoSimcard(@Param('id') id: string) {
+    return this.equipamentosService.deletePlanoSimcard(+id);
   }
 }

@@ -6,6 +6,10 @@ import { CreateModeloDto } from './dto/create-modelo.dto';
 import { UpdateModeloDto } from './dto/update-modelo.dto';
 import { CreateOperadoraDto } from './dto/create-operadora.dto';
 import { UpdateOperadoraDto } from './dto/update-operadora.dto';
+import { CreateMarcaSimcardDto } from './dto/create-marca-simcard.dto';
+import { UpdateMarcaSimcardDto } from './dto/update-marca-simcard.dto';
+import { CreatePlanoSimcardDto } from './dto/create-plano-simcard.dto';
+import { UpdatePlanoSimcardDto } from './dto/update-plano-simcard.dto';
 
 @Injectable()
 export class EquipamentosService {
@@ -167,5 +171,169 @@ export class EquipamentosService {
   async deleteOperadora(id: number) {
     await this.findOneOperadora(id);
     return this.prisma.operadora.delete({ where: { id } });
+  }
+
+  // ============= MARCAS SIMCARD =============
+
+  async findAllMarcasSimcard(operadoraId?: number) {
+    return this.prisma.marcaSimcard.findMany({
+      where: operadoraId ? { operadoraId } : undefined,
+      orderBy: [{ operadora: { nome: 'asc' } }, { nome: 'asc' }],
+      include: { operadora: true, planos: { where: { ativo: true }, orderBy: { planoMb: 'asc' } } },
+    });
+  }
+
+  async findOneMarcaSimcard(id: number) {
+    const marca = await this.prisma.marcaSimcard.findUnique({
+      where: { id },
+      include: { operadora: true, planos: { orderBy: { planoMb: 'asc' } } },
+    });
+    if (!marca) throw new NotFoundException('Marca de simcard não encontrada');
+    return marca;
+  }
+
+  async createMarcaSimcard(dto: CreateMarcaSimcardDto) {
+    const operadora = await this.prisma.operadora.findUnique({
+      where: { id: dto.operadoraId },
+    });
+    if (!operadora) throw new NotFoundException('Operadora não encontrada');
+
+    const existing = await this.prisma.marcaSimcard.findFirst({
+      where: { operadoraId: dto.operadoraId, nome: dto.nome },
+    });
+    if (existing) throw new ConflictException('Marca já existe para esta operadora');
+
+    return this.prisma.marcaSimcard.create({
+      data: {
+        nome: dto.nome,
+        operadoraId: dto.operadoraId,
+        temPlanos: dto.temPlanos ?? false,
+      },
+      include: { operadora: true },
+    });
+  }
+
+  async updateMarcaSimcard(id: number, dto: UpdateMarcaSimcardDto) {
+    const marca = await this.findOneMarcaSimcard(id);
+
+    if (dto.operadoraId !== undefined) {
+      const operadora = await this.prisma.operadora.findUnique({
+        where: { id: dto.operadoraId },
+      });
+      if (!operadora) throw new NotFoundException('Operadora não encontrada');
+    }
+
+    const operadoraIdFinal = dto.operadoraId ?? marca.operadoraId;
+    const nomeFinal = dto.nome ?? marca.nome;
+
+    if (dto.nome) {
+      const existing = await this.prisma.marcaSimcard.findFirst({
+        where: {
+          operadoraId: operadoraIdFinal,
+          nome: nomeFinal,
+          id: { not: id },
+        },
+      });
+      if (existing) throw new ConflictException('Marca já existe para esta operadora');
+    }
+
+    return this.prisma.marcaSimcard.update({
+      where: { id },
+      data: dto,
+      include: { operadora: true },
+    });
+  }
+
+  async deleteMarcaSimcard(id: number) {
+    await this.findOneMarcaSimcard(id);
+    return this.prisma.marcaSimcard.delete({ where: { id } });
+  }
+
+  // ============= PLANOS SIMCARD =============
+
+  async findAllPlanosSimcard(marcaSimcardId?: number) {
+    return this.prisma.planoSimcard.findMany({
+      where: marcaSimcardId ? { marcaSimcardId } : undefined,
+      orderBy: [{ marcaSimcard: { operadora: { nome: 'asc' } } }, { marcaSimcard: { nome: 'asc' } }, { planoMb: 'asc' }],
+      include: { marcaSimcard: { include: { operadora: true } } },
+    });
+  }
+
+  async findOnePlanoSimcard(id: number) {
+    const plano = await this.prisma.planoSimcard.findUnique({
+      where: { id },
+      include: { marcaSimcard: { include: { operadora: true } } },
+    });
+    if (!plano) throw new NotFoundException('Plano de simcard não encontrado');
+    return plano;
+  }
+
+  async createPlanoSimcard(dto: CreatePlanoSimcardDto) {
+    const marca = await this.prisma.marcaSimcard.findUnique({
+      where: { id: dto.marcaSimcardId },
+    });
+    if (!marca) throw new NotFoundException('Marca de simcard não encontrada');
+
+    const existing = await this.prisma.planoSimcard.findUnique({
+      where: {
+        marcaSimcardId_planoMb: { marcaSimcardId: dto.marcaSimcardId, planoMb: dto.planoMb },
+      },
+    });
+    if (existing) throw new ConflictException('Plano já existe para esta marca');
+
+    const [plano] = await this.prisma.$transaction([
+      this.prisma.planoSimcard.create({
+        data: {
+          marcaSimcardId: dto.marcaSimcardId,
+          planoMb: dto.planoMb,
+        },
+        include: { marcaSimcard: { include: { operadora: true } } },
+      }),
+      this.prisma.marcaSimcard.update({
+        where: { id: dto.marcaSimcardId },
+        data: { temPlanos: true },
+      }),
+    ]);
+    return plano;
+  }
+
+  async updatePlanoSimcard(id: number, dto: UpdatePlanoSimcardDto) {
+    const plano = await this.findOnePlanoSimcard(id);
+
+    if (dto.planoMb !== undefined) {
+      const existing = await this.prisma.planoSimcard.findUnique({
+        where: {
+          marcaSimcardId_planoMb: { marcaSimcardId: plano.marcaSimcardId, planoMb: dto.planoMb },
+        },
+      });
+      if (existing && existing.id !== id) {
+        throw new ConflictException('Plano já existe para esta marca');
+      }
+    }
+
+    return this.prisma.planoSimcard.update({
+      where: { id },
+      data: dto,
+      include: { marcaSimcard: { include: { operadora: true } } },
+    });
+  }
+
+  async deletePlanoSimcard(id: number) {
+    const plano = await this.findOnePlanoSimcard(id);
+    const atualizado = await this.prisma.planoSimcard.update({
+      where: { id },
+      data: { ativo: false },
+      include: { marcaSimcard: { include: { operadora: true } } },
+    });
+    const count = await this.prisma.planoSimcard.count({
+      where: { marcaSimcardId: plano.marcaSimcardId, ativo: true },
+    });
+    if (count === 0) {
+      await this.prisma.marcaSimcard.update({
+        where: { id: plano.marcaSimcardId },
+        data: { temPlanos: false },
+      });
+    }
+    return atualizado;
   }
 }
