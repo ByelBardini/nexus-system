@@ -50,7 +50,15 @@ export class AparelhosService {
         kit: { select: { id: true, nome: true } },
         marcaSimcard: { select: { id: true, nome: true, operadora: { select: { id: true, nome: true } } } },
         planoSimcard: { select: { id: true, planoMb: true } },
-        simVinculado: { select: { id: true, identificador: true, operadora: true } },
+        simVinculado: {
+          select: {
+            id: true,
+            identificador: true,
+            operadora: true,
+            marcaSimcard: { select: { id: true, nome: true } },
+            planoSimcard: { select: { id: true, planoMb: true } },
+          },
+        },
         historico: {
           orderBy: { criadoEm: 'desc' },
           take: 5,

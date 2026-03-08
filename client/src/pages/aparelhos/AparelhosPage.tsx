@@ -41,6 +41,8 @@ interface Aparelho {
   marca?: string | null
   modelo?: string | null
   operadora?: string | null
+  marcaSimcard?: { id: number; nome: string; operadora?: { id: number; nome: string } } | null
+  planoSimcard?: { id: number; planoMb: number } | null
   status: StatusAparelho
   proprietario: ProprietarioTipo
   cliente?: { id: number; nome: string } | null
@@ -520,7 +522,9 @@ export function AparelhosPage() {
                       <TableCell className="px-4 py-3 text-sm text-slate-600">
                         {aparelho.tipo === 'RASTREADOR'
                           ? aparelho.marca || '-'
-                          : aparelho.operadora || '-'}
+                          : [aparelho.operadora, aparelho.marcaSimcard?.nome]
+                              .filter(Boolean)
+                              .join(' · ') || '-'}
                       </TableCell>
                       <TableCell className="px-4 py-3">
                         <span
@@ -619,10 +623,22 @@ export function AparelhosPage() {
                                     </>
                                   )}
                                   {aparelho.tipo === 'SIM' && (
-                                    <div className="flex justify-between text-[11px] border-b border-slate-100 pb-2">
-                                      <span className="text-slate-500">Operadora</span>
-                                      <span className="font-bold text-slate-700">{aparelho.operadora || '-'}</span>
-                                    </div>
+                                    <>
+                                      <div className="flex justify-between text-[11px] border-b border-slate-100 pb-2">
+                                        <span className="text-slate-500">Operadora</span>
+                                        <span className="font-bold text-slate-700">{aparelho.operadora || '-'}</span>
+                                      </div>
+                                      <div className="flex justify-between text-[11px] border-b border-slate-100 pb-2">
+                                        <span className="text-slate-500">Marca do Simcard</span>
+                                        <span className="font-bold text-slate-700">{aparelho.marcaSimcard?.nome || '-'}</span>
+                                      </div>
+                                      <div className="flex justify-between text-[11px] border-b border-slate-100 pb-2">
+                                        <span className="text-slate-500">Plano</span>
+                                        <span className="font-bold text-slate-700">
+                                          {aparelho.planoSimcard ? `${aparelho.planoSimcard.planoMb} MB` : '-'}
+                                        </span>
+                                      </div>
+                                    </>
                                   )}
                                   <div className="flex justify-between text-[11px] border-b border-slate-100 pb-2">
                                     <span className="text-slate-500">Proprietário</span>

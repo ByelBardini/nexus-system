@@ -351,9 +351,9 @@ export function CadastroIndividualPage() {
   }, [idJaExiste, idValido, identificador, podeSalvar])
 
   return (
-    <div className="-m-4 min-h-[100dvh] bg-slate-100">
+    <div className="-m-4 flex min-h-[100dvh] flex-col bg-slate-100">
       {/* Header */}
-      <header className="sticky -top-4 z-10 flex h-20 items-center justify-between border-b border-slate-200 bg-white px-8">
+      <header className="z-10 flex h-20 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-8">
         <div className="flex items-center gap-4">
           <Link
             to="/aparelhos"
@@ -379,8 +379,9 @@ export function CadastroIndividualPage() {
         )}
       </header>
 
-      {/* Content */}
-      <div className="flex gap-6 p-6">
+      {/* Content - scrollable */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="flex gap-6 p-6">
         {/* Form Area */}
         <div className="flex-1 space-y-6">
           {/* Bloco 1 - Identificação Técnica */}
@@ -811,10 +812,11 @@ export function CadastroIndividualPage() {
             )}
           </div>
         </div>
+        </div>
       </div>
 
       {/* Footer */}
-      <div className="sticky -bottom-4 z-10 h-20 border-t border-slate-200 px-8 flex items-center justify-end gap-4 bg-white">
+      <div className="z-10 flex h-20 shrink-0 items-center justify-end gap-4 border-t border-slate-200 bg-white px-8">
         <Button
           type="button"
           variant="ghost"
