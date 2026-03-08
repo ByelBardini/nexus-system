@@ -3,10 +3,16 @@ import { PrismaService } from '../prisma/prisma.service';
 import { StatusOS } from '@prisma/client';
 import { CreateOrdemServicoDto } from './dto/create-ordem-servico.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
+import { HtmlOrdemServicoGenerator } from './html-ordem-servico.generator';
+import { PdfOrdemServicoGenerator } from './pdf-ordem-servico.generator';
 
 @Injectable()
 export class OrdensServicoService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly htmlOrdemServicoGenerator: HtmlOrdemServicoGenerator,
+    private readonly pdfOrdemServicoGenerator: PdfOrdemServicoGenerator,
+  ) {}
 
   private static readonly INFINITY_NOME = 'Infinity';
 
@@ -94,11 +100,42 @@ export class OrdensServicoService {
         subcliente: true,
         veiculo: true,
         tecnico: true,
+        criadoPor: true,
         historico: { orderBy: { criadoEm: 'desc' }, take: 20 },
       },
     });
     if (!os) throw new NotFoundException('Ordem de serviço não encontrada');
     return os;
+  }
+
+  private static snapshotFromSubclienteData(data: {
+    nome: string;
+    cep?: string | null;
+    logradouro?: string | null;
+    numero?: string | null;
+    complemento?: string | null;
+    bairro?: string | null;
+    cidade?: string | null;
+    estado?: string | null;
+    cpf?: string | null;
+    email?: string | null;
+    telefone?: string | null;
+    cobrancaTipo?: string | null;
+  }) {
+    return {
+      subclienteSnapshotNome: data.nome || null,
+      subclienteSnapshotCep: data.cep ?? null,
+      subclienteSnapshotLogradouro: data.logradouro ?? null,
+      subclienteSnapshotNumero: data.numero ?? null,
+      subclienteSnapshotComplemento: data.complemento ?? null,
+      subclienteSnapshotBairro: data.bairro ?? null,
+      subclienteSnapshotCidade: data.cidade ?? null,
+      subclienteSnapshotEstado: data.estado ?? null,
+      subclienteSnapshotCpf: data.cpf ?? null,
+      subclienteSnapshotEmail: data.email ?? null,
+      subclienteSnapshotTelefone: data.telefone ?? null,
+      subclienteSnapshotCobrancaTipo: data.cobrancaTipo ?? null,
+    };
   }
 
   async create(dto: CreateOrdemServicoDto, criadoPorId?: number) {
@@ -116,6 +153,10 @@ export class OrdensServicoService {
             clienteId: dto.clienteId,
             nome: dto.subclienteCreate!.nome,
             cep: dto.subclienteCreate!.cep,
+            logradouro: dto.subclienteCreate!.logradouro ?? null,
+            numero: dto.subclienteCreate!.numero ?? null,
+            complemento: dto.subclienteCreate!.complemento ?? null,
+            bairro: dto.subclienteCreate!.bairro ?? null,
             cidade: dto.subclienteCreate!.cidade,
             estado: dto.subclienteCreate!.estado,
             cpf: dto.subclienteCreate!.cpf ?? null,
@@ -126,6 +167,7 @@ export class OrdensServicoService {
         });
         const max = await tx.ordemServico.aggregate({ _max: { numero: true } });
         const numero = (max._max.numero ?? 0) + 1;
+        const snapshot = OrdensServicoService.snapshotFromSubclienteData(dto.subclienteCreate!);
         return tx.ordemServico.create({
           data: {
             numero,
@@ -137,9 +179,84 @@ export class OrdensServicoService {
             tecnicoId: dto.tecnicoId,
             criadoPorId,
             observacoes: dto.observacoes,
+            idAparelho: dto.idAparelho?.trim() || null,
+            localInstalacao: dto.localInstalacao?.trim() || null,
+            posChave: dto.posChave || null,
+            ...snapshot,
           },
           include,
         });
+      });
+    }
+
+    const subclienteUpdate = dto.subclienteId && dto.subclienteUpdate ? dto.subclienteUpdate : null;
+    if (dto.subclienteId && subclienteUpdate) {
+      return this.prisma.$transaction(async (tx) => {
+        await tx.subcliente.update({
+          where: { id: dto.subclienteId! },
+          data: {
+            nome: subclienteUpdate.nome,
+            cep: subclienteUpdate.cep,
+            logradouro: subclienteUpdate.logradouro ?? null,
+            numero: subclienteUpdate.numero ?? null,
+            complemento: subclienteUpdate.complemento ?? null,
+            bairro: subclienteUpdate.bairro ?? null,
+            cidade: subclienteUpdate.cidade,
+            estado: subclienteUpdate.estado,
+            cpf: subclienteUpdate.cpf ?? null,
+            email: subclienteUpdate.email ?? null,
+            telefone: subclienteUpdate.telefone ?? null,
+            cobrancaTipo: subclienteUpdate.cobrancaTipo ?? null,
+          },
+        });
+        const max = await tx.ordemServico.aggregate({ _max: { numero: true } });
+        const numero = (max._max.numero ?? 0) + 1;
+        const snapshot = OrdensServicoService.snapshotFromSubclienteData(subclienteUpdate);
+        return tx.ordemServico.create({
+          data: {
+            numero,
+            tipo: dto.tipo,
+            status: dto.status ?? StatusOS.AGENDADO,
+            clienteId: dto.clienteId,
+            subclienteId: dto.subclienteId,
+            veiculoId: dto.veiculoId,
+            tecnicoId: dto.tecnicoId,
+            criadoPorId,
+            observacoes: dto.observacoes,
+            idAparelho: dto.idAparelho?.trim() || null,
+            localInstalacao: dto.localInstalacao?.trim() || null,
+            posChave: dto.posChave || null,
+            ...snapshot,
+          },
+          include,
+        });
+      });
+    }
+
+    if (dto.subclienteId) {
+      const sub = await this.prisma.subcliente.findUnique({
+        where: { id: dto.subclienteId },
+      });
+      const snapshot = sub ? OrdensServicoService.snapshotFromSubclienteData(sub) : {};
+      const max = await this.prisma.ordemServico.aggregate({ _max: { numero: true } });
+      const numero = (max._max.numero ?? 0) + 1;
+      return this.prisma.ordemServico.create({
+        data: {
+          numero,
+          tipo: dto.tipo,
+          status: dto.status ?? StatusOS.AGENDADO,
+          clienteId: dto.clienteId,
+          subclienteId: dto.subclienteId,
+          veiculoId: dto.veiculoId,
+          tecnicoId: dto.tecnicoId,
+          criadoPorId,
+          observacoes: dto.observacoes,
+          idAparelho: dto.idAparelho?.trim() || null,
+          localInstalacao: dto.localInstalacao?.trim() || null,
+          posChave: dto.posChave || null,
+          ...snapshot,
+        },
+        include,
       });
     }
 
@@ -157,6 +274,9 @@ export class OrdensServicoService {
         tecnicoId: dto.tecnicoId,
         criadoPorId,
         observacoes: dto.observacoes,
+        idAparelho: dto.idAparelho?.trim() || null,
+        localInstalacao: dto.localInstalacao?.trim() || null,
+        posChave: dto.posChave || null,
       },
       include,
     });
@@ -183,5 +303,16 @@ export class OrdensServicoService {
     ]);
 
     return this.findOne(id);
+  }
+
+  async gerarHtmlImpressao(id: number): Promise<string> {
+    const os = await this.findOne(id);
+    return this.htmlOrdemServicoGenerator.gerar(os);
+  }
+
+  async gerarPdf(id: number): Promise<{ buffer: Buffer; numero: number }> {
+    const os = await this.findOne(id);
+    const buffer = await this.pdfOrdemServicoGenerator.gerar(os);
+    return { buffer, numero: os.numero };
   }
 }

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Header, Param, Patch, Post, Query, StreamableFile, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
@@ -44,6 +44,25 @@ export class OrdensServicoController {
       limit: limit ? +limit : undefined,
       status,
       search,
+    });
+  }
+
+  @Get(':id/impressao')
+  @RequirePermissions('AGENDAMENTO.OS.LISTAR')
+  @ApiOperation({ summary: 'Retorna HTML da ordem de serviço para impressão/salvar PDF' })
+  @Header('Content-Type', 'text/html; charset=utf-8')
+  async getHtmlImpressao(@Param('id') id: string) {
+    return this.service.gerarHtmlImpressao(+id);
+  }
+
+  @Get(':id/pdf')
+  @RequirePermissions('AGENDAMENTO.OS.LISTAR')
+  @ApiOperation({ summary: 'Baixar PDF da ordem de serviço' })
+  async getPdf(@Param('id') id: string) {
+    const { buffer, numero } = await this.service.gerarPdf(+id);
+    return new StreamableFile(buffer, {
+      type: 'application/pdf',
+      disposition: `attachment; filename="ordem-servico-${numero}.pdf"`,
     });
   }
 

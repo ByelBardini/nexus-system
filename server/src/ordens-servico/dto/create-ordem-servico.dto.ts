@@ -24,6 +24,30 @@ export class CreateSubclienteDto {
   @MinLength(8)
   cep: string;
 
+  @ApiPropertyOptional({ description: 'Logradouro' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  logradouro?: string;
+
+  @ApiPropertyOptional({ description: 'Número' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  numero?: string;
+
+  @ApiPropertyOptional({ description: 'Complemento' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  complemento?: string;
+
+  @ApiPropertyOptional({ description: 'Bairro' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  bairro?: string;
+
   @ApiProperty({ description: 'Cidade' })
   @IsString()
   @MinLength(1)
@@ -36,10 +60,10 @@ export class CreateSubclienteDto {
   @MaxLength(2)
   estado: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'CPF ou CNPJ' })
   @IsOptional()
   @IsString()
-  @MaxLength(14)
+  @MaxLength(20)
   cpf?: string;
 
   @ApiPropertyOptional()
@@ -90,6 +114,15 @@ export class CreateOrdemServicoDto {
   @Type(() => CreateSubclienteDto)
   subclienteCreate?: CreateSubclienteDto;
 
+  @ApiPropertyOptional({
+    description:
+      'Dados para atualizar subcliente existente. Quando informado junto com subclienteId, atualiza o subcliente e grava snapshot na OS (não afeta OS já existentes).',
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CreateSubclienteDto)
+  subclienteUpdate?: CreateSubclienteDto;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsInt()
@@ -106,4 +139,22 @@ export class CreateOrdemServicoDto {
   @IsOptional()
   @IsString()
   observacoes?: string;
+
+  @ApiPropertyOptional({ description: 'ID do aparelho a retirar (RETIRADA) ou substituir (REVISAO)' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  idAparelho?: string;
+
+  @ApiPropertyOptional({ description: 'Local de instalação do equipamento' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  localInstalacao?: string;
+
+  @ApiPropertyOptional({ description: 'Pós-chave: SIM ou NAO' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
+  posChave?: string;
 }

@@ -14,12 +14,13 @@ export class VeiculosService {
     placa: string;
     marca: string;
     modelo: string;
-    ano?: string | number;
-    cor?: string;
+    ano: string | number;
+    cor: string;
   }) {
     const raw = normalizarPlaca(dados.placa);
     if (raw.length < 7) return null;
-    const anoNum = dados.ano ? (typeof dados.ano === 'string' ? parseInt(dados.ano, 10) : dados.ano) : null;
+    const anoNum = typeof dados.ano === 'string' ? parseInt(dados.ano, 10) : dados.ano;
+    const ano = Number.isNaN(anoNum) ? 0 : anoNum;
     const existing = await this.prisma.veiculo.findUnique({
       where: { placa: raw },
     });
@@ -27,10 +28,10 @@ export class VeiculosService {
     return this.prisma.veiculo.create({
       data: {
         placa: raw,
-        marca: dados.marca || 'Não informado',
-        modelo: dados.modelo || 'Não informado',
-        ano: Number.isNaN(anoNum) || anoNum == null ? null : anoNum,
-        cor: dados.cor || null,
+        marca: dados.marca.trim(),
+        modelo: dados.modelo.trim(),
+        ano,
+        cor: dados.cor.trim(),
       },
     });
   }

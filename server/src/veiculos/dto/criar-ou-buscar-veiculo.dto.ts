@@ -1,5 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, MinLength } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsString, MinLength } from 'class-validator';
 
 export class CriarOuBuscarVeiculoDto {
   @ApiProperty({ example: 'ABC1D23' })
@@ -9,19 +9,21 @@ export class CriarOuBuscarVeiculoDto {
 
   @ApiProperty({ example: 'Fiat' })
   @IsString()
+  @MinLength(1, { message: 'Marca é obrigatória' })
   marca: string;
 
   @ApiProperty({ example: 'Uno' })
   @IsString()
+  @MinLength(1, { message: 'Modelo é obrigatório' })
   modelo: string;
 
-  @ApiPropertyOptional({ example: '2020' })
-  @IsOptional()
+  @ApiProperty({ example: '2020' })
   @IsString()
-  ano?: string;
+  @MinLength(1, { message: 'Ano é obrigatório' })
+  ano: string;
 
-  @ApiPropertyOptional({ example: 'Branco' })
-  @IsOptional()
+  @ApiProperty({ example: 'Branco' })
   @IsString()
-  cor?: string;
+  @MinLength(1, { message: 'Cor é obrigatória' })
+  cor: string;
 }
