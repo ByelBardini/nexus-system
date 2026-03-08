@@ -1585,6 +1585,28 @@ export function PedidosConfigPage() {
     },
   })
 
+  const { data: kitsDetalhes = [] } = useQuery<KitDetalhe[]>({
+    queryKey: ['aparelhos', 'pareamento', 'kits', 'detalhes'],
+    queryFn: () => api('/aparelhos/pareamento/kits/detalhes'),
+    enabled: panelOpen && (pedidoApiSelecionado?.kitIds?.length ?? 0) > 0,
+  })
+
+  useEffect(() => {
+    if (!panelOpen || !pedidoApiSelecionado) return
+    const ids = pedidoApiSelecionado.kitIds
+    if (!ids || !Array.isArray(ids) || ids.length === 0) return
+    const current = kitsPorPedido[pedidoApiSelecionado.id]
+    if (current && current.length > 0) return
+    const mapById = new Map(kitsDetalhes.map((k) => [k.id, k]))
+    const kits: KitVinculado[] = ids.map((id) => {
+      const d = mapById.get(id)
+      return { id, nome: d?.nome ?? `Kit #${id}`, quantidade: d?.quantidade ?? 1 }
+    })
+    if (kits.length > 0) {
+      setKitsPorPedido((prev) => ({ ...prev, [pedidoApiSelecionado.id]: kits }))
+    }
+  }, [panelOpen, pedidoApiSelecionado, kitsDetalhes, kitsPorPedido])
+
   const pedidosView = useMemo(() => {
     const arr = lista?.data ?? []
     return arr.map(mapPedidoToView)

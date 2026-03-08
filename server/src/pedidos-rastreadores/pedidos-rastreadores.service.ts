@@ -157,36 +157,6 @@ export class PedidosRastreadoresService {
             ? StatusAparelho.CONFIGURADO
             : null;
 
-    let kitIds: number[] =
-      dto.kitIds && dto.kitIds.length > 0
-        ? dto.kitIds.map((id) => Number(id))
-        : [];
-
-    if (kitIds.length === 0 && novoStatusAparelho !== null) {
-      const salvos = pedido.kitIds;
-      if (Array.isArray(salvos) && salvos.length > 0) {
-        kitIds = salvos.map((id: unknown) => Number(id));
-      }
-    }
-
-    // Salva kitIds para CONFIGURADO, DESPACHADO e ENTREGUE (permite filtrar kits em uso no pareamento)
-    // Limpa kitIds ao retroceder para SOLICITADO ou EM_CONFIGURACAO
-    if (
-      dto.status === StatusPedidoRastreador.CONFIGURADO ||
-      dto.status === StatusPedidoRastreador.DESPACHADO ||
-      dto.status === StatusPedidoRastreador.ENTREGUE
-    ) {
-      dataUpdate.kitIds = kitIds.length > 0 ? kitIds : Prisma.DbNull;
-    } else if (dto.status === StatusPedidoRastreador.SOLICITADO || dto.status === StatusPedidoRastreador.EM_CONFIGURACAO) {
-      dataUpdate.kitIds = Prisma.DbNull;
-    }
-
-    const statusRestritivos = [
-      StatusPedidoRastreador.CONFIGURADO,
-      StatusPedidoRastreador.DESPACHADO,
-      StatusPedidoRastreador.ENTREGUE,
-    ];
-
     const extrairKitIds = (val: unknown): number[] => {
       if (val == null) return [];
       let arr: unknown;
@@ -199,8 +169,41 @@ export class PedidosRastreadoresService {
       } else {
         arr = val;
       }
-      return Array.isArray(arr) ? arr.filter((x): x is number => typeof x === 'number') : [];
+      return Array.isArray(arr)
+        ? arr.filter((x): x is number => typeof x === 'number')
+        : [];
     };
+
+    let kitIds: number[] =
+      dto.kitIds && dto.kitIds.length > 0
+        ? dto.kitIds.map((id) => Number(id))
+        : [];
+
+    if (kitIds.length === 0 && novoStatusAparelho !== null) {
+      kitIds = extrairKitIds(pedido.kitIds);
+    }
+
+    // Salva kitIds para CONFIGURADO, DESPACHADO e ENTREGUE (permite filtrar kits em uso no pareamento)
+    // Preserva os existentes se dto não enviou (evita desvincular ao concluir)
+    // Limpa kitIds ao retroceder para SOLICITADO ou EM_CONFIGURACAO
+    if (
+      dto.status === StatusPedidoRastreador.CONFIGURADO ||
+      dto.status === StatusPedidoRastreador.DESPACHADO ||
+      dto.status === StatusPedidoRastreador.ENTREGUE
+    ) {
+      if (kitIds.length > 0) {
+        dataUpdate.kitIds = kitIds;
+      }
+      // Se kitIds vazio, não altera - mantém os existentes no banco
+    } else if (dto.status === StatusPedidoRastreador.SOLICITADO || dto.status === StatusPedidoRastreador.EM_CONFIGURACAO) {
+      dataUpdate.kitIds = Prisma.DbNull;
+    }
+
+    const statusRestritivos = [
+      StatusPedidoRastreador.CONFIGURADO,
+      StatusPedidoRastreador.DESPACHADO,
+      StatusPedidoRastreador.ENTREGUE,
+    ];
 
     const kitIdsAntigos = extrairKitIds(pedido.kitIds);
 
