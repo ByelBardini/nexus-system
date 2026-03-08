@@ -22,6 +22,11 @@ describe('EquipamentosController', () => {
     createOperadora: jest.fn(),
     updateOperadora: jest.fn(),
     deleteOperadora: jest.fn(),
+    findAllMarcasSimcard: jest.fn(),
+    findOneMarcaSimcard: jest.fn(),
+    createMarcaSimcard: jest.fn(),
+    updateMarcaSimcard: jest.fn(),
+    deleteMarcaSimcard: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -191,6 +196,74 @@ describe('EquipamentosController', () => {
       await controller.deleteOperadora('3');
 
       expect(service.deleteOperadora).toHaveBeenCalledWith(3);
+    });
+  });
+
+  // ============= MARCAS SIMCARD =============
+
+  describe('findAllMarcasSimcard', () => {
+    it('delega para service sem operadoraId', async () => {
+      (service.findAllMarcasSimcard as jest.Mock).mockResolvedValue([
+        { id: 1, nome: 'Getrak', operadora: { nome: 'Vivo' } },
+      ]);
+
+      await controller.findAllMarcasSimcard();
+
+      expect(service.findAllMarcasSimcard).toHaveBeenCalledWith(undefined);
+    });
+
+    it('passa operadoraId convertido para número quando informado', async () => {
+      (service.findAllMarcasSimcard as jest.Mock).mockResolvedValue([]);
+
+      await controller.findAllMarcasSimcard('2');
+
+      expect(service.findAllMarcasSimcard).toHaveBeenCalledWith(2);
+    });
+  });
+
+  describe('findOneMarcaSimcard', () => {
+    it('converte id para número e chama service', async () => {
+      (service.findOneMarcaSimcard as jest.Mock).mockResolvedValue({
+        id: 1,
+        nome: 'Getrak',
+        operadora: { nome: 'Vivo' },
+      });
+
+      await controller.findOneMarcaSimcard('1');
+
+      expect(service.findOneMarcaSimcard).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe('createMarcaSimcard', () => {
+    it('chama service.createMarcaSimcard com o DTO', async () => {
+      const dto = { nome: 'Getrak', operadoraId: 1 };
+      (service.createMarcaSimcard as jest.Mock).mockResolvedValue({ id: 1, ...dto });
+
+      await controller.createMarcaSimcard(dto);
+
+      expect(service.createMarcaSimcard).toHaveBeenCalledWith(dto);
+    });
+  });
+
+  describe('updateMarcaSimcard', () => {
+    it('converte id e chama service.updateMarcaSimcard', async () => {
+      const dto = { nome: 'Getrak Novo' };
+      (service.updateMarcaSimcard as jest.Mock).mockResolvedValue({ id: 1, ...dto });
+
+      await controller.updateMarcaSimcard('1', dto);
+
+      expect(service.updateMarcaSimcard).toHaveBeenCalledWith(1, dto);
+    });
+  });
+
+  describe('deleteMarcaSimcard', () => {
+    it('converte id e chama service.deleteMarcaSimcard', async () => {
+      (service.deleteMarcaSimcard as jest.Mock).mockResolvedValue({ id: 1 });
+
+      await controller.deleteMarcaSimcard('1');
+
+      expect(service.deleteMarcaSimcard).toHaveBeenCalledWith(1);
     });
   });
 });

@@ -33,6 +33,8 @@ export function createPrismaMock() {
     marcaEquipamento: createTableMock(),
     modeloEquipamento: createTableMock(),
     operadora: createTableMock(),
+    marcaSimcard: createTableMock(),
+    planoSimcard: createTableMock(),
     aparelho: createTableMock(),
     aparelhoHistorico: createTableMock(),
     loteAparelho: createTableMock(),
