@@ -1,4 +1,7 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useMemo, useState } from 'react'
+import { useForm, Controller, type Resolver } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
 import {
@@ -22,11 +25,12 @@ import {
 import { MaterialIcon } from '@/components/MaterialIcon'
 import { InputPreco } from '@/components/InputPreco'
 import { api } from '@/lib/api'
+import { useAuth } from '@/contexts/AuthContext'
+import { formatarMoeda, formatarMoedaDeCentavos } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
 type TipoAparelho = 'RASTREADOR' | 'SIM'
-type ProprietarioTipo = 'INFINITY' | 'CLIENTE'
 
 interface Cliente {
   id: number
@@ -60,6 +64,42 @@ interface Operadora {
   nome: string
   ativo: boolean
 }
+
+const schema = z
+  .object({
+    referencia: z.preprocess((val) => val ?? '', z.string().refine((s) => s.length >= 1, 'Referência obrigatória')),
+    notaFiscal: z.preprocess((val) => val ?? '', z.string().optional()),
+    dataChegada: z.preprocess((val) => val ?? '', z.string().refine((s) => s.length >= 1, 'Data obrigatória')),
+    proprietarioTipo: z.enum(['INFINITY', 'CLIENTE']),
+    clienteId: z.number().nullable(),
+    tipo: z.enum(['RASTREADOR', 'SIM']),
+    marca: z.preprocess((val) => val ?? '', z.string()),
+    modelo: z.preprocess((val) => val ?? '', z.string()),
+    operadora: z.preprocess((val) => val ?? '', z.string()),
+    marcaSimcard: z.string().optional(),
+    planoSimcard: z.string().optional(),
+    quantidade: z.number().min(0),
+    definirIds: z.boolean(),
+    idsTexto: z.string().optional(),
+    valorUnitario: z.number().min(1, 'Valor unitário deve ser maior que zero'),
+  })
+  .superRefine((data, ctx) => {
+    if (data.proprietarioTipo === 'CLIENTE' && !data.clienteId) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Selecione o cliente', path: ['clienteId'] })
+    }
+    if (data.tipo === 'RASTREADOR') {
+      if (!data.marca) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Marca obrigatória', path: ['marca'] })
+      if (!data.modelo) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Modelo obrigatório', path: ['modelo'] })
+    }
+    if (data.tipo === 'SIM' && !data.operadora) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Operadora obrigatória', path: ['operadora'] })
+    }
+    if (!data.definirIds && data.quantidade <= 0) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Quantidade obrigatória', path: ['quantidade'] })
+    }
+  })
+
+type FormData = z.infer<typeof schema>
 
 function validateIds(
   texto: string,
@@ -104,45 +144,54 @@ function validateIds(
   return { validos, duplicados, invalidos, jaExistentes }
 }
 
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value)
-}
-
-function centavosToReais(centavos: number): string {
-  return formatCurrency(centavos / 100)
+const defaultValues: FormData = {
+  referencia: '',
+  notaFiscal: '',
+  dataChegada: new Date().toISOString().split('T')[0],
+  proprietarioTipo: 'INFINITY',
+  clienteId: null,
+  tipo: 'RASTREADOR',
+  marca: '',
+  modelo: '',
+  operadora: '',
+  marcaSimcard: '',
+  planoSimcard: '',
+  quantidade: 0,
+  definirIds: true,
+  idsTexto: '',
+  valorUnitario: 0,
 }
 
 export function CadastroLotePage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { hasPermission } = useAuth()
+  const canCreate = hasPermission('CONFIGURACAO.APARELHO.CRIAR')
 
-  const [loteReferencia, setLoteReferencia] = useState('')
-  const [loteNotaFiscal, setLoteNotaFiscal] = useState('')
-  const [loteDataChegada, setLoteDataChegada] = useState(() => {
-    const today = new Date()
-    return today.toISOString().split('T')[0]
-  })
-  const [loteProprietario, setLoteProprietario] = useState<ProprietarioTipo>('INFINITY')
-  const [loteClienteId, setLoteClienteId] = useState<number | null>(null)
-  const [loteTipo, setLoteTipo] = useState<TipoAparelho>('RASTREADOR')
-  const [loteMarca, setLoteMarca] = useState('')
-  const [loteModelo, setLoteModelo] = useState('')
-  const [loteOperadora, setLoteOperadora] = useState('')
-  const [loteMarcaSimcard, setLoteMarcaSimcard] = useState('')
-  const [lotePlanoSimcard, setLotePlanoSimcard] = useState('')
-  const [loteQuantidade, setLoteQuantidade] = useState<number>(0)
-  const [loteDefinirIds, setLoteDefinirIds] = useState(true)
-  const [loteIdsTexto, setLoteIdsTexto] = useState('')
-  const [loteValorUnitario, setLoteValorUnitario] = useState<number>(0)
   const [buscaCliente, setBuscaCliente] = useState('')
+
+  const form = useForm<FormData>({
+    resolver: zodResolver(schema) as Resolver<FormData>,
+    defaultValues,
+  })
+
+  const watchReferencia = form.watch('referencia')
+  const watchTipo = form.watch('tipo')
+  const watchProprietario = form.watch('proprietarioTipo')
+  const watchMarca = form.watch('marca')
+  const watchModelo = form.watch('modelo')
+  const watchOperadora = form.watch('operadora')
+  const watchClienteId = form.watch('clienteId')
+  const watchMarcaSimcard = form.watch('marcaSimcard')
+  const watchDefinirIds = form.watch('definirIds')
+  const watchIdsTexto = form.watch('idsTexto') ?? ''
+  const watchQuantidade = form.watch('quantidade')
+  const watchValorUnitario = form.watch('valorUnitario')
 
   const { data: clientes = [] } = useQuery<Cliente[]>({
     queryKey: ['clientes-lista'],
     queryFn: () => api('/clientes'),
-    enabled: loteProprietario === 'CLIENTE',
+    enabled: watchProprietario === 'CLIENTE',
   })
 
   const { data: marcas = [] } = useQuery<Marca[]>({
@@ -163,147 +212,128 @@ export function CadastroLotePage() {
   const { data: marcasSimcard = [] } = useQuery<
     { id: number; nome: string; operadoraId: number; temPlanos: boolean; operadora: { id: number; nome: string }; planos?: { id: number; planoMb: number; ativo: boolean }[] }[]
   >({
-    queryKey: ['marcas-simcard', loteOperadora || 'all'],
+    queryKey: ['marcas-simcard', watchOperadora || 'all'],
     queryFn: () =>
-      loteOperadora
-        ? api(`/equipamentos/marcas-simcard?operadoraId=${loteOperadora}`)
+      watchOperadora
+        ? api(`/equipamentos/marcas-simcard?operadoraId=${watchOperadora}`)
         : api('/equipamentos/marcas-simcard'),
   })
 
   const marcasAtivas = useMemo(() => marcas.filter((m) => m.ativo), [marcas])
   const operadorasAtivas = useMemo(() => operadoras.filter((o) => o.ativo), [operadoras])
   const marcasSimcardFiltradas = useMemo(
-    () => marcasSimcard.filter((m) => !loteOperadora || m.operadoraId === Number(loteOperadora)),
-    [marcasSimcard, loteOperadora]
+    () => marcasSimcard.filter((m) => !watchOperadora || m.operadoraId === Number(watchOperadora)),
+    [marcasSimcard, watchOperadora]
   )
 
   const { data: aparelhosExistentes = [] } = useQuery<{ identificador: string }[]>({
     queryKey: ['aparelhos-ids'],
     queryFn: () => api('/aparelhos'),
-    select: (data) => data.filter((a: any) => a.identificador),
+    select: (data) => data.filter((a: { identificador?: string }) => a.identificador),
   })
 
-  const existingIds = useMemo(() => {
-    return aparelhosExistentes.map((a) => a.identificador).filter(Boolean) as string[]
-  }, [aparelhosExistentes])
+  const existingIds = useMemo(
+    () => aparelhosExistentes.map((a) => a.identificador).filter(Boolean) as string[],
+    [aparelhosExistentes]
+  )
 
   const clientesFiltrados = useMemo(() => {
     if (!buscaCliente.trim()) return clientes.slice(0, 10)
-    return clientes.filter((c) =>
-      c.nome.toLowerCase().includes(buscaCliente.toLowerCase()) ||
-      c.nomeFantasia?.toLowerCase().includes(buscaCliente.toLowerCase())
-    ).slice(0, 10)
+    return clientes
+      .filter(
+        (c) =>
+          c.nome.toLowerCase().includes(buscaCliente.toLowerCase()) ||
+          c.nomeFantasia?.toLowerCase().includes(buscaCliente.toLowerCase())
+      )
+      .slice(0, 10)
   }, [clientes, buscaCliente])
 
-  const clienteSelecionado = useMemo(() => {
-    return clientes.find((c) => c.id === loteClienteId)
-  }, [clientes, loteClienteId])
+  const clienteSelecionado = useMemo(
+    () => clientes.find((c) => c.id === watchClienteId),
+    [clientes, watchClienteId]
+  )
 
   const idValidation = useMemo(() => {
-    if (!loteDefinirIds || !loteIdsTexto.trim()) {
+    if (!watchDefinirIds || !watchIdsTexto.trim()) {
       return { validos: [], duplicados: [], invalidos: [], jaExistentes: [] }
     }
-    return validateIds(loteIdsTexto, loteTipo, existingIds)
-  }, [loteIdsTexto, loteTipo, loteDefinirIds, existingIds])
+    return validateIds(watchIdsTexto, watchTipo, existingIds)
+  }, [watchIdsTexto, watchTipo, watchDefinirIds, existingIds])
 
   const modelosDisponiveis = useMemo(() => {
-    if (!loteMarca) return []
-    return modelos.filter((m) => m.marca?.id === Number(loteMarca) && m.ativo)
-  }, [loteMarca, modelos])
-
-  useEffect(() => {
-    setLoteModelo('')
-  }, [loteMarca])
-
-  useEffect(() => {
-    if (loteTipo === 'SIM') {
-      setLoteMarca('')
-      setLoteModelo('')
-    } else {
-      setLoteOperadora('')
-      setLoteMarcaSimcard('')
-      setLotePlanoSimcard('')
-    }
-  }, [loteTipo])
-
-  useEffect(() => {
-    setLotePlanoSimcard('')
-  }, [loteMarcaSimcard])
+    if (!watchMarca) return []
+    return modelos.filter((m) => m.marca?.id === Number(watchMarca) && m.ativo)
+  }, [watchMarca, modelos])
 
   const valorTotal = useMemo(() => {
-    const qtd = loteDefinirIds && idValidation.validos.length > 0
-      ? idValidation.validos.length
-      : loteQuantidade
-    return (loteValorUnitario / 100) * qtd
-  }, [loteValorUnitario, loteQuantidade, loteDefinirIds, idValidation.validos.length])
+    const qtd =
+      watchDefinirIds && idValidation.validos.length > 0 ? idValidation.validos.length : watchQuantidade
+    return (watchValorUnitario / 100) * qtd
+  }, [watchValorUnitario, watchQuantidade, watchDefinirIds, idValidation.validos.length])
 
-  const quantidadeFinal = useMemo(() => {
-    return loteDefinirIds && idValidation.validos.length > 0
-      ? idValidation.validos.length
-      : loteQuantidade
-  }, [loteDefinirIds, idValidation.validos.length, loteQuantidade])
+  const quantidadeFinal = useMemo(
+    () => (watchDefinirIds && idValidation.validos.length > 0 ? idValidation.validos.length : watchQuantidade),
+    [watchDefinirIds, idValidation.validos.length, watchQuantidade]
+  )
 
   const erroQuantidade = useMemo(() => {
-    if (!loteDefinirIds) return null
-    if (loteQuantidade > 0 && idValidation.validos.length > 0) {
-      if (loteQuantidade !== idValidation.validos.length) {
-        return `Quantidade informada (${loteQuantidade}) não corresponde aos IDs válidos (${idValidation.validos.length})`
+    if (!watchDefinirIds) return null
+    if (watchQuantidade > 0 && idValidation.validos.length > 0) {
+      if (watchQuantidade !== idValidation.validos.length) {
+        return `Quantidade informada (${watchQuantidade}) não corresponde aos IDs válidos (${idValidation.validos.length})`
       }
     }
     return null
-  }, [loteDefinirIds, loteQuantidade, idValidation.validos.length])
+  }, [watchDefinirIds, watchQuantidade, idValidation.validos.length])
 
   const podeSalvar = useMemo(() => {
-    if (!loteReferencia.trim()) return false
-    if (loteProprietario === 'CLIENTE' && !loteClienteId) return false
-    if (loteTipo === 'RASTREADOR' && (!loteMarca || !loteModelo)) return false
-    if (loteTipo === 'SIM' && !loteOperadora) return false
-    if (loteValorUnitario <= 0) return false
-
-    if (loteDefinirIds) {
+    if (!watchReferencia.trim()) return false
+    if (watchProprietario === 'CLIENTE' && !watchClienteId) return false
+    if (watchTipo === 'RASTREADOR' && (!watchMarca || !watchModelo)) return false
+    if (watchTipo === 'SIM' && !watchOperadora) return false
+    if (watchValorUnitario <= 0) return false
+    if (watchDefinirIds) {
       if (idValidation.validos.length === 0) return false
       if (erroQuantidade) return false
     } else {
-      if (loteQuantidade <= 0) return false
+      if (watchQuantidade <= 0) return false
     }
-
     return true
   }, [
-    loteReferencia,
-    loteProprietario,
-    loteClienteId,
-    loteTipo,
-    loteMarca,
-    loteModelo,
-    loteOperadora,
-    loteValorUnitario,
-    loteDefinirIds,
+    watchReferencia,
+    watchProprietario,
+    watchClienteId,
+    watchTipo,
+    watchMarca,
+    watchModelo,
+    watchOperadora,
+    watchValorUnitario,
+    watchDefinirIds,
+    watchQuantidade,
     idValidation.validos.length,
-    loteQuantidade,
     erroQuantidade,
   ])
 
   const createLoteMutation = useMutation({
-    mutationFn: async () => {
-      const marcaSelecionada = marcasAtivas.find((m) => m.id === Number(loteMarca))
-      const modeloSelecionado = modelosDisponiveis.find((m) => m.id === Number(loteModelo))
-      const operadoraSelecionada = operadorasAtivas.find((o) => o.id === Number(loteOperadora))
-
+    mutationFn: async (data: FormData) => {
+      const marcaSelecionada = marcasAtivas.find((m) => m.id === Number(data.marca))
+      const modeloSelecionado = modelosDisponiveis.find((m) => m.id === Number(data.modelo))
+      const operadoraSelecionada = operadorasAtivas.find((o) => o.id === Number(data.operadora))
       const payload = {
-        referencia: loteReferencia,
-        notaFiscal: loteNotaFiscal || null,
-        dataChegada: loteDataChegada,
-        proprietarioTipo: loteProprietario,
-        clienteId: loteProprietario === 'CLIENTE' ? loteClienteId : null,
-        tipo: loteTipo,
-        marca: loteTipo === 'RASTREADOR' ? marcaSelecionada?.nome : null,
-        modelo: loteTipo === 'RASTREADOR' ? modeloSelecionado?.nome : null,
-        operadora: loteTipo === 'SIM' ? operadoraSelecionada?.nome : null,
-        marcaSimcardId: loteTipo === 'SIM' && loteMarcaSimcard ? Number(loteMarcaSimcard) : null,
-        planoSimcardId: loteTipo === 'SIM' && lotePlanoSimcard ? Number(lotePlanoSimcard) : null,
+        referencia: String(data.referencia ?? ''),
+        notaFiscal: (data.notaFiscal?.trim() || null) as string | null,
+        dataChegada: String(data.dataChegada ?? new Date().toISOString().split('T')[0]),
+        proprietarioTipo: data.proprietarioTipo,
+        clienteId: data.proprietarioTipo === 'CLIENTE' ? data.clienteId : null,
+        tipo: data.tipo,
+        marca: data.tipo === 'RASTREADOR' ? (marcaSelecionada?.nome ?? null) : null,
+        modelo: data.tipo === 'RASTREADOR' ? (modeloSelecionado?.nome ?? null) : null,
+        operadora: data.tipo === 'SIM' ? (operadoraSelecionada?.nome ?? null) : null,
+        marcaSimcardId: data.tipo === 'SIM' && data.marcaSimcard ? Number(data.marcaSimcard) : null,
+        planoSimcardId: data.tipo === 'SIM' && data.planoSimcard ? Number(data.planoSimcard) : null,
         quantidade: quantidadeFinal,
-        valorUnitario: loteValorUnitario / 100,
-        identificadores: loteDefinirIds ? idValidation.validos : [],
+        valorUnitario: Number(data.valorUnitario) / 100,
+        identificadores: data.definirIds ? idValidation.validos : [],
       }
       return api('/aparelhos/lote', {
         method: 'POST',
@@ -320,462 +350,624 @@ export function CadastroLotePage() {
     },
   })
 
+  const onSubmit = (data: FormData) => {
+    if (!podeSalvar) return
+    createLoteMutation.mutate(data)
+  }
+
   return (
     <div className="-m-4 min-h-[100dvh] bg-slate-100">
-      {/* Header */}
-      <header className="sticky -top-4 z-10 flex h-20 items-center justify-between border-b border-slate-200 bg-white px-8">
-        <div className="flex items-center gap-4">
-          <Link
-            to="/aparelhos"
-            className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-          <div className="flex items-center gap-3">
-            <MaterialIcon name="inventory_2" className="text-blue-600 text-xl" />
-            <div>
-              <h1 className="text-lg font-bold text-slate-800">Entrada de Rastreador/Simcard</h1>
-              <p className="text-xs text-slate-500">Cadastro em massa de lote</p>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Content */}
-      <div className="flex gap-6 p-6">
-        {/* Form Area */}
-        <div className="flex-1 space-y-6">
-          {/* Bloco 1 - Identificação do Lote */}
-          <div className="bg-white border border-slate-200 rounded-sm p-6">
-            <div className="flex items-center gap-2 mb-6 pb-2 border-b border-slate-100">
-              <MaterialIcon name="tag" className="text-blue-600" />
-              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Identificação do Lote</h3>
-            </div>
-            <div className="grid grid-cols-3 gap-4">
+      <form
+          onSubmit={form.handleSubmit(onSubmit, (errors) => {
+            const msg = Object.values(errors)
+              .map((e) => (typeof e?.message === 'string' ? e.message : null))
+              .filter(Boolean)
+              .join(', ')
+            toast.error(msg || 'Verifique os campos do formulário')
+          })}
+          className="contents"
+        >
+        <header className="sticky -top-4 z-10 flex h-20 items-center justify-between border-b border-slate-200 bg-white px-8">
+          <div className="flex items-center gap-4">
+            <Link
+              to="/aparelhos"
+              className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+            <div className="flex items-center gap-3">
+              <MaterialIcon name="inventory_2" className="text-erp-blue text-xl" />
               <div>
-                <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                  Referência do Lote <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  value={loteReferencia}
-                  onChange={(e) => setLoteReferencia(e.target.value)}
-                  placeholder="Ex: LT-2026-001"
-                  className="h-10"
-                />
-              </div>
-              <div>
-                <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                  Nº Nota Fiscal
-                </Label>
-                <Input
-                  value={loteNotaFiscal}
-                  onChange={(e) => setLoteNotaFiscal(e.target.value)}
-                  placeholder="Ex: 123456"
-                  className="h-10"
-                />
-              </div>
-              <div>
-                <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                  Data de Chegada
-                </Label>
-                <Input
-                  type="date"
-                  value={loteDataChegada}
-                  onChange={(e) => setLoteDataChegada(e.target.value)}
-                  className="h-10"
-                />
+                <h1 className="text-lg font-bold text-slate-800">Entrada de Rastreador/Simcard</h1>
+                <p className="text-xs text-slate-500">Cadastro em massa de lote</p>
               </div>
             </div>
           </div>
+        </header>
 
-          {/* Bloco 2 - Propriedade e Tipo */}
-          <div className="bg-white border border-slate-200 rounded-sm p-6">
-            <div className="flex items-center gap-2 mb-6 pb-2 border-b border-slate-100">
-              <MaterialIcon name="business" className="text-blue-600" />
-              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Propriedade e Tipo</h3>
-            </div>
-            <div className="space-y-6">
-              {/* Pertence a */}
-              <div>
-                <Label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Pertence a</Label>
-                <div className="flex rounded-sm overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLoteProprietario('INFINITY')
-                      setLoteClienteId(null)
-                    }}
-                    className={cn(
-                      'flex-1 py-2.5 px-4 text-xs font-bold uppercase border transition-all',
-                      loteProprietario === 'INFINITY'
-                        ? 'bg-slate-800 text-white border-slate-800'
-                        : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+        <div className="flex gap-6 p-6">
+          <div className="flex-1 space-y-6">
+            {/* Bloco 1 - Identificação do Lote */}
+            <div className="bg-white border border-slate-200 rounded-sm p-6">
+              <div className="flex items-center gap-2 mb-6 pb-2 border-b border-slate-100">
+                <MaterialIcon name="tag" className="text-erp-blue" />
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                  Identificação do Lote
+                </h3>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                    Referência do Lote <span className="text-red-500">*</span>
+                  </Label>
+                  <Controller
+                    name="referencia"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <>
+                        <Input
+                          {...field}
+                          placeholder="Ex: LT-2026-001"
+                          className={cn('h-9', fieldState.error && 'border-red-500')}
+                        />
+                        {fieldState.error && (
+                          <p className="text-[10px] text-red-600 mt-1">{fieldState.error.message}</p>
+                        )}
+                      </>
                     )}
-                  >
-                    Infinity
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLoteProprietario('CLIENTE')}
-                    className={cn(
-                      'flex-1 py-2.5 px-4 text-xs font-bold uppercase border-t border-b border-r transition-all',
-                      loteProprietario === 'CLIENTE'
-                        ? 'bg-slate-800 text-white border-slate-800'
-                        : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
-                    )}
-                  >
-                    Cliente
-                  </button>
+                  />
                 </div>
-                {loteProprietario === 'CLIENTE' && (
-                  <div className="mt-3">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                      <Input
-                        value={buscaCliente}
-                        onChange={(e) => setBuscaCliente(e.target.value)}
-                        placeholder="Buscar cliente..."
-                        className="h-10 pl-10"
-                      />
-                    </div>
-                    {clientesFiltrados.length > 0 && (
-                      <div className="mt-2 border border-slate-200 rounded-sm max-h-40 overflow-y-auto">
-                        {clientesFiltrados.map((cliente) => (
-                          <button
-                            key={cliente.id}
-                            type="button"
-                            onClick={() => {
-                              setLoteClienteId(cliente.id)
-                              setBuscaCliente('')
-                            }}
-                            className={cn(
-                              'w-full px-3 py-2 text-left text-sm hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0',
-                              loteClienteId === cliente.id && 'bg-blue-50'
-                            )}
-                          >
-                            <span className="font-medium">{cliente.nome}</span>
-                            {cliente.nomeFantasia && (
-                              <span className="text-slate-400 ml-2 text-xs">({cliente.nomeFantasia})</span>
-                            )}
-                          </button>
-                        ))}
-                      </div>
+                <div>
+                  <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                    Nº Nota Fiscal
+                  </Label>
+                  <Controller
+                    name="notaFiscal"
+                    control={form.control}
+                    render={({ field }) => (
+                      <Input {...field} value={field.value ?? ''} placeholder="Ex: 123456" className="h-9" />
                     )}
-                    {loteClienteId && clienteSelecionado && (
-                      <div className="mt-2 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-sm px-3 py-2">
-                        <MaterialIcon name="check_circle" className="text-blue-600 text-sm" />
-                        <span className="text-sm font-medium text-blue-800">{clienteSelecionado.nome}</span>
+                  />
+                </div>
+                <div>
+                  <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                    Data de Chegada
+                  </Label>
+                  <Controller
+                    name="dataChegada"
+                    control={form.control}
+                    render={({ field }) => (
+                      <Input type="date" {...field} className="h-9" />
+                    )}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Bloco 2 - Propriedade e Tipo */}
+            <div className="bg-white border border-slate-200 rounded-sm p-6">
+              <div className="flex items-center gap-2 mb-6 pb-2 border-b border-slate-100">
+                <MaterialIcon name="business" className="text-erp-blue" />
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                  Propriedade e Tipo
+                </h3>
+              </div>
+              <div className="space-y-6">
+                <div>
+                  <Label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">
+                    Pertence a
+                  </Label>
+                  <Controller
+                    name="proprietarioTipo"
+                    control={form.control}
+                    render={({ field }) => (
+                      <div className="flex rounded-sm overflow-hidden">
                         <button
                           type="button"
-                          onClick={() => setLoteClienteId(null)}
-                          className="ml-auto text-blue-600 hover:text-blue-800"
+                          onClick={() => {
+                            field.onChange('INFINITY')
+                            form.setValue('clienteId', null)
+                          }}
+                          className={cn(
+                            'flex-1 py-2.5 px-4 text-xs font-bold uppercase border transition-all',
+                            field.value === 'INFINITY'
+                              ? 'bg-slate-800 text-white border-slate-800'
+                              : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                          )}
                         >
-                          <X className="h-4 w-4" />
+                          Infinity
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => field.onChange('CLIENTE')}
+                          className={cn(
+                            'flex-1 py-2.5 px-4 text-xs font-bold uppercase border-t border-b border-r transition-all',
+                            field.value === 'CLIENTE'
+                              ? 'bg-slate-800 text-white border-slate-800'
+                              : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                          )}
+                        >
+                          Cliente
                         </button>
                       </div>
                     )}
+                  />
+                  {watchProprietario === 'CLIENTE' && (
+                    <div className="mt-3">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                        <Input
+                          value={buscaCliente}
+                          onChange={(e) => setBuscaCliente(e.target.value)}
+                          placeholder="Buscar cliente..."
+                          className="h-9 pl-10"
+                        />
+                      </div>
+                      {clientesFiltrados.length > 0 && (
+                        <div className="mt-2 border border-slate-200 rounded-sm max-h-40 overflow-y-auto">
+                          {clientesFiltrados.map((cliente) => (
+                            <button
+                              key={cliente.id}
+                              type="button"
+                              onClick={() => {
+                                form.setValue('clienteId', cliente.id)
+                                setBuscaCliente('')
+                              }}
+                              className={cn(
+                                'w-full px-3 py-2 text-left text-sm hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0',
+                                watchClienteId === cliente.id && 'bg-blue-50'
+                              )}
+                            >
+                              <span className="font-medium">{cliente.nome}</span>
+                              {cliente.nomeFantasia && (
+                                <span className="text-slate-400 ml-2 text-xs">({cliente.nomeFantasia})</span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {watchClienteId && clienteSelecionado && (
+                        <div className="mt-2 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-sm px-3 py-2">
+                          <MaterialIcon name="check_circle" className="text-erp-blue text-sm" />
+                          <span className="text-sm font-medium text-blue-800">{clienteSelecionado.nome}</span>
+                          <button
+                            type="button"
+                            onClick={() => form.setValue('clienteId', null)}
+                            className="ml-auto text-erp-blue hover:text-blue-800"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
+                      {form.formState.errors.clienteId && (
+                        <p className="text-[10px] text-red-600 mt-1">{form.formState.errors.clienteId.message}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <Label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">
+                    Tipo de Equipamento
+                  </Label>
+                  <Controller
+                    name="tipo"
+                    control={form.control}
+                    render={({ field }) => (
+                      <div className="flex gap-4">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            field.onChange('RASTREADOR')
+                            form.setValue('operadora', '')
+                            form.setValue('marcaSimcard', '')
+                            form.setValue('planoSimcard', '')
+                          }}
+                          className={cn(
+                            'flex-1 flex flex-col items-center gap-2 p-4 border-2 rounded-sm transition-all',
+                            field.value === 'RASTREADOR'
+                              ? 'border-erp-blue bg-blue-50'
+                              : 'border-slate-200 bg-white hover:border-slate-300'
+                          )}
+                        >
+                          <MaterialIcon
+                            name="sensors"
+                            className={cn('text-3xl', field.value === 'RASTREADOR' ? 'text-erp-blue' : 'text-slate-400')}
+                          />
+                          <span
+                            className={cn(
+                              'text-xs font-bold uppercase',
+                              field.value === 'RASTREADOR' ? 'text-blue-800' : 'text-slate-500'
+                            )}
+                          >
+                            Rastreador
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            field.onChange('SIM')
+                            form.setValue('marca', '')
+                            form.setValue('modelo', '')
+                          }}
+                          className={cn(
+                            'flex-1 flex flex-col items-center gap-2 p-4 border-2 rounded-sm transition-all',
+                            field.value === 'SIM'
+                              ? 'border-erp-blue bg-blue-50'
+                              : 'border-slate-200 bg-white hover:border-slate-300'
+                          )}
+                        >
+                          <MaterialIcon
+                            name="sim_card"
+                            className={cn('text-3xl', field.value === 'SIM' ? 'text-erp-blue' : 'text-slate-400')}
+                          />
+                          <span
+                            className={cn(
+                              'text-xs font-bold uppercase',
+                              field.value === 'SIM' ? 'text-blue-800' : 'text-slate-500'
+                            )}
+                          >
+                            Simcard
+                          </span>
+                        </button>
+                      </div>
+                    )}
+                  />
+                </div>
+
+                {watchTipo === 'RASTREADOR' ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                        Fabricante / Marca <span className="text-red-500">*</span>
+                      </Label>
+                      <Controller
+                        name="marca"
+                        control={form.control}
+                        render={({ field, fieldState }) => (
+                          <>
+                            <Select
+                              value={field.value}
+                              onValueChange={(v) => {
+                                field.onChange(v)
+                                form.setValue('modelo', '')
+                              }}
+                            >
+                              <SelectTrigger className={cn('h-9', fieldState.error && 'border-red-500')}>
+                                <SelectValue placeholder="Selecione..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {marcasAtivas.map((m) => (
+                                  <SelectItem key={m.id} value={String(m.id)}>
+                                    {m.nome}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {fieldState.error && (
+                              <p className="text-[10px] text-red-600 mt-1">{fieldState.error.message}</p>
+                            )}
+                          </>
+                        )}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                        Modelo <span className="text-red-500">*</span>
+                      </Label>
+                      <Controller
+                        name="modelo"
+                        control={form.control}
+                        render={({ field, fieldState }) => (
+                          <>
+                            <Select
+                              value={field.value}
+                              onValueChange={field.onChange}
+                              disabled={!watchMarca}
+                            >
+                              <SelectTrigger className={cn('h-9', fieldState.error && 'border-red-500')}>
+                                <SelectValue
+                                  placeholder={watchMarca ? 'Selecione...' : 'Selecione o fabricante primeiro...'}
+                                />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {modelosDisponiveis.map((m) => (
+                                  <SelectItem key={m.id} value={String(m.id)}>
+                                    {m.nome}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {fieldState.error && (
+                              <p className="text-[10px] text-red-600 mt-1">{fieldState.error.message}</p>
+                            )}
+                          </>
+                        )}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                        Operadora <span className="text-red-500">*</span>
+                      </Label>
+                      <Controller
+                        name="operadora"
+                        control={form.control}
+                        render={({ field, fieldState }) => (
+                          <>
+                            <Select
+                              value={field.value}
+                              onValueChange={(v) => {
+                                field.onChange(v)
+                                form.setValue('marcaSimcard', '')
+                              }}
+                            >
+                              <SelectTrigger className={cn('h-9', fieldState.error && 'border-red-500')}>
+                                <SelectValue placeholder="Selecione..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {operadorasAtivas.map((o) => (
+                                  <SelectItem key={o.id} value={String(o.id)}>
+                                    {o.nome}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {fieldState.error && (
+                              <p className="text-[10px] text-red-600 mt-1">{fieldState.error.message}</p>
+                            )}
+                          </>
+                        )}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                        Marca do Simcard
+                      </Label>
+                      <Controller
+                        name="marcaSimcard"
+                        control={form.control}
+                        render={({ field }) => (
+                          <Select
+                            value={field.value ?? ''}
+                            onValueChange={(v) => {
+                              field.onChange(v)
+                              form.setValue('planoSimcard', '')
+                            }}
+                            disabled={!watchOperadora}
+                          >
+                            <SelectTrigger className="h-9">
+                              <SelectValue
+                                placeholder={
+                                  watchOperadora ? 'Ex: Getrak, 1nce...' : 'Selecione operadora'
+                                }
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {marcasSimcardFiltradas.map((m) => (
+                                <SelectItem key={m.id} value={String(m.id)}>
+                                  {m.nome}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
+                    {watchMarcaSimcard &&
+                      (() => {
+                        const marcaSel = marcasSimcardFiltradas.find((m) => String(m.id) === watchMarcaSimcard)
+                        const planos = (marcaSel?.planos ?? []).filter((p) => p.ativo)
+                        return marcaSel?.temPlanos && planos.length > 0 ? (
+                          <div>
+                            <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                              Plano
+                            </Label>
+                            <Controller
+                              name="planoSimcard"
+                              control={form.control}
+                              render={({ field }) => (
+                                <Select value={field.value ?? ''} onValueChange={field.onChange}>
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Selecione o plano..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {planos.map((p) => (
+                                      <SelectItem key={p.id} value={String(p.id)}>
+                                        {p.planoMb} MB
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
+                          </div>
+                        ) : null
+                      })()}
                   </div>
                 )}
               </div>
+            </div>
 
-              {/* Tipo de Equipamento */}
-              <div>
-                <Label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Tipo de Equipamento</Label>
-                <div className="flex gap-4">
-                  <button
-                    type="button"
-                    onClick={() => setLoteTipo('RASTREADOR')}
-                    className={cn(
-                      'flex-1 flex flex-col items-center gap-2 p-4 border-2 rounded-sm transition-all',
-                      loteTipo === 'RASTREADOR'
-                        ? 'border-blue-600 bg-blue-50'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
+            {/* Bloco 3 - Identificadores */}
+            <div className="bg-white border border-slate-200 rounded-sm p-6">
+              <div className="flex items-center justify-between mb-6 pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <MaterialIcon name="barcode_reader" className="text-erp-blue" />
+                  <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                    Identificadores ({watchTipo === 'RASTREADOR' ? 'IMEI' : 'ICCID'})
+                  </h3>
+                </div>
+                <div className="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-sm border border-slate-200">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">Definir IDs agora?</span>
+                  <Controller
+                    name="definirIds"
+                    control={form.control}
+                    render={({ field }) => (
+                      <button
+                        type="button"
+                        onClick={() => field.onChange(!field.value)}
+                        className={cn(
+                          'w-10 h-5 rounded-full relative transition-colors',
+                          field.value ? 'bg-erp-blue' : 'bg-slate-300'
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            'absolute top-1 w-3 h-3 bg-white rounded-full transition-all',
+                            field.value ? 'right-1' : 'left-1'
+                          )}
+                        />
+                      </button>
                     )}
-                  >
-                    <MaterialIcon
-                      name="sensors"
-                      className={cn('text-3xl', loteTipo === 'RASTREADOR' ? 'text-blue-600' : 'text-slate-400')}
-                    />
-                    <span className={cn(
-                      'text-xs font-bold uppercase',
-                      loteTipo === 'RASTREADOR' ? 'text-blue-800' : 'text-slate-500'
-                    )}>
-                      Rastreador
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setLoteTipo('SIM')}
-                    className={cn(
-                      'flex-1 flex flex-col items-center gap-2 p-4 border-2 rounded-sm transition-all',
-                      loteTipo === 'SIM'
-                        ? 'border-blue-600 bg-blue-50'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
-                    )}
-                  >
-                    <MaterialIcon
-                      name="sim_card"
-                      className={cn('text-3xl', loteTipo === 'SIM' ? 'text-blue-600' : 'text-slate-400')}
-                    />
-                    <span className={cn(
-                      'text-xs font-bold uppercase',
-                      loteTipo === 'SIM' ? 'text-blue-800' : 'text-slate-500'
-                    )}>
-                      Simcard
-                    </span>
-                  </button>
+                  />
                 </div>
               </div>
-
-              {/* Marca/Modelo ou Operadora */}
-              {loteTipo === 'RASTREADOR' ? (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                      Fabricante / Marca <span className="text-red-500">*</span>
-                    </Label>
-                    <Select value={loteMarca} onValueChange={setLoteMarca}>
-                      <SelectTrigger className="h-10">
-                        <SelectValue placeholder="Selecione..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {marcasAtivas.map((m) => (
-                          <SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                      Modelo <span className="text-red-500">*</span>
-                    </Label>
-                    <Select value={loteModelo} onValueChange={setLoteModelo} disabled={!loteMarca}>
-                      <SelectTrigger className="h-10">
-                        <SelectValue placeholder={loteMarca ? 'Selecione...' : 'Selecione o fabricante primeiro...'} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {modelosDisponiveis.map((m) => (
-                          <SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+              <div className="space-y-4">
+                <div className="w-1/3">
+                  <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                    Quantidade <span className="text-red-500">*</span>
+                  </Label>
+                  <Controller
+                    name="quantidade"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={field.value ?? ''}
+                          onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
+                          placeholder="0"
+                          className={cn('h-9', fieldState.error && 'border-red-500')}
+                        />
+                        {fieldState.error && (
+                          <p className="text-[10px] text-red-600 mt-1">{fieldState.error.message}</p>
+                        )}
+                      </>
+                    )}
+                  />
                 </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                      Operadora <span className="text-red-500">*</span>
-                    </Label>
-                    <Select
-                      value={loteOperadora}
-                      onValueChange={(v) => {
-                        setLoteOperadora(v)
-                        setLoteMarcaSimcard('')
-                      }}
-                    >
-                      <SelectTrigger className="h-10">
-                        <SelectValue placeholder="Selecione..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {operadorasAtivas.map((o) => (
-                          <SelectItem key={o.id} value={String(o.id)}>{o.nome}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                      Marca do Simcard
-                    </Label>
-                    <Select
-                      value={loteMarcaSimcard}
-                      onValueChange={setLoteMarcaSimcard}
-                      disabled={!loteOperadora}
-                    >
-                      <SelectTrigger className="h-10">
-                        <SelectValue placeholder={loteOperadora ? 'Ex: Getrak, 1nce...' : 'Selecione operadora'} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {marcasSimcardFiltradas.map((m) => (
-                          <SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {loteMarcaSimcard && (() => {
-                    const marcaSel = marcasSimcardFiltradas.find((m) => String(m.id) === loteMarcaSimcard)
-                    const planos = (marcaSel?.planos ?? []).filter((p) => p.ativo)
-                    return marcaSel?.temPlanos && planos.length > 0 ? (
-                      <div>
-                        <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                          Plano
-                        </Label>
-                        <Select
-                          value={lotePlanoSimcard}
-                          onValueChange={setLotePlanoSimcard}
-                        >
-                          <SelectTrigger className="h-10">
-                            <SelectValue placeholder="Selecione o plano..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {planos.map((p) => (
-                              <SelectItem key={p.id} value={String(p.id)}>
-                                {p.planoMb} MB
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+
+                {watchDefinirIds && (
+                  <>
+                    <div>
+                      <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                        Colar IDs (Um por linha ou separados por vírgula)
+                      </Label>
+                      <Controller
+                        name="idsTexto"
+                        control={form.control}
+                        render={({ field }) => (
+                          <textarea
+                            {...field}
+                            value={field.value ?? ''}
+                            placeholder={`Cole os ${watchTipo === 'RASTREADOR' ? 'IMEIs' : 'ICCIDs'} aqui...`}
+                            className="w-full h-48 p-4 bg-slate-50 border border-slate-300 rounded-sm font-mono text-sm focus:bg-white focus:ring-2 focus:ring-erp-blue focus:border-erp-blue transition-all resize-none"
+                          />
+                        )}
+                      />
+                    </div>
+
+                    {watchIdsTexto.trim() && (
+                      <div className="flex items-center gap-6 p-4 bg-slate-50 rounded-sm border border-dashed border-slate-300">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                          <span className="text-[11px] font-bold text-slate-600 uppercase">
+                            <span className="text-slate-900">{idValidation.validos.length}</span> Válidos
+                          </span>
+                        </div>
+                        {idValidation.duplicados.length > 0 && (
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-amber-500" />
+                            <span className="text-[11px] font-bold text-slate-600 uppercase">
+                              <span className="text-slate-900">{idValidation.duplicados.length}</span> Duplicados
+                            </span>
+                          </div>
+                        )}
+                        {idValidation.invalidos.length > 0 && (
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-red-500" />
+                            <span className="text-[11px] font-bold text-slate-600 uppercase">
+                              <span className="text-slate-900">{idValidation.invalidos.length}</span> Inválidos
+                            </span>
+                          </div>
+                        )}
+                        {idValidation.jaExistentes.length > 0 && (
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-orange-500" />
+                            <span className="text-[11px] font-bold text-slate-600 uppercase">
+                              <span className="text-slate-900">{idValidation.jaExistentes.length}</span> Já cadastrados
+                            </span>
+                          </div>
+                        )}
                       </div>
-                    ) : null
-                  })()}
-                </div>
-              )}
-            </div>
-          </div>
+                    )}
 
-          {/* Bloco 3 - Identificadores */}
-          <div className="bg-white border border-slate-200 rounded-sm p-6">
-            <div className="flex items-center justify-between mb-6 pb-2 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <MaterialIcon name="barcode_reader" className="text-blue-600" />
+                    {erroQuantidade && (
+                      <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-sm text-red-700">
+                        <AlertTriangle className="h-4 w-4 shrink-0" />
+                        <span className="text-xs font-medium">{erroQuantidade}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Bloco 4 - Valores */}
+            <div className="bg-white border border-slate-200 rounded-sm p-6">
+              <div className="flex items-center gap-2 mb-6 pb-2 border-b border-slate-100">
+                <MaterialIcon name="payments" className="text-erp-blue" />
                 <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
-                  Identificadores ({loteTipo === 'RASTREADOR' ? 'IMEI' : 'ICCID'})
+                  Valores Financeiros
                 </h3>
               </div>
-              <div className="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-sm border border-slate-200">
-                <span className="text-[10px] font-bold text-slate-500 uppercase">Definir IDs agora?</span>
-                <button
-                  type="button"
-                  onClick={() => setLoteDefinirIds(!loteDefinirIds)}
-                  className={cn(
-                    'w-10 h-5 rounded-full relative transition-colors',
-                    loteDefinirIds ? 'bg-blue-600' : 'bg-slate-300'
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'absolute top-1 w-3 h-3 bg-white rounded-full transition-all',
-                      loteDefinirIds ? 'right-1' : 'left-1'
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                    Valor Unitário (R$) <span className="text-red-500">*</span>
+                  </Label>
+                  <Controller
+                    name="valorUnitario"
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <div className="relative">
+                        <span className="absolute left-3 top-2.5 text-xs font-bold text-slate-400">R$</span>
+                        <InputPreco
+                          value={field.value}
+                          onChange={field.onChange}
+                          className={cn('h-9 pl-10 text-right font-mono', fieldState.error && 'border-red-500')}
+                        />
+                        {fieldState.error && (
+                          <p className="text-[10px] text-red-600 mt-1">{fieldState.error.message}</p>
+                        )}
+                      </div>
                     )}
                   />
-                </button>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div className="w-1/3">
-                <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                  Quantidade <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={loteQuantidade || ''}
-                  onChange={(e) => setLoteQuantidade(parseInt(e.target.value) || 0)}
-                  placeholder="0"
-                  className="h-10"
-                />
-              </div>
-
-              {loteDefinirIds && (
-                <>
-                  <div>
-                    <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                      Colar IDs (Um por linha ou separados por vírgula)
-                    </Label>
-                    <textarea
-                      value={loteIdsTexto}
-                      onChange={(e) => setLoteIdsTexto(e.target.value)}
-                      placeholder={`Cole os ${loteTipo === 'RASTREADOR' ? 'IMEIs' : 'ICCIDs'} aqui...\n\nExemplo:\n867322048291834\n867322048291835\n867322048291836\n\nou\n\n867322048291834, 867322048291835, 867322048291836`}
-                      className="w-full h-48 p-4 bg-slate-50 border border-slate-300 rounded-sm font-mono text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none"
+                </div>
+                <div>
+                  <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                    Valor Total do Lote
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-xs font-bold text-slate-500">R$</span>
+                    <Input
+                      readOnly
+                      value={formatarMoeda(valorTotal).replace('R$', '').trim()}
+                      className="h-9 pl-10 text-right font-mono bg-slate-50 border-slate-200 font-bold text-slate-800"
                     />
                   </div>
-
-                  {loteIdsTexto.trim() && (
-                    <div className="flex items-center gap-6 p-4 bg-slate-50 rounded-sm border border-dashed border-slate-300">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                        <span className="text-[11px] font-bold text-slate-600 uppercase">
-                          <span className="text-slate-900">{idValidation.validos.length}</span> Válidos
-                        </span>
-                      </div>
-                      {idValidation.duplicados.length > 0 && (
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-amber-500" />
-                          <span className="text-[11px] font-bold text-slate-600 uppercase">
-                            <span className="text-slate-900">{idValidation.duplicados.length}</span> Duplicados
-                          </span>
-                        </div>
-                      )}
-                      {idValidation.invalidos.length > 0 && (
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-red-500" />
-                          <span className="text-[11px] font-bold text-slate-600 uppercase">
-                            <span className="text-slate-900">{idValidation.invalidos.length}</span> Inválidos
-                          </span>
-                        </div>
-                      )}
-                      {idValidation.jaExistentes.length > 0 && (
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-orange-500" />
-                          <span className="text-[11px] font-bold text-slate-600 uppercase">
-                            <span className="text-slate-900">{idValidation.jaExistentes.length}</span> Já cadastrados
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {erroQuantidade && (
-                    <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-sm text-red-700">
-                      <AlertTriangle className="h-4 w-4 shrink-0" />
-                      <span className="text-xs font-medium">{erroQuantidade}</span>
-                    </div>
-                  )}
-                </>
-              )}
+                  <p className="text-[10px] text-slate-400 mt-1 italic">
+                    Calculado automaticamente (Unitário x Qtd)
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Bloco 4 - Valores */}
-          <div className="bg-white border border-slate-200 rounded-sm p-6">
-            <div className="flex items-center gap-2 mb-6 pb-2 border-b border-slate-100">
-              <MaterialIcon name="payments" className="text-blue-600" />
-              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">Valores Financeiros</h3>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                  Valor Unitário (R$) <span className="text-red-500">*</span>
-                </Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-xs font-bold text-slate-400">R$</span>
-                  <InputPreco
-                    value={loteValorUnitario}
-                    onChange={setLoteValorUnitario}
-                    className="h-10 pl-10 text-right font-mono"
-                  />
-                </div>
-              </div>
-              <div>
-                <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                  Valor Total do Lote
-                </Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2.5 text-xs font-bold text-slate-500">R$</span>
-                  <Input
-                    readOnly
-                    value={formatCurrency(valorTotal).replace('R$', '').trim()}
-                    className="h-10 pl-10 text-right font-mono bg-slate-50 border-slate-200 font-bold text-slate-800"
-                  />
-                </div>
-                <p className="text-[10px] text-slate-400 mt-1 italic">Calculado automaticamente (Unitário x Qtd)</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Sidebar Resumo - Sticky */}
           <div className="w-80 shrink-0 sticky top-[calc(50vh-300px)] h-fit">
             <div className="bg-slate-800 text-white rounded-lg overflow-hidden shadow-xl">
               <div className="px-6 py-4 bg-slate-900 flex items-center justify-between">
@@ -785,71 +977,97 @@ export function CadastroLotePage() {
               <div className="p-6 space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Referência</label>
-                    <p className="text-lg font-bold">{loteReferencia || '—'}</p>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
+                      Referência
+                    </label>
+                    <p className="text-lg font-bold">{watchReferencia || '—'}</p>
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Nota Fiscal</label>
-                    <p className="text-lg font-bold">{loteNotaFiscal || '—'}</p>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
+                      Nota Fiscal
+                    </label>
+                    <p className="text-lg font-bold">{form.getValues('notaFiscal') || '—'}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Tipo</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
+                      Tipo
+                    </label>
                     <p className="text-sm font-medium">
-                      {loteTipo === 'RASTREADOR' ? '📡 Rastreador' : '📶 Simcard'}
+                      {watchTipo === 'RASTREADOR' ? '📡 Rastreador' : '📶 Simcard'}
                     </p>
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Proprietário</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
+                      Proprietário
+                    </label>
                     <p className="text-sm font-medium">
-                      {loteProprietario === 'INFINITY' ? 'Infinity' : (clienteSelecionado?.nome || 'Cliente')}
+                      {watchProprietario === 'INFINITY' ? 'Infinity' : clienteSelecionado?.nome ?? 'Cliente'}
                     </p>
                   </div>
                 </div>
-                {loteTipo === 'RASTREADOR' ? (
+                {watchTipo === 'RASTREADOR' ? (
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Marca</label>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
+                        Marca
+                      </label>
                       <p className="text-sm font-medium">
-                        {marcasAtivas.find((m) => m.id === Number(loteMarca))?.nome || '—'}
+                        {marcasAtivas.find((m) => m.id === Number(watchMarca))?.nome || '—'}
                       </p>
                     </div>
                     <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Modelo</label>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
+                        Modelo
+                      </label>
                       <p className="text-sm font-medium">
-                        {modelosDisponiveis.find((m) => m.id === Number(loteModelo))?.nome || '—'}
+                        {modelosDisponiveis.find((m) => m.id === Number(watchModelo))?.nome || '—'}
                       </p>
                     </div>
                   </div>
                 ) : (
                   <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Operadora</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
+                      Operadora
+                    </label>
                     <p className="text-sm font-medium">
-                      {operadorasAtivas.find((o) => o.id === Number(loteOperadora))?.nome || '—'}
+                      {operadorasAtivas.find((o) => o.id === Number(watchOperadora))?.nome || '—'}
                     </p>
                   </div>
                 )}
                 <div className="pt-4 border-t border-slate-700">
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Qtd. Itens</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      Qtd. Itens
+                    </label>
                     <span className="text-sm font-bold">{quantidadeFinal} Unidades</span>
                   </div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Valor Unitário</label>
-                    <span className="text-sm font-medium">{centavosToReais(loteValorUnitario)}</span>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      Valor Unitário
+                    </label>
+                    <span className="text-sm font-medium">
+                      {formatarMoedaDeCentavos(watchValorUnitario)}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Valor Total</label>
-                    <span className="text-xl font-bold text-blue-400">{formatCurrency(valorTotal)}</span>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      Valor Total
+                    </label>
+                    <span className="text-xl font-bold text-blue-400">{formatarMoeda(valorTotal)}</span>
                   </div>
                 </div>
-                {loteDefinirIds && idValidation.validos.length > 0 && (
+                {watchDefinirIds && idValidation.validos.length > 0 && (
                   <div className="pt-4 border-t border-slate-700">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">IDs Válidos</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">
+                      IDs Válidos
+                    </label>
                     <div className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-emerald-400" />
-                      <span className="text-sm font-bold text-emerald-400">{idValidation.validos.length} identificadores</span>
+                      <span className="text-sm font-bold text-emerald-400">
+                        {idValidation.validos.length} identificadores
+                      </span>
                     </div>
                   </div>
                 )}
@@ -866,35 +1084,34 @@ export function CadastroLotePage() {
           </div>
         </div>
 
-      {/* Footer */}
-      <div className="sticky -bottom-4 z-10 h-20 border-t border-slate-200 px-6 flex items-center justify-end gap-4 bg-white">
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={() => navigate('/aparelhos')}
-          className="h-11 px-6 text-[11px] font-bold text-slate-500 uppercase"
-        >
-          Cancelar
-        </Button>
-        <Button
-          type="button"
-          onClick={() => createLoteMutation.mutate()}
-          disabled={!podeSalvar || createLoteMutation.isPending}
-          className="h-11 px-8 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold uppercase gap-2"
-        >
-          {createLoteMutation.isPending ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Registrando...
-            </>
-          ) : (
-            <>
-              <CheckCircle className="h-4 w-4" />
-              Registrar Lote
-            </>
-          )}
-        </Button>
-      </div>
+        <div className="sticky -bottom-4 z-10 h-20 border-t border-slate-200 px-6 flex items-center justify-end gap-4 bg-white">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => navigate('/aparelhos')}
+            className="h-11 px-6 text-[11px] font-bold text-slate-500 uppercase"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            disabled={!canCreate || !podeSalvar || createLoteMutation.isPending}
+            className="h-11 px-8 bg-erp-blue hover:bg-blue-700 text-white text-[11px] font-bold uppercase gap-2"
+          >
+            {createLoteMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Registrando...
+              </>
+            ) : (
+              <>
+                <CheckCircle className="h-4 w-4" />
+                Registrar Lote
+              </>
+            )}
+          </Button>
+        </div>
+      </form>
     </div>
   )
 }

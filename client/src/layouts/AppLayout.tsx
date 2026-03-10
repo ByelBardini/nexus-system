@@ -1,4 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { MaterialIcon } from '@/components/MaterialIcon'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
 
@@ -22,10 +23,6 @@ const navSections = [
 const navBottom = [
   { to: '/configuracoes', label: 'Configurações', icon: 'settings' },
 ]
-
-function MaterialIcon({ name, className }: { name: string; className?: string }) {
-  return <span className={cn('material-symbols-outlined', className)}>{name}</span>
-}
 
 function NavLink({
   to,

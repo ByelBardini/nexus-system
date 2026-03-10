@@ -1,9 +1,9 @@
 import { useState, useMemo, Fragment, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm, Controller, useWatch, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Pencil, Loader2, Search, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowLeft, X, CheckCircle } from 'lucide-react'
+import { Plus, Pencil, Loader2, Search, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ArrowLeft, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -35,7 +35,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
 import { useUFs, useMunicipios } from '@/hooks/useBrasilAPI'
 import type { EnderecoCEP } from '@/hooks/useBrasilAPI'
-import { formatarTelefone, formatarCPFCNPJ } from '@/lib/format'
+import { formatarTelefone, formatarMoeda, formatarMoedaDeCentavos } from '@/lib/format'
 import { InputCPFCNPJ } from '@/components/InputCPFCNPJ'
 import { cn } from '@/lib/utils'
 
@@ -89,17 +89,6 @@ interface Tecnico {
 function toNum(v: number | string | undefined): number {
   if (v === undefined) return 0
   return typeof v === 'string' ? parseFloat(v) || 0 : v
-}
-
-function formatReais(val: number): string {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(val)
-}
-
-function centavosToReais(centavos: number): string {
-  return formatReais(centavos / 100)
 }
 
 const PAGE_SIZE = 10
@@ -156,7 +145,7 @@ export function TecnicosPage() {
   })
 
   const form = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as Resolver<FormData>,
     defaultValues: {
       nome: '',
       cpfCnpj: '',
@@ -334,7 +323,18 @@ export function TecnicosPage() {
     [form]
   )
 
-  const watchedValues = form.watch()
+  const watchedValues = useWatch({
+    control: form.control,
+    name: ['nome', 'cidade', 'estado', 'instalacaoSemBloqueio', 'revisao', 'deslocamento'],
+  })
+  const watchedObj = {
+    nome: watchedValues[0],
+    cidade: watchedValues[1],
+    estado: watchedValues[2],
+    instalacaoSemBloqueio: watchedValues[3],
+    revisao: watchedValues[4],
+    deslocamento: watchedValues[5],
+  }
 
   if (isLoading) {
     return (
@@ -367,9 +367,12 @@ export function TecnicosPage() {
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
-          <div>
-            <h1 className="text-lg font-bold text-slate-800">Técnicos</h1>
+          <div className="flex items-center gap-3">
+            <MaterialIcon name="engineering" className="text-erp-blue text-xl" />
+            <div>
+              <h1 className="text-lg font-bold text-slate-800">Técnicos</h1>
             <p className="text-xs text-slate-500">Cobertura regional e gestão de prestadores</p>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -440,11 +443,11 @@ export function TecnicosPage() {
             <Table>
               <TableHeader>
                 <TableRow className="border-slate-200 bg-slate-50 hover:bg-slate-50">
-                  <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">Nome</TableHead>
-                  <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">Cidade/UF</TableHead>
-                  <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">Telefone</TableHead>
-                  <TableHead className="px-4 py-2 text-right text-[11px] font-bold uppercase tracking-wider text-slate-500">Valor Base (Inst.)</TableHead>
-                  <TableHead className="px-4 py-2 text-center text-[11px] font-bold uppercase tracking-wider text-slate-500">Status</TableHead>
+                  <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">Nome</TableHead>
+                  <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">Cidade/UF</TableHead>
+                  <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">Telefone</TableHead>
+                  <TableHead className="px-4 py-2 text-right text-[10px] font-bold uppercase tracking-wider text-slate-600">Valor Base (Inst.)</TableHead>
+                  <TableHead className="px-4 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-slate-600">Status</TableHead>
                   <TableHead className="w-10 px-4 py-2" />
                 </TableRow>
               </TableHeader>
@@ -466,7 +469,7 @@ export function TecnicosPage() {
                           {t.telefone ? formatarTelefone(t.telefone) : '-'}
                         </TableCell>
                         <TableCell className="px-4 py-3 text-right text-sm font-medium text-slate-800">
-                          {formatReais(valorBase)}
+                          {formatarMoeda(valorBase)}
                         </TableCell>
                         <TableCell className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                           <div className="flex justify-center">
@@ -529,23 +532,23 @@ export function TecnicosPage() {
                                 <div className="grid grid-cols-5 gap-2">
                                   <div className="rounded border border-slate-200 bg-white p-3">
                                     <span className="mb-1 block text-[9px] font-bold uppercase text-slate-400">Inst. c/ Bloqueio</span>
-                                    <span className="text-sm font-bold text-slate-800">{formatReais(toNum(t.precos?.instalacaoComBloqueio))}</span>
+                                    <span className="text-sm font-bold text-slate-800">{formatarMoeda(toNum(t.precos?.instalacaoComBloqueio))}</span>
                                   </div>
                                   <div className="rounded border border-slate-200 bg-white p-3">
                                     <span className="mb-1 block text-[9px] font-bold uppercase text-slate-400">Inst. s/ Bloqueio</span>
-                                    <span className="text-sm font-bold text-slate-800">{formatReais(toNum(t.precos?.instalacaoSemBloqueio))}</span>
+                                    <span className="text-sm font-bold text-slate-800">{formatarMoeda(toNum(t.precos?.instalacaoSemBloqueio))}</span>
                                   </div>
                                   <div className="rounded border border-slate-200 bg-white p-3">
                                     <span className="mb-1 block text-[9px] font-bold uppercase text-slate-400">Revisão</span>
-                                    <span className="text-sm font-bold text-slate-800">{formatReais(toNum(t.precos?.revisao))}</span>
+                                    <span className="text-sm font-bold text-slate-800">{formatarMoeda(toNum(t.precos?.revisao))}</span>
                                   </div>
                                   <div className="rounded border border-slate-200 bg-white p-3">
                                     <span className="mb-1 block text-[9px] font-bold uppercase text-slate-400">Retirada</span>
-                                    <span className="text-sm font-bold text-slate-800">{formatReais(toNum(t.precos?.retirada))}</span>
+                                    <span className="text-sm font-bold text-slate-800">{formatarMoeda(toNum(t.precos?.retirada))}</span>
                                   </div>
                                   <div className="rounded border border-slate-200 bg-white p-3">
                                     <span className="mb-1 block text-[9px] font-bold uppercase text-slate-400">Deslocamento (km)</span>
-                                    <span className="text-sm font-bold text-slate-800">{formatReais(toNum(t.precos?.deslocamento))}</span>
+                                    <span className="text-sm font-bold text-slate-800">{formatarMoeda(toNum(t.precos?.deslocamento))}</span>
                                   </div>
                                 </div>
                               </div>
@@ -608,7 +611,7 @@ export function TecnicosPage() {
 
       {/* Modal de Cadastro/Edição */}
       <Dialog open={modalOpen} onOpenChange={(o) => !o && closeModal()}>
-        <DialogContent hideClose className="max-w-[900px] h-[90vh] p-0 gap-0 flex flex-col overflow-hidden rounded-sm">
+        <DialogContent hideClose ariaTitle={editingTecnico ? 'Editar Técnico' : 'Novo Técnico'} className="max-w-[900px] h-[90vh] p-0 gap-0 flex flex-col overflow-hidden rounded-sm">
           {/* Header */}
           <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-2">
@@ -887,13 +890,13 @@ export function TecnicosPage() {
                 <div className="space-y-6">
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nome do Prestador</label>
-                    <p className="text-sm font-bold text-slate-800 break-words">{watchedValues.nome || '—'}</p>
+                    <p className="text-sm font-bold text-slate-800 break-words">{watchedObj.nome || '—'}</p>
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Localidade</label>
                     <p className="text-sm font-bold text-slate-800">
-                      {watchedValues.cidade && watchedValues.estado
-                        ? `${watchedValues.cidade} / ${watchedValues.estado}`
+                      {watchedObj.cidade && watchedObj.estado
+                        ? `${watchedObj.cidade} / ${watchedObj.estado}`
                         : '— / —'}
                     </p>
                   </div>
@@ -902,15 +905,15 @@ export function TecnicosPage() {
                     <div className="space-y-2">
                       <div className="flex justify-between text-[11px]">
                         <span className="text-slate-500">Instalação:</span>
-                        <span className="font-bold text-slate-700">{centavosToReais(watchedValues.instalacaoSemBloqueio)}</span>
+                        <span className="font-bold text-slate-700">{formatarMoedaDeCentavos(watchedObj.instalacaoSemBloqueio ?? 0)}</span>
                       </div>
                       <div className="flex justify-between text-[11px]">
                         <span className="text-slate-500">Revisão:</span>
-                        <span className="font-bold text-slate-700">{centavosToReais(watchedValues.revisao)}</span>
+                        <span className="font-bold text-slate-700">{formatarMoedaDeCentavos(watchedObj.revisao ?? 0)}</span>
                       </div>
                       <div className="flex justify-between text-[11px]">
                         <span className="text-slate-500">Km:</span>
-                        <span className="font-bold text-slate-700">{centavosToReais(watchedValues.deslocamento)}</span>
+                        <span className="font-bold text-slate-700">{formatarMoedaDeCentavos(watchedObj.deslocamento ?? 0)}</span>
                       </div>
                     </div>
                   </div>
@@ -936,7 +939,7 @@ export function TecnicosPage() {
             <Button
               type="submit"
               form="tecnico-form"
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-erp-blue hover:bg-blue-700"
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Salvando...' : 'Salvar Técnico'}

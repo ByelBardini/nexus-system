@@ -27,10 +27,15 @@ import {
 } from '@/components/ui/select'
 import { MaterialIcon } from '@/components/MaterialIcon'
 import { api } from '@/lib/api'
+import { STATUS_CONFIG_APARELHO, type StatusAparelho } from '@/lib/aparelho-status'
+import {
+  formatarDataCompleta,
+  formatarDataHora,
+  formatarMoedaOpcional,
+} from '@/lib/format'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
 
-type StatusAparelho = 'EM_ESTOQUE' | 'CONFIGURADO' | 'DESPACHADO' | 'COM_TECNICO' | 'INSTALADO'
 type TipoAparelho = 'RASTREADOR' | 'SIM'
 type ProprietarioTipo = 'INFINITY' | 'CLIENTE'
 
@@ -63,52 +68,6 @@ interface HistoricoItem {
   descricao?: string
 }
 
-interface StatusConfig {
-  label: string
-  color: string
-  bgColor: string
-  borderColor: string
-  icon: string
-}
-
-const STATUS_CONFIG: Record<StatusAparelho, StatusConfig> = {
-  EM_ESTOQUE: {
-    label: 'Em Estoque',
-    color: 'text-amber-700',
-    bgColor: 'bg-amber-50',
-    borderColor: 'border-amber-200',
-    icon: '🟡',
-  },
-  CONFIGURADO: {
-    label: 'Configurado',
-    color: 'text-blue-700',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
-    icon: '🔵',
-  },
-  DESPACHADO: {
-    label: 'Despachado',
-    color: 'text-amber-700',
-    bgColor: 'bg-amber-50',
-    borderColor: 'border-amber-200',
-    icon: '🟠',
-  },
-  COM_TECNICO: {
-    label: 'Com Técnico',
-    color: 'text-orange-700',
-    bgColor: 'bg-orange-50',
-    borderColor: 'border-orange-200',
-    icon: '🟠',
-  },
-  INSTALADO: {
-    label: 'Instalado',
-    color: 'text-emerald-700',
-    bgColor: 'bg-emerald-50',
-    borderColor: 'border-emerald-200',
-    icon: '🟢',
-  },
-}
-
 const TIPO_CONFIG: Record<TipoAparelho, { label: string; icon: typeof Router }> = {
   RASTREADOR: { label: 'Rastreador', icon: Router },
   SIM: { label: 'SIM Card', icon: Smartphone },
@@ -126,32 +85,6 @@ const PROPRIETARIO_CONFIG: Record<ProprietarioTipo, { label: string; className: 
 }
 
 const PAGE_SIZE = 15
-
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
-}
-
-function formatDateTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('pt-BR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
-function formatCurrency(value?: number | null): string {
-  if (value === null || value === undefined) return '-'
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value)
-}
 
 export function AparelhosPage() {
   const { hasPermission } = useAuth()
@@ -363,9 +296,9 @@ export function AparelhosPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="TODOS">Todos</SelectItem>
-              {(Object.keys(STATUS_CONFIG) as StatusAparelho[]).map((status) => (
+              {(Object.keys(STATUS_CONFIG_APARELHO) as StatusAparelho[]).map((status) => (
                 <SelectItem key={status} value={status}>
-                  {STATUS_CONFIG[status].label}
+                  {STATUS_CONFIG_APARELHO[status].label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -447,34 +380,34 @@ export function AparelhosPage() {
             <TableHeader>
               <TableRow className="border-slate-200 bg-slate-50 hover:bg-slate-50">
                 <TableHead className="w-10 px-4 py-2" />
-                <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                   Identificação
                 </TableHead>
-                <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                   Tipo
                 </TableHead>
-                <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                   Marca / Operadora
                 </TableHead>
-                <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                   Proprietário
                 </TableHead>
-                <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                   Status
                 </TableHead>
-                <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                   SIM/Rastreador Vinculado
                 </TableHead>
-                <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                   Kit
                 </TableHead>
-                <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                   Técnico
                 </TableHead>
-                <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                   Lote
                 </TableHead>
-                <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                   Data Entrada
                 </TableHead>
               </TableRow>
@@ -482,7 +415,7 @@ export function AparelhosPage() {
             <TableBody>
               {paginated.map((aparelho) => {
                 const isExpanded = expandedId === aparelho.id
-                const statusConfig = STATUS_CONFIG[aparelho.status]
+                const statusConfig = STATUS_CONFIG_APARELHO[aparelho.status]
                 const tipoConfig = TIPO_CONFIG[aparelho.tipo]
                 const TipoIcon = tipoConfig.icon
                 const propConfig = PROPRIETARIO_CONFIG[aparelho.proprietario]
@@ -587,7 +520,7 @@ export function AparelhosPage() {
                         )}
                       </TableCell>
                       <TableCell className="px-4 py-3 text-xs text-slate-500">
-                        {formatDate(aparelho.criadoEm)}
+                        {formatarDataCompleta(aparelho.criadoEm)}
                       </TableCell>
                     </TableRow>
 
@@ -650,7 +583,7 @@ export function AparelhosPage() {
                                   <div className="flex justify-between text-[11px] border-b border-slate-100 pb-2">
                                     <span className="text-slate-500">Valor Unitário</span>
                                     <span className="font-bold text-slate-700">
-                                      {formatCurrency(aparelho.valorUnitario)}
+                                      {formatarMoedaOpcional(aparelho.valorUnitario)}
                                     </span>
                                   </div>
                                   <div className="flex justify-between text-[11px]">
@@ -717,7 +650,7 @@ export function AparelhosPage() {
                                             <p className="text-[10px] text-slate-500">{item.descricao}</p>
                                           )}
                                           <p className="text-[9px] text-slate-400 mt-0.5">
-                                            {formatDateTime(item.data)}
+                                            {formatarDataHora(item.data)}
                                           </p>
                                         </div>
                                       </div>

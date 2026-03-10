@@ -1,13 +1,13 @@
-import { useCallback, useState, useMemo, useEffect, useRef, useLayoutEffect } from 'react'
-import { createPortal } from 'react-dom'
+import { useCallback, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm, Controller, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Loader2, ArrowLeft, Search } from 'lucide-react'
+import { Loader2, ArrowLeft } from 'lucide-react'
 import { InputPlaca } from '@/components/InputPlaca'
-import { placaApenasAlfanumericos, telefoneApenasDigitos } from '@/lib/format'
+import { placaApenasAlfanumericos, telefoneApenasDigitos, TIPO_OS_LABELS } from '@/lib/format'
+import { useConsultaPlaca } from '@/hooks/useConsultaPlaca'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,6 +24,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
 import { MaterialIcon } from '@/components/MaterialIcon'
 import { SelectClienteSearch } from '@/components/SelectClienteSearch'
+import { SubclienteNomeAutocomplete } from '@/components/SubclienteNomeAutocomplete'
+import { IdAparelhoSearch } from '@/components/IdAparelhoSearch'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -33,14 +35,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
-
-const tipoLabels: Record<string, string> = {
-  INSTALACAO_COM_BLOQUEIO: 'Instalação c/ bloqueio',
-  INSTALACAO_SEM_BLOQUEIO: 'Instalação s/ bloqueio',
-  REVISAO: 'Revisão',
-  RETIRADA: 'Retirada',
-  DESLOCAMENTO: 'Deslocamento',
-}
 
 const tipoServicoConfig = {
   INSTALACAO: { label: 'Instalação', icon: 'add_circle' as const },
@@ -72,266 +66,6 @@ const VEICULO_TIPOS = [
   { value: 'UTILITARIO', label: 'Utilitário' },
   { value: 'CAMINHÃO', label: 'Caminhão' },
 ] as const
-
-
-interface SubclienteAutocompleteItem {
-  id: number
-  nome: string
-  cep?: string | null
-  logradouro?: string | null
-  numero?: string | null
-  complemento?: string | null
-  bairro?: string | null
-  cidade?: string | null
-  estado?: string | null
-  cpf?: string | null
-  email?: string | null
-  telefone?: string | null
-  cobrancaTipo?: string | null
-}
-
-function SubclienteNomeAutocomplete({
-  subclientes,
-  value,
-  subclienteId,
-  isNovoSubcliente,
-  onSelect,
-  onSelectNovo,
-  onChange,
-  placeholder,
-}: {
-  subclientes: SubclienteAutocompleteItem[]
-  value: string
-  subclienteId?: number
-  isNovoSubcliente: boolean
-  onSelect: (s: SubclienteAutocompleteItem) => void
-  onSelectNovo: () => void
-  onChange: (nome: string) => void
-  placeholder?: string
-}) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState(value)
-
-  const filtered = useMemo(() => {
-    if (!searchTerm.trim()) return subclientes
-    const term = searchTerm.toLowerCase()
-    return subclientes.filter((s) => s.nome.toLowerCase().includes(term))
-  }, [subclientes, searchTerm])
-
-  const displayValue = isOpen ? searchTerm : value
-
-  useEffect(() => {
-    if (!isOpen) setSearchTerm(value)
-  }, [isOpen, value])
-
-  function handleFocus() {
-    setIsOpen(true)
-    setSearchTerm(value)
-  }
-
-  function handleBlur() {
-    setTimeout(() => {
-      setIsOpen(false)
-      setSearchTerm(value)
-    }, 150)
-  }
-
-  function handleSelect(s: SubclienteAutocompleteItem) {
-    onSelect(s)
-    setIsOpen(false)
-  }
-
-  function handleInputChange(v: string) {
-    setSearchTerm(v)
-    onChange(v)
-  }
-
-  return (
-    <div className="relative">
-      <Input
-        className="h-9 pr-9"
-        placeholder={placeholder}
-        value={displayValue}
-        onChange={(e) => handleInputChange(e.target.value)}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        autoComplete="off"
-      />
-      <Search className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-      {isOpen && (
-        <div
-          className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-popover py-1 text-popover-foreground shadow-md"
-          onMouseDown={(e) => e.preventDefault()}
-        >
-          {filtered.length === 0 ? (
-            <div className="px-3 py-4 text-center">
-              <button
-                type="button"
-                className="w-full cursor-pointer rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600 outline-none transition-colors hover:border-erp-blue hover:bg-erp-blue/5 hover:text-erp-blue"
-                onMouseDown={() => {
-                  onSelectNovo()
-                  setIsOpen(false)
-                }}
-              >
-                Novo Subcliente
-              </button>
-              <p className="mt-2 text-[11px] text-slate-500">
-                Nenhum subcliente encontrado. Preencha os campos para criar novo.
-              </p>
-            </div>
-          ) : (
-            filtered.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                className={cn(
-                  'w-full cursor-pointer px-3 py-2 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground',
-                  !isNovoSubcliente && subclienteId === s.id && 'bg-accent'
-                )}
-                onMouseDown={() => handleSelect(s)}
-              >
-                {s.nome}
-              </button>
-            ))
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function IdAparelhoSearch({
-  rastreadores,
-  value,
-  onChange,
-  placeholder,
-}: {
-  rastreadores: { id: number; identificador?: string | null }[]
-  value: string
-  onChange: (v: string) => void
-  placeholder?: string
-}) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState(value)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [dropdownStyle, setDropdownStyle] = useState({ top: 0, left: 0, width: 0 })
-
-  useLayoutEffect(() => {
-    if (isOpen && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect()
-      setDropdownStyle({
-        top: rect.bottom + 4,
-        left: rect.left,
-        width: rect.width,
-      })
-    }
-  }, [isOpen])
-
-  useEffect(() => {
-    if (!isOpen) return
-    const onScroll = () => setIsOpen(false)
-    document.addEventListener('scroll', onScroll, true)
-    return () => document.removeEventListener('scroll', onScroll, true)
-  }, [isOpen])
-
-  const filtered = useMemo(() => {
-    if (!searchTerm.trim()) return rastreadores.slice(0, 20)
-    const term = searchTerm.toLowerCase()
-    return rastreadores.filter((a) =>
-      (a.identificador ?? '').toLowerCase().includes(term)
-    )
-  }, [rastreadores, searchTerm])
-
-  const displayValue = isOpen ? searchTerm : value
-
-  useEffect(() => {
-    if (!isOpen) setSearchTerm(value)
-  }, [isOpen, value])
-
-  function handleFocus() {
-    setIsOpen(true)
-    setSearchTerm(value)
-  }
-
-  function handleBlur() {
-    setTimeout(() => {
-      setIsOpen(false)
-      const trimmed = searchTerm.trim()
-      if (trimmed) onChange(trimmed)
-    }, 150)
-  }
-
-  function handleSelect(id: string) {
-    setSearchTerm(id)
-    onChange(id)
-    setIsOpen(false)
-  }
-
-  return (
-    <div ref={containerRef} className="relative">
-      <Input
-        className="h-9 pr-9"
-        placeholder={placeholder}
-        value={displayValue}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        autoComplete="off"
-      />
-      <Search className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-      {isOpen &&
-        createPortal(
-          <div
-            className="fixed z-[100] max-h-60 overflow-auto rounded-md border bg-popover py-1 text-popover-foreground shadow-md"
-            style={{
-              top: dropdownStyle.top,
-              left: dropdownStyle.left,
-              width: dropdownStyle.width,
-              minWidth: 200,
-            }}
-            onMouseDown={(e) => e.preventDefault()}
-          >
-            {value && (
-            <button
-              type="button"
-              className="w-full cursor-pointer px-3 py-2 text-left text-[11px] text-slate-500 hover:bg-accent"
-              onMouseDown={() => {
-                onChange('')
-                setSearchTerm('')
-              }}
-            >
-              Limpar
-            </button>
-          )}
-          {filtered.length === 0 ? (
-            <div className="px-3 py-4 text-center text-[11px] text-slate-500">
-              Nenhum rastreador instalado na lista. Digite o ID manualmente.
-            </div>
-          ) : (
-            filtered.map((a) => {
-              const id = (a.identificador ?? '').trim()
-              if (!id) return null
-              return (
-                <button
-                  key={a.id}
-                  type="button"
-                  className={cn(
-                    'w-full cursor-pointer px-3 py-2 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground',
-                    value === id && 'bg-accent'
-                  )}
-                  onMouseDown={() => handleSelect(id)}
-                >
-                  {id}
-                </button>
-              )
-            })
-          )}
-          </div>,
-          document.body
-        )}
-    </div>
-  )
-}
 
 const schema = z.object({
   ordemInstalacao: z.enum(['INFINITY', 'CLIENTE']),
@@ -511,36 +245,33 @@ export function OrdensServicoCriacaoPage() {
   const tecnicoId = form.watch('tecnicoId')
   const tecnicoSelecionado = tecnicos.find((t) => t.id === tecnicoId)
 
-  const [consultaPlacaLoading, setConsultaPlacaLoading] = useState(false)
-  const ultimaPlacaConsultadaRef = useRef<string>('')
-
   const veiculoPlaca = form.watch('veiculoPlaca')
+  const {
+    data: dadosVeiculo,
+    isFetching: consultaPlacaLoading,
+    isSuccess: consultaPlacaSuccess,
+    isError: consultaPlacaError,
+    error: consultaPlacaErrorObj,
+  } = useConsultaPlaca(veiculoPlaca ?? '')
+
   useEffect(() => {
-    const placa = placaApenasAlfanumericos(veiculoPlaca ?? '')
-    if (placa.length === 7 && placa !== ultimaPlacaConsultadaRef.current) {
-      ultimaPlacaConsultadaRef.current = placa
-      setConsultaPlacaLoading(true)
-      api<{ marca: string; modelo: string; ano: string; cor: string; tipo?: string }>(
-        `/veiculos/consulta-placa/${encodeURIComponent(placa)}`
-      )
-        .then((dados) => {
-          if (dados) {
-            form.setValue('veiculoMarca', dados.marca ?? '')
-            form.setValue('veiculoModelo', dados.modelo ?? '')
-            form.setValue('veiculoAno', dados.ano ?? '')
-            form.setValue('veiculoCor', dados.cor ?? '')
-            form.setValue('veiculoTipo', dados.tipo ?? '')
-            toast.success('Dados do veículo consultados')
-          } else {
-            toast.error('Placa não encontrada')
-          }
-        })
-        .catch((err) => toast.error(err instanceof Error ? err.message : 'Erro ao consultar placa'))
-        .finally(() => setConsultaPlacaLoading(false))
-    } else if (placa.length < 7) {
-      ultimaPlacaConsultadaRef.current = ''
+    if (consultaPlacaSuccess && dadosVeiculo) {
+      form.setValue('veiculoMarca', dadosVeiculo.marca ?? '')
+      form.setValue('veiculoModelo', dadosVeiculo.modelo ?? '')
+      form.setValue('veiculoAno', dadosVeiculo.ano ?? '')
+      form.setValue('veiculoCor', dadosVeiculo.cor ?? '')
+      form.setValue('veiculoTipo', dadosVeiculo.tipo ?? '')
+      toast.success('Dados do veículo consultados')
+    } else if (consultaPlacaSuccess && !dadosVeiculo) {
+      toast.error('Placa não encontrada')
     }
-  }, [veiculoPlaca, form])
+  }, [consultaPlacaSuccess, dadosVeiculo, form])
+
+  useEffect(() => {
+    if (consultaPlacaError) {
+      toast.error(consultaPlacaErrorObj instanceof Error ? consultaPlacaErrorObj.message : 'Erro ao consultar placa')
+    }
+  }, [consultaPlacaError, consultaPlacaErrorObj])
 
   const subclienteEstado = form.watch('subclienteEstado')
   const { data: ufs = [] } = useUFs()
@@ -731,7 +462,31 @@ export function OrdensServicoCriacaoPage() {
     runCreate()
   }
 
-  const watched = form.watch()
+  const watchedFields = useWatch({
+    control: form.control,
+    name: [
+      'subclienteTelefone', 'subclienteNome', 'subclienteCep', 'subclienteLogradouro',
+      'subclienteNumero', 'subclienteBairro', 'subclienteEstado', 'subclienteCidade',
+      'ordemInstalacao', 'clienteOrdemId', 'tecnicoId', 'veiculoPlaca', 'veiculoMarca', 'veiculoModelo', 'tipo',
+    ],
+  })
+  const watched = {
+    subclienteTelefone: watchedFields[0],
+    subclienteNome: watchedFields[1],
+    subclienteCep: watchedFields[2],
+    subclienteLogradouro: watchedFields[3],
+    subclienteNumero: watchedFields[4],
+    subclienteBairro: watchedFields[5],
+    subclienteEstado: watchedFields[6],
+    subclienteCidade: watchedFields[7],
+    ordemInstalacao: watchedFields[8],
+    clienteOrdemId: watchedFields[9],
+    tecnicoId: watchedFields[10],
+    veiculoPlaca: watchedFields[11],
+    veiculoMarca: watchedFields[12],
+    veiculoModelo: watchedFields[13],
+    tipo: watchedFields[14],
+  }
   const telefoneCompleto =
     (telefoneApenasDigitos(watched.subclienteTelefone ?? '').length >= 10)
   const temDadosSubcliente =
@@ -1474,7 +1229,7 @@ export function OrdensServicoCriacaoPage() {
                   Tipo de Serviço
                 </span>
                 <p className="text-xs font-black text-erp-blue uppercase">
-                  {tipo ? tipoLabels[tipo] ?? tipo : '—'}
+                  {tipo ? TIPO_OS_LABELS[tipo] ?? tipo : '—'}
                 </p>
               </div>
             </div>

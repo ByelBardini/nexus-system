@@ -60,18 +60,36 @@ export function SelectTecnicoSearch({
   const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
-  const [dropdownStyle, setDropdownStyle] = useState({ top: 0, left: 0, width: 0 })
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [dropdownStyle, setDropdownStyle] = useState({
+    top: 0,
+    left: 0,
+    width: 0,
+    position: 'fixed' as 'fixed' | 'absolute',
+  })
 
   const tecnicoSelecionado = tecnicos.find((t) => t.id === value)
 
   useLayoutEffect(() => {
     if (isOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect()
-      setDropdownStyle({
-        top: rect.bottom + 4,
-        left: rect.left,
-        width: rect.width,
-      })
+      const dialog = containerRef.current.closest('[role="dialog"]')
+      if (dialog) {
+        const dialogRect = dialog.getBoundingClientRect()
+        setDropdownStyle({
+          top: rect.bottom - dialogRect.top + 4,
+          left: rect.left - dialogRect.left,
+          width: rect.width,
+          position: 'absolute',
+        })
+      } else {
+        setDropdownStyle({
+          top: rect.bottom + 4,
+          left: rect.left,
+          width: rect.width,
+          position: 'fixed',
+        })
+      }
     }
   }, [isOpen])
 
@@ -80,6 +98,17 @@ export function SelectTecnicoSearch({
     const onScroll = () => setIsOpen(false)
     document.addEventListener('scroll', onScroll, true)
     return () => document.removeEventListener('scroll', onScroll, true)
+  }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return
+    function handleClickOutside(e: MouseEvent) {
+      const el = e.target as Node
+      if (containerRef.current?.contains(el) || dropdownRef.current?.contains(el)) return
+      setIsOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isOpen])
 
   const filteredAndSorted = useMemo(() => {
@@ -124,12 +153,6 @@ export function SelectTecnicoSearch({
     setSearchTerm('')
   }
 
-  function handleBlur() {
-    setTimeout(() => {
-      setIsOpen(false)
-    }, 150)
-  }
-
   function handleSelect(t: TecnicoOption) {
     onChange(t.id)
     setIsOpen(false)
@@ -142,6 +165,11 @@ export function SelectTecnicoSearch({
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Escape') {
       setIsOpen(false)
+      return
+    }
+    if (e.key === 'Enter' && isOpen && filteredAndSorted.length > 0) {
+      e.preventDefault()
+      handleSelect(filteredAndSorted[0])
     }
   }
 
@@ -160,6 +188,9 @@ export function SelectTecnicoSearch({
     )
   }
 
+  const portalContainer =
+    (typeof document !== 'undefined' && containerRef.current?.closest('[role="dialog"]')) || document?.body
+
   return (
     <div ref={containerRef} className="relative w-full">
       <Input
@@ -168,28 +199,29 @@ export function SelectTecnicoSearch({
         value={displayValue}
         onChange={(e) => setSearchTerm(e.target.value)}
         onFocus={handleFocus}
-        onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         autoComplete="off"
       />
       <Search className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
       {isOpen &&
+        portalContainer &&
         createPortal(
           <div
-            className="fixed z-[100] max-h-60 overflow-auto rounded-md border bg-popover py-1 text-popover-foreground shadow-md"
+            ref={dropdownRef}
+            className="z-[9999] max-h-60 overflow-y-auto overflow-x-hidden overscroll-contain rounded-md border bg-popover py-1 text-popover-foreground shadow-md"
             style={{
+              position: dropdownStyle.position,
               top: dropdownStyle.top,
               left: dropdownStyle.left,
               width: dropdownStyle.width,
               minWidth: 200,
             }}
-            onMouseDown={(e) => e.preventDefault()}
           >
           {value && (
             <button
               type="button"
               className="w-full cursor-pointer px-3 py-2 text-left text-[11px] text-slate-500 hover:bg-accent"
-              onMouseDown={() => handleClear()}
+              onClick={() => handleClear()}
             >
               Limpar seleção
             </button>
@@ -199,7 +231,7 @@ export function SelectTecnicoSearch({
               <button
                 type="button"
                 className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600 outline-none transition-colors hover:border-erp-blue hover:bg-erp-blue/5 hover:text-erp-blue"
-                onMouseDown={(e) => {
+                onClick={(e) => {
                   e.preventDefault()
                   setIsOpen(false)
                   navigate('/tecnicos')
@@ -222,7 +254,11 @@ export function SelectTecnicoSearch({
                     'w-full cursor-pointer px-3 py-2 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground',
                     value === t.id && 'bg-accent'
                   )}
-                  onMouseDown={() => handleSelect(t)}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    handleSelect(t)
+                  }}
                 >
                   <span className="font-medium">{t.nome}</span>
                   {t.cidade && t.estado && (
@@ -236,7 +272,7 @@ export function SelectTecnicoSearch({
                 <button
                   type="button"
                   className="flex w-full items-center gap-2 px-3 py-2 text-[11px] text-slate-500 hover:bg-accent hover:text-slate-700"
-                  onMouseDown={(e) => {
+                  onClick={(e) => {
                     e.preventDefault()
                     setIsOpen(false)
                     navigate('/tecnicos')
@@ -249,7 +285,7 @@ export function SelectTecnicoSearch({
             </>
           )}
           </div>,
-          document.body
+          portalContainer
         )}
     </div>
   )

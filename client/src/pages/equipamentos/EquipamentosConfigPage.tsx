@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
+import { useDebounce } from '@/hooks/useDebounce'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { Loader2, MoreVertical, ArrowLeft, X } from 'lucide-react'
@@ -6,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
   SelectContent,
@@ -21,6 +23,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { MaterialIcon } from '@/components/MaterialIcon'
 import { api } from '@/lib/api'
+import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
@@ -63,10 +66,12 @@ interface MarcaSimcard {
 
 export function EquipamentosConfigPage() {
   const queryClient = useQueryClient()
+  const { hasPermission } = useAuth()
+  const canEdit = hasPermission('CONFIGURACAO.APARELHO.EDITAR')
   const [searchMarcas, setSearchMarcas] = useState('')
-  const [debouncedSearchMarcas, setDebouncedSearchMarcas] = useState('')
+  const debouncedSearchMarcas = useDebounce(searchMarcas, 300)
   const [searchOperadoras, setSearchOperadoras] = useState('')
-  const [debouncedSearchOperadoras, setDebouncedSearchOperadoras] = useState('')
+  const debouncedSearchOperadoras = useDebounce(searchOperadoras, 300)
   const [expandedMarcaIds, setExpandedMarcaIds] = useState<Set<number>>(new Set())
 
   // Modals
@@ -93,15 +98,6 @@ export function EquipamentosConfigPage() {
   const [editingPlanoSimcard, setEditingPlanoSimcard] = useState<PlanoSimcard | null>(null)
   const [planoMbPlanoSimcard, setPlanoMbPlanoSimcard] = useState<number | ''>('')
   const [marcaSimcardIdForPlano, setMarcaSimcardIdForPlano] = useState<number | null>(null)
-
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearchMarcas(searchMarcas), 300)
-    return () => clearTimeout(t)
-  }, [searchMarcas])
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearchOperadoras(searchOperadoras), 300)
-    return () => clearTimeout(t)
-  }, [searchOperadoras])
 
   const { data: marcas = [], isLoading: loadingMarcas } = useQuery<Marca[]>({
     queryKey: ['marcas'],
@@ -146,11 +142,7 @@ export function EquipamentosConfigPage() {
   )
 
   const [searchMarcasSimcard, setSearchMarcasSimcard] = useState('')
-  const [debouncedSearchMarcasSimcard, setDebouncedSearchMarcasSimcard] = useState('')
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearchMarcasSimcard(searchMarcasSimcard), 300)
-    return () => clearTimeout(t)
-  }, [searchMarcasSimcard])
+  const debouncedSearchMarcasSimcard = useDebounce(searchMarcasSimcard, 300)
 
   const filteredMarcasSimcard = useMemo(
     () =>
@@ -566,9 +558,9 @@ export function EquipamentosConfigPage() {
   }
 
   return (
-    <div className="-m-4 flex min-h-[100dvh] flex-col bg-[#F1F5F9]">
+    <div className="-m-4 flex min-h-[100dvh] flex-col bg-slate-100">
       {/* Header */}
-      <header className="h-20 shrink-0 flex items-center justify-between border-b border-[#E2E8F0] bg-white px-8">
+      <header className="h-20 shrink-0 flex items-center justify-between border-b border-slate-200 bg-white px-8">
         <div className="flex items-center gap-4">
           <Link
             to="/equipamentos"
@@ -576,13 +568,16 @@ export function EquipamentosConfigPage() {
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
-          <div>
-            <h1 className="text-lg font-bold text-slate-800 uppercase tracking-tight">
+          <div className="flex items-center gap-3">
+            <MaterialIcon name="precision_manufacturing" className="text-erp-blue text-xl" />
+            <div>
+              <h1 className="text-lg font-bold text-slate-800 uppercase tracking-tight">
               Marcas, Modelos e Operadoras
             </h1>
             <p className="text-xs text-slate-500">
               Gestão de marcas, modelos e operadoras dos aparelhos e simcards.
             </p>
+            </div>
           </div>
         </div>
       </header>
@@ -599,13 +594,15 @@ export function EquipamentosConfigPage() {
                     <MaterialIcon name="sensors" className="text-blue-600" />
                     Marcas e Modelos de Rastreador
                   </h2>
-                  <Button
-                    className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold h-8 px-3 rounded-sm flex items-center gap-1.5 uppercase"
-                    onClick={() => openCreateMarca()}
-                  >
-                    <MaterialIcon name="add" className="text-base" />
-                    Nova Marca
-                  </Button>
+                  {canEdit && (
+                    <Button
+                      className="bg-erp-blue hover:bg-blue-700 text-white text-[10px] font-bold h-8 px-3 rounded-sm flex items-center gap-1.5 uppercase"
+                      onClick={() => openCreateMarca()}
+                    >
+                      <MaterialIcon name="add" className="text-base" />
+                      Nova Marca
+                    </Button>
+                  )}
                 </div>
                 <div className="relative">
                   <MaterialIcon
@@ -653,38 +650,40 @@ export function EquipamentosConfigPage() {
                             {String(marca._count.modelos).padStart(2, '0')} MODELOS
                           </span>
                         </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              onClick={(e) => e.stopPropagation()}
-                              className="text-slate-400 hover:text-slate-600"
-                            >
-                              <MaterialIcon name="edit" className="text-lg" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                            <DropdownMenuItem onClick={() => openEditMarca(marca)}>
-                              <MaterialIcon name="edit" className="mr-2 text-base" />
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => toggleAtivoMarca(marca)}>
-                              <MaterialIcon
-                                name={marca.ativo ? 'visibility_off' : 'visibility'}
-                                className="mr-2 text-base"
-                              />
-                              {marca.ativo ? 'Desativar' : 'Ativar'}
-                            </DropdownMenuItem>
-                            {marca._count.modelos === 0 && (
-                              <DropdownMenuItem
-                                onClick={() => deleteMarcaMutation.mutate(marca.id)}
-                                className="text-red-600"
+                        {canEdit && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-slate-400 hover:text-slate-600"
                               >
-                                <MaterialIcon name="delete" className="mr-2 text-base" />
-                                Excluir
+                                <MaterialIcon name="edit" className="text-lg" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                              <DropdownMenuItem onClick={() => openEditMarca(marca)}>
+                                <MaterialIcon name="edit" className="mr-2 text-base" />
+                                Editar
                               </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                              <DropdownMenuItem onClick={() => toggleAtivoMarca(marca)}>
+                                <MaterialIcon
+                                  name={marca.ativo ? 'visibility_off' : 'visibility'}
+                                  className="mr-2 text-base"
+                                />
+                                {marca.ativo ? 'Desativar' : 'Ativar'}
+                              </DropdownMenuItem>
+                              {marca._count.modelos === 0 && (
+                                <DropdownMenuItem
+                                  onClick={() => deleteMarcaMutation.mutate(marca.id)}
+                                  className="text-red-600"
+                                >
+                                  <MaterialIcon name="delete" className="mr-2 text-base" />
+                                  Excluir
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       </div>
                       {isExpanded && (
                         <div className="bg-white">
@@ -941,7 +940,7 @@ export function EquipamentosConfigPage() {
                     Marcas de Simcard
                   </h2>
                   <Button
-                    className="bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold h-8 px-3 rounded-sm flex items-center gap-1.5 uppercase"
+                    className="bg-erp-blue hover:bg-blue-700 text-white text-[10px] font-bold h-8 px-3 rounded-sm flex items-center gap-1.5 uppercase"
                     onClick={openCreateMarcaSimcard}
                   >
                     <MaterialIcon name="add" className="text-base" />
@@ -1166,7 +1165,7 @@ export function EquipamentosConfigPage() {
               Cancelar
             </Button>
             <Button
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-erp-blue hover:bg-blue-700"
               onClick={handleSaveMarca}
               disabled={createMarcaMutation.isPending || updateMarcaMutation.isPending}
             >
@@ -1242,7 +1241,7 @@ export function EquipamentosConfigPage() {
               Cancelar
             </Button>
             <Button
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-erp-blue hover:bg-blue-700"
               onClick={handleSaveModelo}
               disabled={createModeloMutation.isPending || updateModeloMutation.isPending}
             >
@@ -1284,7 +1283,7 @@ export function EquipamentosConfigPage() {
               Cancelar
             </Button>
             <Button
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-erp-blue hover:bg-blue-700"
               onClick={handleSaveOperadora}
               disabled={createOperadoraMutation.isPending || updateOperadoraMutation.isPending}
             >
@@ -1367,12 +1366,11 @@ export function EquipamentosConfigPage() {
               />
             </div>
             <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="temPlanos"
                 checked={temPlanosMarcaSimcard}
-                onChange={(e) => setTemPlanosMarcaSimcard(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300"
+                onCheckedChange={(v) => setTemPlanosMarcaSimcard(!!v)}
+                className="border-slate-300 data-[state=checked]:bg-erp-blue data-[state=checked]:border-erp-blue"
               />
               <Label htmlFor="temPlanos" className="text-sm font-medium text-slate-700 cursor-pointer">
                 Tem planos (500 MB, 1 GB, etc.)
@@ -1384,7 +1382,7 @@ export function EquipamentosConfigPage() {
               Cancelar
             </Button>
             <Button
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-erp-blue hover:bg-blue-700"
               onClick={handleSaveMarcaSimcard}
               disabled={
                 createMarcaSimcardMutation.isPending || updateMarcaSimcardMutation.isPending
@@ -1435,7 +1433,7 @@ export function EquipamentosConfigPage() {
               Cancelar
             </Button>
             <Button
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-erp-blue hover:bg-blue-700"
               onClick={handleSavePlanoSimcard}
               disabled={
                 createPlanoSimcardMutation.isPending || updatePlanoSimcardMutation.isPending

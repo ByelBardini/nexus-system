@@ -21,42 +21,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { Checkbox } from '@/components/ui/checkbox'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Switch } from '@/components/ui/switch'
 import { MaterialIcon } from '@/components/MaterialIcon'
 import { api } from '@/lib/api'
+import {
+  PreviewPareamentoTable,
+  TRACKER_STATUS_LABELS,
+  type PreviewResult,
+} from './PreviewPareamentoTable'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
 type ModoPareamento = 'individual' | 'massa' | 'csv'
-
-type TrackerStatus = 'FOUND_AVAILABLE' | 'FOUND_ALREADY_LINKED' | 'NEEDS_CREATE' | 'INVALID_FORMAT'
-type SimStatus = TrackerStatus
-type ActionNeeded = 'OK' | 'SELECT_TRACKER_LOT' | 'SELECT_SIM_LOT' | 'FIX_ERROR'
-
-interface PreviewLinha {
-  imei: string
-  iccid: string
-  tracker_status: TrackerStatus
-  sim_status: SimStatus
-  action_needed: ActionNeeded
-  trackerId?: number
-  simId?: number
-  marca?: string
-  modelo?: string
-  operadora?: string
-}
-
-interface PreviewResult {
-  linhas: PreviewLinha[]
-  contadores: { validos: number; exigemLote: number; erros: number }
-}
 
 function parseIds(text: string): string[] {
   if (!text?.trim()) return []
@@ -64,20 +42,6 @@ function parseIds(text: string): string[] {
     .split(/[,;\n\r]+/)
     .map((s) => s.replace(/\s+/g, '').replace(/[\u200B-\u200D\uFEFF]/g, '').trim())
     .filter(Boolean)
-}
-
-const TRACKER_STATUS_LABELS: Record<TrackerStatus, { label: string; className: string }> = {
-  FOUND_AVAILABLE: { label: 'Disponível', className: 'bg-emerald-100 text-emerald-700' },
-  FOUND_ALREADY_LINKED: { label: 'Em Uso', className: 'bg-red-100 text-red-700' },
-  NEEDS_CREATE: { label: 'Não Encontrado', className: 'bg-blue-100 text-blue-700' },
-  INVALID_FORMAT: { label: 'Formato Inválido', className: 'bg-amber-100 text-amber-700' },
-}
-
-const ACTION_LABELS: Record<ActionNeeded, { label: string; className: string }> = {
-  OK: { label: '✔ Pronto para vincular', className: 'font-bold text-emerald-600' },
-  SELECT_TRACKER_LOT: { label: '➕ Será criado (lote rastreador)', className: 'font-bold text-blue-600' },
-  SELECT_SIM_LOT: { label: '➕ Será criado (lote SIM)', className: 'font-bold text-blue-600' },
-  FIX_ERROR: { label: '✖ Erro', className: 'font-bold text-red-600' },
 }
 
 export function PareamentoPage() {
@@ -625,11 +589,10 @@ export function PareamentoPage() {
                         </div>
                       </div>
                       <label className="flex cursor-pointer items-center gap-2">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={pertenceLoteRastreador}
-                          onChange={(e) => setPertenceLoteRastreador(e.target.checked)}
-                          className="h-4 w-4 rounded border-slate-300 text-blue-600"
+                          onCheckedChange={(v) => setPertenceLoteRastreador(!!v)}
+                          className="border-slate-300 data-[state=checked]:bg-erp-blue data-[state=checked]:border-erp-blue"
                         />
                         <span className="text-[11px] font-bold uppercase text-slate-600">
                           Pertence a um lote
@@ -637,7 +600,7 @@ export function PareamentoPage() {
                       </label>
                       {pertenceLoteRastreador ? (
                         <div>
-                          <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-500">
+                          <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-600">
                             Lote
                           </Label>
                           <Select value={loteRastreadorId} onValueChange={setLoteRastreadorId}>
@@ -659,7 +622,7 @@ export function PareamentoPage() {
                       ) : (
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-500">
+                            <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-600">
                               Marca (se criar novo)
                             </Label>
                             <Select value={marcaRastreador} onValueChange={(v) => { setMarcaRastreador(v); setModeloRastreador('') }}>
@@ -674,7 +637,7 @@ export function PareamentoPage() {
                             </Select>
                           </div>
                           <div>
-                            <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-500">
+                            <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-600">
                               Modelo (se criar novo)
                             </Label>
                             <Select value={modeloRastreador} onValueChange={setModeloRastreador} disabled={!marcaRastreador}>
@@ -693,11 +656,11 @@ export function PareamentoPage() {
                       {preview?.linhas[0]?.tracker_status === 'FOUND_AVAILABLE' && (
                         <div className="grid grid-cols-2 gap-3 rounded-sm bg-slate-50 p-2">
                           <div>
-                            <Label className="mb-1 block text-[9px] font-bold uppercase text-slate-400">Marca</Label>
+                            <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">Marca</Label>
                             <span className="text-xs font-medium">{preview.linhas[0].marca ?? '--'}</span>
                           </div>
                           <div>
-                            <Label className="mb-1 block text-[9px] font-bold uppercase text-slate-400">Modelo</Label>
+                            <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">Modelo</Label>
                             <span className="text-xs font-medium">{preview.linhas[0].modelo ?? '--'}</span>
                           </div>
                         </div>
@@ -729,11 +692,10 @@ export function PareamentoPage() {
                         </div>
                       </div>
                       <label className="flex cursor-pointer items-center gap-2">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={pertenceLoteSim}
-                          onChange={(e) => setPertenceLoteSim(e.target.checked)}
-                          className="h-4 w-4 rounded border-slate-300 text-blue-600"
+                          onCheckedChange={(v) => setPertenceLoteSim(!!v)}
+                          className="border-slate-300 data-[state=checked]:bg-erp-blue data-[state=checked]:border-erp-blue"
                         />
                         <span className="text-[11px] font-bold uppercase text-slate-600">
                           Pertence a um lote
@@ -741,7 +703,7 @@ export function PareamentoPage() {
                       </label>
                       {pertenceLoteSim ? (
                         <div>
-                          <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-500">
+                          <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-600">
                             Lote
                           </Label>
                           <Select value={loteSimId} onValueChange={setLoteSimId}>
@@ -763,7 +725,7 @@ export function PareamentoPage() {
                       ) : (
                         <div className="space-y-3">
                           <div>
-                            <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">
+                            <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-600">
                               Operadora
                             </Label>
                             <Select
@@ -785,7 +747,7 @@ export function PareamentoPage() {
                             </Select>
                           </div>
                           <div>
-                            <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">
+                            <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-600">
                               Marca do Simcard
                             </Label>
                             <Select
@@ -811,7 +773,7 @@ export function PareamentoPage() {
                             const planos = (marcaSel?.planos ?? []).filter((p) => p.ativo)
                             return marcaSel?.temPlanos && planos.length > 0 ? (
                               <div>
-                                <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">Plano</Label>
+                                <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-600">Plano</Label>
                                 <Select value={planoSimcardIdSim} onValueChange={setPlanoSimcardIdSim}>
                                   <SelectTrigger className="h-9">
                                     <SelectValue placeholder="Selecione o plano..." />
@@ -829,7 +791,7 @@ export function PareamentoPage() {
                       )}
                       {preview?.linhas[0]?.sim_status === 'FOUND_AVAILABLE' && (
                         <div className="rounded-sm bg-slate-50 p-2">
-                          <Label className="mb-1 block text-[9px] font-bold uppercase text-slate-400">Operadora</Label>
+                          <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">Operadora</Label>
                           <span className="text-xs font-medium">{preview.linhas[0].operadora ?? '--'}</span>
                         </div>
                       )}
@@ -875,13 +837,11 @@ export function PareamentoPage() {
                       </div>
                     </div>
                     <label className="relative inline-flex shrink-0 cursor-pointer items-center">
-                      <input
-                        type="checkbox"
+                      <Switch
                         checked={adicionarKit}
-                        onChange={(e) => setAdicionarKit(e.target.checked)}
-                        className="peer sr-only"
+                        onCheckedChange={setAdicionarKit}
+                        className="data-[state=checked]:bg-erp-blue"
                       />
-                      <div className="relative h-6 w-11 shrink-0 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:left-[22px] peer-checked:bg-blue-600 peer-focus:outline-none" />
                       <span className="ml-3 shrink-0 whitespace-nowrap text-[10px] font-bold uppercase text-slate-600">
                         Ativar Vínculo
                       </span>
@@ -889,35 +849,23 @@ export function PareamentoPage() {
                   </div>
                   {adicionarKit && (
                     <div className="mt-4 space-y-4 bg-slate-50/30 p-5">
-                      <div className="flex gap-4">
-                        <label className="flex cursor-pointer items-center gap-2">
-                          <input
-                            type="radio"
-                            name="kitModo"
-                            checked={kitModo === 'existente'}
-                            onChange={() => setKitModo('existente')}
-                            className="h-4 w-4 border-slate-300 text-blue-600"
-                          />
+                      <RadioGroup value={kitModo} onValueChange={(v) => setKitModo(v as 'existente' | 'novo')} className="flex gap-4">
+                        <label htmlFor="kitModo-existente" className="flex cursor-pointer items-center gap-2">
+                          <RadioGroupItem value="existente" id="kitModo-existente" className="border-slate-300 text-erp-blue" />
                           <span className="text-[11px] font-bold uppercase text-slate-600">
                             Selecionar kit existente
                           </span>
                         </label>
-                        <label className="flex cursor-pointer items-center gap-2">
-                          <input
-                            type="radio"
-                            name="kitModo"
-                            checked={kitModo === 'novo'}
-                            onChange={() => setKitModo('novo')}
-                            className="h-4 w-4 border-slate-300 text-blue-600"
-                          />
+                        <label htmlFor="kitModo-novo" className="flex cursor-pointer items-center gap-2">
+                          <RadioGroupItem value="novo" id="kitModo-novo" className="border-slate-300 text-erp-blue" />
                           <span className="text-[11px] font-bold uppercase text-slate-600">
                             Criar novo kit
                           </span>
                         </label>
-                      </div>
+                      </RadioGroup>
                       {kitModo === 'existente' ? (
                         <div>
-                          <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-500">
+                          <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-600">
                             Kit
                           </Label>
                           <Select value={kitIdExistente} onValueChange={setKitIdExistente}>
@@ -938,7 +886,7 @@ export function PareamentoPage() {
                         </div>
                       ) : (
                         <div>
-                          <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-500">
+                          <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-600">
                             Nome do novo kit
                           </Label>
                           <Input
@@ -1006,7 +954,7 @@ export function PareamentoPage() {
                       </div>
                       <div className="border-t border-slate-800 pt-4">
                         <div className="mb-2 flex items-center justify-between">
-                          <span className="text-[10px] font-bold uppercase text-slate-500">
+                          <span className="text-[10px] font-bold uppercase text-slate-600">
                             Status do Vínculo
                           </span>
                           <span
@@ -1020,7 +968,7 @@ export function PareamentoPage() {
                         </div>
                         <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
                           <div
-                            className="h-full bg-blue-600 transition-all duration-300"
+                            className="h-full bg-erp-blue transition-all duration-300"
                             style={{
                               width: podeConfirmarPareamentoIndividual
                                 ? '100%'
@@ -1190,11 +1138,10 @@ export function PareamentoPage() {
                           <Label className="text-[10px] font-bold uppercase text-slate-600">Rastreadores</Label>
                         </div>
                         <label className="flex cursor-pointer items-center gap-2">
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             checked={pertenceLoteRastreadorMassa}
-                            onChange={(e) => setPertenceLoteRastreadorMassa(e.target.checked)}
-                            className="h-4 w-4 rounded border-slate-300 text-blue-600"
+                            onCheckedChange={(v) => setPertenceLoteRastreadorMassa(!!v)}
+                            className="border-slate-300 data-[state=checked]:bg-erp-blue data-[state=checked]:border-erp-blue"
                           />
                           <span className="text-[11px] font-bold uppercase text-slate-600">
                             Pertence a um lote
@@ -1265,11 +1212,10 @@ export function PareamentoPage() {
                           <Label className="text-[10px] font-bold uppercase text-slate-600">SIM Cards</Label>
                         </div>
                         <label className="flex cursor-pointer items-center gap-2">
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             checked={pertenceLoteSimMassa}
-                            onChange={(e) => setPertenceLoteSimMassa(e.target.checked)}
-                            className="h-4 w-4 rounded border-slate-300 text-blue-600"
+                            onCheckedChange={(v) => setPertenceLoteSimMassa(!!v)}
+                            className="border-slate-300 data-[state=checked]:bg-erp-blue data-[state=checked]:border-erp-blue"
                           />
                           <span className="text-[11px] font-bold uppercase text-slate-600">
                             Pertence a um lote
@@ -1372,13 +1318,11 @@ export function PareamentoPage() {
                         </div>
                       </div>
                       <label className="relative inline-flex shrink-0 cursor-pointer items-center">
-                        <input
-                          type="checkbox"
+                        <Switch
                           checked={adicionarKitMassa}
-                          onChange={(e) => setAdicionarKitMassa(e.target.checked)}
-                          className="peer sr-only"
+                          onCheckedChange={setAdicionarKitMassa}
+                          className="data-[state=checked]:bg-erp-blue"
                         />
-                        <div className="relative h-6 w-11 shrink-0 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:left-[22px] peer-checked:bg-blue-600 peer-focus:outline-none" />
                         <span className="ml-3 shrink-0 whitespace-nowrap text-[10px] font-bold uppercase text-slate-600">
                           Ativar Vínculo
                         </span>
@@ -1386,32 +1330,20 @@ export function PareamentoPage() {
                     </div>
                     {adicionarKitMassa && (
                       <div className="mt-4 space-y-4 bg-slate-50/30 p-5">
-                        <div className="flex gap-4">
-                          <label className="flex cursor-pointer items-center gap-2">
-                            <input
-                              type="radio"
-                              name="kitModoMassa"
-                              checked={kitModoMassa === 'existente'}
-                              onChange={() => setKitModoMassa('existente')}
-                              className="h-4 w-4 border-slate-300 text-blue-600"
-                            />
+                        <RadioGroup value={kitModoMassa} onValueChange={(v) => setKitModoMassa(v as 'existente' | 'novo')} className="flex gap-4">
+                          <label htmlFor="kitModoMassa-existente" className="flex cursor-pointer items-center gap-2">
+                            <RadioGroupItem value="existente" id="kitModoMassa-existente" className="border-slate-300 text-erp-blue" />
                             <span className="text-[11px] font-bold uppercase text-slate-600">
                               Selecionar kit existente
                             </span>
                           </label>
-                          <label className="flex cursor-pointer items-center gap-2">
-                            <input
-                              type="radio"
-                              name="kitModoMassa"
-                              checked={kitModoMassa === 'novo'}
-                              onChange={() => setKitModoMassa('novo')}
-                              className="h-4 w-4 border-slate-300 text-blue-600"
-                            />
+                          <label htmlFor="kitModoMassa-novo" className="flex cursor-pointer items-center gap-2">
+                            <RadioGroupItem value="novo" id="kitModoMassa-novo" className="border-slate-300 text-erp-blue" />
                             <span className="text-[11px] font-bold uppercase text-slate-600">
                               Criar novo kit
                             </span>
                           </label>
-                        </div>
+                        </RadioGroup>
                         {kitModoMassa === 'existente' ? (
                           <div>
                             <Label className="mb-1 block text-[10px] font-bold text-slate-500">Kit</Label>
@@ -1459,105 +1391,7 @@ export function PareamentoPage() {
                   )}
                 </div>
 
-                {preview && (
-                  <>
-                    <div className="grid grid-cols-4 gap-4">
-                      <div className="flex-1 rounded-sm border-l-4 border-emerald-500 bg-white p-4 shadow-sm">
-                        <Label className="block text-[10px] font-bold uppercase text-slate-400">
-                          Válidos
-                        </Label>
-                        <p className="text-2xl font-bold text-slate-800">{preview.contadores.validos}</p>
-                      </div>
-                      <div className="flex-1 rounded-sm border-l-4 border-blue-500 bg-white p-4 shadow-sm">
-                        <Label className="block text-[10px] font-bold uppercase text-slate-400">
-                          Exigem Lote
-                        </Label>
-                        <p className="text-2xl font-bold text-slate-800">{preview.contadores.exigemLote}</p>
-                      </div>
-                      <div className="flex-1 rounded-sm border-l-4 border-amber-500 bg-white p-4 shadow-sm">
-                        <Label className="block text-[10px] font-bold uppercase text-slate-400">
-                          Duplicados
-                        </Label>
-                        <p className="text-2xl font-bold text-slate-800">0</p>
-                      </div>
-                      <div className="flex-1 rounded-sm border-l-4 border-red-500 bg-white p-4 shadow-sm">
-                        <Label className="block text-[10px] font-bold uppercase text-slate-400">
-                          Erros
-                        </Label>
-                        <p className="text-2xl font-bold text-slate-800">{preview.contadores.erros}</p>
-                      </div>
-                    </div>
-
-                    <div className="overflow-hidden rounded-sm border border-slate-200 bg-white shadow-sm">
-                      <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 bg-slate-50">
-                        <span className="text-[10px] font-bold uppercase text-slate-500">
-                          Preview de Associação
-                        </span>
-                        <span className="rounded bg-slate-200 px-2 py-0.5 text-[9px] text-slate-600">
-                          {preview.linhas.length} itens processados
-                        </span>
-                      </div>
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="border-slate-200 bg-slate-50 hover:bg-slate-50">
-                            <TableHead className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500">
-                              IMEI
-                            </TableHead>
-                            <TableHead className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500">
-                              ICCID
-                            </TableHead>
-                            <TableHead className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500">
-                              Status Rastreador
-                            </TableHead>
-                            <TableHead className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500">
-                              Status SIM
-                            </TableHead>
-                            <TableHead className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500">
-                              Resultado
-                            </TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {preview.linhas.map((linha, idx) => (
-                            <TableRow key={idx} className="border-slate-100">
-                              <TableCell className="px-4 py-3 font-mono text-xs">
-                                {linha.imei}
-                              </TableCell>
-                              <TableCell className="px-4 py-3 font-mono text-xs">
-                                {linha.iccid}
-                              </TableCell>
-                              <TableCell className="px-4 py-3">
-                                <span
-                                  className={cn(
-                                    'rounded-full px-2 py-0.5 text-[10px] font-bold',
-                                    TRACKER_STATUS_LABELS[linha.tracker_status].className
-                                  )}
-                                >
-                                  {TRACKER_STATUS_LABELS[linha.tracker_status].label}
-                                </span>
-                              </TableCell>
-                              <TableCell className="px-4 py-3">
-                                <span
-                                  className={cn(
-                                    'rounded-full px-2 py-0.5 text-[10px] font-bold',
-                                    TRACKER_STATUS_LABELS[linha.sim_status].className
-                                  )}
-                                >
-                                  {TRACKER_STATUS_LABELS[linha.sim_status].label}
-                                </span>
-                              </TableCell>
-                              <TableCell className="px-4 py-3 text-[11px]">
-                                <span className={ACTION_LABELS[linha.action_needed].className}>
-                                  {ACTION_LABELS[linha.action_needed].label}
-                                </span>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </>
-                )}
+                {preview && <PreviewPareamentoTable preview={preview} />}
               </div>
 
               <div className="col-span-4">
@@ -1649,7 +1483,7 @@ export function PareamentoPage() {
               type="button"
               onClick={() => pareamentoMutation.mutate()}
               disabled={!podeConfirmarPareamentoIndividual || pareamentoMutation.isPending}
-              className="h-11 gap-2 px-8 bg-blue-600 text-[11px] font-bold uppercase hover:bg-blue-700"
+              className="h-11 gap-2 px-8 bg-erp-blue text-[11px] font-bold uppercase hover:bg-blue-700"
             >
               {pareamentoMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -1686,7 +1520,7 @@ export function PareamentoPage() {
               type="button"
               onClick={() => pareamentoMutation.mutate()}
               disabled={!podeConfirmarMassa || pareamentoMutation.isPending}
-              className="h-11 gap-2 px-8 bg-blue-600 text-[11px] font-bold uppercase shadow-lg shadow-blue-500/20 hover:bg-blue-700"
+              className="h-11 gap-2 px-8 bg-erp-blue text-[11px] font-bold uppercase shadow-lg shadow-blue-500/20 hover:bg-blue-700"
             >
               {pareamentoMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

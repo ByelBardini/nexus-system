@@ -43,17 +43,22 @@ export function SelectClienteSearch({
     if (!isOpen) setSearchTerm(clienteSelecionado?.nome ?? '')
   }, [isOpen, clienteSelecionado?.nome])
 
+  useEffect(() => {
+    if (!isOpen) return
+    function handleClickOutside(e: MouseEvent) {
+      const el = e.target as Node
+      if (containerRef.current?.contains(el)) return
+      setIsOpen(false)
+      setSearchTerm(clienteSelecionado?.nome ?? '')
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isOpen, clienteSelecionado?.nome])
+
   function handleFocus() {
     if (disabled) return
     setIsOpen(true)
     setSearchTerm(clienteSelecionado?.nome ?? '')
-  }
-
-  function handleBlur() {
-    setTimeout(() => {
-      setIsOpen(false)
-      setSearchTerm(clienteSelecionado?.nome ?? '')
-    }, 150)
   }
 
   function handleSelect(c: ClienteOption) {
@@ -70,6 +75,11 @@ export function SelectClienteSearch({
     if (e.key === 'Escape') {
       setIsOpen(false)
       setSearchTerm(clienteSelecionado?.nome ?? '')
+      return
+    }
+    if (e.key === 'Enter' && isOpen && filtered.length > 0) {
+      e.preventDefault()
+      handleSelect(filtered[0])
     }
   }
 
@@ -96,7 +106,6 @@ export function SelectClienteSearch({
         value={displayValue}
         onChange={(e) => setSearchTerm(e.target.value)}
         onFocus={handleFocus}
-        onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         autoComplete="off"
       />
@@ -104,13 +113,16 @@ export function SelectClienteSearch({
       {isOpen && (
         <div
           className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-popover py-1 text-popover-foreground shadow-md"
-          onMouseDown={(e) => e.preventDefault()}
         >
           {value && (
             <button
               type="button"
               className="w-full cursor-pointer px-3 py-2 text-left text-[11px] text-slate-500 hover:bg-accent"
-              onMouseDown={() => handleClear()}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                handleClear()
+              }}
             >
               Limpar seleção
             </button>
@@ -120,16 +132,20 @@ export function SelectClienteSearch({
               Nenhum cliente encontrado
             </div>
           ) : (
-            filtered.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                className={cn(
-                  'w-full cursor-pointer px-3 py-2 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground',
-                  value === c.id && 'bg-accent'
-                )}
-                onMouseDown={() => handleSelect(c)}
-              >
+              filtered.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  className={cn(
+                    'w-full cursor-pointer px-3 py-2 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground',
+                    value === c.id && 'bg-accent'
+                  )}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    handleSelect(c)
+                  }}
+                >
                 {c.nome}
               </button>
             ))

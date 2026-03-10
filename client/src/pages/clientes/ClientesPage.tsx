@@ -1,6 +1,6 @@
 import { useState, useMemo, Fragment, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm, Controller, useFieldArray } from 'react-hook-form'
+import { useForm, Controller, useFieldArray, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
@@ -316,7 +316,22 @@ export function ClientesPage() {
     append({ nome: '', celular: '', email: '' })
   }
 
-  const watchedValues = form.watch()
+  const watchedValues = useWatch({
+    control: form.control,
+    name: ['nome', 'nomeFantasia', 'tipoContrato', 'cep', 'logradouro', 'numero', 'bairro', 'cidade', 'estado', 'contatos'],
+  })
+  const watchedObj = {
+    nome: watchedValues[0],
+    nomeFantasia: watchedValues[1],
+    tipoContrato: watchedValues[2],
+    cep: watchedValues[3],
+    logradouro: watchedValues[4],
+    numero: watchedValues[5],
+    bairro: watchedValues[6],
+    cidade: watchedValues[7],
+    estado: watchedValues[8],
+    contatos: watchedValues[9] ?? [],
+  }
 
   if (isLoading) {
     return (
@@ -350,9 +365,12 @@ export function ClientesPage() {
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
-          <div>
-            <h1 className="text-lg font-bold text-slate-800">Clientes</h1>
+          <div className="flex items-center gap-3">
+            <MaterialIcon name="groups" className="text-erp-blue text-xl" />
+            <div>
+              <h1 className="text-lg font-bold text-slate-800">Clientes</h1>
             <p className="text-xs text-slate-500">Gestão de contatos e registros administrativos</p>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -573,7 +591,7 @@ export function ClientesPage() {
                                       className="bg-white border border-slate-200 rounded p-3 flex flex-col gap-1.5 shadow-sm hover:border-slate-300 transition-colors"
                                     >
                                       <div className="flex flex-col">
-                                        <span className="text-[9px] font-bold text-slate-400 uppercase leading-none">
+                                        <span className="text-[10px] font-bold text-slate-500 uppercase leading-none">
                                           Nome
                                         </span>
                                         <span className="text-[11px] font-semibold text-slate-700 flex items-center gap-1.5">
@@ -582,7 +600,7 @@ export function ClientesPage() {
                                         </span>
                                       </div>
                                       <div className="flex flex-col">
-                                        <span className="text-[9px] font-bold text-slate-400 uppercase leading-none">
+                                        <span className="text-[10px] font-bold text-slate-500 uppercase leading-none">
                                           Telefone
                                         </span>
                                         <span className="text-[11px] font-semibold text-slate-700 flex items-center gap-1.5">
@@ -593,7 +611,7 @@ export function ClientesPage() {
                                         </span>
                                       </div>
                                       <div className="flex flex-col">
-                                        <span className="text-[9px] font-bold text-slate-400 uppercase leading-none">
+                                        <span className="text-[10px] font-bold text-slate-500 uppercase leading-none">
                                           E-mail
                                         </span>
                                         <span className="text-[11px] font-semibold text-slate-700 flex items-center gap-1.5">
@@ -1025,15 +1043,15 @@ export function ClientesPage() {
                       Razão Social
                     </label>
                     <p className="text-sm font-bold text-slate-800 break-words">
-                      {watchedValues.nome || '—'}
+                      {watchedObj.nome || '—'}
                     </p>
                   </div>
-                  {watchedValues.nomeFantasia && (
+                  {watchedObj.nomeFantasia && (
                     <div>
                       <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
                         Nome Fantasia
                       </label>
-                      <p className="text-sm text-slate-700">{watchedValues.nomeFantasia}</p>
+                      <p className="text-sm text-slate-700">{watchedObj.nomeFantasia}</p>
                     </div>
                   )}
                   <div>
@@ -1043,25 +1061,25 @@ export function ClientesPage() {
                     <span
                       className={cn(
                         'inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase border',
-                        watchedValues.tipoContrato === 'COMODATO'
+                        watchedObj.tipoContrato === 'COMODATO'
                           ? 'bg-amber-100 text-amber-700 border-amber-200'
                           : 'bg-indigo-100 text-indigo-700 border-indigo-200'
                       )}
                     >
-                      {watchedValues.tipoContrato === 'COMODATO' ? 'Comodato' : 'Aquisição'}
+                      {watchedObj.tipoContrato === 'COMODATO' ? 'Comodato' : 'Aquisição'}
                     </span>
                   </div>
-                  {(watchedValues.cep || watchedValues.logradouro || watchedValues.cidade) && (
+                  {(watchedObj.cep || watchedObj.logradouro || watchedObj.cidade) && (
                     <div>
                       <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
                         Endereço
                       </label>
                       <p className="text-sm text-slate-700">
-                        {[watchedValues.logradouro, watchedValues.numero, watchedValues.bairro]
+                        {[watchedObj.logradouro, watchedObj.numero, watchedObj.bairro]
                           .filter(Boolean)
                           .join(', ')}
-                        {(watchedValues.cidade || watchedValues.estado) && (
-                          <> — {[watchedValues.cidade, watchedValues.estado].filter(Boolean).join('/')}</>
+                        {(watchedObj.cidade || watchedObj.estado) && (
+                          <> — {[watchedObj.cidade, watchedObj.estado].filter(Boolean).join('/')}</>
                         )}
                       </p>
                     </div>
@@ -1071,7 +1089,7 @@ export function ClientesPage() {
                       Contatos
                     </label>
                     <p className="text-sm font-bold text-slate-700">
-                      {watchedValues.contatos?.length || 0} contato(s)
+                      {watchedObj.contatos?.length || 0} contato(s)
                     </p>
                   </div>
                   <div className="mt-8 p-3 bg-blue-50 border border-blue-100 rounded-sm">
@@ -1096,7 +1114,7 @@ export function ClientesPage() {
             <Button
               type="submit"
               form="cliente-form"
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-erp-blue hover:bg-blue-700"
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Salvando...' : 'Salvar Cliente'}

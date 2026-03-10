@@ -18,19 +18,11 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { api, apiDownloadBlob } from '@/lib/api'
+import { formatarCEP, formatarCPFCNPJ, formatarDataHora, formatarDataHoraCurta, TIPO_OS_LABELS } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { MaterialIcon } from '@/components/MaterialIcon'
-import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-
-const tipoLabels: Record<string, string> = {
-  INSTALACAO_COM_BLOQUEIO: 'Instalação c/ bloqueio',
-  INSTALACAO_SEM_BLOQUEIO: 'Instalação s/ bloqueio',
-  REVISAO: 'Revisão',
-  RETIRADA: 'Retirada',
-  DESLOCAMENTO: 'Deslocamento',
-}
 
 const statusLabels: Record<string, string> = {
   AGENDADO: 'Agendado',
@@ -72,7 +64,7 @@ interface OrdemServico {
 }
 
 interface PaginatedResult {
-  items: OrdemServico[]
+  data: OrdemServico[]
   total: number
   page: number
   limit: number
@@ -130,56 +122,6 @@ interface OrdemServicoDetalhe {
   criadoPor?: { id: number; nome: string } | null
 }
 
-function formatDate(s: string) {
-  const d = new Date(s)
-  return d.toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
-function formatDateTimeFull(s: string) {
-  const d = new Date(s)
-  return d.toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
-function formatCep(cep: string | null | undefined): string {
-  if (!cep) return ''
-  const d = cep.replace(/\D/g, '')
-  if (d.length < 8) return cep
-  return `${d.slice(0, 5)}-${d.slice(5, 8)}`
-}
-
-function formatCPFCNPJ(val: string | null | undefined): string {
-  if (!val) return ''
-  const d = val.replace(/\D/g, '')
-  if (!d) return ''
-  if (d.length <= 11) {
-    if (d.length <= 3) return d
-    if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`
-    if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`
-    return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9, 11)}`
-  }
-  if (d.length <= 12) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8)}`
-  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12, 14)}`
-}
-
-const TIPO_LABELS: Record<string, string> = {
-  INSTALACAO_COM_BLOQUEIO: 'Instalação c/ bloqueio',
-  INSTALACAO_SEM_BLOQUEIO: 'Instalação s/ bloqueio',
-  REVISAO: 'Revisão',
-  RETIRADA: 'Retirada',
-  DESLOCAMENTO: 'Deslocamento',
-}
-
 /** Usa snapshot do subcliente quando disponível (preserva dados no momento da criação). */
 function getSubclienteParaExibicao(os: OrdemServicoDetalhe): SubclienteParaExibicao | null {
   if (os.subclienteSnapshotNome != null && os.subclienteSnapshotNome !== '') {
@@ -210,7 +152,7 @@ function formatEnderecoSubcliente(sub: SubclienteParaExibicao | null | undefined
   }
   if (sub.bairro) partes.push(sub.bairro)
   if (sub.cidade || sub.estado) partes.push([sub.cidade, sub.estado].filter(Boolean).join(' - '))
-  if (sub.cep) partes.push(`CEP ${formatCep(sub.cep)}`)
+  if (sub.cep) partes.push(`CEP ${formatarCEP(sub.cep)}`)
   return partes.length > 0 ? partes.join(', ') : sub.nome || '-'
 }
 
@@ -460,14 +402,14 @@ export function OrdensServicoPage() {
                     <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                   </td>
                 </tr>
-              ) : lista?.items.length === 0 ? (
+              ) : lista?.data?.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="py-8 text-center text-slate-500">
                     Nenhuma ordem de serviço
                   </td>
                 </tr>
               ) : (
-                lista?.items.map((os) => {
+                lista?.data?.map((os: OrdemServico) => {
                   const isExpanded = expandedOsId === os.id
                   return (
                     <Fragment key={os.id}>
@@ -500,7 +442,7 @@ export function OrdensServicoPage() {
                         <td>{os.subclienteSnapshotNome ?? os.subcliente?.nome ?? '-'}</td>
                         <td className="font-bold">{os.veiculo?.placa ?? '-'}</td>
                         <td>{os.tecnico?.nome ?? '-'}</td>
-                        <td>{tipoLabels[os.tipo] ?? os.tipo}</td>
+                        <td>{TIPO_OS_LABELS[os.tipo] ?? os.tipo}</td>
                         <td>
                           <span
                             className={`px-1.5 py-0.5 border ${
@@ -510,7 +452,7 @@ export function OrdensServicoPage() {
                             {statusLabels[os.status] ?? os.status}
                           </span>
                         </td>
-                        <td className="text-slate-500">{formatDate(os.criadoEm)}</td>
+                        <td className="text-slate-500">{formatarDataHoraCurta(os.criadoEm)}</td>
                         <td className="text-right" onClick={(e) => e.stopPropagation()}>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -550,14 +492,14 @@ export function OrdensServicoPage() {
                                 <div className="p-4 bg-slate-50/50 border-t border-slate-200">
                                   <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-x-6 gap-y-3 text-[10px]">
                                     <div><span className="text-slate-400 font-semibold uppercase block">Emitido por</span><span className="font-bold text-slate-800">{osDetalhe.criadoPor?.nome ?? '-'}</span></div>
-                                    <div><span className="text-slate-400 font-semibold uppercase block">Data</span><span className="font-bold text-slate-800">{formatDateTimeFull(osDetalhe.criadoEm)}</span></div>
-                                    <div className="col-span-2"><span className="text-slate-400 font-semibold uppercase block">Tipo</span><span className="font-bold text-slate-800">{TIPO_LABELS[osDetalhe.tipo] ?? osDetalhe.tipo}</span></div>
+                                    <div><span className="text-slate-400 font-semibold uppercase block">Data</span><span className="font-bold text-slate-800">{formatarDataHora(osDetalhe.criadoEm)}</span></div>
+                                    <div className="col-span-2"><span className="text-slate-400 font-semibold uppercase block">Tipo</span><span className="font-bold text-slate-800">{TIPO_OS_LABELS[osDetalhe.tipo] ?? osDetalhe.tipo}</span></div>
                                     {(() => {
                                       const sub = getSubclienteParaExibicao(osDetalhe)
                                       return (
                                         <>
                                           <div><span className="text-slate-400 font-semibold uppercase block">Endereço subcliente</span><span className="font-bold text-slate-800 text-[9px] leading-tight">{formatEnderecoSubcliente(sub)}</span></div>
-                                          <div><span className="text-slate-400 font-semibold uppercase block">CPF/CNPJ</span><span className="font-bold text-slate-800">{formatCPFCNPJ(sub?.cpf) || '-'}</span></div>
+                                          <div><span className="text-slate-400 font-semibold uppercase block">CPF/CNPJ</span><span className="font-bold text-slate-800">{formatarCPFCNPJ(sub?.cpf ?? '') || '-'}</span></div>
                                           <div><span className="text-slate-400 font-semibold uppercase block">E-mail subcliente</span><span className="font-bold text-slate-800 truncate block">{sub?.email || '-'}</span></div>
                                         </>
                                       )

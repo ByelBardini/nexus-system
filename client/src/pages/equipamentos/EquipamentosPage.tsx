@@ -21,9 +21,10 @@ import {
 } from '@/components/ui/select'
 import { MaterialIcon } from '@/components/MaterialIcon'
 import { api } from '@/lib/api'
+import { STATUS_CONFIG_APARELHO, type StatusAparelho } from '@/lib/aparelho-status'
+import { formatarDataHora } from '@/lib/format'
+import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
-
-type StatusAparelho = 'EM_ESTOQUE' | 'CONFIGURADO' | 'DESPACHADO' | 'COM_TECNICO' | 'INSTALADO'
 
 interface Aparelho {
   id: number
@@ -53,55 +54,11 @@ interface Aparelho {
 
 type PipelineFilter = 'TODOS' | 'CONFIGURADO' | 'EM_KIT' | 'DESPACHADO' | 'COM_TECNICO' | 'INSTALADO'
 
-const STATUS_CONFIG: Record<StatusAparelho, { label: string; color: string; dotColor: string }> = {
-  EM_ESTOQUE: {
-    label: 'Em Estoque',
-    color: 'text-amber-700',
-    dotColor: 'bg-amber-500',
-  },
-  CONFIGURADO: {
-    label: 'Configurado',
-    color: 'text-blue-700',
-    dotColor: 'bg-blue-500',
-  },
-  DESPACHADO: {
-    label: 'Despachado',
-    color: 'text-amber-700',
-    dotColor: 'bg-amber-500',
-  },
-  COM_TECNICO: {
-    label: 'Com Técnico',
-    color: 'text-orange-700',
-    dotColor: 'bg-orange-500',
-  },
-  INSTALADO: {
-    label: 'Instalado',
-    color: 'text-emerald-700',
-    dotColor: 'bg-emerald-500',
-  },
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  EM_ESTOQUE: 'Em Estoque',
-  CONFIGURADO: 'Equipamento Configurado',
-  DESPACHADO: 'Despachado',
-  COM_TECNICO: 'Com Técnico',
-  INSTALADO: 'Instalado',
-}
-
 const PAGE_SIZE = 12
 
-function formatDateTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
 export function EquipamentosPage() {
+  const { hasPermission } = useAuth()
+  const canCreate = hasPermission('CONFIGURACAO.APARELHO.CRIAR')
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [busca, setBusca] = useState('')
   const [pipelineFilter, setPipelineFilter] = useState<PipelineFilter>('TODOS')
@@ -327,18 +284,22 @@ export function EquipamentosPage() {
               <SelectItem value="INSTALADO">Instalado</SelectItem>
             </SelectContent>
           </Select>
-          <Link to="/equipamentos/pareamento">
-            <Button variant="outline" className="text-[11px] font-bold uppercase">
-              <MaterialIcon name="build" className="text-sm mr-1" />
-              Montar Equipamento
-            </Button>
-          </Link>
-          <Link to="/equipamentos/pareamento?modo=massa">
+          {canCreate && (
+            <>
+              <Link to="/equipamentos/pareamento">
+                <Button variant="outline" className="text-[11px] font-bold uppercase">
+                  <MaterialIcon name="build" className="text-sm mr-1" />
+                  Montar Equipamento
+                </Button>
+              </Link>
+              <Link to="/equipamentos/pareamento?modo=massa">
             <Button className="bg-erp-blue hover:bg-blue-700 text-[11px] font-bold uppercase">
               <MaterialIcon name="inventory_2" className="text-sm mr-1" />
               Cadastro em Lote
             </Button>
           </Link>
+            </>
+          )}
         </div>
       </div>
 
@@ -347,25 +308,25 @@ export function EquipamentosPage() {
         <Table>
           <TableHeader>
             <TableRow className="border-slate-200 bg-slate-50 hover:bg-slate-50">
-              <TableHead className="w-16 pl-4 px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <TableHead className="w-16 pl-4 px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                 ID
               </TableHead>
-              <TableHead className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <TableHead className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                 IMEI & ICCID
               </TableHead>
-              <TableHead className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <TableHead className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                 Marca / Operadora
               </TableHead>
-              <TableHead className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <TableHead className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                 Status
               </TableHead>
-              <TableHead className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <TableHead className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                 Kit
               </TableHead>
-              <TableHead className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <TableHead className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                 Técnico
               </TableHead>
-              <TableHead className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              <TableHead className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                 Última Mov.
               </TableHead>
               <TableHead className="w-10 px-3 py-2.5" />
@@ -374,7 +335,7 @@ export function EquipamentosPage() {
           <TableBody>
             {paginated.map((equip) => {
               const isExpanded = expandedId === equip.id
-              const statusConfig = STATUS_CONFIG[equip.status]
+              const statusConfig = STATUS_CONFIG_APARELHO[equip.status]
               const displayStatus =
                 equip.status === 'CONFIGURADO' && equip.kitId
                   ? 'Em Kit'
@@ -463,7 +424,7 @@ export function EquipamentosPage() {
                     </TableCell>
                     <TableCell className="px-3 py-3">
                       <span className="text-[10px] font-mono text-slate-500">
-                        {formatDateTime(equip.atualizadoEm)}
+                        {formatarDataHora(equip.atualizadoEm)}
                       </span>
                     </TableCell>
                     <TableCell className="px-3 py-3 text-right">
@@ -607,10 +568,10 @@ export function EquipamentosPage() {
                                     />
                                     <div className="flex flex-col">
                                       <span className="text-[10px] font-bold text-slate-800">
-                                        {STATUS_LABELS[item.statusNovo] || item.statusNovo}
+                                        {STATUS_CONFIG_APARELHO[item.statusNovo as StatusAparelho]?.label ?? item.statusNovo}
                                       </span>
                                       <span className="text-[9px] text-slate-500">
-                                        {formatDateTime(item.criadoEm)}
+                                        {formatarDataHora(item.criadoEm)}
                                       </span>
                                     </div>
                                   </div>

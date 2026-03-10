@@ -25,18 +25,36 @@ export function SelectUF({
   const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   const selectedUF = useMemo(() => ufs.find((uf) => uf.sigla === value), [ufs, value])
-  const [dropdownStyle, setDropdownStyle] = useState({ top: 0, left: 0, width: 0 })
+  const [dropdownStyle, setDropdownStyle] = useState({
+    top: 0,
+    left: 0,
+    width: 0,
+    position: 'fixed' as 'fixed' | 'absolute',
+  })
 
   useLayoutEffect(() => {
     if (isOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect()
-      setDropdownStyle({
-        top: rect.bottom + 4,
-        left: rect.left,
-        width: rect.width,
-      })
+      const dialog = containerRef.current.closest('[role="dialog"]')
+      if (dialog) {
+        const dialogRect = dialog.getBoundingClientRect()
+        setDropdownStyle({
+          top: rect.bottom - dialogRect.top + 4,
+          left: rect.left - dialogRect.left,
+          width: rect.width,
+          position: 'absolute',
+        })
+      } else {
+        setDropdownStyle({
+          top: rect.bottom + 4,
+          left: rect.left,
+          width: rect.width,
+          position: 'fixed',
+        })
+      }
     }
   }, [isOpen])
 
@@ -45,6 +63,17 @@ export function SelectUF({
     const onScroll = () => setIsOpen(false)
     document.addEventListener('scroll', onScroll, true)
     return () => document.removeEventListener('scroll', onScroll, true)
+  }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return
+    function handleClickOutside(e: MouseEvent) {
+      const el = e.target as Node
+      if (containerRef.current?.contains(el) || dropdownRef.current?.contains(el)) return
+      setIsOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isOpen])
 
   const filtered = useMemo(() => {
@@ -71,12 +100,6 @@ export function SelectUF({
     setSearchTerm('')
   }
 
-  function handleBlur() {
-    setTimeout(() => {
-      setIsOpen(false)
-    }, 150)
-  }
-
   function handleSelect(sigla: string) {
     onChange(sigla)
     setIsOpen(false)
@@ -85,6 +108,11 @@ export function SelectUF({
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Escape') {
       setIsOpen(false)
+      return
+    }
+    if (e.key === 'Enter' && isOpen && filtered.length > 0) {
+      e.preventDefault()
+      handleSelect(filtered[0].sigla)
     }
   }
 
@@ -102,6 +130,9 @@ export function SelectUF({
     )
   }
 
+  const portalContainer =
+    (typeof document !== 'undefined' && containerRef.current?.closest('[role="dialog"]')) || document?.body
+
   return (
     <div ref={containerRef} className="relative">
       <Input
@@ -110,22 +141,23 @@ export function SelectUF({
         value={displayValue}
         onChange={(e) => setSearchTerm(e.target.value)}
         onFocus={handleFocus}
-        onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         autoComplete="off"
       />
       <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50" />
       {isOpen &&
+        portalContainer &&
         createPortal(
           <div
-            className="fixed z-[100] max-h-60 overflow-auto rounded-md border bg-popover py-1 text-popover-foreground shadow-md"
+            ref={dropdownRef}
+            className="z-[9999] max-h-60 overflow-y-auto overflow-x-hidden overscroll-contain rounded-md border bg-popover py-1 text-popover-foreground shadow-md"
             style={{
+              position: dropdownStyle.position,
               top: dropdownStyle.top,
               left: dropdownStyle.left,
               width: dropdownStyle.width,
               minWidth: 200,
             }}
-            onMouseDown={(e) => e.preventDefault()}
           >
             {filtered.length === 0 ? (
               <div className="px-3 py-6 text-center text-sm text-muted-foreground">
@@ -140,14 +172,18 @@ export function SelectUF({
                     'w-full cursor-pointer px-3 py-2 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground',
                     value === uf.sigla && 'bg-accent'
                   )}
-                  onMouseDown={() => handleSelect(uf.sigla)}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    handleSelect(uf.sigla)
+                  }}
                 >
                   {uf.sigla} - {uf.nome}
                 </button>
               ))
             )}
           </div>,
-          document.body
+          portalContainer
         )}
     </div>
   )

@@ -1,5 +1,22 @@
 /**
- * Formata centavos para exibição em reais (100 = "1,00")
+ * Formata valor em reais como moeda: "R$ 1,00"
+ */
+export function formatarMoeda(reais: number): string {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(reais)
+}
+
+/**
+ * Formata centavos para exibição em reais (100 = "R$ 1,00")
+ */
+export function formatarMoedaDeCentavos(centavos: number): string {
+  return formatarMoeda(centavos / 100)
+}
+
+/**
+ * Formata centavos para exibição em reais (100 = "1,00") - sem símbolo
  */
 export function centavosParaReais(centavos: number): string {
   const reais = centavos / 100
@@ -131,6 +148,64 @@ export function parseDataLocal(str: string): Date {
   // YYYY-MM-DD: usar meio-dia local para evitar deslocamento de dia
   const [y, m, d] = str.split('-').map(Number)
   return new Date(y, (m ?? 1) - 1, d ?? 1, 12, 0, 0)
+}
+
+/**
+ * Formata data com mês curto e ano: "12 abr. 2026"
+ */
+export function formatarDataCompleta(iso: string): string {
+  const d = parseDataLocal(iso)
+  return d.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
+/**
+ * Formata data/hora curta sem ano: "12/04 14:30"
+ */
+export function formatarDataHoraCurta(iso: string): string {
+  const d = parseDataLocal(iso)
+  return d.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+/**
+ * Formata data/hora completa: "12/04/2026 14:30"
+ */
+export function formatarDataHora(iso: string): string {
+  const d = parseDataLocal(iso)
+  return d.toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+/**
+ * Formata moeda ou retorna "-" se null/undefined
+ */
+export function formatarMoedaOpcional(value?: number | null): string {
+  if (value === null || value === undefined) return '-'
+  return formatarMoeda(value)
+}
+
+/**
+ * Labels de tipo de ordem de serviço
+ */
+export const TIPO_OS_LABELS: Record<string, string> = {
+  INSTALACAO_COM_BLOQUEIO: 'Instalação c/ bloqueio',
+  INSTALACAO_SEM_BLOQUEIO: 'Instalação s/ bloqueio',
+  REVISAO: 'Revisão',
+  RETIRADA: 'Retirada',
+  DESLOCAMENTO: 'Deslocamento',
 }
 
 /**
