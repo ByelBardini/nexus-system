@@ -1,176 +1,240 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AparelhosController } from 'src/aparelhos/aparelhos.controller';
 import { AparelhosService } from 'src/aparelhos/aparelhos.service';
+import { LotesService } from 'src/aparelhos/lotes.service';
+import { KitsService } from 'src/aparelhos/kits.service';
+import { PareamentoService } from 'src/aparelhos/pareamento.service';
 import { PermissionsGuard } from 'src/auth/guards/permissions.guard';
 
 describe('AparelhosController', () => {
   let controller: AparelhosController;
-  let service: AparelhosService;
+  let aparelhosService: AparelhosService;
+  let lotesService: LotesService;
+  let kitsService: KitsService;
+  let pareamentoService: PareamentoService;
 
-  const serviceMock = {
+  const aparelhosMock = {
     findAll: jest.fn(),
     findOne: jest.fn(),
     getResumo: jest.fn(),
-    createLote: jest.fn(),
     createIndividual: jest.fn(),
     updateStatus: jest.fn(),
-    pareamentoPreview: jest.fn(),
-    pareamento: jest.fn(),
+  };
+
+  const lotesMock = {
+    createLote: jest.fn(),
+    getLotesParaPareamento: jest.fn(),
+  };
+
+  const kitsMock = {
     getKits: jest.fn(),
     getKitsComDetalhes: jest.fn(),
     getKitById: jest.fn(),
     updateAparelhoKit: jest.fn(),
     getAparelhosDisponiveisParaKit: jest.fn(),
     criarOuBuscarKitPorNome: jest.fn(),
-    getLotesParaPareamento: jest.fn(),
+  };
+
+  const pareamentoMock = {
+    pareamentoPreview: jest.fn(),
+    pareamento: jest.fn(),
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AparelhosController],
-      providers: [{ provide: AparelhosService, useValue: serviceMock }],
+      providers: [
+        { provide: AparelhosService, useValue: aparelhosMock },
+        { provide: LotesService, useValue: lotesMock },
+        { provide: KitsService, useValue: kitsMock },
+        { provide: PareamentoService, useValue: pareamentoMock },
+      ],
     })
       .overrideGuard(PermissionsGuard)
       .useValue({ canActivate: () => true })
       .compile();
 
     controller = module.get<AparelhosController>(AparelhosController);
-    service = module.get<AparelhosService>(AparelhosService);
+    aparelhosService = module.get<AparelhosService>(AparelhosService);
+    lotesService = module.get<LotesService>(LotesService);
+    kitsService = module.get<KitsService>(KitsService);
+    pareamentoService = module.get<PareamentoService>(PareamentoService);
     jest.clearAllMocks();
   });
 
   describe('findAll', () => {
-    it('delega para service.findAll', async () => {
-      (service.findAll as jest.Mock).mockResolvedValue([]);
+    it('delega para aparelhosService.findAll', async () => {
+      (aparelhosService.findAll as jest.Mock).mockResolvedValue([]);
 
       await controller.findAll();
 
-      expect(service.findAll).toHaveBeenCalled();
+      expect(aparelhosService.findAll).toHaveBeenCalled();
     });
   });
 
   describe('findOne', () => {
-    it('converte id para número e chama service', async () => {
+    it('converte id para número e chama aparelhosService', async () => {
       const aparelho = { id: 5, identificador: '123' };
-      (service.findOne as jest.Mock).mockResolvedValue(aparelho);
+      (aparelhosService.findOne as jest.Mock).mockResolvedValue(aparelho);
 
       const result = await controller.findOne('5');
 
-      expect(service.findOne).toHaveBeenCalledWith(5);
+      expect(aparelhosService.findOne).toHaveBeenCalledWith(5);
       expect(result).toEqual(aparelho);
     });
   });
 
   describe('getResumo', () => {
-    it('delega para service.getResumo', async () => {
+    it('delega para aparelhosService.getResumo', async () => {
       const resumo = { total: 10, porStatus: {}, porTipo: {} };
-      (service.getResumo as jest.Mock).mockResolvedValue(resumo);
+      (aparelhosService.getResumo as jest.Mock).mockResolvedValue(resumo);
 
       const result = await controller.getResumo();
 
-      expect(service.getResumo).toHaveBeenCalled();
+      expect(aparelhosService.getResumo).toHaveBeenCalled();
       expect(result).toEqual(resumo);
     });
   });
 
   describe('createLote', () => {
-    it('chama service.createLote com o DTO', async () => {
-      const dto = { referencia: 'LOT-001', quantidade: 10 };
-      (service.createLote as jest.Mock).mockResolvedValue({ id: 1 });
+    it('chama lotesService.createLote com o DTO', async () => {
+      const dto = { referencia: 'LOT-001', quantidade: 10 } as any;
+      (lotesService.createLote as jest.Mock).mockResolvedValue({ id: 1 });
 
       await controller.createLote(dto);
 
-      expect(service.createLote).toHaveBeenCalledWith(dto);
+      expect(lotesService.createLote).toHaveBeenCalledWith(dto);
     });
   });
 
   describe('createIndividual', () => {
-    it('chama service.createIndividual com o DTO', async () => {
-      const dto = { identificador: 'IMEI123', tipo: 'RASTREADOR' };
-      (service.createIndividual as jest.Mock).mockResolvedValue({ id: 1 });
+    it('chama aparelhosService.createIndividual com o DTO', async () => {
+      const dto = { identificador: 'IMEI123', tipo: 'RASTREADOR' } as any;
+      (aparelhosService.createIndividual as jest.Mock).mockResolvedValue({ id: 1 });
 
       await controller.createIndividual(dto);
 
-      expect(service.createIndividual).toHaveBeenCalledWith(dto);
+      expect(aparelhosService.createIndividual).toHaveBeenCalledWith(dto);
     });
   });
 
   describe('updateStatus', () => {
-    it('converte id e chama service.updateStatus com status e observacao', async () => {
-      (service.updateStatus as jest.Mock).mockResolvedValue({});
+    it('converte id e chama aparelhosService.updateStatus com status e observacao', async () => {
+      (aparelhosService.updateStatus as jest.Mock).mockResolvedValue({});
 
       await controller.updateStatus('3', { status: 'CONFIGURADO', observacao: 'ok' });
 
-      expect(service.updateStatus).toHaveBeenCalledWith(3, 'CONFIGURADO', 'ok');
+      expect(aparelhosService.updateStatus).toHaveBeenCalledWith(3, 'CONFIGURADO', 'ok');
     });
   });
 
   describe('pareamentoPreview', () => {
-    it('chama service.pareamentoPreview com os pares', async () => {
+    it('chama pareamentoService.pareamentoPreview com os pares', async () => {
       const pares = [{ imei: '123456789012345', iccid: '123456789012345678' }];
-      (service.pareamentoPreview as jest.Mock).mockResolvedValue({ linhas: [], contadores: {} });
+      (pareamentoService.pareamentoPreview as jest.Mock).mockResolvedValue({ linhas: [], contadores: {} });
 
       await controller.pareamentoPreview({ pares });
 
-      expect(service.pareamentoPreview).toHaveBeenCalledWith(pares);
+      expect(pareamentoService.pareamentoPreview).toHaveBeenCalledWith(pares);
     });
 
     it('passa lista vazia quando pares não informados', async () => {
-      (service.pareamentoPreview as jest.Mock).mockResolvedValue({ linhas: [], contadores: {} });
+      (pareamentoService.pareamentoPreview as jest.Mock).mockResolvedValue({ linhas: [], contadores: {} });
 
       await controller.pareamentoPreview({} as any);
 
-      expect(service.pareamentoPreview).toHaveBeenCalledWith([]);
+      expect(pareamentoService.pareamentoPreview).toHaveBeenCalledWith([]);
+    });
+  });
+
+  describe('pareamento', () => {
+    it('chama pareamentoService.pareamento com o DTO', async () => {
+      const dto = { pares: [{ imei: '123', iccid: '456' }] };
+      (pareamentoService.pareamento as jest.Mock).mockResolvedValue({ criados: 1 });
+
+      await controller.pareamento(dto);
+
+      expect(pareamentoService.pareamento).toHaveBeenCalledWith(dto);
     });
   });
 
   describe('getKits', () => {
-    it('delega para service.getKits', async () => {
-      (service.getKits as jest.Mock).mockResolvedValue([{ id: 1, nome: 'Kit-A' }]);
+    it('delega para kitsService.getKits', async () => {
+      (kitsService.getKits as jest.Mock).mockResolvedValue([{ id: 1, nome: 'Kit-A' }]);
 
       await controller.getKits();
 
-      expect(service.getKits).toHaveBeenCalled();
+      expect(kitsService.getKits).toHaveBeenCalled();
+    });
+  });
+
+  describe('getKitsComDetalhes', () => {
+    it('delega para kitsService.getKitsComDetalhes', async () => {
+      (kitsService.getKitsComDetalhes as jest.Mock).mockResolvedValue([]);
+
+      await controller.getKitsComDetalhes();
+
+      expect(kitsService.getKitsComDetalhes).toHaveBeenCalled();
     });
   });
 
   describe('getKitById', () => {
-    it('converte id para número e chama service', async () => {
-      (service.getKitById as jest.Mock).mockResolvedValue({ id: 2, nome: 'Kit-B' });
+    it('converte id para número e chama kitsService', async () => {
+      (kitsService.getKitById as jest.Mock).mockResolvedValue({ id: 2, nome: 'Kit-B' });
 
       await controller.getKitById('2');
 
-      expect(service.getKitById).toHaveBeenCalledWith(2);
+      expect(kitsService.getKitById).toHaveBeenCalledWith(2);
     });
   });
 
   describe('updateAparelhoKit', () => {
-    it('converte id e chama service.updateAparelhoKit', async () => {
-      (service.updateAparelhoKit as jest.Mock).mockResolvedValue({});
+    it('converte id e chama kitsService.updateAparelhoKit', async () => {
+      (kitsService.updateAparelhoKit as jest.Mock).mockResolvedValue({});
 
       await controller.updateAparelhoKit('7', { kitId: 3 });
 
-      expect(service.updateAparelhoKit).toHaveBeenCalledWith(7, 3);
+      expect(kitsService.updateAparelhoKit).toHaveBeenCalledWith(7, 3);
+    });
+  });
+
+  describe('getAparelhosDisponiveisParaKit', () => {
+    it('delega para kitsService.getAparelhosDisponiveisParaKit', async () => {
+      (kitsService.getAparelhosDisponiveisParaKit as jest.Mock).mockResolvedValue([]);
+
+      await controller.getAparelhosDisponiveisParaKit();
+
+      expect(kitsService.getAparelhosDisponiveisParaKit).toHaveBeenCalled();
+    });
+  });
+
+  describe('createKit', () => {
+    it('chama kitsService.criarOuBuscarKitPorNome com nome trimado', async () => {
+      (kitsService.criarOuBuscarKitPorNome as jest.Mock).mockResolvedValue({ id: 1, nome: 'Kit-X' });
+
+      await controller.createKit({ nome: '  Kit-X  ' });
+
+      expect(kitsService.criarOuBuscarKitPorNome).toHaveBeenCalledWith('Kit-X');
     });
   });
 
   describe('getLotesRastreadores', () => {
-    it('chama service.getLotesParaPareamento com tipo RASTREADOR', async () => {
-      (service.getLotesParaPareamento as jest.Mock).mockResolvedValue([]);
+    it('chama lotesService.getLotesParaPareamento com tipo RASTREADOR', async () => {
+      (lotesService.getLotesParaPareamento as jest.Mock).mockResolvedValue([]);
 
       await controller.getLotesRastreadores();
 
-      expect(service.getLotesParaPareamento).toHaveBeenCalledWith('RASTREADOR');
+      expect(lotesService.getLotesParaPareamento).toHaveBeenCalledWith('RASTREADOR');
     });
   });
 
   describe('getLotesSims', () => {
-    it('chama service.getLotesParaPareamento com tipo SIM', async () => {
-      (service.getLotesParaPareamento as jest.Mock).mockResolvedValue([]);
+    it('chama lotesService.getLotesParaPareamento com tipo SIM', async () => {
+      (lotesService.getLotesParaPareamento as jest.Mock).mockResolvedValue([]);
 
       await controller.getLotesSims();
 
-      expect(service.getLotesParaPareamento).toHaveBeenCalledWith('SIM');
+      expect(lotesService.getLotesParaPareamento).toHaveBeenCalledWith('SIM');
     });
   });
 });

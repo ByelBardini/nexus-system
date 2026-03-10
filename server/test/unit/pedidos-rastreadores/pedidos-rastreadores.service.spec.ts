@@ -58,7 +58,13 @@ describe('PedidosRastreadoresService', () => {
 
       const result = await service.findAll({ page: 1, limit: 15 });
 
-      expect(result).toEqual({ data: pedidos, total: 1, page: 1, totalPages: 1 });
+      expect(result).toEqual({
+        data: pedidos,
+        total: 1,
+        page: 1,
+        limit: 15,
+        totalPages: 1,
+      });
       expect(prisma.pedidoRastreador.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ skip: 0, take: 15, orderBy: expect.any(Object) }),
       );
@@ -354,6 +360,38 @@ describe('PedidosRastreadoresService', () => {
         where: { id: 201 },
         data: { status: StatusAparelho.CONFIGURADO, tecnicoId: null, clienteId: null },
       });
+    });
+  });
+
+  describe('remove', () => {
+    it('lança NotFoundException quando pedido não existe', async () => {
+      prisma.pedidoRastreador.findUnique.mockResolvedValue(null);
+
+      await expect(service.remove(999)).rejects.toThrow(NotFoundException);
+      expect(prisma.pedidoRastreador.delete).not.toHaveBeenCalled();
+    });
+
+    it('deleta pedido existente', async () => {
+      const pedido = {
+        id: 1,
+        codigo: 'PED-0001',
+        tipoDestino: TipoDestinoPedido.TECNICO,
+        tecnicoId: 1,
+        tecnico: { id: 1, nome: 'João' },
+        cliente: null,
+        subcliente: null,
+        marcaEquipamento: null,
+        modeloEquipamento: null,
+        operadora: null,
+        deCliente: null,
+        historico: [],
+      };
+      prisma.pedidoRastreador.findUnique.mockResolvedValue(pedido);
+      prisma.pedidoRastreador.delete.mockResolvedValue(pedido as never);
+
+      await service.remove(1);
+
+      expect(prisma.pedidoRastreador.delete).toHaveBeenCalledWith({ where: { id: 1 } });
     });
   });
 });

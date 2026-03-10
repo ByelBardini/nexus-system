@@ -183,6 +183,49 @@ describe('EquipamentosService', () => {
     });
   });
 
+  describe('updateModelo', () => {
+    it('lança NotFoundException quando modelo não existe', async () => {
+      prisma.modeloEquipamento.findUnique.mockResolvedValue(null);
+
+      await expect(service.updateModelo(999, { nome: 'GV300' })).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('lança ConflictException quando nome conflita com outro modelo da mesma marca', async () => {
+      prisma.modeloEquipamento.findUnique.mockResolvedValue({
+        id: 1,
+        nome: 'GV300',
+        marcaId: 1,
+        marca: { id: 1, nome: 'Queclink' },
+      });
+      prisma.modeloEquipamento.findFirst.mockResolvedValue({ id: 2, nome: 'GV350' });
+
+      await expect(service.updateModelo(1, { nome: 'GV350' })).rejects.toThrow(ConflictException);
+    });
+
+    it('atualiza modelo quando não há conflito', async () => {
+      prisma.modeloEquipamento.findUnique.mockResolvedValue({
+        id: 1,
+        nome: 'GV300',
+        marcaId: 1,
+        marca: { id: 1, nome: 'Queclink' },
+      });
+      prisma.modeloEquipamento.findFirst.mockResolvedValue(null);
+      const updated = { id: 1, nome: 'GV300W', marcaId: 1, marca: { id: 1, nome: 'Queclink' } };
+      prisma.modeloEquipamento.update.mockResolvedValue(updated);
+
+      const result = await service.updateModelo(1, { nome: 'GV300W' });
+
+      expect(result).toEqual(updated);
+      expect(prisma.modeloEquipamento.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { nome: 'GV300W' },
+        include: { marca: true },
+      });
+    });
+  });
+
   describe('deleteModelo', () => {
     it('lança NotFoundException quando modelo não existe', async () => {
       prisma.modeloEquipamento.findUnique.mockResolvedValue(null);

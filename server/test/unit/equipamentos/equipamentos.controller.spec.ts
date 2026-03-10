@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { PermissionsGuard } from 'src/auth/guards/permissions.guard';
 import { EquipamentosController } from 'src/equipamentos/equipamentos.controller';
 import { EquipamentosService } from 'src/equipamentos/equipamentos.service';
 
@@ -33,7 +34,10 @@ describe('EquipamentosController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [EquipamentosController],
       providers: [{ provide: EquipamentosService, useValue: serviceMock }],
-    }).compile();
+    })
+      .overrideGuard(PermissionsGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<EquipamentosController>(EquipamentosController);
     service = module.get<EquipamentosService>(EquipamentosService);

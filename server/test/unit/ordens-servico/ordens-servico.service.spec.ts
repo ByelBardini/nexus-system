@@ -84,7 +84,7 @@ describe('OrdensServicoService', () => {
 
       const result = await service.findAll({});
 
-      expect(result).toEqual({ items, total: 1, page: 1, limit: 15, totalPages: 1 });
+      expect(result).toEqual({ data: items, total: 1, page: 1, limit: 15, totalPages: 1 });
       expect(prisma.ordemServico.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ skip: 0, take: 15 }),
       );
