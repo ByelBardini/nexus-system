@@ -15,6 +15,14 @@ import { UpdatePlanoSimcardDto } from './dto/update-plano-simcard.dto';
 export class EquipamentosService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private async assertUnique<T>(
+    check: () => Promise<T | null>,
+    message: string,
+  ): Promise<void> {
+    const existing = await check();
+    if (existing) throw new ConflictException(message);
+  }
+
   // ============= MARCAS =============
 
   async findAllMarcas() {
@@ -36,11 +44,10 @@ export class EquipamentosService {
   }
 
   async createMarca(dto: CreateMarcaDto) {
-    const existing = await this.prisma.marcaEquipamento.findUnique({
-      where: { nome: dto.nome },
-    });
-    if (existing) throw new ConflictException('Marca já existe');
-
+    await this.assertUnique(
+      () => this.prisma.marcaEquipamento.findUnique({ where: { nome: dto.nome } }),
+      'Marca já existe',
+    );
     return this.prisma.marcaEquipamento.create({
       data: { nome: dto.nome },
     });
@@ -48,14 +55,15 @@ export class EquipamentosService {
 
   async updateMarca(id: number, dto: UpdateMarcaDto) {
     await this.findOneMarca(id);
-
     if (dto.nome) {
-      const existing = await this.prisma.marcaEquipamento.findFirst({
-        where: { nome: dto.nome, id: { not: id } },
-      });
-      if (existing) throw new ConflictException('Marca já existe');
+      await this.assertUnique(
+        () =>
+          this.prisma.marcaEquipamento.findFirst({
+            where: { nome: dto.nome!, id: { not: id } },
+          }),
+        'Marca já existe',
+      );
     }
-
     return this.prisma.marcaEquipamento.update({
       where: { id },
       data: dto,
@@ -91,12 +99,13 @@ export class EquipamentosService {
       where: { id: dto.marcaId },
     });
     if (!marca) throw new NotFoundException('Marca não encontrada');
-
-    const existing = await this.prisma.modeloEquipamento.findFirst({
-      where: { marcaId: dto.marcaId, nome: dto.nome },
-    });
-    if (existing) throw new ConflictException('Modelo já existe para esta marca');
-
+    await this.assertUnique(
+      () =>
+        this.prisma.modeloEquipamento.findFirst({
+          where: { marcaId: dto.marcaId, nome: dto.nome },
+        }),
+      'Modelo já existe para esta marca',
+    );
     return this.prisma.modeloEquipamento.create({
       data: { nome: dto.nome, marcaId: dto.marcaId },
       include: { marca: true },
@@ -105,14 +114,15 @@ export class EquipamentosService {
 
   async updateModelo(id: number, dto: UpdateModeloDto) {
     const modelo = await this.findOneModelo(id);
-
     if (dto.nome) {
-      const existing = await this.prisma.modeloEquipamento.findFirst({
-        where: { marcaId: modelo.marcaId, nome: dto.nome, id: { not: id } },
-      });
-      if (existing) throw new ConflictException('Modelo já existe para esta marca');
+      await this.assertUnique(
+        () =>
+          this.prisma.modeloEquipamento.findFirst({
+            where: { marcaId: modelo.marcaId, nome: dto.nome!, id: { not: id } },
+          }),
+        'Modelo já existe para esta marca',
+      );
     }
-
     return this.prisma.modeloEquipamento.update({
       where: { id },
       data: dto,
@@ -142,11 +152,10 @@ export class EquipamentosService {
   }
 
   async createOperadora(dto: CreateOperadoraDto) {
-    const existing = await this.prisma.operadora.findUnique({
-      where: { nome: dto.nome },
-    });
-    if (existing) throw new ConflictException('Operadora já existe');
-
+    await this.assertUnique(
+      () => this.prisma.operadora.findUnique({ where: { nome: dto.nome } }),
+      'Operadora já existe',
+    );
     return this.prisma.operadora.create({
       data: { nome: dto.nome },
     });
@@ -154,14 +163,15 @@ export class EquipamentosService {
 
   async updateOperadora(id: number, dto: UpdateOperadoraDto) {
     await this.findOneOperadora(id);
-
     if (dto.nome) {
-      const existing = await this.prisma.operadora.findFirst({
-        where: { nome: dto.nome, id: { not: id } },
-      });
-      if (existing) throw new ConflictException('Operadora já existe');
+      await this.assertUnique(
+        () =>
+          this.prisma.operadora.findFirst({
+            where: { nome: dto.nome!, id: { not: id } },
+          }),
+        'Operadora já existe',
+      );
     }
-
     return this.prisma.operadora.update({
       where: { id },
       data: dto,
@@ -197,12 +207,13 @@ export class EquipamentosService {
       where: { id: dto.operadoraId },
     });
     if (!operadora) throw new NotFoundException('Operadora não encontrada');
-
-    const existing = await this.prisma.marcaSimcard.findFirst({
-      where: { operadoraId: dto.operadoraId, nome: dto.nome },
-    });
-    if (existing) throw new ConflictException('Marca já existe para esta operadora');
-
+    await this.assertUnique(
+      () =>
+        this.prisma.marcaSimcard.findFirst({
+          where: { operadoraId: dto.operadoraId, nome: dto.nome },
+        }),
+      'Marca já existe para esta operadora',
+    );
     return this.prisma.marcaSimcard.create({
       data: {
         nome: dto.nome,
@@ -225,18 +236,19 @@ export class EquipamentosService {
 
     const operadoraIdFinal = dto.operadoraId ?? marca.operadoraId;
     const nomeFinal = dto.nome ?? marca.nome;
-
     if (dto.nome) {
-      const existing = await this.prisma.marcaSimcard.findFirst({
-        where: {
-          operadoraId: operadoraIdFinal,
-          nome: nomeFinal,
-          id: { not: id },
-        },
-      });
-      if (existing) throw new ConflictException('Marca já existe para esta operadora');
+      await this.assertUnique(
+        () =>
+          this.prisma.marcaSimcard.findFirst({
+            where: {
+              operadoraId: operadoraIdFinal,
+              nome: nomeFinal,
+              id: { not: id },
+            },
+          }),
+        'Marca já existe para esta operadora',
+      );
     }
-
     return this.prisma.marcaSimcard.update({
       where: { id },
       data: dto,
@@ -273,14 +285,18 @@ export class EquipamentosService {
       where: { id: dto.marcaSimcardId },
     });
     if (!marca) throw new NotFoundException('Marca de simcard não encontrada');
-
-    const existing = await this.prisma.planoSimcard.findUnique({
-      where: {
-        marcaSimcardId_planoMb: { marcaSimcardId: dto.marcaSimcardId, planoMb: dto.planoMb },
-      },
-    });
-    if (existing) throw new ConflictException('Plano já existe para esta marca');
-
+    await this.assertUnique(
+      () =>
+        this.prisma.planoSimcard.findUnique({
+          where: {
+            marcaSimcardId_planoMb: {
+              marcaSimcardId: dto.marcaSimcardId,
+              planoMb: dto.planoMb,
+            },
+          },
+        }),
+      'Plano já existe para esta marca',
+    );
     const [plano] = await this.prisma.$transaction([
       this.prisma.planoSimcard.create({
         data: {
@@ -299,18 +315,19 @@ export class EquipamentosService {
 
   async updatePlanoSimcard(id: number, dto: UpdatePlanoSimcardDto) {
     const plano = await this.findOnePlanoSimcard(id);
-
     if (dto.planoMb !== undefined) {
       const existing = await this.prisma.planoSimcard.findUnique({
         where: {
-          marcaSimcardId_planoMb: { marcaSimcardId: plano.marcaSimcardId, planoMb: dto.planoMb },
+          marcaSimcardId_planoMb: {
+            marcaSimcardId: plano.marcaSimcardId,
+            planoMb: dto.planoMb,
+          },
         },
       });
       if (existing && existing.id !== id) {
         throw new ConflictException('Plano já existe para esta marca');
       }
     }
-
     return this.prisma.planoSimcard.update({
       where: { id },
       data: dto,

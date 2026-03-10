@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { paginateParams } from '../common/pagination.helper';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
 import { StatusOS } from '@prisma/client';
 import { CreateOrdemServicoDto } from './dto/create-ordem-servico.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
@@ -17,18 +19,39 @@ export class OrdensServicoService {
   private static readonly INFINITY_NOME = 'Infinity';
 
   async getClienteInfinityOuCriar() {
-    let cliente = await this.prisma.cliente.findFirst({
-      where: { nome: OrdensServicoService.INFINITY_NOME },
-    });
-    if (!cliente) {
-      cliente = await this.prisma.cliente.create({
-        data: {
-          nome: OrdensServicoService.INFINITY_NOME,
-          nomeFantasia: OrdensServicoService.INFINITY_NOME,
-        },
-      });
+    const maxRetries = 5;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        return await this.prisma.$transaction(
+          async (tx) => {
+            let cliente = await tx.cliente.findFirst({
+              where: { nome: OrdensServicoService.INFINITY_NOME },
+            });
+            if (!cliente) {
+              cliente = await tx.cliente.create({
+                data: {
+                  nome: OrdensServicoService.INFINITY_NOME,
+                  nomeFantasia: OrdensServicoService.INFINITY_NOME,
+                },
+              });
+            }
+            return cliente.id;
+          },
+          {
+            isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+          },
+        );
+      } catch (e) {
+        const isRetryable =
+          e instanceof Prisma.PrismaClientKnownRequestError &&
+          e.code === 'P2034'; // Transaction conflict / serialization failure
+        if (attempt < maxRetries - 1 && isRetryable) {
+          continue;
+        }
+        throw e;
+      }
     }
-    return cliente.id;
+    throw new Error('getClienteInfinityOuCriar: retries exhausted');
   }
 
   async getResumo() {
@@ -49,9 +72,10 @@ export class OrdensServicoService {
   }
 
   async findAll(params: { page?: number; limit?: number; status?: StatusOS; search?: string }) {
-    const page = Math.max(1, params.page ?? 1);
-    const limit = Math.min(100, Math.max(1, params.limit ?? 15));
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = paginateParams(params, {
+      maxLimit: 100,
+      defaultLimit: 15,
+    });
 
     const where: Record<string, unknown> = {};
     if (params.status) where.status = params.status;
@@ -84,7 +108,7 @@ export class OrdensServicoService {
     ]);
 
     return {
-      items,
+      data: items,
       total,
       page,
       limit,
@@ -106,6 +130,30 @@ export class OrdensServicoService {
     });
     if (!os) throw new NotFoundException('Ordem de serviço não encontrada');
     return os;
+  }
+
+  private static buildOrdemServicoData(
+    dto: CreateOrdemServicoDto,
+    numero: number,
+    subclienteId: number | null | undefined,
+    criadoPorId: number | undefined,
+    snapshot: Record<string, unknown>,
+  ) {
+    return {
+      numero,
+      tipo: dto.tipo,
+      status: dto.status ?? StatusOS.AGENDADO,
+      clienteId: dto.clienteId,
+      subclienteId,
+      veiculoId: dto.veiculoId,
+      tecnicoId: dto.tecnicoId,
+      criadoPorId,
+      observacoes: dto.observacoes,
+      idAparelho: dto.idAparelho?.trim() || null,
+      localInstalacao: dto.localInstalacao?.trim() || null,
+      posChave: dto.posChave || null,
+      ...snapshot,
+    };
   }
 
   private static snapshotFromSubclienteData(data: {
@@ -138,7 +186,26 @@ export class OrdensServicoService {
     };
   }
 
+  private static isUniqueConstraintError(e: unknown): boolean {
+    return e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002';
+  }
+
   async create(dto: CreateOrdemServicoDto, criadoPorId?: number) {
+    const maxRetries = 5;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        return await this.createOnce(dto, criadoPorId);
+      } catch (e) {
+        if (attempt < maxRetries - 1 && OrdensServicoService.isUniqueConstraintError(e)) {
+          continue;
+        }
+        throw e;
+      }
+    }
+    throw new Error('create ordem-servico: retries exhausted');
+  }
+
+  private async createOnce(dto: CreateOrdemServicoDto, criadoPorId?: number) {
     const include = {
       cliente: true,
       subcliente: true,
@@ -169,21 +236,13 @@ export class OrdensServicoService {
         const numero = (max._max.numero ?? 0) + 1;
         const snapshot = OrdensServicoService.snapshotFromSubclienteData(dto.subclienteCreate!);
         return tx.ordemServico.create({
-          data: {
+          data: OrdensServicoService.buildOrdemServicoData(
+            dto,
             numero,
-            tipo: dto.tipo,
-            status: dto.status ?? StatusOS.AGENDADO,
-            clienteId: dto.clienteId,
-            subclienteId: sub.id,
-            veiculoId: dto.veiculoId,
-            tecnicoId: dto.tecnicoId,
+            sub.id,
             criadoPorId,
-            observacoes: dto.observacoes,
-            idAparelho: dto.idAparelho?.trim() || null,
-            localInstalacao: dto.localInstalacao?.trim() || null,
-            posChave: dto.posChave || null,
-            ...snapshot,
-          },
+            snapshot,
+          ),
           include,
         });
       });
@@ -213,72 +272,52 @@ export class OrdensServicoService {
         const numero = (max._max.numero ?? 0) + 1;
         const snapshot = OrdensServicoService.snapshotFromSubclienteData(subclienteUpdate);
         return tx.ordemServico.create({
-          data: {
+          data: OrdensServicoService.buildOrdemServicoData(
+            dto,
             numero,
-            tipo: dto.tipo,
-            status: dto.status ?? StatusOS.AGENDADO,
-            clienteId: dto.clienteId,
-            subclienteId: dto.subclienteId,
-            veiculoId: dto.veiculoId,
-            tecnicoId: dto.tecnicoId,
+            dto.subclienteId!,
             criadoPorId,
-            observacoes: dto.observacoes,
-            idAparelho: dto.idAparelho?.trim() || null,
-            localInstalacao: dto.localInstalacao?.trim() || null,
-            posChave: dto.posChave || null,
-            ...snapshot,
-          },
+            snapshot,
+          ),
           include,
         });
       });
     }
 
     if (dto.subclienteId) {
-      const sub = await this.prisma.subcliente.findUnique({
-        where: { id: dto.subclienteId },
-      });
-      const snapshot = sub ? OrdensServicoService.snapshotFromSubclienteData(sub) : {};
-      const max = await this.prisma.ordemServico.aggregate({ _max: { numero: true } });
-      const numero = (max._max.numero ?? 0) + 1;
-      return this.prisma.ordemServico.create({
-        data: {
-          numero,
-          tipo: dto.tipo,
-          status: dto.status ?? StatusOS.AGENDADO,
-          clienteId: dto.clienteId,
-          subclienteId: dto.subclienteId,
-          veiculoId: dto.veiculoId,
-          tecnicoId: dto.tecnicoId,
-          criadoPorId,
-          observacoes: dto.observacoes,
-          idAparelho: dto.idAparelho?.trim() || null,
-          localInstalacao: dto.localInstalacao?.trim() || null,
-          posChave: dto.posChave || null,
-          ...snapshot,
-        },
-        include,
+      return this.prisma.$transaction(async (tx) => {
+        const sub = await tx.subcliente.findUnique({
+          where: { id: dto.subclienteId! },
+        });
+        const snapshot = sub ? OrdensServicoService.snapshotFromSubclienteData(sub) : {};
+        const max = await tx.ordemServico.aggregate({ _max: { numero: true } });
+        const numero = (max._max.numero ?? 0) + 1;
+        return tx.ordemServico.create({
+          data: OrdensServicoService.buildOrdemServicoData(
+            dto,
+            numero,
+            dto.subclienteId,
+            criadoPorId,
+            snapshot,
+          ),
+          include,
+        });
       });
     }
 
-    const max = await this.prisma.ordemServico.aggregate({ _max: { numero: true } });
-    const numero = (max._max.numero ?? 0) + 1;
-
-    return this.prisma.ordemServico.create({
-      data: {
-        numero,
-        tipo: dto.tipo,
-        status: dto.status ?? StatusOS.AGENDADO,
-        clienteId: dto.clienteId,
-        subclienteId: dto.subclienteId,
-        veiculoId: dto.veiculoId,
-        tecnicoId: dto.tecnicoId,
-        criadoPorId,
-        observacoes: dto.observacoes,
-        idAparelho: dto.idAparelho?.trim() || null,
-        localInstalacao: dto.localInstalacao?.trim() || null,
-        posChave: dto.posChave || null,
-      },
-      include,
+    return this.prisma.$transaction(async (tx) => {
+      const max = await tx.ordemServico.aggregate({ _max: { numero: true } });
+      const numero = (max._max.numero ?? 0) + 1;
+      return tx.ordemServico.create({
+        data: OrdensServicoService.buildOrdemServicoData(
+          dto,
+          numero,
+          dto.subclienteId ?? null,
+          criadoPorId,
+          {},
+        ),
+        include,
+      });
     });
   }
 

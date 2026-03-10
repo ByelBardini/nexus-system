@@ -3,12 +3,13 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreatePedidoRastreadorDto } from './dto/create-pedido-rastreador.dto';
 import { UpdateStatusPedidoDto } from './dto/update-status-pedido.dto';
 import {
+  Prisma,
   StatusPedidoRastreador,
   StatusAparelho,
   TipoDestinoPedido,
   UrgenciaPedido,
-  Prisma,
 } from '@prisma/client';
+import { paginateParams } from '../common/pagination.helper';
 
 const includeBase = {
   tecnico: true,
@@ -31,9 +32,10 @@ export class PedidosRastreadoresService {
     status?: StatusPedidoRastreador;
     search?: string;
   }) {
-    const page = Math.max(1, params.page ?? 1);
-    const limit = Math.min(500, Math.max(1, params.limit ?? 500));
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = paginateParams(params, {
+      maxLimit: 500,
+      defaultLimit: 500,
+    });
 
     const where: Record<string, unknown> = {};
     if (params.status) where.status = params.status;
@@ -71,6 +73,7 @@ export class PedidosRastreadoresService {
       data,
       total,
       page,
+      limit,
       totalPages: Math.ceil(total / limit),
     };
   }
@@ -89,7 +92,43 @@ export class PedidosRastreadoresService {
     return pedido;
   }
 
+  private extrairKitIds(val: unknown): number[] {
+    if (val == null) return [];
+    let arr: unknown;
+    if (typeof val === 'string') {
+      try {
+        arr = JSON.parse(val) as unknown;
+      } catch {
+        return [];
+      }
+    } else {
+      arr = val;
+    }
+    return Array.isArray(arr)
+      ? arr.filter((x): x is number => typeof x === 'number')
+      : [];
+  }
+
+  private static isUniqueConstraintError(e: unknown): boolean {
+    return e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002';
+  }
+
   async create(dto: CreatePedidoRastreadorDto, criadoPorId?: number) {
+    const maxRetries = 5;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        return await this.createOnce(dto, criadoPorId);
+      } catch (e) {
+        if (attempt < maxRetries - 1 && PedidosRastreadoresService.isUniqueConstraintError(e)) {
+          continue;
+        }
+        throw e;
+      }
+    }
+    throw new Error('create pedido-rastreador: retries exhausted');
+  }
+
+  private async createOnce(dto: CreatePedidoRastreadorDto, criadoPorId?: number) {
     const ultimo = await this.prisma.pedidoRastreador.findFirst({
       orderBy: { id: 'desc' },
       select: { codigo: true },
@@ -157,30 +196,13 @@ export class PedidosRastreadoresService {
             ? StatusAparelho.CONFIGURADO
             : null;
 
-    const extrairKitIds = (val: unknown): number[] => {
-      if (val == null) return [];
-      let arr: unknown;
-      if (typeof val === 'string') {
-        try {
-          arr = JSON.parse(val) as unknown;
-        } catch {
-          return [];
-        }
-      } else {
-        arr = val;
-      }
-      return Array.isArray(arr)
-        ? arr.filter((x): x is number => typeof x === 'number')
-        : [];
-    };
-
     let kitIds: number[] =
       dto.kitIds && dto.kitIds.length > 0
         ? dto.kitIds.map((id) => Number(id))
         : [];
 
     if (kitIds.length === 0 && novoStatusAparelho !== null) {
-      kitIds = extrairKitIds(pedido.kitIds);
+      kitIds = this.extrairKitIds(pedido.kitIds);
     }
 
     // Salva kitIds para CONFIGURADO, DESPACHADO e ENTREGUE (permite filtrar kits em uso no pareamento)
@@ -205,7 +227,7 @@ export class PedidosRastreadoresService {
       StatusPedidoRastreador.ENTREGUE,
     ];
 
-    const kitIdsAntigos = extrairKitIds(pedido.kitIds);
+    const kitIdsAntigos = this.extrairKitIds(pedido.kitIds);
 
     await this.prisma.$transaction(async (tx) => {
       await tx.pedidoRastreadorHistorico.create({
@@ -248,7 +270,7 @@ export class PedidosRastreadoresService {
           select: { kitIds: true },
         });
         const kitIdsAindaEmUso = new Set(
-          outrosPedidos.flatMap((p) => extrairKitIds(p.kitIds)),
+          outrosPedidos.flatMap((p) => this.extrairKitIds(p.kitIds)),
         );
         for (const kitId of kitIdsAntigos) {
           if (!kitIdsAindaEmUso.has(kitId)) {

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadGatewayException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { consultarPlaca } from 'api-placa-fipe';
 
@@ -21,26 +21,29 @@ export class VeiculosService {
     if (raw.length < 7) return null;
     const anoNum = typeof dados.ano === 'string' ? parseInt(dados.ano, 10) : dados.ano;
     const ano = Number.isNaN(anoNum) ? 0 : anoNum;
-    const existing = await this.prisma.veiculo.findUnique({
+    return this.prisma.veiculo.upsert({
       where: { placa: raw },
-    });
-    if (existing) return existing;
-    return this.prisma.veiculo.create({
-      data: {
+      create: {
         placa: raw,
         marca: dados.marca.trim(),
         modelo: dados.modelo.trim(),
         ano,
         cor: dados.cor.trim(),
       },
+      update: {},
     });
   }
 
   async consultaPlaca(placa: string) {
-    const raw = placa.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 7)
-    if (raw.length < 7) return null
-    const resultado = await consultarPlaca(raw)
-    if (!resultado) return null
+    const raw = normalizarPlaca(placa);
+    if (raw.length < 7) return null;
+    let resultado;
+    try {
+      resultado = await consultarPlaca(raw);
+    } catch {
+      throw new BadGatewayException('Erro ao consultar API de placas. Tente novamente.');
+    }
+    if (!resultado) return null;
     return {
       marca: resultado.marca ?? '',
       modelo: resultado.modelo ?? '',

@@ -1,5 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { paginateParams } from '../common/pagination.helper';
 import * as bcrypt from 'bcrypt';
+import { SetorUsuario } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -7,6 +9,11 @@ import { UpdateUserDto } from './dto/update-user.dto';
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private sanitizeUser<T extends { senhaHash: string }>(user: T): Omit<T, 'senhaHash'> {
+    const { senhaHash: _, ...rest } = user;
+    return rest as Omit<T, 'senhaHash'>;
+  }
 
   async findAll() {
     const users = await this.prisma.usuario.findMany({
@@ -24,7 +31,7 @@ export class UsersService {
         },
       },
     });
-    return users.map(({ senhaHash: _, ...u }) => u);
+    return users.map((u) => this.sanitizeUser(u));
   }
 
   async findAllPaginated(params: {
@@ -33,8 +40,11 @@ export class UsersService {
     page?: number;
     limit?: number;
   }) {
-    const { search, ativo, page = 1, limit = 15 } = params;
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = paginateParams(params, {
+      maxLimit: 100,
+      defaultLimit: 15,
+    });
+    const { search, ativo } = params;
 
     const where: {
       nome?: { contains: string; mode: 'insensitive' };
@@ -77,9 +87,10 @@ export class UsersService {
     ]);
 
     return {
-      data: users.map(({ senhaHash: _, ...u }) => u),
+      data: users.map((u) => this.sanitizeUser(u)),
       total,
       page,
+      limit,
       totalPages: Math.ceil(total / limit),
     };
   }
@@ -90,8 +101,7 @@ export class UsersService {
       include: { usuarioCargos: { include: { cargo: true } } },
     });
     if (!user) throw new NotFoundException('Usuário não encontrado');
-    const { senhaHash: _, ...rest } = user;
-    return rest;
+    return this.sanitizeUser(user);
   }
 
   async create(dto: CreateUserDto) {
@@ -104,11 +114,10 @@ export class UsersService {
         email: dto.email,
         senhaHash,
         ativo: dto.ativo ?? true,
-        setor: dto.setor as any,
+        setor: dto.setor as SetorUsuario | undefined,
       },
     });
-    const { senhaHash: _, ...rest } = user;
-    return rest;
+    return this.sanitizeUser(user);
   }
 
   async update(id: number, dto: UpdateUserDto) {
@@ -119,17 +128,16 @@ export class UsersService {
       });
       if (exists) throw new ConflictException('Email já cadastrado');
     }
-    const data: { nome?: string; email?: string; ativo?: boolean; setor?: any } = {};
+    const data: { nome?: string; email?: string; ativo?: boolean; setor?: SetorUsuario } = {};
     if (dto.nome !== undefined) data.nome = dto.nome;
     if (dto.email !== undefined) data.email = dto.email;
     if (dto.ativo !== undefined) data.ativo = dto.ativo;
-    if (dto.setor !== undefined) data.setor = dto.setor;
+    if (dto.setor !== undefined) data.setor = dto.setor as SetorUsuario;
     const user = await this.prisma.usuario.update({
       where: { id },
       data,
     });
-    const { senhaHash: _, ...rest } = user;
-    return rest;
+    return this.sanitizeUser(user);
   }
 
   async resetPassword(id: number) {
@@ -163,7 +171,7 @@ export class UsersService {
   }
 
   async findById(id: number) {
-    return this.prisma.usuario.findUnique({
+    const user = await this.prisma.usuario.findUnique({
       where: { id },
       include: {
         usuarioCargos: {
@@ -171,6 +179,7 @@ export class UsersService {
         },
       },
     });
+    return user ? this.sanitizeUser(user) : null;
   }
 
   getPermissions(user: NonNullable<Awaited<ReturnType<typeof this.findByEmail>>>) {
