@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
@@ -38,6 +38,25 @@ export class AparelhosController {
   @ApiOperation({ summary: 'Resumo de aparelhos por status' })
   getResumo() {
     return this.aparelhosService.getResumo();
+  }
+
+  @Get('para-testes')
+  @RequirePermissions('CONFIGURACAO.APARELHO.LISTAR')
+  @ApiOperation({ summary: 'Listar rastreadores para testes (filtrados por cliente e técnico)' })
+  findParaTestes(
+    @Query('clienteId') clienteId: string,
+    @Query('tecnicoId') tecnicoId?: string,
+    @Query('ordemServicoId') ordemServicoId?: string,
+  ) {
+    const cId = parseInt(clienteId, 10);
+    if (isNaN(cId)) return [];
+    const tId = tecnicoId ? parseInt(tecnicoId, 10) : undefined;
+    const osId = ordemServicoId ? parseInt(ordemServicoId, 10) : undefined;
+    return this.aparelhosService.findParaTestes(
+      cId,
+      isNaN(tId!) ? undefined : tId,
+      isNaN(osId!) ? undefined : osId,
+    );
   }
 
   @Get('pareamento/lotes-rastreadores')

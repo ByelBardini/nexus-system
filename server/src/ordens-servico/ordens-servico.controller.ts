@@ -5,6 +5,8 @@ import { RequirePermissions } from '../auth/decorators/require-permissions.decor
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { OrdensServicoService } from './ordens-servico.service';
 import { CreateOrdemServicoDto } from './dto/create-ordem-servico.dto';
+import { UpdateIdAparelhoDto } from './dto/update-id-aparelho.dto';
+import { UpdateOrdemServicoDto } from './dto/update-ordem-servico.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { StatusOS } from '@prisma/client';
 
@@ -28,6 +30,13 @@ export class OrdensServicoController {
   async getClienteInfinity() {
     const clienteId = await this.service.getClienteInfinityOuCriar();
     return { clienteId };
+  }
+
+  @Get('testando')
+  @RequirePermissions('AGENDAMENTO.OS.LISTAR')
+  @ApiOperation({ summary: 'Listar OS em testes (status EM_TESTES) com tempo em testes' })
+  findTestando(@Query('search') search?: string) {
+    return this.service.findTestando(search);
   }
 
   @Get()
@@ -80,10 +89,24 @@ export class OrdensServicoController {
     return this.service.create(dto, criadoPorId);
   }
 
+  @Patch(':id')
+  @RequirePermissions('AGENDAMENTO.OS.EDITAR')
+  @ApiOperation({ summary: 'Atualizar ordem de serviço (idEntrada, aparelhoEncontrado)' })
+  update(@Param('id') id: string, @Body() dto: UpdateOrdemServicoDto) {
+    return this.service.update(+id, dto);
+  }
+
   @Patch(':id/status')
   @RequirePermissions('AGENDAMENTO.OS.EDITAR')
   @ApiOperation({ summary: 'Atualizar status da ordem de serviço' })
   updateStatus(@Param('id') id: string, @Body() dto: UpdateStatusDto) {
     return this.service.updateStatus(+id, dto);
+  }
+
+  @Patch(':id/aparelho')
+  @RequirePermissions('AGENDAMENTO.OS.EDITAR')
+  @ApiOperation({ summary: 'Vincular aparelho (IMEI) à ordem de serviço' })
+  updateIdAparelho(@Param('id') id: string, @Body() dto: UpdateIdAparelhoDto) {
+    return this.service.updateIdAparelho(+id, dto.idAparelho.trim());
   }
 }

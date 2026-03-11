@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { paginateParams } from '../common/pagination.helper';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
-import { StatusOS } from '@prisma/client';
+import { StatusOS, StatusAparelho } from '@prisma/client';
 import { CreateOrdemServicoDto } from './dto/create-ordem-servico.dto';
+import { UpdateOrdemServicoDto } from './dto/update-ordem-servico.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { HtmlOrdemServicoGenerator } from './html-ordem-servico.generator';
 import { PdfOrdemServicoGenerator } from './pdf-ordem-servico.generator';
@@ -17,6 +18,15 @@ export class OrdensServicoService {
   ) {}
 
   private static readonly INFINITY_NOME = 'Infinity';
+
+  private static readonly TRANSICOES_VALIDAS: Partial<Record<StatusOS, StatusOS[]>> = {
+    AGENDADO: [StatusOS.EM_TESTES, StatusOS.CANCELADO],
+    EM_TESTES: [StatusOS.TESTES_REALIZADOS, StatusOS.AGENDADO, StatusOS.CANCELADO],
+    TESTES_REALIZADOS: [StatusOS.AGUARDANDO_CADASTRO, StatusOS.AGENDADO, StatusOS.CANCELADO],
+    AGUARDANDO_CADASTRO: [StatusOS.FINALIZADO, StatusOS.AGENDADO, StatusOS.CANCELADO],
+    FINALIZADO: [],
+    CANCELADO: [StatusOS.AGENDADO],
+  };
 
   async getClienteInfinityOuCriar() {
     const maxRetries = 5;
@@ -52,6 +62,54 @@ export class OrdensServicoService {
       }
     }
     throw new Error('getClienteInfinityOuCriar: retries exhausted');
+  }
+
+  async findTestando(search?: string) {
+    const where: Prisma.OrdemServicoWhereInput = { status: StatusOS.EM_TESTES };
+    if (search?.trim()) {
+      const s = search.trim();
+      const isNum = !isNaN(Number(s));
+      where.OR = [
+        ...(isNum ? [{ numero: Number(s) }] : []),
+        { cliente: { nome: { contains: s } } },
+        { subcliente: { nome: { contains: s } } },
+        { subclienteSnapshotNome: { contains: s } },
+        { veiculo: { placa: { contains: s } } },
+        { tecnico: { nome: { contains: s } } },
+        { idAparelho: { contains: s } },
+      ];
+    }
+
+    const items = await this.prisma.ordemServico.findMany({
+      where,
+      orderBy: { criadoEm: 'desc' },
+      include: {
+        cliente: { select: { id: true, nome: true } },
+        subcliente: { select: { id: true, nome: true } },
+        veiculo: { select: { id: true, placa: true, marca: true, modelo: true } },
+        tecnico: { select: { id: true, nome: true } },
+        historico: {
+          where: { statusNovo: StatusOS.EM_TESTES },
+          orderBy: { criadoEm: 'desc' },
+          take: 1,
+        },
+      },
+    });
+
+    const now = new Date();
+    return items.map((os) => {
+      const entradaEmTestes = os.historico[0]?.criadoEm ?? os.atualizadoEm;
+      const tempoEmTestesMin = Math.floor((now.getTime() - new Date(entradaEmTestes).getTime()) / 60000);
+      const { historico, ...rest } = os;
+      const result = { ...rest, tempoEmTestesMin };
+      // Retiradas: zerar dados do rastreador/veículo vinculado ao exibir em testes
+      if (os.tipo === 'RETIRADA') {
+        result.veiculo = null;
+        result.subcliente = null;
+        result.subclienteSnapshotNome = null;
+      }
+      return result;
+    });
   }
 
   async getResumo() {
@@ -326,21 +384,105 @@ export class OrdensServicoService {
     const statusAnterior = os.status;
     if (statusAnterior === dto.status) return this.findOne(id);
 
-    await this.prisma.$transaction([
-      this.prisma.oSHistorico.create({
+    const permitidos = OrdensServicoService.TRANSICOES_VALIDAS[statusAnterior];
+    const transicaoPermitida =
+      permitidos?.includes(dto.status) ||
+      (os.tipo === 'RETIRADA' &&
+        statusAnterior === StatusOS.AGENDADO &&
+        dto.status === StatusOS.AGUARDANDO_CADASTRO);
+
+    if (!transicaoPermitida) {
+      throw new BadRequestException(
+        `Transição de status inválida: ${statusAnterior} → ${dto.status}`,
+      );
+    }
+
+    const updateData: {
+      status: StatusOS
+      localInstalacao?: string | null
+      posChave?: string | null
+      observacoes?: string | null
+    } = { status: dto.status };
+    if (dto.localInstalacao !== undefined) {
+      updateData.localInstalacao = dto.localInstalacao?.trim() || null;
+    }
+    if (dto.posChave !== undefined) {
+      updateData.posChave = dto.posChave;
+    }
+    if (dto.observacao?.trim()) {
+      const prefixo = 'Observações do Teste:'
+      const novaParte = `${prefixo} ${dto.observacao.trim()}`
+      updateData.observacoes = [os.observacoes, novaParte].filter(Boolean).join('\n')
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.oSHistorico.create({
         data: {
           ordemServicoId: id,
           statusAnterior,
           statusNovo: dto.status,
           observacao: dto.observacao,
         },
-      }),
-      this.prisma.ordemServico.update({
+      });
+      await tx.ordemServico.update({
         where: { id },
-        data: { status: dto.status },
-      }),
-    ]);
+        data: updateData,
+      });
+      if (
+        dto.status === StatusOS.TESTES_REALIZADOS &&
+        os.idAparelho?.trim()
+      ) {
+        const aparelho = await tx.aparelho.findFirst({
+          where: { identificador: os.idAparelho.trim(), tipo: 'RASTREADOR' },
+        });
+        if (aparelho) {
+          await tx.aparelhoHistorico.create({
+            data: {
+              aparelhoId: aparelho.id,
+              statusAnterior: aparelho.status,
+              statusNovo: StatusAparelho.INSTALADO,
+              observacao: [
+                `Instalado via OS #${os.numero}`,
+                os.veiculo ? `Placa: ${os.veiculo.placa}` : null,
+              ]
+                .filter(Boolean)
+                .join(' | '),
+            },
+          });
+          await tx.aparelho.update({
+            where: { id: aparelho.id },
+            data: { status: StatusAparelho.INSTALADO },
+          });
+        }
+      }
+    });
 
+    return this.findOne(id);
+  }
+
+  async update(id: number, dto: UpdateOrdemServicoDto) {
+    await this.findOne(id);
+    const data: { idEntrada?: string | null; aparelhoEncontrado?: boolean | null } = {};
+    if (dto.idEntrada !== undefined) {
+      data.idEntrada = dto.idEntrada?.trim() || null;
+    }
+    if (dto.aparelhoEncontrado !== undefined) {
+      data.aparelhoEncontrado = dto.aparelhoEncontrado;
+    }
+    if (Object.keys(data).length === 0) return this.findOne(id);
+    await this.prisma.ordemServico.update({
+      where: { id },
+      data,
+    });
+    return this.findOne(id);
+  }
+
+  async updateIdAparelho(id: number, idAparelho: string) {
+    await this.findOne(id);
+    await this.prisma.ordemServico.update({
+      where: { id },
+      data: { idAparelho: idAparelho || null },
+    });
     return this.findOne(id);
   }
 

@@ -1,14 +1,102 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { StatusAparelho } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { StatusAparelho, StatusOS } from '@prisma/client';
 import { CreateIndividualDto } from './dto/create-individual.dto';
 
 @Injectable()
 export class AparelhosService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private readonly selectParaTestes = {
+    id: true,
+    identificador: true,
+    marca: true,
+    modelo: true,
+    status: true,
+    operadora: true,
+    criadoEm: true,
+    cliente: { select: { id: true, nome: true } },
+    tecnico: { select: { id: true, nome: true } },
+    marcaSimcard: { select: { id: true, nome: true, operadora: { select: { id: true, nome: true } } } },
+    planoSimcard: { select: { id: true, planoMb: true } },
+    simVinculado: {
+      select: {
+        id: true,
+        identificador: true,
+        operadora: true,
+        marcaSimcard: { select: { nome: true, operadora: { select: { nome: true } } } },
+        planoSimcard: { select: { planoMb: true } },
+      },
+    },
+  } as const;
+
+  async findParaTestes(
+    clienteId: number,
+    tecnicoId?: number | null,
+    ordemServicoId?: number | null,
+  ) {
+    const whereEmUso: Prisma.OrdemServicoWhereInput = {
+      status: StatusOS.EM_TESTES,
+      idAparelho: { not: null },
+    }
+    if (ordemServicoId != null) {
+      whereEmUso.id = { not: ordemServicoId }
+    }
+    const idsEmUso = await this.prisma.ordemServico.findMany({
+      where: whereEmUso,
+      select: { idAparelho: true },
+    })
+    const identificadoresEmUso = idsEmUso
+      .map((o) => o.idAparelho)
+      .filter((x): x is string => !!x)
+
+    let idAparelhoVinculado: string | null = null
+    if (ordemServicoId != null) {
+      const os = await this.prisma.ordemServico.findUnique({
+        where: { id: ordemServicoId },
+        select: { idAparelho: true },
+      })
+      idAparelhoVinculado = os?.idAparelho?.trim() || null
+    }
+
+    const where = {
+      tipo: 'RASTREADOR' as const,
+      status: 'COM_TECNICO' as StatusAparelho,
+      OR: [
+        { proprietario: 'INFINITY' as const },
+        { proprietario: 'CLIENTE' as const, clienteId },
+      ],
+      tecnicoId: tecnicoId != null ? tecnicoId : null,
+      ...(identificadoresEmUso.length > 0
+        ? { identificador: { notIn: identificadoresEmUso } }
+        : {}),
+    };
+    const lista = await this.prisma.aparelho.findMany({
+      where,
+      orderBy: { criadoEm: 'desc' },
+      select: this.selectParaTestes,
+    })
+
+    if (!idAparelhoVinculado) return lista
+    const jaIncluido = lista.some(
+      (a) => (a.identificador ?? '').trim().toLowerCase() === idAparelhoVinculado!.trim().toLowerCase(),
+    )
+    if (jaIncluido) return lista
+
+    const vinculado = await this.prisma.aparelho.findFirst({
+      where: {
+        tipo: 'RASTREADOR',
+        identificador: idAparelhoVinculado,
+      },
+      select: this.selectParaTestes,
+    })
+    if (!vinculado) return lista
+    return [vinculado, ...lista]
+  }
+
   async findAll() {
-    return this.prisma.aparelho.findMany({
+    const aparelhos = await this.prisma.aparelho.findMany({
       orderBy: { criadoEm: 'desc' },
       include: {
         cliente: { select: { id: true, nome: true } },
@@ -31,6 +119,44 @@ export class AparelhosService {
           take: 5,
         },
       },
+    });
+
+    const identificadores = aparelhos
+      .filter((a) => a.tipo === 'RASTREADOR' && a.identificador?.trim())
+      .map((a) => a.identificador!.trim());
+
+    const osVinculadas = await this.prisma.ordemServico.findMany({
+      where: { idAparelho: { in: identificadores } },
+      orderBy: { atualizadoEm: 'desc' },
+      select: {
+        numero: true,
+        idAparelho: true,
+        subclienteSnapshotNome: true,
+        subcliente: { select: { nome: true } },
+        veiculo: { select: { placa: true } },
+      },
+    });
+
+    const osPorIdentificador = new Map<string, (typeof osVinculadas)[0]>();
+    for (const os of osVinculadas) {
+      const key = (os.idAparelho ?? '').trim();
+      if (key && !osPorIdentificador.has(key)) {
+        osPorIdentificador.set(key, os);
+      }
+    }
+
+    return aparelhos.map((a) => {
+      const key = (a.identificador ?? '').trim();
+      const os = key ? osPorIdentificador.get(key) : undefined;
+      const ordemServicoVinculada = os
+        ? {
+            numero: os.numero,
+            subclienteNome:
+              os.subclienteSnapshotNome ?? os.subcliente?.nome ?? null,
+            veiculoPlaca: os.veiculo?.placa ?? null,
+          }
+        : undefined;
+      return { ...a, ordemServicoVinculada };
     });
   }
 
