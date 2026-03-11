@@ -236,6 +236,16 @@ export function formatarFromNow(dataOuIso: string): string {
 }
 
 /**
+ * Formata minutos em texto legível: "42 min", "1h 30min", etc.
+ */
+export function formatarTempoMinutos(minutos: number): string {
+  if (minutos < 60) return `${minutos} min`
+  const h = Math.floor(minutos / 60)
+  const m = minutos % 60
+  return m === 0 ? `${h}h` : `${h}h ${m}min`
+}
+
+/**
  * Calcula duração entre duas datas: "4 dias", "1 dia e 2h", etc.
  */
 export function formatarDuracao(dataInicio: string, dataFim: string): string {

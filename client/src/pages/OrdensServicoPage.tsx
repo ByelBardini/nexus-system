@@ -1,9 +1,13 @@
 import { Fragment, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Loader2, Download } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Loader2, Download, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  Dialog,
+  DialogContent,
+} from '@/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,10 +24,10 @@ import {
 import { api, apiDownloadBlob } from '@/lib/api'
 import {
   formatarCEP,
-  formatarCPFCNPJ,
   formatarDataHora,
   formatarDataHoraCurta,
   formatarTelefone,
+  formatarTempoMinutos,
   TIPO_OS_LABELS,
 } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -129,6 +133,8 @@ interface OrdemServicoDetalhe {
   } | null
   veiculo?: { id: number; placa: string; marca?: string; modelo?: string; ano?: number; cor?: string } | null
   criadoPor?: { id: number; nome: string } | null
+  atualizadoEm?: string
+  historico?: { statusAnterior: string; statusNovo: string; criadoEm: string; observacao?: string | null }[]
 }
 
 /** Usa snapshot do subcliente quando disponível (preserva dados no momento da criação). */
@@ -166,23 +172,6 @@ function formatEnderecoSubcliente(sub: SubclienteParaExibicao | null | undefined
   return partes.length > 0 ? partes.join(', ') : sub.nome || '-'
 }
 
-function formatEnderecoTecnico(tec: OrdemServicoDetalhe['tecnico']): string {
-  if (!tec) return '-'
-  const partes: string[] = []
-  if (tec.logradouro) {
-    let rua = tec.logradouro
-    if (tec.numero) rua += `, ${tec.numero}`
-    if (tec.complemento) rua += ` - ${tec.complemento}`
-    partes.push(rua)
-  }
-  if (tec.bairro) partes.push(tec.bairro)
-  if (tec.cidadeEndereco || tec.estadoEndereco) {
-    partes.push([tec.cidadeEndereco, tec.estadoEndereco].filter(Boolean).join(' - '))
-  }
-  if (tec.cep) partes.push(`CEP ${tec.cep}`)
-  return partes.length > 0 ? partes.join(', ') : tec.nome || '-'
-}
-
 function formatDadosVeiculo(
   v: OrdemServicoDetalhe['veiculo'] | null | undefined
 ): string {
@@ -194,14 +183,43 @@ function formatDadosVeiculo(
   return partes.length > 0 ? partes.join(' · ') : '-'
 }
 
+function getDadosTeste(os: OrdemServicoDetalhe) {
+  const hist = os.historico ?? []
+  const entradaEmTestes = hist.find((h) => h.statusNovo === 'EM_TESTES')?.criadoEm ?? null
+  const saidaEmTestes = hist.find((h) => h.statusAnterior === 'EM_TESTES')?.criadoEm ?? null
+  const now = new Date()
+  let tempoMin = 0
+  if (entradaEmTestes) {
+    const fim = saidaEmTestes ? new Date(saidaEmTestes) : now
+    tempoMin = Math.floor((fim.getTime() - new Date(entradaEmTestes).getTime()) / 60000)
+  }
+  return { entradaEmTestes, saidaEmTestes, tempoMin }
+}
+
+function getDadosRetirada(os: OrdemServicoDetalhe): { dataRetirada: string | null; aparelhoEncontrado: boolean | null } {
+  const hist = os.historico ?? []
+  const entry = hist.find((h) => h.statusNovo === 'AGUARDANDO_CADASTRO')
+  const obs = entry?.observacao ?? ''
+  let dataRetirada: string | null = null
+  let aparelhoEncontrado: boolean | null = null
+  const dataMatch = obs.match(/Data retirada:\s*([^|]+)/i)
+  if (dataMatch) dataRetirada = dataMatch[1].trim()
+  const encontradoMatch = obs.match(/Aparelho encontrado:\s*(Sim|Não)/i)
+  if (encontradoMatch) aparelhoEncontrado = encontradoMatch[1].toLowerCase() === 'sim'
+  return { dataRetirada, aparelhoEncontrado }
+}
+
 export function OrdensServicoPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { hasPermission } = useAuth()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('TODOS')
   const [expandedOsId, setExpandedOsId] = useState<number | null>(null)
   const [downloadingPdf, setDownloadingPdf] = useState(false)
+  const [confirmIniciarOsId, setConfirmIniciarOsId] = useState<number | null>(null)
+  const [showRetiradaModal, setShowRetiradaModal] = useState<number | null>(null)
   const canCreate = hasPermission('AGENDAMENTO.OS.CRIAR')
 
   const { data: resumo, isLoading: loadingResumo } = useQuery<Resumo>({
@@ -226,6 +244,42 @@ export function OrdensServicoPage() {
     queryFn: () => api(`/ordens-servico/${expandedOsId}`),
     enabled: !!expandedOsId,
   })
+
+  const updateStatusMutation = useMutation({
+    mutationFn: ({
+      id,
+      status,
+      observacao,
+    }: {
+      id: number
+      status: string
+      observacao?: string
+    }) =>
+      api(`/ordens-servico/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status, observacao: observacao || undefined }),
+      }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['ordens-servico'] })
+      toast.success(
+        variables.status === 'AGUARDANDO_CADASTRO' ? 'Retirada registrada' : 'Status atualizado'
+      )
+    },
+    onError: (err: Error) => toast.error(err.message),
+  })
+
+  const handleIniciarTestes = (id: number) => {
+    updateStatusMutation.mutate({ id, status: 'EM_TESTES' })
+  }
+
+  const handleRetiradaConfirmar = (aparelhoEncontrado: boolean) => {
+    const id = showRetiradaModal
+    if (id == null) return
+    setShowRetiradaModal(null)
+    const hoje = new Date().toLocaleDateString('pt-BR')
+    const obs = `Data retirada: ${hoje} | Aparelho encontrado: ${aparelhoEncontrado ? 'Sim' : 'Não'}`
+    updateStatusMutation.mutate({ id, status: 'AGUARDANDO_CADASTRO', observacao: obs })
+  }
 
   const handleAbrirImpressao = async (id: number) => {
     setDownloadingPdf(true)
@@ -580,16 +634,143 @@ export function OrdensServicoPage() {
                                     </div>
                                   </section>
 
-                                  {/* 2. Dados de teste */}
+                                  {/* 2. Dados de teste / Dados da Retirada */}
                                   <section className="bg-white border border-slate-300 shadow-sm overflow-hidden">
                                     <div className="bg-slate-50 border-b border-slate-300 px-3 py-1.5 flex items-center gap-2">
-                                      <MaterialIcon name="science" className="text-slate-400 text-base" />
+                                      <MaterialIcon
+                                        name={
+                                          osDetalhe.tipo === 'RETIRADA' &&
+                                          (osDetalhe.status === 'AGENDADO' || osDetalhe.status === 'AGUARDANDO_CADASTRO')
+                                            ? 'remove_circle'
+                                            : 'science'
+                                        }
+                                        className="text-slate-400 text-base"
+                                      />
                                       <h2 className="text-xs font-bold text-slate-700 font-condensed uppercase">
-                                        Dados de teste
+                                        {osDetalhe.tipo === 'RETIRADA' &&
+                                        (osDetalhe.status === 'AGENDADO' || osDetalhe.status === 'AGUARDANDO_CADASTRO')
+                                          ? 'Dados da Retirada'
+                                          : 'Dados de teste'}
                                       </h2>
                                     </div>
                                     <div className="p-3">
-                                      <span className="text-slate-500 text-xs italic">Em Breve</span>
+                                      {osDetalhe.tipo === 'RETIRADA' && osDetalhe.status === 'AGENDADO' ? (
+                                        <div className="flex flex-col items-center justify-center gap-3 min-h-[120px]">
+                                          <div className="w-full text-left space-y-1.5">
+                                            <div>
+                                              <span className="text-[10px] text-slate-500 uppercase font-medium">ID a retirar</span>
+                                              <p className="text-sm font-semibold text-slate-800">{osDetalhe.idAparelho || '—'}</p>
+                                            </div>
+                                          </div>
+                                          <Button
+                                            size="sm"
+                                            className="bg-erp-blue hover:bg-blue-700 text-white text-xs font-bold uppercase h-9"
+                                            onClick={() => setShowRetiradaModal(osDetalhe.id)}
+                                            disabled={updateStatusMutation.isPending || !hasPermission('AGENDAMENTO.OS.EDITAR')}
+                                          >
+                                            {updateStatusMutation.isPending ? (
+                                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                            ) : (
+                                              <MaterialIcon name="check_circle" className="text-lg mr-2" />
+                                            )}
+                                            Retirada Realizada
+                                          </Button>
+                                        </div>
+                                      ) : osDetalhe.tipo === 'RETIRADA' && osDetalhe.status === 'AGUARDANDO_CADASTRO' ? (
+                                        (() => {
+                                          const { dataRetirada, aparelhoEncontrado } = getDadosRetirada(osDetalhe)
+                                          return (
+                                            <dl className="space-y-3 text-[11px]">
+                                              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                                                <div>
+                                                  <dt className="text-[10px] text-slate-500 uppercase font-medium">Data da retirada</dt>
+                                                  <dd className="font-semibold text-slate-800">{dataRetirada ?? '—'}</dd>
+                                                </div>
+                                                <div>
+                                                  <dt className="text-[10px] text-slate-500 uppercase font-medium">Aparelho encontrado</dt>
+                                                  <dd className="font-semibold text-slate-800">
+                                                    {aparelhoEncontrado === null ? '—' : aparelhoEncontrado ? 'Sim' : 'Não'}
+                                                  </dd>
+                                                </div>
+                                              </div>
+                                            </dl>
+                                          )
+                                        })()
+                                      ) : osDetalhe.status === 'AGENDADO' ? (
+                                        <div className="flex flex-col items-center justify-center gap-2 min-h-[120px]">
+                                          <p className="text-slate-500 text-xs">
+                                            Inicie os testes para esta ordem de serviço.
+                                          </p>
+                                          <Button
+                                            size="sm"
+                                            className="bg-erp-blue hover:bg-blue-700 text-white text-xs font-bold uppercase h-9"
+                                            onClick={() => setConfirmIniciarOsId(osDetalhe.id)}
+                                            disabled={updateStatusMutation.isPending || !hasPermission('AGENDAMENTO.OS.EDITAR')}
+                                          >
+                                            {updateStatusMutation.isPending ? (
+                                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                            ) : (
+                                              <MaterialIcon name="play_arrow" className="text-lg mr-2" />
+                                            )}
+                                            Iniciar Testes
+                                          </Button>
+                                        </div>
+                                      ) : ['EM_TESTES', 'TESTES_REALIZADOS', 'AGUARDANDO_CADASTRO'].includes(osDetalhe.status) &&
+                                        !(osDetalhe.tipo === 'RETIRADA' && osDetalhe.status === 'AGUARDANDO_CADASTRO') ? (
+                                        (() => {
+                                          const { entradaEmTestes, saidaEmTestes, tempoMin } = getDadosTeste(osDetalhe)
+                                          return (
+                                            <dl className="space-y-3 text-[11px]">
+                                              <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5">
+                                                <div>
+                                                  <dt className="text-[10px] text-slate-500 uppercase font-medium">ID de Entrada</dt>
+                                                  <dd className="font-semibold text-slate-800">{osDetalhe.idAparelho || '—'}</dd>
+                                                </div>
+                                                <div>
+                                                  <dt className="text-[10px] text-slate-500 uppercase font-medium">Local Instalação</dt>
+                                                  <dd className="font-semibold text-slate-800">{osDetalhe.localInstalacao || '—'}</dd>
+                                                </div>
+                                                <div>
+                                                  <dt className="text-[10px] text-slate-500 uppercase font-medium">Pós-chave</dt>
+                                                  <dd className="font-semibold text-slate-800">
+                                                    {osDetalhe.posChave === 'SIM' ? 'Sim' : osDetalhe.posChave === 'NAO' ? 'Não' : '—'}
+                                                  </dd>
+                                                </div>
+                                              </div>
+                                              <div className="grid grid-cols-3 gap-x-4 gap-y-1.5">
+                                                <div>
+                                                  <dt className="text-[10px] text-slate-500 uppercase font-medium">Início testes</dt>
+                                                  <dd className="font-semibold text-slate-800">
+                                                    {entradaEmTestes ? formatarDataHora(entradaEmTestes) : '—'}
+                                                  </dd>
+                                                </div>
+                                                <div>
+                                                  <dt className="text-[10px] text-slate-500 uppercase font-medium">Fim testes</dt>
+                                                  <dd className="font-semibold text-slate-800">
+                                                    {saidaEmTestes ? formatarDataHora(saidaEmTestes) : 'Em andamento'}
+                                                  </dd>
+                                                </div>
+                                                <div>
+                                                  <dt className="text-[10px] text-slate-500 uppercase font-medium">Tempo em testes</dt>
+                                                  <dd className="font-semibold text-slate-800">{formatarTempoMinutos(tempoMin)}</dd>
+                                                </div>
+                                              </div>
+                                              {osDetalhe.observacoes && (
+                                                <div>
+                                                  <dt className="text-[10px] text-slate-500 uppercase font-medium">Observações</dt>
+                                                  <dd className="font-medium text-slate-700 whitespace-pre-wrap leading-tight text-[10px] mt-0.5">
+                                                    {osDetalhe.observacoes}
+                                                  </dd>
+                                                </div>
+                                              )}
+                                            </dl>
+                                          )
+                                        })()
+                                      ) : (
+                                        <span className="text-slate-500 text-xs italic">
+                                          Testes não iniciados
+                                        </span>
+                                      )}
                                     </div>
                                   </section>
 
@@ -659,6 +840,91 @@ export function OrdensServicoPage() {
           </div>
         </div>
       </div>
+
+      <Dialog open={confirmIniciarOsId != null} onOpenChange={(open) => !open && setConfirmIniciarOsId(null)}>
+        <DialogContent hideClose ariaTitle="Confirmar Iniciar Testes" className="max-w-md p-0 gap-0 overflow-hidden rounded-sm">
+          <header className="bg-white border-b border-slate-200 p-6 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MaterialIcon name="science" className="text-erp-blue" />
+              <h2 className="text-lg font-bold text-slate-800">Iniciar Testes</h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => setConfirmIniciarOsId(null)}
+              className="text-slate-400 hover:text-slate-600"
+              aria-label="Fechar"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </header>
+          <div className="p-6">
+            <p className="text-sm text-slate-600">
+              Tem certeza que deseja iniciar os testes desta ordem de serviço? O status será alterado para &quot;Em Testes&quot;.
+            </p>
+          </div>
+          <footer className="bg-slate-50 border-t border-slate-200 p-4 flex justify-end gap-3">
+            <Button variant="ghost" onClick={() => setConfirmIniciarOsId(null)} disabled={updateStatusMutation.isPending}>
+              Cancelar
+            </Button>
+            <Button
+              className="bg-erp-blue hover:bg-blue-700"
+              onClick={() => {
+                if (confirmIniciarOsId != null) {
+                  handleIniciarTestes(confirmIniciarOsId)
+                  setConfirmIniciarOsId(null)
+                }
+              }}
+              disabled={updateStatusMutation.isPending}
+            >
+              {updateStatusMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <MaterialIcon name="play_arrow" className="text-lg mr-2" />
+              )}
+              Iniciar Testes
+            </Button>
+          </footer>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showRetiradaModal != null} onOpenChange={(open) => !open && setShowRetiradaModal(null)}>
+        <DialogContent hideClose ariaTitle="Retirada realizada" className="max-w-md p-0 gap-0 overflow-hidden rounded-sm">
+          <header className="bg-white border-b border-slate-200 p-6 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MaterialIcon name="remove_circle" className="text-erp-blue" />
+              <h2 className="text-lg font-bold text-slate-800">Retirada realizada</h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowRetiradaModal(null)}
+              className="text-slate-400 hover:text-slate-600"
+              aria-label="Fechar"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </header>
+          <div className="p-6">
+            <p className="text-sm text-slate-600 mb-4">O aparelho foi encontrado no local?</p>
+            <div className="flex gap-3">
+              <Button
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                onClick={() => handleRetiradaConfirmar(true)}
+                disabled={updateStatusMutation.isPending}
+              >
+                Sim
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 border-red-300 text-red-700 hover:bg-red-50"
+                onClick={() => handleRetiradaConfirmar(false)}
+                disabled={updateStatusMutation.isPending}
+              >
+                Não
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

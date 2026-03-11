@@ -36,6 +36,11 @@ interface Aparelho {
   status: StatusAparelho
   proprietario: 'INFINITY' | 'CLIENTE'
   cliente?: { id: number; nome: string } | null
+  ordemServicoVinculada?: {
+    numero: number
+    subclienteNome: string | null
+    veiculoPlaca: string | null
+  } | null
   simVinculado?: {
     id: number
     identificador: string
@@ -535,17 +540,27 @@ export function EquipamentosPage() {
                               </div>
                               <div>
                                 <label className="block text-[10px] text-slate-500 uppercase font-medium">
-                                  Cliente Final
+                                  Subcliente / Placa
                                 </label>
                                 <span className="text-xs font-bold text-slate-700">
-                                  {equip.cliente?.nome || '-'}
+                                  {equip.ordemServicoVinculada?.subclienteNome ||
+                                  equip.ordemServicoVinculada?.veiculoPlaca
+                                    ? [
+                                        equip.ordemServicoVinculada.subclienteNome,
+                                        equip.ordemServicoVinculada.veiculoPlaca,
+                                      ]
+                                        .filter(Boolean)
+                                        .join(' · ')
+                                    : '-'}
                                 </span>
                               </div>
                               <div>
                                 <label className="block text-[10px] text-slate-500 uppercase font-medium">
-                                  Ordem / Instalação
+                                  Ordem Instalação
                                 </label>
-                                <span className="text-xs font-bold text-slate-700">-</span>
+                                <span className="text-xs font-bold text-slate-700">
+                                  {equip.ordemServicoVinculada?.numero ?? '-'}
+                                </span>
                               </div>
                             </div>
                           </div>

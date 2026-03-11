@@ -38,6 +38,9 @@ const PedidosRastreadoresPage = lazy(() =>
 const PedidosConfigPage = lazy(() =>
   import('@/pages/pedidos/PedidosConfigPage').then((m) => ({ default: m.PedidosConfigPage }))
 )
+const TestesPage = lazy(() =>
+  import('@/pages/testes/TestesPage').then((m) => ({ default: m.TestesPage }))
+)
 
 function PageLoader() {
   return (
@@ -88,6 +91,14 @@ function App() {
           element={
             <Suspense fallback={<PageLoader />}>
               <PedidosConfigPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="testes"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <TestesPage />
             </Suspense>
           }
         />
