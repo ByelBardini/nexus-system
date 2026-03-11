@@ -52,8 +52,9 @@ describe('ClientesService', () => {
     it('lança NotFoundException quando cliente não existe', async () => {
       prisma.cliente.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
-      await expect(service.findOne(999)).rejects.toThrow('Cliente não encontrado');
+      const promise = service.findOne(999);
+      await expect(promise).rejects.toThrow(NotFoundException);
+      await expect(promise).rejects.toThrow('Cliente não encontrado');
     });
 
     it('retorna cliente quando encontrado', async () => {

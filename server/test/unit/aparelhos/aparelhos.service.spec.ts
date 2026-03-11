@@ -22,19 +22,138 @@ describe('AparelhosService', () => {
     jest.clearAllMocks();
   });
 
+  describe('findParaTestes', () => {
+    it('retorna rastreadores COM_TECNICO do cliente especificado', async () => {
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+      const aparelhos = [
+        {
+          id: 1,
+          identificador: '862345678901234',
+          tipo: 'RASTREADOR',
+          status: 'COM_TECNICO',
+          cliente: { id: 1, nome: 'Cliente A' },
+        },
+      ];
+      prisma.aparelho.findMany.mockResolvedValue(aparelhos);
+
+      const result = await service.findParaTestes(1);
+
+      expect(prisma.ordemServico.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            status: 'EM_TESTES',
+            idAparelho: { not: null },
+          }),
+        }),
+      );
+      expect(prisma.aparelho.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            tipo: 'RASTREADOR',
+            status: 'COM_TECNICO',
+            OR: expect.arrayContaining([
+              { proprietario: 'INFINITY' },
+              { proprietario: 'CLIENTE', clienteId: 1 },
+            ]),
+          }),
+        }),
+      );
+      expect(result).toEqual(aparelhos);
+    });
+
+    it('filtra por tecnicoId quando fornecido', async () => {
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+      prisma.aparelho.findMany.mockResolvedValue([]);
+
+      await service.findParaTestes(1, 5);
+
+      expect(prisma.aparelho.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            tecnicoId: 5,
+          }),
+        }),
+      );
+    });
+
+    it('exclui aparelhos em uso em outra OS EM_TESTES da lista disponível', async () => {
+      prisma.ordemServico.findMany.mockResolvedValue([{ idAparelho: 'IMEI-EM-USO' }]);
+      prisma.aparelho.findMany.mockResolvedValue([]);
+
+      await service.findParaTestes(1);
+
+      expect(prisma.aparelho.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            identificador: { notIn: ['IMEI-EM-USO'] },
+          }),
+        }),
+      );
+    });
+
+    it('exclui a própria OS do filtro quando ordemServicoId é informado', async () => {
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+      prisma.aparelho.findMany.mockResolvedValue([]);
+
+      await service.findParaTestes(1, null, 42);
+
+      expect(prisma.ordemServico.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            status: 'EM_TESTES',
+            idAparelho: { not: null },
+            id: { not: 42 },
+          }),
+        }),
+      );
+    });
+
+    it('retorna array vazio quando não há aparelhos elegíveis', async () => {
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+      prisma.aparelho.findMany.mockResolvedValue([]);
+
+      const result = await service.findParaTestes(1);
+
+      expect(result).toEqual([]);
+    });
+  });
+
   describe('findAll', () => {
-    it('retorna lista de aparelhos com includes', async () => {
+    it('retorna lista de aparelhos com includes e ordemServicoVinculada', async () => {
       const aparelhos = [
         { id: 1, identificador: '123456789012345', tipo: 'RASTREADOR', status: 'EM_ESTOQUE' },
       ];
       prisma.aparelho.findMany.mockResolvedValue(aparelhos);
+      prisma.ordemServico.findMany.mockResolvedValue([
+        { numero: 72, idAparelho: '123456789012345', subclienteSnapshotNome: 'Sub A', subcliente: { nome: 'Sub A' }, veiculo: { placa: 'ABC1D23' } },
+      ]);
 
       const result = await service.findAll();
 
-      expect(result).toEqual(aparelhos);
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        id: 1,
+        identificador: '123456789012345',
+        ordemServicoVinculada: { numero: 72, subclienteNome: 'Sub A', veiculoPlaca: 'ABC1D23' },
+      });
       expect(prisma.aparelho.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ orderBy: { criadoEm: 'desc' } }),
       );
+      expect(prisma.ordemServico.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { idAparelho: { in: ['123456789012345'] } },
+        }),
+      );
+    });
+
+    it('retorna aparelhos sem ordemServicoVinculada quando não há OS vinculada', async () => {
+      const aparelhos = [{ id: 1, identificador: '999999999999999', tipo: 'RASTREADOR', status: 'EM_ESTOQUE' }];
+      prisma.aparelho.findMany.mockResolvedValue(aparelhos);
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+
+      const result = await service.findAll();
+
+      expect(result[0].ordemServicoVinculada).toBeUndefined();
     });
   });
 
@@ -42,8 +161,9 @@ describe('AparelhosService', () => {
     it('lança NotFoundException quando aparelho não existe', async () => {
       prisma.aparelho.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
-      await expect(service.findOne(999)).rejects.toThrow('Aparelho não encontrado');
+      const promise = service.findOne(999);
+      await expect(promise).rejects.toThrow(NotFoundException);
+      await expect(promise).rejects.toThrow('Aparelho não encontrado');
     });
 
     it('retorna aparelho quando encontrado', async () => {

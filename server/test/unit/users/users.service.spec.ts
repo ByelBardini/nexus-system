@@ -97,8 +97,9 @@ describe('UsersService', () => {
     it('lança NotFoundException quando usuário não existe', async () => {
       prisma.usuario.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
-      await expect(service.findOne(999)).rejects.toThrow('Usuário não encontrado');
+      const promise = service.findOne(999);
+      await expect(promise).rejects.toThrow(NotFoundException);
+      await expect(promise).rejects.toThrow('Usuário não encontrado');
     });
 
     it('retorna usuário sem senhaHash quando encontrado', async () => {
@@ -116,12 +117,9 @@ describe('UsersService', () => {
     it('lança ConflictException quando email já está cadastrado', async () => {
       prisma.usuario.findUnique.mockResolvedValue({ id: 1, email: 'alice@test.com' });
 
-      await expect(
-        service.create({ nome: 'Alice', email: 'alice@test.com', password: '123' }),
-      ).rejects.toThrow(ConflictException);
-      await expect(
-        service.create({ nome: 'Alice', email: 'alice@test.com', password: '123' }),
-      ).rejects.toThrow('Email já cadastrado');
+      const promise = service.create({ nome: 'Alice', email: 'alice@test.com', password: '123' });
+      await expect(promise).rejects.toThrow(ConflictException);
+      await expect(promise).rejects.toThrow('Email já cadastrado');
     });
 
     it('cria usuário e retorna sem senhaHash', async () => {

@@ -16,6 +16,7 @@ describe('AparelhosController', () => {
   const aparelhosMock = {
     findAll: jest.fn(),
     findOne: jest.fn(),
+    findParaTestes: jest.fn(),
     getResumo: jest.fn(),
     createIndividual: jest.fn(),
     updateStatus: jest.fn(),
@@ -69,6 +70,16 @@ describe('AparelhosController', () => {
       await controller.findAll();
 
       expect(aparelhosService.findAll).toHaveBeenCalled();
+    });
+  });
+
+  describe('findParaTestes', () => {
+    it('converte clienteId, tecnicoId e ordemServicoId para número e chama service', async () => {
+      (aparelhosService.findParaTestes as jest.Mock).mockResolvedValue([]);
+
+      await controller.findParaTestes('10', '5', '42');
+
+      expect(aparelhosService.findParaTestes).toHaveBeenCalledWith(10, 5, 42);
     });
   });
 

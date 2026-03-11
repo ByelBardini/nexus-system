@@ -102,8 +102,9 @@ describe('PedidosRastreadoresService', () => {
     it('lança NotFoundException quando pedido não existe', async () => {
       prisma.pedidoRastreador.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
-      await expect(service.findOne(999)).rejects.toThrow('Pedido de rastreador não encontrado');
+      const promise = service.findOne(999);
+      await expect(promise).rejects.toThrow(NotFoundException);
+      await expect(promise).rejects.toThrow('Pedido de rastreador não encontrado');
     });
 
     it('retorna pedido quando encontrado', async () => {
@@ -149,7 +150,7 @@ describe('PedidosRastreadoresService', () => {
       const result = await service.create(dto, 100);
 
       expect(result.codigo).toMatch(/^PED-\d{4}$/);
-      expect(result.tecnico).toBeDefined();
+      expect(result.tecnico).toMatchObject({ id: 1, nome: 'João' });
       expect(prisma.pedidoRastreador.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -180,7 +181,7 @@ describe('PedidosRastreadoresService', () => {
 
       const result = await service.create(dto);
 
-      expect(result.subcliente).toBeDefined();
+      expect(result.subcliente).toMatchObject({ id: 5, nome: 'Cliente X' });
       expect(prisma.pedidoRastreador.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -210,7 +211,7 @@ describe('PedidosRastreadoresService', () => {
 
       const result = await service.create(dto);
 
-      expect(result.cliente).toBeDefined();
+      expect(result.cliente).toMatchObject({ id: 3, nome: 'Associação XYZ' });
       expect(prisma.pedidoRastreador.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -237,7 +238,6 @@ describe('PedidosRastreadoresService', () => {
       prisma.pedidoRastreador.findUnique
         .mockResolvedValueOnce(pedidoExistente)
         .mockResolvedValueOnce({ ...pedidoExistente, status: StatusPedidoRastreador.EM_CONFIGURACAO });
-      prisma.$transaction.mockImplementation((fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
       prisma.pedidoRastreador.update.mockResolvedValue({});
 
       const dto: UpdateStatusPedidoDto = {
@@ -275,7 +275,6 @@ describe('PedidosRastreadoresService', () => {
       prisma.pedidoRastreador.findUnique
         .mockResolvedValueOnce(pedidoExistente)
         .mockResolvedValueOnce({ ...pedidoExistente, status: StatusPedidoRastreador.ENTREGUE });
-      prisma.$transaction.mockImplementation((fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
       prisma.pedidoRastreador.update.mockResolvedValue({});
 
       const dto: UpdateStatusPedidoDto = { status: StatusPedidoRastreador.ENTREGUE };
@@ -309,7 +308,6 @@ describe('PedidosRastreadoresService', () => {
       prisma.pedidoRastreador.findUnique
         .mockResolvedValueOnce(pedidoDespachado)
         .mockResolvedValueOnce({ ...pedidoDespachado, status: StatusPedidoRastreador.CONFIGURADO });
-      prisma.$transaction.mockImplementation((fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
       prisma.pedidoRastreador.update.mockResolvedValue({});
       prisma.aparelho.findMany.mockResolvedValue(aparelhosNoKit);
       prisma.aparelhoHistorico.create.mockResolvedValue({});
@@ -346,7 +344,6 @@ describe('PedidosRastreadoresService', () => {
       prisma.pedidoRastreador.findUnique
         .mockResolvedValueOnce(pedidoEntregue)
         .mockResolvedValueOnce({ ...pedidoEntregue, status: StatusPedidoRastreador.CONFIGURADO });
-      prisma.$transaction.mockImplementation((fn: (tx: unknown) => Promise<unknown>) => fn(prisma));
       prisma.pedidoRastreador.update.mockResolvedValue({});
       prisma.aparelho.findMany.mockResolvedValue(aparelhosNoKit);
       prisma.aparelhoHistorico.create.mockResolvedValue({});

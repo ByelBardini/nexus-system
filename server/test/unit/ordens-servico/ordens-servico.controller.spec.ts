@@ -12,10 +12,13 @@ describe('OrdensServicoController', () => {
   const serviceMock = {
     getClienteInfinityOuCriar: jest.fn(),
     getResumo: jest.fn(),
+    findTestando: jest.fn(),
     findAll: jest.fn(),
     findOne: jest.fn(),
     create: jest.fn(),
+    update: jest.fn(),
     updateStatus: jest.fn(),
+    updateIdAparelho: jest.fn(),
     gerarHtmlImpressao: jest.fn(),
     gerarPdf: jest.fn(),
   };
@@ -57,9 +60,27 @@ describe('OrdensServicoController', () => {
     });
   });
 
+  describe('findTestando', () => {
+    it('chama service.findTestando sem search quando query vazia', async () => {
+      (service.findTestando as jest.Mock).mockResolvedValue([]);
+
+      await controller.findTestando();
+
+      expect(service.findTestando).toHaveBeenCalledWith(undefined);
+    });
+
+    it('passa search para service.findTestando', async () => {
+      (service.findTestando as jest.Mock).mockResolvedValue([]);
+
+      await controller.findTestando('29480');
+
+      expect(service.findTestando).toHaveBeenCalledWith('29480');
+    });
+  });
+
   describe('findAll', () => {
     it('converte page e limit para número e repassa parâmetros', async () => {
-      (service.findAll as jest.Mock).mockResolvedValue({ items: [], total: 0 });
+      (service.findAll as jest.Mock).mockResolvedValue({ data: [], total: 0 });
 
       await controller.findAll('2', '20', StatusOS.AGENDADO, 'Carlos');
 
@@ -108,6 +129,17 @@ describe('OrdensServicoController', () => {
     });
   });
 
+  describe('update', () => {
+    it('converte id e chama service.update com dto', async () => {
+      const dto = { idEntrada: 'IMEI123', aparelhoEncontrado: true };
+      (service.update as jest.Mock).mockResolvedValue({ id: 1, idEntrada: 'IMEI123', aparelhoEncontrado: true });
+
+      await controller.update('1', dto);
+
+      expect(service.update).toHaveBeenCalledWith(1, dto);
+    });
+  });
+
   describe('updateStatus', () => {
     it('converte id e chama service.updateStatus', async () => {
       const dto = { status: StatusOS.EM_TESTES };
@@ -116,6 +148,17 @@ describe('OrdensServicoController', () => {
       await controller.updateStatus('3', dto);
 
       expect(service.updateStatus).toHaveBeenCalledWith(3, dto);
+    });
+  });
+
+  describe('updateIdAparelho', () => {
+    it('converte id para número e chama service.updateIdAparelho com idAparelho', async () => {
+      const dto = { idAparelho: '862345678901234' };
+      (service.updateIdAparelho as jest.Mock).mockResolvedValue({ id: 1, idAparelho: '862345678901234' });
+
+      await controller.updateIdAparelho('1', dto);
+
+      expect(service.updateIdAparelho).toHaveBeenCalledWith(1, '862345678901234');
     });
   });
 

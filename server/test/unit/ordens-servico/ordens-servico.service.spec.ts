@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { OrdensServicoService } from 'src/ordens-servico/ordens-servico.service';
 import { HtmlOrdemServicoGenerator } from 'src/ordens-servico/html-ordem-servico.generator';
@@ -73,6 +73,118 @@ describe('OrdensServicoService', () => {
         finalizado: 10,
       });
       expect(prisma.ordemServico.count).toHaveBeenCalledTimes(5);
+    });
+  });
+
+  describe('findTestando', () => {
+    it('retorna lista de OS com status EM_TESTES sem filtro', async () => {
+      const items = [
+        {
+          id: 1,
+          numero: 100,
+          status: StatusOS.EM_TESTES,
+          atualizadoEm: new Date('2025-01-01T10:00:00Z'),
+          historico: [],
+          cliente: { id: 1, nome: 'Cliente A' },
+          subcliente: { id: 1, nome: 'Sub A' },
+          veiculo: { id: 1, placa: 'ABC-1234', marca: null, modelo: null },
+          tecnico: { id: 1, nome: 'Técnico X' },
+        },
+      ];
+      prisma.ordemServico.findMany.mockResolvedValue(items);
+
+      const result = await service.findTestando();
+
+      expect(prisma.ordemServico.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { status: StatusOS.EM_TESTES },
+        }),
+      );
+      expect(result).toHaveLength(1);
+      expect(result[0]).not.toHaveProperty('historico');
+      expect(result[0]).toHaveProperty('tempoEmTestesMin');
+    });
+
+    it('calcula tempoEmTestesMin corretamente usando histórico de entrada', async () => {
+      jest.useFakeTimers();
+      const now = new Date('2025-01-15T12:00:00Z');
+      jest.setSystemTime(now);
+      const entradaEmTestes = new Date(now.getTime() - 60 * 60 * 1000);
+      const items = [
+        {
+          id: 1,
+          numero: 100,
+          status: StatusOS.EM_TESTES,
+          atualizadoEm: now,
+          historico: [{ criadoEm: entradaEmTestes }],
+          cliente: { id: 1, nome: 'Cliente A' },
+          subcliente: null,
+          veiculo: null,
+          tecnico: null,
+        },
+      ];
+      prisma.ordemServico.findMany.mockResolvedValue(items);
+
+      const result = await service.findTestando();
+
+      expect(result[0].tempoEmTestesMin).toBe(60);
+      jest.useRealTimers();
+    });
+
+    it('usa atualizadoEm como fallback quando historico[0] está ausente', async () => {
+      jest.useFakeTimers();
+      const now = new Date('2025-01-15T12:00:00Z');
+      jest.setSystemTime(now);
+      const atualizado = new Date(now.getTime() - 30 * 60 * 1000);
+      const items = [
+        {
+          id: 1,
+          numero: 100,
+          status: StatusOS.EM_TESTES,
+          atualizadoEm: atualizado,
+          historico: [],
+          cliente: { id: 1, nome: 'Cliente A' },
+          subcliente: null,
+          veiculo: null,
+          tecnico: null,
+        },
+      ];
+      prisma.ordemServico.findMany.mockResolvedValue(items);
+
+      const result = await service.findTestando();
+
+      expect(result[0].tempoEmTestesMin).toBe(30);
+      jest.useRealTimers();
+    });
+
+    it('filtra por número quando search é numérico', async () => {
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+
+      await service.findTestando('29480');
+
+      expect(prisma.ordemServico.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            status: StatusOS.EM_TESTES,
+            OR: expect.arrayContaining([{ numero: 29480 }]),
+          }),
+        }),
+      );
+    });
+
+    it('filtra por texto quando search é string', async () => {
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+
+      await service.findTestando('ABC-1234');
+
+      expect(prisma.ordemServico.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            status: StatusOS.EM_TESTES,
+            OR: expect.any(Array),
+          }),
+        }),
+      );
     });
   });
 
@@ -154,8 +266,9 @@ describe('OrdensServicoService', () => {
     it('lança NotFoundException quando OS não existe', async () => {
       prisma.ordemServico.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
-      await expect(service.findOne(999)).rejects.toThrow('Ordem de serviço não encontrada');
+      const promise = service.findOne(999);
+      await expect(promise).rejects.toThrow(NotFoundException);
+      await expect(promise).rejects.toThrow('Ordem de serviço não encontrada');
     });
 
     it('retorna OS quando encontrada', async () => {
@@ -370,14 +483,200 @@ describe('OrdensServicoService', () => {
       expect(prisma.$transaction).toHaveBeenCalled();
       expect(result).toMatchObject({ status: StatusOS.EM_TESTES });
     });
+
+    it('lança BadRequestException para transição inválida (EM_TESTES → FINALIZADO)', async () => {
+      const os = { id: 1, numero: 1, status: StatusOS.EM_TESTES, historico: [] };
+      prisma.ordemServico.findUnique.mockResolvedValue(os);
+
+      const promise = service.updateStatus(1, { status: StatusOS.FINALIZADO });
+      await expect(promise).rejects.toThrow(BadRequestException);
+      await expect(promise).rejects.toThrow('Transição de status inválida');
+    });
+
+    it('aceita transição válida (EM_TESTES → TESTES_REALIZADOS)', async () => {
+      const os = { id: 1, numero: 1, status: StatusOS.EM_TESTES, historico: [] };
+      prisma.ordemServico.findUnique
+        .mockResolvedValueOnce(os)
+        .mockResolvedValueOnce({ ...os, status: StatusOS.TESTES_REALIZADOS });
+      prisma.oSHistorico.create.mockResolvedValue({});
+      prisma.ordemServico.update.mockResolvedValue({});
+
+      const result = await service.updateStatus(1, { status: StatusOS.TESTES_REALIZADOS });
+
+      expect(result).toMatchObject({ status: StatusOS.TESTES_REALIZADOS });
+    });
+
+    it('aceita transição válida (EM_TESTES → AGENDADO)', async () => {
+      const os = { id: 1, numero: 1, status: StatusOS.EM_TESTES, historico: [] };
+      prisma.ordemServico.findUnique
+        .mockResolvedValueOnce(os)
+        .mockResolvedValueOnce({ ...os, status: StatusOS.AGENDADO });
+      prisma.oSHistorico.create.mockResolvedValue({});
+      prisma.ordemServico.update.mockResolvedValue({});
+
+      const result = await service.updateStatus(1, { status: StatusOS.AGENDADO });
+
+      expect(result).toMatchObject({ status: StatusOS.AGENDADO });
+    });
+
+    it('aceita transição válida (EM_TESTES → CANCELADO)', async () => {
+      const os = { id: 1, numero: 1, status: StatusOS.EM_TESTES, historico: [] };
+      prisma.ordemServico.findUnique
+        .mockResolvedValueOnce(os)
+        .mockResolvedValueOnce({ ...os, status: StatusOS.CANCELADO });
+      prisma.oSHistorico.create.mockResolvedValue({});
+      prisma.ordemServico.update.mockResolvedValue({});
+
+      const result = await service.updateStatus(1, { status: StatusOS.CANCELADO });
+
+      expect(result).toMatchObject({ status: StatusOS.CANCELADO });
+    });
+  });
+
+  describe('update', () => {
+    it('atualiza idEntrada quando informado', async () => {
+      const os = {
+        id: 1,
+        numero: 100,
+        idEntrada: null,
+        aparelhoEncontrado: null,
+        historico: [],
+      };
+      prisma.ordemServico.findUnique
+        .mockResolvedValueOnce(os)
+        .mockResolvedValueOnce({ ...os, idEntrada: '862345678901234' });
+      prisma.ordemServico.update.mockResolvedValue({ ...os, idEntrada: '862345678901234' });
+
+      const result = await service.update(1, { idEntrada: '862345678901234' });
+
+      expect(prisma.ordemServico.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { idEntrada: '862345678901234' },
+      });
+      expect(result).toMatchObject({ id: 1, idEntrada: '862345678901234' });
+    });
+
+    it('atualiza aparelhoEncontrado quando informado', async () => {
+      const os = {
+        id: 1,
+        numero: 100,
+        idEntrada: null,
+        aparelhoEncontrado: null,
+        historico: [],
+      };
+      prisma.ordemServico.findUnique
+        .mockResolvedValueOnce(os)
+        .mockResolvedValueOnce({ ...os, aparelhoEncontrado: true });
+      prisma.ordemServico.update.mockResolvedValue({ ...os, aparelhoEncontrado: true });
+
+      const result = await service.update(1, { aparelhoEncontrado: true });
+
+      expect(prisma.ordemServico.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { aparelhoEncontrado: true },
+      });
+      expect(result).toMatchObject({ id: 1, aparelhoEncontrado: true });
+    });
+
+    it('atualiza idEntrada e aparelhoEncontrado juntos', async () => {
+      const os = {
+        id: 1,
+        numero: 100,
+        idEntrada: null,
+        aparelhoEncontrado: null,
+        historico: [],
+      };
+      prisma.ordemServico.findUnique
+        .mockResolvedValueOnce(os)
+        .mockResolvedValueOnce({ ...os, idEntrada: 'IMEI123', aparelhoEncontrado: false });
+      prisma.ordemServico.update.mockResolvedValue({
+        ...os,
+        idEntrada: 'IMEI123',
+        aparelhoEncontrado: false,
+      });
+
+      await service.update(1, { idEntrada: 'IMEI123', aparelhoEncontrado: false });
+
+      expect(prisma.ordemServico.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { idEntrada: 'IMEI123', aparelhoEncontrado: false },
+      });
+    });
+
+    it('lança NotFoundException quando OS não existe', async () => {
+      prisma.ordemServico.findUnique.mockResolvedValue(null);
+
+      const promise = service.update(999, { idEntrada: 'xxx' });
+      await expect(promise).rejects.toThrow(NotFoundException);
+      await expect(promise).rejects.toThrow('Ordem de serviço não encontrada');
+      expect(prisma.ordemServico.update).not.toHaveBeenCalled();
+    });
+
+    it('constrói data apenas com campos informados', async () => {
+      const os = { id: 1, numero: 100, historico: [] };
+      prisma.ordemServico.findUnique
+        .mockResolvedValueOnce(os)
+        .mockResolvedValueOnce({ ...os, idEntrada: 'ABC123' });
+      prisma.ordemServico.update.mockResolvedValue({});
+
+      await service.update(1, { idEntrada: 'ABC123' });
+
+      expect(prisma.ordemServico.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { idEntrada: 'ABC123' },
+      });
+    });
+  });
+
+  describe('updateIdAparelho', () => {
+    it('atualiza idAparelho com valor válido', async () => {
+      const os = { id: 1, numero: 1, idAparelho: '862345678901234', historico: [] };
+      prisma.ordemServico.findUnique
+        .mockResolvedValueOnce(os)
+        .mockResolvedValueOnce({ ...os, idAparelho: '862345678901234' });
+      prisma.ordemServico.update.mockResolvedValue({});
+
+      const result = await service.updateIdAparelho(1, '862345678901234');
+
+      expect(prisma.ordemServico.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { idAparelho: '862345678901234' },
+      });
+      expect(result).toMatchObject({ id: 1, idAparelho: '862345678901234' });
+    });
+
+    it('salva null quando string vazia é passada', async () => {
+      const os = { id: 1, numero: 1, idAparelho: 'xxx', historico: [] };
+      prisma.ordemServico.findUnique
+        .mockResolvedValueOnce(os)
+        .mockResolvedValueOnce({ ...os, idAparelho: null });
+      prisma.ordemServico.update.mockResolvedValue({});
+
+      await service.updateIdAparelho(1, '');
+
+      expect(prisma.ordemServico.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { idAparelho: null },
+      });
+    });
+
+    it('lança NotFoundException quando OS não existe', async () => {
+      prisma.ordemServico.findUnique.mockResolvedValue(null);
+
+      const promise = service.updateIdAparelho(999, '862345');
+      await expect(promise).rejects.toThrow(NotFoundException);
+      await expect(promise).rejects.toThrow('Ordem de serviço não encontrada');
+      expect(prisma.ordemServico.update).not.toHaveBeenCalled();
+    });
   });
 
   describe('gerarHtmlImpressao', () => {
     it('lança NotFoundException quando OS não existe', async () => {
       prisma.ordemServico.findUnique.mockResolvedValue(null);
 
-      await expect(service.gerarHtmlImpressao(999)).rejects.toThrow(NotFoundException);
-      await expect(service.gerarHtmlImpressao(999)).rejects.toThrow('Ordem de serviço não encontrada');
+      const promise = service.gerarHtmlImpressao(999);
+      await expect(promise).rejects.toThrow(NotFoundException);
+      await expect(promise).rejects.toThrow('Ordem de serviço não encontrada');
       expect(htmlGenerator.gerar).not.toHaveBeenCalled();
     });
 
@@ -420,7 +719,8 @@ describe('OrdensServicoService', () => {
     it('lança NotFoundException quando OS não existe', async () => {
       prisma.ordemServico.findUnique.mockResolvedValue(null);
 
-      await expect(service.gerarPdf(999)).rejects.toThrow(NotFoundException);
+      const promise = service.gerarPdf(999);
+      await expect(promise).rejects.toThrow(NotFoundException);
       expect(pdfGenerator.gerar).not.toHaveBeenCalled();
     });
 

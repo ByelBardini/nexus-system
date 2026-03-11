@@ -40,12 +40,9 @@ describe('AuthService', () => {
     it('lança UnauthorizedException quando usuário não existe', async () => {
       usersServiceMock.findByEmail.mockResolvedValue(null);
 
-      await expect(service.login('inexistente@test.com', '123')).rejects.toThrow(
-        UnauthorizedException,
-      );
-      await expect(service.login('inexistente@test.com', '123')).rejects.toThrow(
-        'Credenciais inválidas',
-      );
+      const promise = service.login('inexistente@test.com', '123');
+      await expect(promise).rejects.toThrow(UnauthorizedException);
+      await expect(promise).rejects.toThrow('Credenciais inválidas');
     });
 
     it('lança UnauthorizedException quando usuário está inativo', async () => {
