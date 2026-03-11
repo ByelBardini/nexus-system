@@ -18,7 +18,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { api, apiDownloadBlob } from '@/lib/api'
-import { formatarCEP, formatarCPFCNPJ, formatarDataHora, formatarDataHoraCurta, TIPO_OS_LABELS } from '@/lib/format'
+import {
+  formatarCEP,
+  formatarCPFCNPJ,
+  formatarDataHora,
+  formatarDataHoraCurta,
+  formatarTelefone,
+  TIPO_OS_LABELS,
+} from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { MaterialIcon } from '@/components/MaterialIcon'
@@ -83,6 +90,7 @@ type SubclienteParaExibicao = {
   estado?: string | null
   cpf?: string | null
   email?: string | null
+  telefone?: string | null
 }
 
 interface OrdemServicoDetalhe {
@@ -107,6 +115,7 @@ interface OrdemServicoDetalhe {
   subclienteSnapshotCep?: string | null
   subclienteSnapshotCpf?: string | null
   subclienteSnapshotEmail?: string | null
+  subclienteSnapshotTelefone?: string | null
   tecnico?: {
     id: number
     nome: string
@@ -118,7 +127,7 @@ interface OrdemServicoDetalhe {
     cidadeEndereco?: string | null
     estadoEndereco?: string | null
   } | null
-  veiculo?: { id: number; placa: string } | null
+  veiculo?: { id: number; placa: string; marca?: string; modelo?: string; ano?: number; cor?: string } | null
   criadoPor?: { id: number; nome: string } | null
 }
 
@@ -136,6 +145,7 @@ function getSubclienteParaExibicao(os: OrdemServicoDetalhe): SubclienteParaExibi
       cep: os.subclienteSnapshotCep ?? undefined,
       cpf: os.subclienteSnapshotCpf ?? undefined,
       email: os.subclienteSnapshotEmail ?? undefined,
+      telefone: os.subclienteSnapshotTelefone ?? undefined,
     }
   }
   return os.subcliente ?? null
@@ -171,6 +181,17 @@ function formatEnderecoTecnico(tec: OrdemServicoDetalhe['tecnico']): string {
   }
   if (tec.cep) partes.push(`CEP ${tec.cep}`)
   return partes.length > 0 ? partes.join(', ') : tec.nome || '-'
+}
+
+function formatDadosVeiculo(
+  v: OrdemServicoDetalhe['veiculo'] | null | undefined
+): string {
+  if (!v) return '-'
+  const partes: string[] = [v.placa]
+  if (v.marca || v.modelo) partes.push([v.marca, v.modelo].filter(Boolean).join(' '))
+  if (v.ano) partes.push(String(v.ano))
+  if (v.cor) partes.push(v.cor)
+  return partes.length > 0 ? partes.join(' · ') : '-'
 }
 
 export function OrdensServicoPage() {
@@ -489,33 +510,101 @@ export function OrdensServicoPage() {
                                   <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
                                 </div>
                               ) : osDetalhe && expandedOsId === os.id ? (
-                                <div className="p-4 bg-slate-50/50 border-t border-slate-200">
-                                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-x-6 gap-y-3 text-[10px]">
-                                    <div><span className="text-slate-400 font-semibold uppercase block">Emitido por</span><span className="font-bold text-slate-800">{osDetalhe.criadoPor?.nome ?? '-'}</span></div>
-                                    <div><span className="text-slate-400 font-semibold uppercase block">Data</span><span className="font-bold text-slate-800">{formatarDataHora(osDetalhe.criadoEm)}</span></div>
-                                    <div className="col-span-2"><span className="text-slate-400 font-semibold uppercase block">Tipo</span><span className="font-bold text-slate-800">{TIPO_OS_LABELS[osDetalhe.tipo] ?? osDetalhe.tipo}</span></div>
-                                    {(() => {
-                                      const sub = getSubclienteParaExibicao(osDetalhe)
-                                      return (
-                                        <>
-                                          <div><span className="text-slate-400 font-semibold uppercase block">Endereço subcliente</span><span className="font-bold text-slate-800 text-[9px] leading-tight">{formatEnderecoSubcliente(sub)}</span></div>
-                                          <div><span className="text-slate-400 font-semibold uppercase block">CPF/CNPJ</span><span className="font-bold text-slate-800">{formatarCPFCNPJ(sub?.cpf ?? '') || '-'}</span></div>
-                                          <div><span className="text-slate-400 font-semibold uppercase block">E-mail subcliente</span><span className="font-bold text-slate-800 truncate block">{sub?.email || '-'}</span></div>
-                                        </>
-                                      )
-                                    })()}
-                                    <div><span className="text-slate-400 font-semibold uppercase block">Endereço técnico</span><span className="font-bold text-slate-800 text-[9px] leading-tight">{formatEnderecoTecnico(osDetalhe.tecnico)}</span></div>
-                                    {['REVISAO', 'RETIRADA'].includes(osDetalhe.tipo) && (
-                                      <>
-                                        <div><span className="text-slate-400 font-semibold uppercase block">{osDetalhe.tipo === 'RETIRADA' ? 'ID a retirar' : 'ID a substituir'}</span><span className="font-bold text-slate-800">{osDetalhe.idAparelho || '-'}</span></div>
-                                        <div><span className="text-slate-400 font-semibold uppercase block">Local instalação</span><span className="font-bold text-slate-800">{osDetalhe.localInstalacao || '-'}</span></div>
-                                        <div><span className="text-slate-400 font-semibold uppercase block">Pós-chave</span><span className="font-bold text-slate-800">{osDetalhe.posChave === 'SIM' ? 'Sim' : osDetalhe.posChave === 'NAO' ? 'Não' : '-'}</span></div>
-                                      </>
-                                    )}
-                                    {osDetalhe.observacoes && (
-                                      <div className="col-span-full"><span className="text-slate-400 font-semibold uppercase block">Observações</span><p className="text-[9px] text-slate-700 whitespace-pre-wrap leading-tight">{osDetalhe.observacoes}</p></div>
-                                    )}
-                                  </div>
+                                <div className="p-3 bg-slate-50/50 border-t border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-3">
+                                  {/* 1. Dados de Emissão */}
+                                  <section className="bg-white border border-slate-300 shadow-sm overflow-hidden">
+                                    <div className="bg-slate-50 border-b border-slate-300 px-3 py-1.5 flex items-center gap-2">
+                                      <MaterialIcon name="description" className="text-slate-400 text-base" />
+                                      <h2 className="text-xs font-bold text-slate-700 font-condensed uppercase">
+                                        Dados de Emissão
+                                      </h2>
+                                    </div>
+                                    <div className="p-3">
+                                      {(() => {
+                                        const sub = getSubclienteParaExibicao(osDetalhe)
+                                        return (
+                                          <dl className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5 text-[11px]">
+                                            <div>
+                                              <dt className="text-[10px] text-slate-500 uppercase font-medium">Emitido por</dt>
+                                              <dd className="font-semibold text-slate-800">{osDetalhe.criadoPor?.nome ?? '-'}</dd>
+                                            </div>
+                                            <div>
+                                              <dt className="text-[10px] text-slate-500 uppercase font-medium">Data</dt>
+                                              <dd className="font-semibold text-slate-800">{formatarDataHora(osDetalhe.criadoEm)}</dd>
+                                            </div>
+                                            <div>
+                                              <dt className="text-[10px] text-slate-500 uppercase font-medium">Tipo</dt>
+                                              <dd className="font-semibold text-slate-800">{TIPO_OS_LABELS[osDetalhe.tipo] ?? osDetalhe.tipo}</dd>
+                                            </div>
+                                            {['REVISAO', 'RETIRADA'].includes(osDetalhe.tipo) && (osDetalhe.idAparelho || osDetalhe.localInstalacao) && (
+                                              <>
+                                                <div>
+                                                  <dt className="text-[10px] text-slate-500 uppercase font-medium">{osDetalhe.tipo === 'RETIRADA' ? 'ID saída' : 'ID substituir'}</dt>
+                                                  <dd className="font-semibold text-slate-800">{osDetalhe.idAparelho || '-'}</dd>
+                                                </div>
+                                                <div>
+                                                  <dt className="text-[10px] text-slate-500 uppercase font-medium">Local inst.</dt>
+                                                  <dd className="font-semibold text-slate-800">{osDetalhe.localInstalacao || '-'}</dd>
+                                                </div>
+                                                <div>
+                                                  <dt className="text-[10px] text-slate-500 uppercase font-medium">Pós-chave</dt>
+                                                  <dd className="font-semibold text-slate-800">{osDetalhe.posChave === 'SIM' ? 'Sim' : osDetalhe.posChave === 'NAO' ? 'Não' : '-'}</dd>
+                                                </div>
+                                              </>
+                                            )}
+                                            <div className="col-span-2 md:col-span-3">
+                                              <dt className="text-[10px] text-slate-500 uppercase font-medium">Endereço subcliente</dt>
+                                              <dd className="font-semibold text-slate-800 leading-tight">{formatEnderecoSubcliente(sub)}</dd>
+                                            </div>
+                                            <div>
+                                              <dt className="text-[10px] text-slate-500 uppercase font-medium">Telefone</dt>
+                                              <dd className="font-semibold text-slate-800">{sub?.telefone ? formatarTelefone(sub.telefone) : '-'}</dd>
+                                            </div>
+                                            <div>
+                                              <dt className="text-[10px] text-slate-500 uppercase font-medium">E-mail</dt>
+                                              <dd className="font-semibold text-slate-800 truncate">{sub?.email || '-'}</dd>
+                                            </div>
+                                            <div>
+                                              <dt className="text-[10px] text-slate-500 uppercase font-medium">Veículo</dt>
+                                              <dd className="font-semibold text-slate-800 leading-tight">{formatDadosVeiculo(osDetalhe.veiculo)}</dd>
+                                            </div>
+                                            {osDetalhe.observacoes && (
+                                              <div className="col-span-2 md:col-span-3">
+                                                <dt className="text-[10px] text-slate-500 uppercase font-medium">Observações</dt>
+                                                <dd className="font-medium text-slate-700 whitespace-pre-wrap leading-tight text-[10px]">{osDetalhe.observacoes}</dd>
+                                              </div>
+                                            )}
+                                          </dl>
+                                        )
+                                      })()}
+                                    </div>
+                                  </section>
+
+                                  {/* 2. Dados de teste */}
+                                  <section className="bg-white border border-slate-300 shadow-sm overflow-hidden">
+                                    <div className="bg-slate-50 border-b border-slate-300 px-3 py-1.5 flex items-center gap-2">
+                                      <MaterialIcon name="science" className="text-slate-400 text-base" />
+                                      <h2 className="text-xs font-bold text-slate-700 font-condensed uppercase">
+                                        Dados de teste
+                                      </h2>
+                                    </div>
+                                    <div className="p-3">
+                                      <span className="text-slate-500 text-xs italic">Em Breve</span>
+                                    </div>
+                                  </section>
+
+                                  {/* 3. Dados de Cadastro */}
+                                  <section className="bg-white border border-slate-300 shadow-sm overflow-hidden">
+                                    <div className="bg-slate-50 border-b border-slate-300 px-3 py-1.5 flex items-center gap-2">
+                                      <MaterialIcon name="person_add" className="text-slate-400 text-base" />
+                                      <h2 className="text-xs font-bold text-slate-700 font-condensed uppercase">
+                                        Dados de Cadastro
+                                      </h2>
+                                    </div>
+                                    <div className="p-3">
+                                      <span className="text-slate-500 text-xs italic">Em Breve</span>
+                                    </div>
+                                  </section>
                                 </div>
                               ) : null}
                             </div>
