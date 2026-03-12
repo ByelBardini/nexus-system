@@ -21,8 +21,12 @@ export interface AuthState {
   isAuthenticated: boolean;
 }
 
+export interface LoginResponse {
+  exigeTrocaSenha?: boolean;
+}
+
 interface AuthContextValue extends AuthState {
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<LoginResponse>;
   logout: () => void;
   hasPermission: (code: string) => boolean;
 }
@@ -81,11 +85,12 @@ function getInitialState(): AuthState {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>(getInitialState);
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string): Promise<LoginResponse> => {
     const res = await api<{
       accessToken: string;
       user: User;
       permissions: string[];
+      exigeTrocaSenha?: boolean;
     }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
@@ -104,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading: false,
       isAuthenticated: true,
     });
+    return { exigeTrocaSenha: res.exigeTrocaSenha };
   }, []);
 
   const logout = useCallback(() => {
