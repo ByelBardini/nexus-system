@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { paginateParams } from '../common/pagination.helper';
+import { CLIENTE_INFINITY_ID } from '../common/constants';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { StatusOS, StatusAparelho } from '@prisma/client';
@@ -34,9 +35,15 @@ export class OrdensServicoService {
       try {
         return await this.prisma.$transaction(
           async (tx) => {
-            let cliente = await tx.cliente.findFirst({
-              where: { nome: OrdensServicoService.INFINITY_NOME },
+            // Prioriza o cliente Infinity com ID fixo (criado pelo seed)
+            let cliente = await tx.cliente.findUnique({
+              where: { id: CLIENTE_INFINITY_ID },
             });
+            if (!cliente) {
+              cliente = await tx.cliente.findFirst({
+                where: { nome: OrdensServicoService.INFINITY_NOME },
+              });
+            }
             if (!cliente) {
               cliente = await tx.cliente.create({
                 data: {

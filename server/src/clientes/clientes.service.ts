@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CLIENTE_INFINITY_ID } from '../common/constants';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
 
@@ -9,6 +10,7 @@ export class ClientesService {
 
   async findAll(opts?: { includeSubclientes?: boolean }) {
     return this.prisma.cliente.findMany({
+      where: { id: { not: CLIENTE_INFINITY_ID } },
       orderBy: { nome: 'asc' },
       include: {
         contatos: true,

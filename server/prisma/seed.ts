@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 
+import { CLIENTE_INFINITY_ID } from '../src/common/constants';
 import { PERMISSION_CODES } from './permission-codes';
 
 dotenv.config();
@@ -132,18 +133,18 @@ async function main() {
     create: { usuarioId: usuarioAdmin.id, cargoId: cargoAdmin.id },
   });
 
-  // Cliente Infinity (empresa dona do sistema) - usado em ordens no modo Infinity
-  const clienteInfinity = await prisma.cliente.findFirst({
-    where: { nome: 'Infinity' },
+  // Cliente Infinity (empresa dona do sistema, ID fixo) - usado em ordens no modo Infinity
+  // Não aparece na lista de Empresas (excluído em ClientesService.findAll)
+  const existe = await prisma.cliente.findUnique({
+    where: { id: CLIENTE_INFINITY_ID },
   });
-  if (!clienteInfinity) {
-    await prisma.cliente.create({
-      data: {
-        nome: 'Infinity',
-        nomeFantasia: 'Infinity',
-      },
-    });
-    console.log('Cliente Infinity criado');
+  if (!existe) {
+    await prisma.$executeRaw`
+      INSERT INTO clientes (id, nome, nome_fantasia, tipo_contrato, estoque_proprio, status)
+      VALUES (${CLIENTE_INFINITY_ID}, 'Infinity', 'Infinity', 'COMODATO', 0, 'ATIVO')
+      ON DUPLICATE KEY UPDATE nome = 'Infinity', nome_fantasia = 'Infinity'
+    `;
+    console.log('Cliente Infinity (id 999999) criado');
   }
 
   console.log('Seed concluído: admin@admin.com / 12345');
