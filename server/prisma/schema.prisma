@@ -7,13 +7,14 @@ datasource db {
 }
 
 model Usuario {
-  id            Int            @id @default(autoincrement())
-  nome          String         @db.VarChar(200)
-  email         String         @unique @db.VarChar(255)
-  senhaHash     String         @map("senha_hash") @db.VarChar(255)
-  ativo         Boolean        @default(true)
-  setor         SetorUsuario?
-  ultimoAcesso  DateTime?      @map("ultimo_acesso")
+  id              Int            @id @default(autoincrement())
+  nome            String         @db.VarChar(200)
+  email           String         @unique @db.VarChar(255)
+  senhaHash       String         @map("senha_hash") @db.VarChar(255)
+  ativo           Boolean        @default(true)
+  setor           SetorUsuario?
+  ultimoAcesso    DateTime?      @map("ultimo_acesso")
+  senhaExpiradaEm DateTime?      @map("senha_expirada_em")
   createdAt     DateTime       @default(now()) @map("created_at")
   updatedAt     DateTime       @updatedAt @map("updated_at")
   ordensServico      OrdemServico[]

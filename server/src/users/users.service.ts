@@ -115,6 +115,7 @@ export class UsersService {
         senhaHash,
         ativo: dto.ativo ?? true,
         setor: dto.setor as SetorUsuario | undefined,
+        senhaExpiradaEm: null,
       },
     });
     return this.sanitizeUser(user);
@@ -146,9 +147,33 @@ export class UsersService {
     const senhaHash = await bcrypt.hash(defaultPassword, 10);
     await this.prisma.usuario.update({
       where: { id },
-      data: { senhaHash },
+      data: { senhaHash, senhaExpiradaEm: null },
     });
     return { message: 'Senha resetada com sucesso' };
+  }
+
+  async findByIdWithPassword(id: number) {
+    return this.prisma.usuario.findUnique({
+      where: { id },
+      include: {
+        usuarioCargos: {
+          include: {
+            cargo: {
+              include: {
+                cargoPermissoes: { include: { permissao: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async updatePassword(id: number, senhaHash: string, senhaExpiradaEm: Date) {
+    await this.prisma.usuario.update({
+      where: { id },
+      data: { senhaHash, senhaExpiradaEm },
+    });
   }
 
   async findByEmail(email: string) {
