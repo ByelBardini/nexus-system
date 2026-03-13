@@ -1,6 +1,6 @@
 # Nexus System
 
-Stack: **Server** (NestJS + Prisma + MySQL) e **Client** (React + Vite + TypeScript + Tailwind + shadcn/ui).
+Stack: **Server** (NestJS + Prisma + MySQL) e **Client** (React + Vite + TypeScript + Tailwind + shadcn/ui)
 
 ## Pré-requisitos
 
