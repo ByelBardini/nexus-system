@@ -20,6 +20,7 @@ export interface SubclienteAutocompleteItem {
 }
 
 const BLUR_DELAY_MS = 150
+const MAX_VISIBLE = 8
 
 export function SubclienteNomeAutocomplete({
   subclientes,
@@ -45,9 +46,9 @@ export function SubclienteNomeAutocomplete({
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const filtered = useMemo(() => {
-    if (!searchTerm.trim()) return subclientes
+    if (!searchTerm.trim()) return subclientes.slice(0, MAX_VISIBLE)
     const term = searchTerm.toLowerCase()
-    return subclientes.filter((s) => s.nome.toLowerCase().includes(term))
+    return subclientes.filter((s) => s.nome.toLowerCase().includes(term)).slice(0, MAX_VISIBLE)
   }, [subclientes, searchTerm])
 
   const displayValue = isOpen ? searchTerm : value
@@ -100,40 +101,48 @@ export function SubclienteNomeAutocomplete({
       <Search className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
       {isOpen && (
         <div
-          className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border bg-popover py-1 text-popover-foreground shadow-md"
+          className="absolute z-50 mt-1 w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md"
           onMouseDown={(e) => e.preventDefault()}
         >
-          {filtered.length === 0 ? (
-            <div className="px-3 py-4 text-center">
-              <button
-                type="button"
-                className="w-full cursor-pointer rounded-md border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600 outline-none transition-colors hover:border-erp-blue hover:bg-erp-blue/5 hover:text-erp-blue"
-                onMouseDown={() => {
-                  onSelectNovo()
-                  setIsOpen(false)
-                }}
-              >
-                Novo Subcliente
-              </button>
-              <p className="mt-2 text-[11px] text-slate-500">
-                Nenhum subcliente encontrado. Preencha os campos para criar novo.
-              </p>
+          {filtered.length > 0 && (
+            <div className="max-h-48 overflow-auto py-1">
+              {filtered.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  className={cn(
+                    'flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground',
+                    !isNovoSubcliente && subclienteId === s.id && 'bg-accent'
+                  )}
+                  onMouseDown={() => handleSelect(s)}
+                >
+                  <span className="truncate font-medium">{s.nome}</span>
+                  {(s.cidade || s.estado) && (
+                    <span className="shrink-0 text-[11px] text-slate-400">
+                      {[s.cidade, s.estado].filter(Boolean).join('/')}
+                    </span>
+                  )}
+                </button>
+              ))}
             </div>
-          ) : (
-            filtered.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                className={cn(
-                  'w-full cursor-pointer px-3 py-2 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground',
-                  !isNovoSubcliente && subclienteId === s.id && 'bg-accent'
-                )}
-                onMouseDown={() => handleSelect(s)}
-              >
-                {s.nome}
-              </button>
-            ))
           )}
+          {filtered.length === 0 && (
+            <p className="px-3 py-2 text-[11px] text-slate-500">
+              Nenhum subcliente encontrado. Clique em "Novo Subcliente" para criar.
+            </p>
+          )}
+          <div className="border-t px-2 py-2">
+            <button
+              type="button"
+              className="w-full cursor-pointer rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600 outline-none transition-colors hover:border-erp-blue hover:bg-erp-blue/5 hover:text-erp-blue"
+              onMouseDown={() => {
+                onSelectNovo()
+                setIsOpen(false)
+              }}
+            >
+              + Novo Subcliente
+            </button>
+          </div>
         </div>
       )}
     </div>

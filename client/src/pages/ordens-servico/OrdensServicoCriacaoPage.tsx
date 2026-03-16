@@ -216,13 +216,20 @@ export function OrdensServicoCriacaoPage() {
   })
   const clienteInfinityId = clienteInfinityData?.clienteId ?? null
 
+  const { data: infinityClienteDetalhes } = useQuery<{ subclientes?: SubclienteFull[] }>({
+    queryKey: ['clientes', clienteInfinityId, 'subclientes'],
+    queryFn: () => api(`/clientes/${clienteInfinityId}`),
+    enabled: clienteInfinityId != null,
+  })
+
   const clienteSelecionado =
     ordemInstalacao === 'CLIENTE'
       ? clientes.find((c) => c.id === clienteOrdemId)
-      : clienteInfinityId != null
-        ? clientes.find((c) => c.id === clienteInfinityId)
-        : null
-  const subclientes = clienteSelecionado?.subclientes ?? []
+      : null
+  const subclientes =
+    ordemInstalacao === 'INFINITY'
+      ? (infinityClienteDetalhes?.subclientes ?? [])
+      : (clienteSelecionado?.subclientes ?? [])
 
   const { data: tecnicos = [] } = useQuery<Tecnico[]>({
     queryKey: ['tecnicos'],
