@@ -52,7 +52,16 @@ interface Aparelho {
   proprietario: ProprietarioTipo
   cliente?: { id: number; nome: string } | null
   simVinculado?: { id: number; identificador: string; operadora?: string | null } | null
-  aparelhosVinculados?: { id: number; identificador?: string | null }[]
+  aparelhosVinculados?: {
+    id: number
+    identificador?: string | null
+    kitId?: number | null
+    kit?: { id: number; nome: string } | null
+    tecnicoId?: number | null
+    tecnico?: { id: number; nome: string } | null
+    clienteId?: number | null
+    cliente?: { id: number; nome: string } | null
+  }[]
   kitId?: number | null
   kit?: { id: number; nome: string } | null
   tecnico?: { id: number; nome: string } | null
@@ -503,16 +512,30 @@ export function AparelhosPage() {
                         })()}
                       </TableCell>
                       <TableCell className="px-4 py-3">
-                        {(aparelho.kit?.nome ?? (aparelho.kitId ? kitsPorId.get(aparelho.kitId) : null)) ? (
-                          <span className="rounded-sm bg-violet-50 px-2 py-0.5 text-[10px] font-bold text-violet-700 border border-violet-200">
-                            {aparelho.kit?.nome ?? kitsPorId.get(aparelho.kitId!)}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400">-</span>
-                        )}
+                        {(() => {
+                          const rastreador = aparelho.tipo === 'SIM' ? aparelho.aparelhosVinculados?.[0] : null
+                          const kitNome = aparelho.kit?.nome
+                            ?? (aparelho.kitId ? kitsPorId.get(aparelho.kitId) : null)
+                            ?? rastreador?.kit?.nome
+                            ?? (rastreador?.kitId ? kitsPorId.get(rastreador.kitId) : null)
+                          return kitNome ? (
+                            <span className="rounded-sm bg-violet-50 px-2 py-0.5 text-[10px] font-bold text-violet-700 border border-violet-200">
+                              {kitNome}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )
+                        })()}
                       </TableCell>
                       <TableCell className="px-4 py-3 text-sm text-slate-600">
-                        {aparelho.cliente?.nome ?? aparelho.tecnico?.nome ?? '-'}
+                        {(() => {
+                          const rastreador = aparelho.tipo === 'SIM' ? aparelho.aparelhosVinculados?.[0] : null
+                          return aparelho.cliente?.nome
+                            ?? aparelho.tecnico?.nome
+                            ?? rastreador?.cliente?.nome
+                            ?? rastreador?.tecnico?.nome
+                            ?? '-'
+                        })()}
                       </TableCell>
                       <TableCell className="px-4 py-3">
                         {aparelho.lote ? (
@@ -620,15 +643,33 @@ export function AparelhosPage() {
                                   </div>
                                   <div className="flex justify-between text-[11px] border-b border-slate-100 pb-2">
                                     <span className="text-slate-500">Kit</span>
-                                    <span className={cn('font-bold', (aparelho.kit?.nome ?? (aparelho.kitId ? kitsPorId.get(aparelho.kitId) : null)) ? 'text-violet-600' : 'text-slate-400')}>
-                                      {aparelho.kit?.nome ?? (aparelho.kitId ? kitsPorId.get(aparelho.kitId) : null) ?? '-'}
-                                    </span>
+                                    {(() => {
+                                      const rastreador = aparelho.tipo === 'SIM' ? aparelho.aparelhosVinculados?.[0] : null
+                                      const kitNome = aparelho.kit?.nome
+                                        ?? (aparelho.kitId ? kitsPorId.get(aparelho.kitId) : null)
+                                        ?? rastreador?.kit?.nome
+                                        ?? (rastreador?.kitId ? kitsPorId.get(rastreador.kitId) : null)
+                                      return (
+                                        <span className={cn('font-bold', kitNome ? 'text-violet-600' : 'text-slate-400')}>
+                                          {kitNome ?? '-'}
+                                        </span>
+                                      )
+                                    })()}
                                   </div>
                                   <div className="flex justify-between text-[11px] border-b border-slate-100 pb-2">
                                     <span className="text-slate-500">Técnico</span>
-                                    <span className={cn('font-bold', (aparelho.cliente ?? aparelho.tecnico) ? 'text-slate-700' : 'text-slate-400')}>
-                                      {aparelho.cliente?.nome ?? aparelho.tecnico?.nome ?? '-'}
-                                    </span>
+                                    {(() => {
+                                      const rastreador = aparelho.tipo === 'SIM' ? aparelho.aparelhosVinculados?.[0] : null
+                                      const nome = aparelho.cliente?.nome
+                                        ?? aparelho.tecnico?.nome
+                                        ?? rastreador?.cliente?.nome
+                                        ?? rastreador?.tecnico?.nome
+                                      return (
+                                        <span className={cn('font-bold', nome ? 'text-slate-700' : 'text-slate-400')}>
+                                          {nome ?? '-'}
+                                        </span>
+                                      )
+                                    })()}
                                   </div>
                                   <div className="flex justify-between text-[11px]">
                                     <span className="text-slate-500">Ordem de Serviço</span>
