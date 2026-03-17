@@ -118,6 +118,12 @@ export class AparelhosService {
           select: {
             id: true,
             identificador: true,
+            kitId: true,
+            kit: { select: { id: true, nome: true } },
+            tecnicoId: true,
+            tecnico: { select: { id: true, nome: true } },
+            clienteId: true,
+            cliente: { select: { id: true, nome: true } },
           },
         },
         historico: {
