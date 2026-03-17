@@ -50,6 +50,7 @@ interface Modelo {
   nome: string
   ativo: boolean
   marca: { id: number; nome: string }
+  minCaracteresImei?: number | null
 }
 
 interface Operadora {
@@ -225,6 +226,7 @@ export function CadastroIndividualPage() {
       nome: string
       operadoraId: number
       temPlanos: boolean
+      minCaracteresIccid?: number | null
       operadora: { id: number; nome: string }
       planos?: { id: number; planoMb: number; ativo: boolean }[]
     }[]
@@ -278,12 +280,25 @@ export function CadastroIndividualPage() {
     [marcasSimcard, operadoraIdParaMarca]
   )
 
+  const watchMarcaSimcardId = form.watch('marcaSimcardId')
+
+  const minCaracteresId = useMemo(() => {
+    if (watchTipo === 'RASTREADOR') {
+      const modeloSelecionado = modelosDisponiveis.find((m) => m.nome === form.getValues('modelo'))
+      return modeloSelecionado?.minCaracteresImei ?? null
+    } else {
+      const marcaSim = marcasSimcard.find((m) => m.id === Number(watchMarcaSimcardId))
+      return marcaSim?.minCaracteresIccid ?? null
+    }
+  }, [watchTipo, watchMarcaSimcardId, modelosDisponiveis, marcasSimcard, form])
+
   const idValido = useMemo(() => {
     if (!watchIdentificador.trim()) return false
     const cleanId = watchIdentificador.replace(/\D/g, '')
-    const tamanhoEsperado = watchTipo === 'RASTREADOR' ? 15 : 19
-    return cleanId.length >= tamanhoEsperado - 1 && cleanId.length <= tamanhoEsperado + 1
-  }, [watchIdentificador, watchTipo])
+    if (cleanId.length < 1) return false
+    if (minCaracteresId !== null && cleanId.length < minCaracteresId) return false
+    return true
+  }, [watchIdentificador, minCaracteresId])
 
   const watchModelo = form.watch('modelo')
   const watchResponsavel = form.watch('responsavelEntrega')
