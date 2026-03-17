@@ -630,6 +630,12 @@ export function SidePanel({
           onVincular={handleVincularKit}
           kitParaEditar={kitParaEditar}
           kitsPorPedido={kitsPorPedido}
+          filtrosPedido={pedidoApi ? {
+            clienteId: pedidoApi.deClienteId,
+            modeloEquipamentoId: pedidoApi.modeloEquipamentoId,
+            marcaEquipamentoId: pedidoApi.marcaEquipamentoId,
+            operadoraId: pedidoApi.operadoraId,
+          } : null}
         />
       </SheetContent>
     </Sheet>

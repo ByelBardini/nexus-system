@@ -27,6 +27,7 @@ export function ModalSelecaoEKit({
   onVincular,
   kitParaEditar,
   kitsPorPedido,
+  filtrosPedido,
 }: {
   open: boolean
   onOpenChange: (o: boolean) => void
@@ -34,6 +35,12 @@ export function ModalSelecaoEKit({
   onVincular: (kit: KitResumo, qtd: number) => void
   kitParaEditar?: { id: number; nome: string } | null
   kitsPorPedido?: Record<number, KitVinculado[]>
+  filtrosPedido?: {
+    clienteId?: number | null
+    modeloEquipamentoId?: number | null
+    marcaEquipamentoId?: number | null
+    operadoraId?: number | null
+  } | null
 }) {
   const queryClient = useQueryClient()
   const [step, setStep] = useState<'selecao' | 'edicao'>('selecao')
@@ -72,8 +79,16 @@ export function ModalSelecaoEKit({
   })
 
   const { data: aparelhosDisponiveis = [] } = useQuery<AparelhoNoKit[]>({
-    queryKey: ['aparelhos', 'disponiveis', kitSelecionado?.id],
-    queryFn: () => api('/aparelhos/pareamento/aparelhos-disponiveis'),
+    queryKey: ['aparelhos', 'disponiveis', kitSelecionado?.id, filtrosPedido],
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (filtrosPedido?.clienteId) params.set('clienteId', String(filtrosPedido.clienteId))
+      if (filtrosPedido?.modeloEquipamentoId) params.set('modeloEquipamentoId', String(filtrosPedido.modeloEquipamentoId))
+      if (filtrosPedido?.marcaEquipamentoId) params.set('marcaEquipamentoId', String(filtrosPedido.marcaEquipamentoId))
+      if (filtrosPedido?.operadoraId) params.set('operadoraId', String(filtrosPedido.operadoraId))
+      const qs = params.toString()
+      return api(qs ? `/aparelhos/pareamento/aparelhos-disponiveis?${qs}` : '/aparelhos/pareamento/aparelhos-disponiveis')
+    },
     enabled: open && step === 'edicao' && kitSelecionado != null,
   })
 
