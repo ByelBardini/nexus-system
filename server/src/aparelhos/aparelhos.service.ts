@@ -133,9 +133,16 @@ export class AparelhosService {
       },
     });
 
-    const identificadores = aparelhos
-      .filter((a) => a.tipo === 'RASTREADOR' && a.identificador?.trim())
-      .map((a) => a.identificador!.trim());
+    const identificadoresSet = new Set<string>()
+    aparelhos.forEach((a) => {
+      if (a.tipo === 'RASTREADOR' && a.identificador?.trim()) {
+        identificadoresSet.add(a.identificador!.trim())
+      }
+      a.aparelhosVinculados?.forEach((r) => {
+        if (r.identificador?.trim()) identificadoresSet.add(r.identificador!.trim())
+      })
+    })
+    const identificadores = Array.from(identificadoresSet)
 
     const osVinculadas = await this.prisma.ordemServico.findMany({
       where: { idAparelho: { in: identificadores } },
@@ -158,8 +165,10 @@ export class AparelhosService {
     }
 
     return aparelhos.map((a) => {
-      const key = (a.identificador ?? '').trim();
-      const os = key ? osPorIdentificador.get(key) : undefined;
+      const chave = a.tipo === 'RASTREADOR'
+        ? (a.identificador ?? '').trim()
+        : (a.aparelhosVinculados?.[0]?.identificador ?? '').trim()
+      const os = chave ? osPorIdentificador.get(chave) : undefined;
       const ordemServicoVinculada = os
         ? {
             numero: os.numero,
