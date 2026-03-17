@@ -157,8 +157,20 @@ export class AparelhosController {
   @Get('pareamento/aparelhos-disponiveis')
   @RequirePermissions('CONFIGURACAO.APARELHO.LISTAR')
   @ApiOperation({ summary: 'Listar aparelhos disponíveis para adicionar ao kit' })
-  getAparelhosDisponiveisParaKit() {
-    return this.kitsService.getAparelhosDisponiveisParaKit();
+  getAparelhosDisponiveisParaKit(
+    @Query('clienteId') clienteIdStr?: string,
+    @Query('modeloEquipamentoId') modeloEquipamentoIdStr?: string,
+    @Query('marcaEquipamentoId') marcaEquipamentoIdStr?: string,
+    @Query('operadoraId') operadoraIdStr?: string,
+  ) {
+    const toInt = (s?: string) => (s ? parseInt(s, 10) : undefined);
+    const parse = (s?: string) => { const n = toInt(s); return n && !isNaN(n) ? n : undefined; };
+    return this.kitsService.getAparelhosDisponiveisParaKit({
+      clienteId: parse(clienteIdStr),
+      modeloEquipamentoId: parse(modeloEquipamentoIdStr),
+      marcaEquipamentoId: parse(marcaEquipamentoIdStr),
+      operadoraId: parse(operadoraIdStr),
+    });
   }
 
   @Post('pareamento/kits')
