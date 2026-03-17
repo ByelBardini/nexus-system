@@ -17,7 +17,7 @@ export class PareamentoService {
     modelo?: string;
   }> {
     const clean = imei.replace(/\D/g, '');
-    if (clean.length < 14 || clean.length > 16) {
+    if (clean.length < 1 || clean.length > 50) {
       return { status: 'INVALID_FORMAT' };
     }
     const rastreador = await this.prisma.aparelho.findFirst({
@@ -45,7 +45,7 @@ export class PareamentoService {
     planoSimcardId?: number;
   }> {
     const clean = iccid.replace(/\D/g, '');
-    if (clean.length < 18 || clean.length > 21) {
+    if (clean.length < 1 || clean.length > 50) {
       return { status: 'INVALID_FORMAT' };
     }
     const sim = await this.prisma.aparelho.findFirst({

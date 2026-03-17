@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsInt, IsOptional, IsBoolean, MaxLength } from 'class-validator';
+import { IsString, IsNotEmpty, IsInt, IsOptional, IsBoolean, MaxLength, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -18,4 +18,11 @@ export class CreateMarcaSimcardDto {
   @IsBoolean()
   @IsOptional()
   temPlanos?: boolean;
+
+  @ApiPropertyOptional({ example: 19, description: 'Quantidade mínima de caracteres do ICCID para esta marca' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  minCaracteresIccid?: number;
 }

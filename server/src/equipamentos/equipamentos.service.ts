@@ -107,7 +107,7 @@ export class EquipamentosService {
       'Modelo já existe para esta marca',
     );
     return this.prisma.modeloEquipamento.create({
-      data: { nome: dto.nome, marcaId: dto.marcaId },
+      data: { nome: dto.nome, marcaId: dto.marcaId, minCaracteresImei: dto.minCaracteresImei ?? null },
       include: { marca: true },
     });
   }
@@ -219,6 +219,7 @@ export class EquipamentosService {
         nome: dto.nome,
         operadoraId: dto.operadoraId,
         temPlanos: dto.temPlanos ?? false,
+        minCaracteresIccid: dto.minCaracteresIccid ?? null,
       },
       include: { operadora: true },
     });
