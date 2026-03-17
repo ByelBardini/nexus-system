@@ -397,7 +397,7 @@ describe('EquipamentosService', () => {
 
       expect(result).toEqual(created);
       expect(prisma.marcaSimcard.create).toHaveBeenCalledWith({
-        data: { nome: 'Getrak', operadoraId: 1, temPlanos: false },
+        data: { nome: 'Getrak', operadoraId: 1, temPlanos: false, minCaracteresIccid: null },
         include: { operadora: true },
       });
     });
