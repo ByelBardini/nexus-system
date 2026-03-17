@@ -70,8 +70,9 @@ describe('KitsService', () => {
       );
     });
 
-    it('atualiza kitId do aparelho rastreador', async () => {
+    it('atualiza kitId do aparelho rastreador sem pedido vinculado ao kit', async () => {
       prisma.aparelho.findUnique.mockResolvedValue({ id: 1, tipo: 'RASTREADOR' });
+      prisma.pedidoRastreador.findMany.mockResolvedValue([]);
       const updated = { id: 1, kitId: 5 };
       prisma.aparelho.update.mockResolvedValue(updated);
 
@@ -79,6 +80,81 @@ describe('KitsService', () => {
 
       expect(result).toEqual(updated);
       expect(prisma.aparelho.update).toHaveBeenCalledWith({ where: { id: 1 }, data: { kitId: 5 } });
+    });
+
+    it('atualiza kitId quando aparelho atende aos requisitos do pedido', async () => {
+      prisma.aparelho.findUnique
+        .mockResolvedValueOnce({ id: 1, tipo: 'RASTREADOR' })
+        .mockResolvedValueOnce({ id: 1, tipo: 'RASTREADOR', marca: 'Teltonika', modelo: 'FMB920', clienteId: null, simVinculado: null });
+      prisma.pedidoRastreador.findMany.mockResolvedValue([
+        {
+          id: 10,
+          kitIds: [5],
+          deClienteId: null,
+          marcaEquipamento: { nome: 'Teltonika' },
+          modeloEquipamento: { nome: 'FMB920' },
+          operadora: null,
+        },
+      ]);
+      const updated = { id: 1, kitId: 5 };
+      prisma.aparelho.update.mockResolvedValue(updated);
+
+      const result = await service.updateAparelhoKit(1, 5);
+
+      expect(result).toEqual(updated);
+    });
+
+    it('lança BadRequestException quando modelo do aparelho não atende ao pedido', async () => {
+      prisma.aparelho.findUnique
+        .mockResolvedValueOnce({ id: 1, tipo: 'RASTREADOR' })
+        .mockResolvedValueOnce({ id: 1, tipo: 'RASTREADOR', marca: 'Teltonika', modelo: 'FMB110', clienteId: null, simVinculado: null })
+        .mockResolvedValueOnce({ id: 1, tipo: 'RASTREADOR' })
+        .mockResolvedValueOnce({ id: 1, tipo: 'RASTREADOR', marca: 'Teltonika', modelo: 'FMB110', clienteId: null, simVinculado: null });
+      prisma.pedidoRastreador.findMany.mockResolvedValue([
+        {
+          id: 10,
+          kitIds: [5],
+          deClienteId: null,
+          marcaEquipamento: { nome: 'Teltonika' },
+          modeloEquipamento: { nome: 'FMB920' },
+          operadora: null,
+        },
+      ]);
+
+      await expect(service.updateAparelhoKit(1, 5)).rejects.toThrow(BadRequestException);
+      await expect(service.updateAparelhoKit(1, 5)).rejects.toThrow('modelo deve ser "FMB920"');
+    });
+
+    it('lança BadRequestException quando operadora do SIM não atende ao pedido', async () => {
+      prisma.aparelho.findUnique
+        .mockResolvedValueOnce({ id: 1, tipo: 'RASTREADOR' })
+        .mockResolvedValueOnce({ id: 1, tipo: 'RASTREADOR', marca: null, modelo: null, clienteId: null, simVinculado: { operadora: 'TIM' } })
+        .mockResolvedValueOnce({ id: 1, tipo: 'RASTREADOR' })
+        .mockResolvedValueOnce({ id: 1, tipo: 'RASTREADOR', marca: null, modelo: null, clienteId: null, simVinculado: { operadora: 'TIM' } });
+      prisma.pedidoRastreador.findMany.mockResolvedValue([
+        {
+          id: 10,
+          kitIds: [5],
+          deClienteId: null,
+          marcaEquipamento: null,
+          modeloEquipamento: null,
+          operadora: { nome: 'Vivo' },
+        },
+      ]);
+
+      await expect(service.updateAparelhoKit(1, 5)).rejects.toThrow(BadRequestException);
+      await expect(service.updateAparelhoKit(1, 5)).rejects.toThrow('operadora do SIM deve ser "Vivo"');
+    });
+
+    it('não valida quando kitId é null (remoção do kit)', async () => {
+      prisma.aparelho.findUnique.mockResolvedValue({ id: 1, tipo: 'RASTREADOR' });
+      const updated = { id: 1, kitId: null };
+      prisma.aparelho.update.mockResolvedValue(updated);
+
+      const result = await service.updateAparelhoKit(1, null);
+
+      expect(result).toEqual(updated);
+      expect(prisma.pedidoRastreador.findMany).not.toHaveBeenCalled();
     });
   });
 
