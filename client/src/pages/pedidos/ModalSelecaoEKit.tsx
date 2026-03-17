@@ -123,7 +123,7 @@ export function ModalSelecaoEKit({
   }, [pedido?.id, kitsPorPedido])
 
   const kitsDisponiveis = useMemo(() => {
-    return kitsDetalhes.filter((k) => !kitIdsEmOutrosPedidos.has(k.id))
+    return kitsDetalhes.filter((k) => !k.kitConcluido && !kitIdsEmOutrosPedidos.has(k.id))
   }, [kitsDetalhes, kitIdsEmOutrosPedidos])
 
   const kitsFiltrados = useMemo(() => {

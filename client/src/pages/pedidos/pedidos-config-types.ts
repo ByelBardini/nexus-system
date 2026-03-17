@@ -7,6 +7,7 @@ export interface KitDetalhe {
   id: number
   nome: string
   criadoEm: string
+  kitConcluido: boolean
   quantidade: number
   modelosOperadoras: string
 }

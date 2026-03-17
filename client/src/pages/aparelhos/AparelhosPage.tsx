@@ -52,6 +52,7 @@ interface Aparelho {
   proprietario: ProprietarioTipo
   cliente?: { id: number; nome: string } | null
   simVinculado?: { id: number; identificador: string; operadora?: string | null } | null
+  aparelhosVinculados?: { id: number; identificador?: string | null }[]
   kitId?: number | null
   kit?: { id: number; nome: string } | null
   tecnico?: { id: number; nome: string } | null
@@ -488,15 +489,18 @@ export function AparelhosPage() {
                         </span>
                       </TableCell>
                       <TableCell className="px-4 py-3">
-                        {aparelho.simVinculado ? (
-                          <span className="font-mono text-xs text-blue-600">
-                            {aparelho.simVinculado.identificador}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-slate-400 italic">
-                            {aparelho.tipo === 'RASTREADOR' ? 'Não vinculado' : 'Disponível'}
-                          </span>
-                        )}
+                        {(() => {
+                          const vinculado = aparelho.tipo === 'RASTREADOR'
+                            ? aparelho.simVinculado?.identificador
+                            : aparelho.aparelhosVinculados?.[0]?.identificador
+                          return vinculado ? (
+                            <span className="font-mono text-xs text-blue-600">{vinculado}</span>
+                          ) : (
+                            <span className="text-xs text-slate-400 italic">
+                              {aparelho.tipo === 'RASTREADOR' ? 'Não vinculado' : 'Disponível'}
+                            </span>
+                          )
+                        })()}
                       </TableCell>
                       <TableCell className="px-4 py-3">
                         {(aparelho.kit?.nome ?? (aparelho.kitId ? kitsPorId.get(aparelho.kitId) : null)) ? (
@@ -603,9 +607,16 @@ export function AparelhosPage() {
                                     <span className="text-slate-500">
                                       {aparelho.tipo === 'RASTREADOR' ? 'SIM Vinculado' : 'Rastreador Vinculado'}
                                     </span>
-                                    <span className={cn('font-bold', aparelho.simVinculado ? 'text-blue-600 font-mono' : 'text-slate-400 italic')}>
-                                      {aparelho.simVinculado?.identificador || (aparelho.tipo === 'RASTREADOR' ? 'Não vinculado' : 'Disponível')}
-                                    </span>
+                                    {(() => {
+                                      const vinculado = aparelho.tipo === 'RASTREADOR'
+                                        ? aparelho.simVinculado?.identificador
+                                        : aparelho.aparelhosVinculados?.[0]?.identificador
+                                      return (
+                                        <span className={cn('font-bold', vinculado ? 'text-blue-600 font-mono' : 'text-slate-400 italic')}>
+                                          {vinculado ?? (aparelho.tipo === 'RASTREADOR' ? 'Não vinculado' : 'Disponível')}
+                                        </span>
+                                      )
+                                    })()}
                                   </div>
                                   <div className="flex justify-between text-[11px] border-b border-slate-100 pb-2">
                                     <span className="text-slate-500">Kit</span>

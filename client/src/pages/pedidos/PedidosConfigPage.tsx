@@ -121,6 +121,7 @@ export function PedidosConfigPage() {
     if (!panelOpen || !pedidoApiSelecionado) return
     const ids = pedidoApiSelecionado.kitIds
     if (!ids || !Array.isArray(ids) || ids.length === 0) return
+    if (kitsDetalhes.length === 0) return
     const current = kitsPorPedido[pedidoApiSelecionado.id]
     if (current && current.length > 0) return
     const mapById = new Map(kitsDetalhes.map((k) => [k.id, k]))
