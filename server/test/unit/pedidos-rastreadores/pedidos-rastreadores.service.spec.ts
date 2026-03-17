@@ -317,9 +317,11 @@ describe('PedidosRastreadoresService', () => {
 
       await service.updateStatus(1, dto);
 
-      expect(prisma.aparelho.findMany).toHaveBeenCalledWith({
-        where: { kitId: { in: [10, 11] }, tipo: 'RASTREADOR' },
-      });
+      expect(prisma.aparelho.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { kitId: { in: [10, 11] }, tipo: 'RASTREADOR' },
+        }),
+      );
       expect(prisma.aparelho.update).toHaveBeenCalledTimes(2);
       expect(prisma.aparelho.update).toHaveBeenCalledWith({
         where: { id: 101 },

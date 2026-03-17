@@ -217,9 +217,11 @@ describe('AparelhosService', () => {
 
     it('registra histórico e atualiza status', async () => {
       const aparelho = { id: 1, status: 'EM_ESTOQUE', historico: [] };
-      prisma.aparelho.findUnique.mockResolvedValue(aparelho);
-      prisma.aparelhoHistorico.create.mockResolvedValue({});
       const updated = { id: 1, status: 'CONFIGURADO' };
+      prisma.aparelho.findUnique
+        .mockResolvedValueOnce(aparelho)
+        .mockResolvedValueOnce(updated);
+      prisma.aparelhoHistorico.create.mockResolvedValue({});
       prisma.aparelho.update.mockResolvedValue(updated);
 
       const result = await service.updateStatus(1, 'CONFIGURADO', 'Obs');
