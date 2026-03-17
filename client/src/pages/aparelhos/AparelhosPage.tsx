@@ -67,7 +67,7 @@ interface Aparelho {
   tecnico?: { id: number; nome: string } | null
   lote?: { id: number; referencia: string } | null
   valorUnitario?: number | null
-  ordemServicoId?: number | null
+  ordemServicoVinculada?: { numero: number; subclienteNome: string | null; veiculoPlaca: string | null } | null
   criadoEm: string
   historico?: HistoricoItem[]
 }
@@ -671,15 +671,27 @@ export function AparelhosPage() {
                                       )
                                     })()}
                                   </div>
-                                  <div className="flex justify-between text-[11px]">
+                                  <div className="flex justify-between text-[11px] border-b border-slate-100 pb-2">
                                     <span className="text-slate-500">Ordem de Serviço</span>
-                                    {aparelho.ordemServicoId ? (
-                                      <span className="font-bold text-blue-600 hover:underline cursor-pointer">
-                                        OS #{aparelho.ordemServicoId}
+                                    {aparelho.ordemServicoVinculada ? (
+                                      <span className="font-bold text-blue-600">
+                                        OS #{aparelho.ordemServicoVinculada.numero}
                                       </span>
                                     ) : (
                                       <span className="text-slate-400">-</span>
                                     )}
+                                  </div>
+                                  <div className="flex justify-between text-[11px] border-b border-slate-100 pb-2">
+                                    <span className="text-slate-500">Subcliente</span>
+                                    <span className={cn('font-bold', aparelho.ordemServicoVinculada?.subclienteNome ? 'text-slate-700' : 'text-slate-400')}>
+                                      {aparelho.ordemServicoVinculada?.subclienteNome ?? '-'}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between text-[11px]">
+                                    <span className="text-slate-500">Placa</span>
+                                    <span className={cn('font-bold', aparelho.ordemServicoVinculada?.veiculoPlaca ? 'text-slate-700' : 'text-slate-400')}>
+                                      {aparelho.ordemServicoVinculada?.veiculoPlaca ?? '-'}
+                                    </span>
                                   </div>
                                 </div>
                               </div>
