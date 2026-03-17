@@ -441,25 +441,43 @@ export class OrdensServicoService {
       ) {
         const aparelho = await tx.aparelho.findFirst({
           where: { identificador: os.idAparelho.trim(), tipo: 'RASTREADOR' },
+          include: { simVinculado: { select: { id: true, status: true } } },
         });
         if (aparelho) {
+          const obsInstalacao = [
+            `Instalado via OS #${os.numero}`,
+            os.veiculo ? `Placa: ${os.veiculo.placa}` : null,
+          ]
+            .filter(Boolean)
+            .join(' | ');
+
           await tx.aparelhoHistorico.create({
             data: {
               aparelhoId: aparelho.id,
               statusAnterior: aparelho.status,
               statusNovo: StatusAparelho.INSTALADO,
-              observacao: [
-                `Instalado via OS #${os.numero}`,
-                os.veiculo ? `Placa: ${os.veiculo.placa}` : null,
-              ]
-                .filter(Boolean)
-                .join(' | '),
+              observacao: obsInstalacao,
             },
           });
           await tx.aparelho.update({
             where: { id: aparelho.id },
             data: { status: StatusAparelho.INSTALADO },
           });
+
+          if (aparelho.simVinculadoId && aparelho.simVinculado) {
+            await tx.aparelhoHistorico.create({
+              data: {
+                aparelhoId: aparelho.simVinculadoId,
+                statusAnterior: aparelho.simVinculado.status,
+                statusNovo: StatusAparelho.INSTALADO,
+                observacao: obsInstalacao,
+              },
+            });
+            await tx.aparelho.update({
+              where: { id: aparelho.simVinculadoId },
+              data: { status: StatusAparelho.INSTALADO },
+            });
+          }
         }
       }
     });

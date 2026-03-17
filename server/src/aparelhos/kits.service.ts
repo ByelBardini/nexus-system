@@ -36,6 +36,7 @@ export class KitsService {
         id: k.id,
         nome: k.nome,
         criadoEm: k.criadoEm,
+        kitConcluido: k.kitConcluido,
         quantidade: k._count.aparelhos,
         modelosOperadoras:
           [...modelos, ...operadoras].filter(Boolean).join(', ') || '-',

@@ -114,6 +114,12 @@ export class AparelhosService {
             planoSimcard: { select: { id: true, planoMb: true } },
           },
         },
+        aparelhosVinculados: {
+          select: {
+            id: true,
+            identificador: true,
+          },
+        },
         historico: {
           orderBy: { criadoEm: 'desc' },
           take: 5,
@@ -181,18 +187,35 @@ export class AparelhosService {
   async updateStatus(id: number, status: StatusAparelho, observacao?: string) {
     const aparelho = await this.findOne(id);
 
-    await this.prisma.aparelhoHistorico.create({
-      data: {
-        aparelhoId: id,
-        statusAnterior: aparelho.status,
-        statusNovo: status,
-        observacao,
-      },
+    await this.prisma.$transaction(async (tx) => {
+      await tx.aparelhoHistorico.create({
+        data: {
+          aparelhoId: id,
+          statusAnterior: aparelho.status,
+          statusNovo: status,
+          observacao,
+        },
+      });
+      await tx.aparelho.update({ where: { id }, data: { status } });
+
+      if (aparelho.tipo === 'RASTREADOR' && aparelho.simVinculadoId) {
+        await tx.aparelhoHistorico.create({
+          data: {
+            aparelhoId: aparelho.simVinculadoId,
+            statusAnterior: aparelho.simVinculado!.status,
+            statusNovo: status,
+            observacao: observacao ?? `Status atualizado junto ao rastreador`,
+          },
+        });
+        await tx.aparelho.update({
+          where: { id: aparelho.simVinculadoId },
+          data: { status },
+        });
+      }
     });
 
-    return this.prisma.aparelho.update({
+    return this.prisma.aparelho.findUnique({
       where: { id },
-      data: { status },
       include: {
         cliente: { select: { id: true, nome: true } },
         lote: { select: { id: true, referencia: true } },

@@ -285,6 +285,7 @@ export class PedidosRastreadoresService {
             kitId: { in: kitIds },
             tipo: 'RASTREADOR',
           },
+          select: { id: true, status: true, simVinculadoId: true, simVinculado: { select: { id: true, status: true } } },
         });
 
         const dataAparelho: {
@@ -329,6 +330,21 @@ export class PedidosRastreadoresService {
             where: { id: ap.id },
             data: dataAparelho,
           });
+
+          if (ap.simVinculadoId && ap.simVinculado) {
+            await tx.aparelhoHistorico.create({
+              data: {
+                aparelhoId: ap.simVinculadoId,
+                statusAnterior: ap.simVinculado.status,
+                statusNovo: novoStatusAparelho,
+                observacao: `Pedido ${pedido.codigo} ${dto.status}`,
+              },
+            });
+            await tx.aparelho.update({
+              where: { id: ap.simVinculadoId },
+              data: { status: novoStatusAparelho },
+            });
+          }
         }
       }
     });
