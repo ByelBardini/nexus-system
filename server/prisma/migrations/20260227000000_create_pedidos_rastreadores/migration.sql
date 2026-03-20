@@ -40,7 +40,7 @@ ALTER TABLE `modelos_equipamentos` ADD CONSTRAINT `modelos_equipamentos_marca_id
 CREATE TABLE `pedidos_rastreadores` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `codigo` VARCHAR(20) NOT NULL,
-    `tipo_destino` ENUM('TECNICO', 'CLIENTE') NOT NULL,
+    `tipoDestino` ENUM('TECNICO', 'CLIENTE') NOT NULL,
     `tecnico_id` INTEGER NULL,
     `subcliente_id` INTEGER NULL,
     `quantidade` INTEGER NOT NULL,
