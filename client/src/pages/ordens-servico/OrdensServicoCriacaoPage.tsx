@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useEffect } from 'react'
+import { useCallback, useMemo, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller, useWatch } from 'react-hook-form'
@@ -200,6 +200,8 @@ export function OrdensServicoCriacaoPage() {
     resolver: zodResolver(schema),
     defaultValues,
   })
+
+  const [kmEstimado, setKmEstimado] = useState<number | ''>('')
 
   const ordemInstalacao = form.watch('ordemInstalacao')
   const clienteOrdemId = form.watch('clienteOrdemId')
@@ -1263,37 +1265,91 @@ export function OrdensServicoCriacaoPage() {
               ))}
             </div>
           </div>
-          <div className="p-5 border-t border-slate-200 shrink-0 space-y-2">
-            <div>
-              <span className="text-[11px] text-slate-500 font-bold uppercase block mb-1">
-                Valor aproximado
-              </span>
-              <p className="text-2xl font-black text-slate-800">
-                {(() => {
-                  const key = tipo && tipoToPrecoKey[tipo]
-                  const valor = key ? tecnicoSelecionado?.precos?.[key] : null
-                  const num = typeof valor === 'string' ? parseFloat(valor) : Number(valor ?? 0)
-                  return !Number.isNaN(num) && num > 0
-                    ? num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-                    : '—'
-                })()}
-              </p>
-            </div>
-            <div>
-              <span className="text-[11px] text-slate-500 font-bold uppercase block mb-1">
-                Deslocamento
-              </span>
-              <p className="text-base font-bold text-slate-600">
-                +{' '}
-                {(() => {
-                  const valor = tecnicoSelecionado?.precos?.deslocamento
-                  const num = typeof valor === 'string' ? parseFloat(valor) : Number(valor ?? 0)
-                  return !Number.isNaN(num) && num > 0
-                    ? num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) + ' por KM'
-                    : '—'
-                })()}
-              </p>
-            </div>
+          <div className="p-5 border-t border-slate-200 shrink-0 space-y-3">
+            {/* Deslocamento com campo KM */}
+            {(() => {
+              const valor = tecnicoSelecionado?.precos?.deslocamento
+              const precoKm = typeof valor === 'string' ? parseFloat(valor) : Number(valor ?? 0)
+              const temPrecoKm = !Number.isNaN(precoKm) && precoKm > 0
+              const totalDeslocamento =
+                temPrecoKm && kmEstimado !== '' && kmEstimado > 0
+                  ? precoKm * kmEstimado
+                  : null
+              return (
+                <div>
+                  <span className="text-[11px] text-slate-500 font-bold uppercase block mb-2">
+                    Deslocamento
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="0"
+                      value={kmEstimado}
+                      onChange={(e) => {
+                        const v = e.target.value
+                        setKmEstimado(v === '' ? '' : Math.max(0, Number(v)))
+                      }}
+                      className="h-8 w-20 text-xs text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                    />
+                    <span className="text-xs font-bold text-slate-500">KM</span>
+                    {temPrecoKm && (
+                      <span className="text-xs text-slate-400">
+                        × {precoKm.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/KM
+                      </span>
+                    )}
+                    {totalDeslocamento !== null && (
+                      <span className="text-xs font-bold text-slate-700 ml-auto">
+                        = {totalDeslocamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )
+            })()}
+
+            <div className="border-t border-slate-100" />
+
+            {/* Valor total aproximado */}
+            {(() => {
+              const key = tipo && tipoToPrecoKey[tipo]
+              const valorServico = key ? tecnicoSelecionado?.precos?.[key] : null
+              const numServico =
+                typeof valorServico === 'string' ? parseFloat(valorServico) : Number(valorServico ?? 0)
+              const precoServico = !Number.isNaN(numServico) && numServico > 0 ? numServico : null
+
+              const valorKm = tecnicoSelecionado?.precos?.deslocamento
+              const precoKm =
+                typeof valorKm === 'string' ? parseFloat(valorKm) : Number(valorKm ?? 0)
+              const totalDeslocamento =
+                !Number.isNaN(precoKm) && precoKm > 0 && kmEstimado !== '' && kmEstimado > 0
+                  ? precoKm * kmEstimado
+                  : null
+
+              const valorTotal =
+                precoServico !== null ? precoServico + (totalDeslocamento ?? 0) : null
+
+              return (
+                <div>
+                  <span className="text-[11px] text-slate-500 font-bold uppercase block mb-1">
+                    Valor total aproximado
+                  </span>
+                  <p className="text-2xl font-black text-slate-800">
+                    {valorTotal !== null
+                      ? valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+                      : '—'}
+                  </p>
+                  {totalDeslocamento !== null && precoServico !== null && (
+                    <p className="text-[10px] text-slate-400 mt-0.5">
+                      serviço{' '}
+                      {precoServico.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      {' + deslocamento '}
+                      {totalDeslocamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </p>
+                  )}
+                </div>
+              )
+            })()}
           </div>
           <div className="p-5 bg-slate-50 border-t border-slate-200 shrink-0">
             <Button
