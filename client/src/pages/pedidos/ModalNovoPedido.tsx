@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { MaterialIcon } from '@/components/MaterialIcon'
+import { SelectTecnicoSearch } from '@/components/SelectTecnicoSearch'
 import { api } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
@@ -465,49 +466,49 @@ export function ModalNovoPedido({
                 <Label className="text-[10px] font-bold uppercase text-slate-500 block mb-1.5">
                   Pesquisar Destinatário
                 </Label>
-                <Controller
-                  name={tipoDestino === 'TECNICO' ? 'tecnicoId' : 'destinoCliente'}
-                  control={form.control}
-                  render={({ field }) => (
-                    <div className="relative">
-                      <MaterialIcon
-                        name="search"
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"
+                {tipoDestino === 'TECNICO' ? (
+                  <Controller
+                    name="tecnicoId"
+                    control={form.control}
+                    render={({ field }) => (
+                      <SelectTecnicoSearch
+                        tecnicos={tecnicos}
+                        value={field.value}
+                        onChange={field.onChange}
+                        disabled={loadingTecnicos}
                       />
-                      <Select
-                        value={
-                          tipoDestino === 'TECNICO'
-                            ? (field.value != null ? String(field.value) : '')
-                            : String(field.value ?? '')
-                        }
-                        onValueChange={(v) =>
-                          tipoDestino === 'TECNICO' ? field.onChange(v ? +v : undefined) : field.onChange(v ?? '')
-                        }
-                        disabled={
-                          (tipoDestino === 'TECNICO' && loadingTecnicos) ||
-                          (tipoDestino === 'CLIENTE' && loadingClientes)
-                        }
-                      >
-                        <SelectTrigger className="pl-9 h-9 text-xs">
-                          <SelectValue placeholder="Selecione o destinatário" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {tipoDestino === 'TECNICO'
-                            ? tecnicos.map((t) => (
-                                <SelectItem key={t.id} value={String(t.id)}>
-                                  {t.nome} (Técnico)
-                                </SelectItem>
-                              ))
-                            : opcoesCliente.map((o) => (
-                                <SelectItem key={`${o.tipo}-${o.id}`} value={`${o.tipo}-${o.id}`}>
-                                  {o.label}
-                                </SelectItem>
-                              ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                />
+                    )}
+                  />
+                ) : (
+                  <Controller
+                    name="destinoCliente"
+                    control={form.control}
+                    render={({ field }) => (
+                      <div className="relative">
+                        <MaterialIcon
+                          name="search"
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"
+                        />
+                        <Select
+                          value={String(field.value ?? '')}
+                          onValueChange={(v) => field.onChange(v ?? '')}
+                          disabled={loadingClientes}
+                        >
+                          <SelectTrigger className="pl-9 h-9 text-xs">
+                            <SelectValue placeholder="Selecione o destinatário" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {opcoesCliente.map((o) => (
+                              <SelectItem key={`${o.tipo}-${o.id}`} value={`${o.tipo}-${o.id}`}>
+                                {o.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  />
+                )}
                 {(form.formState.errors.tecnicoId ?? form.formState.errors.destinoCliente ?? form.formState.errors.root) && (
                   <p className="text-xs text-destructive mt-1">
                     {(form.formState.errors.tecnicoId ?? form.formState.errors.destinoCliente ?? form.formState.errors.root)

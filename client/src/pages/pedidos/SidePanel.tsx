@@ -73,6 +73,19 @@ export function SidePanel({
 
   const podeEditar = hasPermission('AGENDAMENTO.PEDIDO_RASTREADOR.EDITAR')
 
+  const kitIdsMutation = useMutation({
+    mutationFn: ({ id, kitIds }: { id: number; kitIds: number[] }) =>
+      api(`/pedidos-rastreadores/${id}/kits`, {
+        method: 'PATCH',
+        body: JSON.stringify({ kitIds }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pedidos-rastreadores'] })
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : 'Erro ao salvar kit'),
+  })
+
   const statusMutation = useMutation({
     mutationFn: ({
       id,
@@ -165,24 +178,26 @@ export function SidePanel({
   }
 
   function handleVincularKit(kit: KitResumo, qtd: number) {
-    onKitsChange(
-      (() => {
-        const prev = kitsVinculados
-        const idx = prev.findIndex((k) => k.id === kit.id)
-        if (idx >= 0) {
-          const next = [...prev]
-          next[idx] = { ...next[idx], nome: kit.nome, quantidade: qtd }
-          return next
-        }
-        return [...prev, { id: kit.id, nome: kit.nome, quantidade: qtd }]
-      })()
-    )
+    const prev = kitsVinculados
+    const idx = prev.findIndex((k) => k.id === kit.id)
+    const newKits =
+      idx >= 0
+        ? prev.map((k, i) => (i === idx ? { ...k, nome: kit.nome, quantidade: qtd } : k))
+        : [...prev, { id: kit.id, nome: kit.nome, quantidade: qtd }]
+    onKitsChange(newKits)
+    if (pedido) {
+      kitIdsMutation.mutate({ id: pedido.id, kitIds: newKits.map((k) => k.id) })
+    }
   }
 
   function handleRemoverKit(kitId: number) {
-    onKitsChange(kitsVinculados.filter((k) => k.id !== kitId))
+    const newKits = kitsVinculados.filter((k) => k.id !== kitId)
+    onKitsChange(newKits)
     if (kitExpandidoId === kitId) setKitExpandidoId(null)
     if (detalhesKitId === kitId) setDetalhesKitId(null)
+    if (pedido) {
+      kitIdsMutation.mutate({ id: pedido.id, kitIds: newKits.map((k) => k.id) })
+    }
   }
 
   function handleToggleExpandir(kitId: number) {

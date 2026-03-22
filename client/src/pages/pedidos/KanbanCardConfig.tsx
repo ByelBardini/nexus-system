@@ -60,7 +60,7 @@ export function KanbanCardConfig({
         <div className="flex justify-between text-[10px] font-bold text-slate-600">
           <span>Progresso de Montagem</span>
           <span className={progress > 0 ? 'text-erp-blue' : ''}>
-            {progress} / {String(total).padStart(2, '0')}
+            {String(progress).padStart(2,'0')} / {String(total).padStart(2, '0')}
           </span>
         </div>
         <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">

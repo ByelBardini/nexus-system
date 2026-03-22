@@ -72,6 +72,7 @@ export function PareamentoPage() {
   const [kitModo, setKitModo] = useState<'existente' | 'novo'>('existente')
   const [kitIdExistente, setKitIdExistente] = useState<string>('')
   const [kitNomeNovo, setKitNomeNovo] = useState<string>('')
+  const [kitBuscaIndividual, setKitBuscaIndividual] = useState('')
   const [quantidadeCriada, setQuantidadeCriada] = useState(0)
 
   // Massa
@@ -91,6 +92,9 @@ export function PareamentoPage() {
   const [adicionarKitMassa, setAdicionarKitMassa] = useState(false)
   const [kitModoMassa, setKitModoMassa] = useState<'existente' | 'novo'>('existente')
   const [kitIdExistenteMassa, setKitIdExistenteMassa] = useState<string>('')
+  const [kitBuscaMassa, setKitBuscaMassa] = useState('')
+  const [loteBuscaRastreador, setLoteBuscaRastreador] = useState('')
+  const [loteBuscaSim, setLoteBuscaSim] = useState('')
 
   const imeis = useMemo(() => parseIds(textImeis), [textImeis])
   const iccids = useMemo(() => parseIds(textIccids), [textIccids])
@@ -101,13 +105,13 @@ export function PareamentoPage() {
     return imeis.map((imei, i) => ({ imei, iccid: iccids[i] ?? '' }))
   }, [imeis, iccids, quantidadeBate])
 
-  const { data: lotesRastreadores = [] } = useQuery<{ id: number; referencia: string; quantidadeDisponivelSemId: number }[]>({
+  const { data: lotesRastreadores = [] } = useQuery<{ id: number; referencia: string; quantidadeDisponivelSemId: number; modelo: string | null; marca: string | null; operadora: string | null; marcaSimcardId: number | null }[]>({
     queryKey: ['lotes-rastreadores'],
     queryFn: () => api('/aparelhos/pareamento/lotes-rastreadores'),
     enabled: modo === 'massa' || modo === 'individual',
   })
 
-  const { data: lotesSims = [] } = useQuery<{ id: number; referencia: string; quantidadeDisponivelSemId: number }[]>({
+  const { data: lotesSims = [] } = useQuery<{ id: number; referencia: string; quantidadeDisponivelSemId: number; modelo: string | null; marca: string | null; operadora: string | null; marcaSimcardId: number | null }[]>({
     queryKey: ['lotes-sims'],
     queryFn: () => api('/aparelhos/pareamento/lotes-sims'),
     enabled: modo === 'massa' || modo === 'individual',
@@ -118,7 +122,7 @@ export function PareamentoPage() {
     queryFn: () => api('/equipamentos/marcas'),
     enabled: modo === 'individual' || modo === 'massa',
   })
-  const { data: modelos = [] } = useQuery<{ id: number; nome: string; marca: { id: number } }[]>({
+  const { data: modelos = [] } = useQuery<{ id: number; nome: string; marca: { id: number }; minCaracteresImei?: number | null }[]>({
     queryKey: ['modelos'],
     queryFn: () => api('/equipamentos/modelos'),
     enabled: modo === 'individual' || modo === 'massa',
@@ -129,17 +133,106 @@ export function PareamentoPage() {
     enabled: modo === 'individual' || modo === 'massa',
   })
   const { data: marcasSimcard = [] } = useQuery<
-    { id: number; nome: string; operadoraId: number; temPlanos: boolean; operadora: { id: number; nome: string }; planos?: { id: number; planoMb: number; ativo: boolean }[] }[]
+    { id: number; nome: string; operadoraId: number; temPlanos: boolean; minCaracteresIccid?: number | null; operadora: { id: number; nome: string }; planos?: { id: number; planoMb: number; ativo: boolean }[] }[]
   >({
     queryKey: ['marcas-simcard'],
     queryFn: () => api('/equipamentos/marcas-simcard'),
     enabled: modo === 'individual' || modo === 'massa',
   })
+  const kitFiltroIndividual = useMemo(() => {
+    let modelo: string | undefined
+    let marca: string | undefined
+    let operadora: string | undefined
+
+    if (pertenceLoteRastreador && loteRastreadorId) {
+      const lote = lotesRastreadores.find((l) => String(l.id) === loteRastreadorId)
+      modelo = lote?.modelo ?? undefined
+      marca = lote?.marca ?? undefined
+    } else if (!pertenceLoteRastreador && modeloRastreador) {
+      modelo = modeloRastreador
+      marca = marcaRastreador || undefined
+    }
+
+    if (pertenceLoteSim && loteSimId) {
+      const lote = lotesSims.find((l) => String(l.id) === loteSimId)
+      operadora = lote?.operadora ?? undefined
+    } else if (!pertenceLoteSim && operadoraSim) {
+      operadora = operadoraSim
+    }
+
+    return { modelo, marca, operadora }
+  }, [pertenceLoteRastreador, loteRastreadorId, lotesRastreadores, modeloRastreador, marcaRastreador,
+      pertenceLoteSim, loteSimId, lotesSims, operadoraSim])
+
+  const kitFiltroMassa = useMemo(() => {
+    let modelo: string | undefined
+    let marca: string | undefined
+    let operadora: string | undefined
+
+    if (pertenceLoteRastreadorMassa && loteRastreadorId) {
+      const lote = lotesRastreadores.find((l) => String(l.id) === loteRastreadorId)
+      modelo = lote?.modelo ?? undefined
+      marca = lote?.marca ?? undefined
+    } else if (!pertenceLoteRastreadorMassa && modeloRastreadorMassa) {
+      modelo = modeloRastreadorMassa
+      marca = marcaRastreadorMassa || undefined
+    }
+
+    if (pertenceLoteSimMassa && loteSimId) {
+      const lote = lotesSims.find((l) => String(l.id) === loteSimId)
+      operadora = lote?.operadora ?? undefined
+    } else if (!pertenceLoteSimMassa && operadoraSimMassa) {
+      operadora = operadoraSimMassa
+    }
+
+    return { modelo, marca, operadora }
+  }, [pertenceLoteRastreadorMassa, loteRastreadorId, lotesRastreadores, modeloRastreadorMassa, marcaRastreadorMassa,
+      pertenceLoteSimMassa, loteSimId, lotesSims, operadoraSimMassa])
+
+  const kitFiltroAtivo = modo === 'individual' ? kitFiltroIndividual : kitFiltroMassa
   const { data: kits = [] } = useQuery<{ id: number; nome: string }[]>({
-    queryKey: ['kits'],
-    queryFn: () => api('/aparelhos/pareamento/kits'),
+    queryKey: ['kits', kitFiltroAtivo],
+    queryFn: () => {
+      const params = new URLSearchParams()
+      if (kitFiltroAtivo.modelo) params.set('modelo', kitFiltroAtivo.modelo)
+      if (kitFiltroAtivo.marca) params.set('marca', kitFiltroAtivo.marca)
+      if (kitFiltroAtivo.operadora) params.set('operadora', kitFiltroAtivo.operadora)
+      const qs = params.toString()
+      return api(`/aparelhos/pareamento/kits${qs ? `?${qs}` : ''}`)
+    },
     enabled: (modo === 'individual' && adicionarKit) || (modo === 'massa' && adicionarKitMassa),
   })
+
+  const kitsFilteradosIndividual = useMemo(() => {
+    const s = kitBuscaIndividual.trim().toLowerCase()
+    if (!s) return kits
+    return kits.filter((k) => k.nome.toLowerCase().includes(s))
+  }, [kits, kitBuscaIndividual])
+
+  const kitsFilteradosMassa = useMemo(() => {
+    const s = kitBuscaMassa.trim().toLowerCase()
+    if (!s) return kits
+    return kits.filter((k) => k.nome.toLowerCase().includes(s))
+  }, [kits, kitBuscaMassa])
+
+  const lotesRastreadoresFiltrados = useMemo(() => {
+    const s = loteBuscaRastreador.trim().toLowerCase()
+    if (!s) return lotesRastreadores
+    return lotesRastreadores.filter((l) => {
+      const info = [l.marca, l.modelo].filter(Boolean).join(' / ')
+      return l.referencia.toLowerCase().includes(s) || info.toLowerCase().includes(s)
+    })
+  }, [lotesRastreadores, loteBuscaRastreador])
+
+  const lotesSimsFiltrados = useMemo(() => {
+    const s = loteBuscaSim.trim().toLowerCase()
+    if (!s) return lotesSims
+    return lotesSims.filter((l) => {
+      const marcaNome = marcasSimcard.find((m) => m.id === l.marcaSimcardId)?.nome ?? null
+      const info = [l.operadora, marcaNome].filter(Boolean).join(' / ')
+      return l.referencia.toLowerCase().includes(s) || info.toLowerCase().includes(s)
+    })
+  }, [lotesSims, loteBuscaSim, marcasSimcard])
 
   const marcasAtivas = useMemo(() => marcas.filter((m) => m.ativo), [marcas])
   const operadorasAtivas = useMemo(() => operadoras.filter((o) => o.ativo), [operadoras])
@@ -169,13 +262,38 @@ export function PareamentoPage() {
     return marcasSimcard.filter((m) => m.operadoraId === opId)
   }, [marcasSimcard, operadoraSimMassa, operadorasAtivas])
 
+  const minImeiIndividual = useMemo(() => {
+    if (pertenceLoteRastreador) return 0
+    const modelo = modelosPorMarca.find((m) => m.nome === modeloRastreador)
+    return modelo?.minCaracteresImei ?? 0
+  }, [pertenceLoteRastreador, modeloRastreador, modelosPorMarca])
+
+  const minIccidIndividual = useMemo(() => {
+    if (pertenceLoteSim) return 0
+    const marca = marcasSimcard.find((m) => String(m.id) === marcaSimcardIdSim)
+    return marca?.minCaracteresIccid ?? 0
+  }, [pertenceLoteSim, marcaSimcardIdSim, marcasSimcard])
+
+  const minImeiMassa = useMemo(() => {
+    if (pertenceLoteRastreadorMassa) return 0
+    const modelo = modelosPorMarcaMassa.find((m) => m.nome === modeloRastreadorMassa)
+    return modelo?.minCaracteresImei ?? 0
+  }, [pertenceLoteRastreadorMassa, modeloRastreadorMassa, modelosPorMarcaMassa])
+
+  const minIccidMassa = useMemo(() => {
+    if (pertenceLoteSimMassa) return 0
+    const marca = marcasSimcard.find((m) => String(m.id) === marcaSimcardIdSimMassa)
+    return marca?.minCaracteresIccid ?? 0
+  }, [pertenceLoteSimMassa, marcaSimcardIdSimMassa, marcasSimcard])
+
   const paresIndividual = useMemo(() => {
     const imei = imeiIndividual.replace(/\D/g, '')
     const iccid = iccidIndividual.replace(/\D/g, '')
-    // Alinhado com backend: IMEI 14-16 dígitos, ICCID 18-21 dígitos
-    if (imei.length < 14 || imei.length > 16 || iccid.length < 18 || iccid.length > 21) return []
+    if (imei.length < 1 || iccid.length < 1) return []
+    if (minImeiIndividual > 0 && imei.length < minImeiIndividual) return []
+    if (minIccidIndividual > 0 && iccid.length < minIccidIndividual) return []
     return [{ imei: imeiIndividual.trim(), iccid: iccidIndividual.trim() }]
-  }, [imeiIndividual, iccidIndividual])
+  }, [imeiIndividual, iccidIndividual, minImeiIndividual, minIccidIndividual])
 
   const fetchPreview = useCallback(async () => {
     const pares = modo === 'individual' ? paresIndividual : paresMassa
@@ -302,9 +420,11 @@ export function PareamentoPage() {
   const podeConfirmarIndividual = useMemo(() => {
     const imei = imeiIndividual.replace(/\D/g, '')
     const iccid = iccidIndividual.replace(/\D/g, '')
-    // Alinhado com backend: IMEI 14-16, ICCID 18-21
-    return imei.length >= 14 && imei.length <= 16 && iccid.length >= 18 && iccid.length <= 21
-  }, [imeiIndividual, iccidIndividual])
+    if (imei.length < 1 || iccid.length < 1) return false
+    if (minImeiIndividual > 0 && imei.length < minImeiIndividual) return false
+    if (minIccidIndividual > 0 && iccid.length < minIccidIndividual) return false
+    return true
+  }, [imeiIndividual, iccidIndividual, minImeiIndividual, minIccidIndividual])
 
   const loteRastreadorSelecionado = useMemo(
     () =>
@@ -326,8 +446,8 @@ export function PareamentoPage() {
   const progressoVinculoIndividual = useMemo(() => {
     const imei = imeiIndividual.replace(/\D/g, '')
     const iccid = iccidIndividual.replace(/\D/g, '')
-    const imeiOk = imei.length >= 14
-    const iccidOk = iccid.length >= 18
+    const imeiOk = imei.length >= 1 && (minImeiIndividual === 0 || imei.length >= minImeiIndividual)
+    const iccidOk = iccid.length >= 1 && (minIccidIndividual === 0 || iccid.length >= minIccidIndividual)
     const rastreadorOk = pertenceLoteRastreador
       ? loteRastreadorSelecionado
       : !!(marcaRastreador && modeloRastreador)
@@ -442,7 +562,9 @@ export function PareamentoPage() {
   const handleGerarPreview = () => {
     if (modo === 'individual') {
       if (paresIndividual.length === 0) {
-        toast.error('Informe IMEI (15 dígitos) e ICCID (19-20 dígitos)')
+        const imeiMsg = minImeiIndividual > 0 ? `${minImeiIndividual} dígitos` : 'ao menos 1 dígito'
+        const iccidMsg = minIccidIndividual > 0 ? `${minIccidIndividual} dígitos` : 'ao menos 1 dígito'
+        toast.error(`Informe IMEI (${imeiMsg}) e ICCID (${iccidMsg})`)
         return
       }
     } else {
@@ -603,18 +725,33 @@ export function PareamentoPage() {
                           <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-600">
                             Lote
                           </Label>
-                          <Select value={loteRastreadorId} onValueChange={setLoteRastreadorId}>
+                          <Select value={loteRastreadorId} onValueChange={setLoteRastreadorId} onOpenChange={(o) => { if (!o) setLoteBuscaRastreador('') }}>
                             <SelectTrigger className="h-9">
                               <SelectValue placeholder="Selecione o lote..." />
                             </SelectTrigger>
                             <SelectContent>
-                              {lotesRastreadores.map((l) => (
-                                <SelectItem key={l.id} value={String(l.id)}>
-                                  {l.referencia} ({l.quantidadeDisponivelSemId} disp.)
-                                </SelectItem>
-                              ))}
-                              {lotesRastreadores.length === 0 && (
-                                <SelectItem value="_" disabled>Nenhum lote disponível</SelectItem>
+                              <div className="px-2 pb-1 pt-1">
+                                <Input
+                                  placeholder="Buscar lote..."
+                                  value={loteBuscaRastreador}
+                                  onChange={(e) => setLoteBuscaRastreador(e.target.value)}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  className="h-7 text-xs"
+                                />
+                              </div>
+                              {lotesRastreadoresFiltrados.map((l) => {
+                                const info = [l.marca, l.modelo].filter(Boolean).join(' / ')
+                                return (
+                                  <SelectItem key={l.id} value={String(l.id)} textValue={l.referencia}>
+                                    <span className="flex w-full items-center justify-between gap-3">
+                                      <span>{l.referencia}</span>
+                                      {info && <span className="text-[11px] text-slate-400">({info})</span>}
+                                    </span>
+                                  </SelectItem>
+                                )
+                              })}
+                              {lotesRastreadoresFiltrados.length === 0 && (
+                                <SelectItem value="_" disabled>Nenhum lote encontrado</SelectItem>
                               )}
                             </SelectContent>
                           </Select>
@@ -706,18 +843,34 @@ export function PareamentoPage() {
                           <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-600">
                             Lote
                           </Label>
-                          <Select value={loteSimId} onValueChange={setLoteSimId}>
+                          <Select value={loteSimId} onValueChange={setLoteSimId} onOpenChange={(o) => { if (!o) setLoteBuscaSim('') }}>
                             <SelectTrigger className="h-9">
                               <SelectValue placeholder="Selecione o lote..." />
                             </SelectTrigger>
                             <SelectContent>
-                              {lotesSims.map((l) => (
-                                <SelectItem key={l.id} value={String(l.id)}>
-                                  {l.referencia} ({l.quantidadeDisponivelSemId} disp.)
-                                </SelectItem>
-                              ))}
-                              {lotesSims.length === 0 && (
-                                <SelectItem value="_" disabled>Nenhum lote disponível</SelectItem>
+                              <div className="px-2 pb-1 pt-1">
+                                <Input
+                                  placeholder="Buscar lote..."
+                                  value={loteBuscaSim}
+                                  onChange={(e) => setLoteBuscaSim(e.target.value)}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  className="h-7 text-xs"
+                                />
+                              </div>
+                              {lotesSimsFiltrados.map((l) => {
+                                const marcaNome = marcasSimcard.find((m) => m.id === l.marcaSimcardId)?.nome ?? null
+                                const info = [l.operadora, marcaNome].filter(Boolean).join(' / ')
+                                return (
+                                  <SelectItem key={l.id} value={String(l.id)} textValue={l.referencia}>
+                                    <span className="flex w-full items-center justify-between gap-3">
+                                      <span>{l.referencia}</span>
+                                      {info && <span className="text-[11px] text-slate-400">({info})</span>}
+                                    </span>
+                                  </SelectItem>
+                                )
+                              })}
+                              {lotesSimsFiltrados.length === 0 && (
+                                <SelectItem value="_" disabled>Nenhum lote encontrado</SelectItem>
                               )}
                             </SelectContent>
                           </Select>
@@ -868,18 +1021,27 @@ export function PareamentoPage() {
                           <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-600">
                             Kit
                           </Label>
-                          <Select value={kitIdExistente} onValueChange={setKitIdExistente}>
+                          <Select value={kitIdExistente} onValueChange={setKitIdExistente} onOpenChange={(o) => { if (!o) setKitBuscaIndividual('') }}>
                             <SelectTrigger className="h-9">
                               <SelectValue placeholder="Selecione um kit..." />
                             </SelectTrigger>
                             <SelectContent>
-                              {kits.map((k) => (
+                              <div className="px-2 pb-1 pt-1">
+                                <Input
+                                  placeholder="Buscar kit..."
+                                  value={kitBuscaIndividual}
+                                  onChange={(e) => setKitBuscaIndividual(e.target.value)}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  className="h-7 text-xs"
+                                />
+                              </div>
+                              {kitsFilteradosIndividual.map((k) => (
                                 <SelectItem key={k.id} value={String(k.id)}>
                                   {k.nome}
                                 </SelectItem>
                               ))}
-                              {kits.length === 0 && (
-                                <SelectItem value="_" disabled>Nenhum kit cadastrado</SelectItem>
+                              {kitsFilteradosIndividual.length === 0 && (
+                                <SelectItem value="_" disabled>Nenhum kit encontrado</SelectItem>
                               )}
                             </SelectContent>
                           </Select>
@@ -979,7 +1141,9 @@ export function PareamentoPage() {
                         {!podeConfirmarPareamentoIndividual && !podeConfirmarIndividual &&
                           (imeiIndividual.replace(/\D/g, '').length > 0 || iccidIndividual.replace(/\D/g, '').length > 0) && (
                           <p className="mt-2 text-[10px] text-amber-400">
-                            IMEI deve ter 14–16 dígitos. ICCID deve ter 18–21 dígitos.
+                            {minImeiIndividual > 0 ? `IMEI deve ter ao menos ${minImeiIndividual} dígito(s).` : 'Informe o IMEI.'}
+                            {' '}
+                            {minIccidIndividual > 0 ? `ICCID deve ter ao menos ${minIccidIndividual} dígito(s).` : 'Informe o ICCID.'}
                           </p>
                         )}
                         {!podeConfirmarPareamentoIndividual && podeConfirmarIndividual && (
@@ -1096,6 +1260,9 @@ export function PareamentoPage() {
                         placeholder={`358942109982341\n358942109982342\n358942109982343...`}
                         className="h-48 w-full resize-none rounded-sm border border-slate-300 p-3 font-mono text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                       />
+                      {minImeiMassa > 0 && (
+                        <p className="mt-1 text-[10px] text-slate-400">Mínimo {minImeiMassa} dígito(s) por IMEI</p>
+                      )}
                     </div>
                     <div>
                       <div className="mb-2 flex items-center gap-2">
@@ -1112,6 +1279,9 @@ export function PareamentoPage() {
                         placeholder={`895501100000001\n895501100000002\n895501100000003...`}
                         className="h-48 w-full resize-none rounded-sm border border-slate-300 p-3 font-mono text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                       />
+                      {minIccidMassa > 0 && (
+                        <p className="mt-1 text-[10px] text-slate-400">Mínimo {minIccidMassa} dígito(s) por ICCID</p>
+                      )}
                     </div>
                   </div>
 
@@ -1148,18 +1318,33 @@ export function PareamentoPage() {
                           </span>
                         </label>
                         {pertenceLoteRastreadorMassa ? (
-                          <Select value={loteRastreadorId} onValueChange={setLoteRastreadorId}>
+                          <Select value={loteRastreadorId} onValueChange={setLoteRastreadorId} onOpenChange={(o) => { if (!o) setLoteBuscaRastreador('') }}>
                             <SelectTrigger className="h-9">
                               <SelectValue placeholder="Selecione o lote..." />
                             </SelectTrigger>
                             <SelectContent>
-                              {lotesRastreadores.map((l) => (
-                                <SelectItem key={l.id} value={String(l.id)}>
-                                  {l.referencia} ({l.quantidadeDisponivelSemId} disp.)
-                                </SelectItem>
-                              ))}
-                              {lotesRastreadores.length === 0 && (
-                                <SelectItem value="_" disabled>Nenhum lote disponível</SelectItem>
+                              <div className="px-2 pb-1 pt-1">
+                                <Input
+                                  placeholder="Buscar lote..."
+                                  value={loteBuscaRastreador}
+                                  onChange={(e) => setLoteBuscaRastreador(e.target.value)}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  className="h-7 text-xs"
+                                />
+                              </div>
+                              {lotesRastreadoresFiltrados.map((l) => {
+                                const info = [l.marca, l.modelo].filter(Boolean).join(' / ')
+                                return (
+                                  <SelectItem key={l.id} value={String(l.id)} textValue={l.referencia}>
+                                    <span className="flex w-full items-center justify-between gap-3">
+                                      <span>{l.referencia}</span>
+                                      {info && <span className="text-[11px] text-slate-400">({info})</span>}
+                                    </span>
+                                  </SelectItem>
+                                )
+                              })}
+                              {lotesRastreadoresFiltrados.length === 0 && (
+                                <SelectItem value="_" disabled>Nenhum lote encontrado</SelectItem>
                               )}
                             </SelectContent>
                           </Select>
@@ -1222,18 +1407,34 @@ export function PareamentoPage() {
                           </span>
                         </label>
                         {pertenceLoteSimMassa ? (
-                          <Select value={loteSimId} onValueChange={setLoteSimId}>
+                          <Select value={loteSimId} onValueChange={setLoteSimId} onOpenChange={(o) => { if (!o) setLoteBuscaSim('') }}>
                             <SelectTrigger className="h-9">
                               <SelectValue placeholder="Selecione o lote..." />
                             </SelectTrigger>
                             <SelectContent>
-                              {lotesSims.map((l) => (
-                                <SelectItem key={l.id} value={String(l.id)}>
-                                  {l.referencia} ({l.quantidadeDisponivelSemId} disp.)
-                                </SelectItem>
-                              ))}
-                              {lotesSims.length === 0 && (
-                                <SelectItem value="_" disabled>Nenhum lote disponível</SelectItem>
+                              <div className="px-2 pb-1 pt-1">
+                                <Input
+                                  placeholder="Buscar lote..."
+                                  value={loteBuscaSim}
+                                  onChange={(e) => setLoteBuscaSim(e.target.value)}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  className="h-7 text-xs"
+                                />
+                              </div>
+                              {lotesSimsFiltrados.map((l) => {
+                                const marcaNome = marcasSimcard.find((m) => m.id === l.marcaSimcardId)?.nome ?? null
+                                const info = [l.operadora, marcaNome].filter(Boolean).join(' / ')
+                                return (
+                                  <SelectItem key={l.id} value={String(l.id)} textValue={l.referencia}>
+                                    <span className="flex w-full items-center justify-between gap-3">
+                                      <span>{l.referencia}</span>
+                                      {info && <span className="text-[11px] text-slate-400">({info})</span>}
+                                    </span>
+                                  </SelectItem>
+                                )
+                              })}
+                              {lotesSimsFiltrados.length === 0 && (
+                                <SelectItem value="_" disabled>Nenhum lote encontrado</SelectItem>
                               )}
                             </SelectContent>
                           </Select>
@@ -1347,18 +1548,27 @@ export function PareamentoPage() {
                         {kitModoMassa === 'existente' ? (
                           <div>
                             <Label className="mb-1 block text-[10px] font-bold text-slate-500">Kit</Label>
-                            <Select value={kitIdExistenteMassa} onValueChange={setKitIdExistenteMassa}>
+                            <Select value={kitIdExistenteMassa} onValueChange={setKitIdExistenteMassa} onOpenChange={(o) => { if (!o) setKitBuscaMassa('') }}>
                               <SelectTrigger className="h-9">
                                 <SelectValue placeholder="Selecione um kit..." />
                               </SelectTrigger>
                               <SelectContent>
-                                {kits.map((k) => (
+                                <div className="px-2 pb-1 pt-1">
+                                  <Input
+                                    placeholder="Buscar kit..."
+                                    value={kitBuscaMassa}
+                                    onChange={(e) => setKitBuscaMassa(e.target.value)}
+                                    onKeyDown={(e) => e.stopPropagation()}
+                                    className="h-7 text-xs"
+                                  />
+                                </div>
+                                {kitsFilteradosMassa.map((k) => (
                                   <SelectItem key={k.id} value={String(k.id)}>
                                     {k.nome}
                                   </SelectItem>
                                 ))}
-                                {kits.length === 0 && (
-                                  <SelectItem value="_" disabled>Nenhum kit cadastrado</SelectItem>
+                                {kitsFilteradosMassa.length === 0 && (
+                                  <SelectItem value="_" disabled>Nenhum kit encontrado</SelectItem>
                                 )}
                               </SelectContent>
                             </Select>

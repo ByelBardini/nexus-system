@@ -141,15 +141,35 @@ export function ModalSelecaoEKit({
     return kitsDetalhes.filter((k) => !k.kitConcluido && !kitIdsEmOutrosPedidos.has(k.id))
   }, [kitsDetalhes, kitIdsEmOutrosPedidos])
 
+  const kitsCompativeis = useMemo(() => {
+    const temRequisito = !!(pedido?.marcaModelo || pedido?.operadora)
+    if (!temRequisito) return kitsDisponiveis
+
+    return kitsDisponiveis.filter((k) => {
+      if (k.quantidade === 0 || (k.marcas.length === 0 && k.modelos.length === 0 && k.operadoras.length === 0)) return true
+
+      const parts = pedido?.marcaModelo?.split(' / ') ?? []
+      const marcaReq = parts[0]?.trim() ?? null
+      const modeloReq = parts[1]?.trim() ?? null
+      const operadoraReq = pedido?.operadora ?? null
+
+      if (modeloReq && k.modelos.length > 0 && !k.modelos.every((m) => m === modeloReq)) return false
+      if (marcaReq && !modeloReq && k.marcas.length > 0 && !k.marcas.every((m) => m === marcaReq)) return false
+      if (operadoraReq && k.operadoras.length > 0 && !k.operadoras.every((op) => op === operadoraReq)) return false
+
+      return true
+    })
+  }, [kitsDisponiveis, pedido])
+
   const kitsFiltrados = useMemo(() => {
-    if (!filtroBusca.trim()) return kitsDisponiveis
+    if (!filtroBusca.trim()) return kitsCompativeis
     const s = filtroBusca.toLowerCase()
-    return kitsDisponiveis.filter(
+    return kitsCompativeis.filter(
       (k) =>
         k.nome.toLowerCase().includes(s) ||
         k.modelosOperadoras.toLowerCase().includes(s)
     )
-  }, [kitsDisponiveis, filtroBusca])
+  }, [kitsCompativeis, filtroBusca])
 
   const aparelhosParaAdicionar = useMemo(() => {
     const noKit = kitComAparelhos?.aparelhos ?? []
@@ -253,7 +273,7 @@ export function ModalSelecaoEKit({
 
   function handleSalvarEVincular() {
     if (!kitSelecionado) return
-    const qtd = (kitComAparelhos?.aparelhos?.length ?? 0) || 1
+    const qtd = kitComAparelhos?.aparelhos?.length ?? 0
     onVincular({ id: kitSelecionado.id, nome: kitSelecionado.nome }, qtd)
     toast.success(`Kit ${kitSelecionado.nome} vinculado`)
     onOpenChange(false)
@@ -401,10 +421,19 @@ export function ModalSelecaoEKit({
                 </tbody>
               </table>
             </div>
-            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-between">
-              <span className="text-[11px] text-slate-500 uppercase">
-                Exibindo <span className="font-bold text-slate-700">{kitsFiltrados.length} kits</span>
-              </span>
+            <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] text-slate-500 uppercase">
+                  Exibindo <span className="font-bold text-slate-700">{kitsFiltrados.length} kits</span>
+                </span>
+                {kitsDisponiveis.length - kitsCompativeis.length > 0 && (
+                  <span className="text-[10px] text-amber-600 font-bold flex items-center gap-1">
+                    <MaterialIcon name="info" className="text-sm" />
+                    {kitsDisponiveis.length - kitsCompativeis.length}{' '}
+                    kit{kitsDisponiveis.length - kitsCompativeis.length > 1 ? 's' : ''} oculto{kitsDisponiveis.length - kitsCompativeis.length > 1 ? 's' : ''} por incompatibilidade
+                  </span>
+                )}
+              </div>
               <Button variant="outline" size="sm" onClick={handleClose}>
                 Cancelar
               </Button>
@@ -518,6 +547,18 @@ export function ModalSelecaoEKit({
                 </div>
               </section>
               <section className="bg-slate-50 p-5 rounded-lg border border-slate-200 border-dashed">
+                {(pedido?.marcaModelo || pedido?.operadora) && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded text-[10px] font-bold text-blue-700 mb-4">
+                    <MaterialIcon name="filter_alt" className="text-sm shrink-0" />
+                    <span className="shrink-0">Aparelhos filtrados por requisitos do pedido:</span>
+                    {pedido.marcaModelo && (
+                      <span className="bg-blue-100 px-1.5 py-0.5 rounded">{pedido.marcaModelo}</span>
+                    )}
+                    {pedido.operadora && (
+                      <span className="bg-blue-100 px-1.5 py-0.5 rounded">Operadora: {pedido.operadora}</span>
+                    )}
+                  </div>
+                )}
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
                     <MaterialIcon name="search" className="text-sm" />

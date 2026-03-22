@@ -10,6 +10,9 @@ export interface KitDetalhe {
   kitConcluido: boolean
   quantidade: number
   modelosOperadoras: string
+  marcas: string[]
+  modelos: string[]
+  operadoras: string[]
 }
 
 export interface AparelhoNoKit {
