@@ -16,13 +16,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { InputPreco } from '@/components/InputPreco'
 import { InputTelefone } from '@/components/InputTelefone'
 import { InputCEP } from '@/components/InputCEP'
@@ -30,6 +23,7 @@ import { SelectUF } from '@/components/SelectUF'
 import { SelectCidade } from '@/components/SelectCidade'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { MaterialIcon } from '@/components/MaterialIcon'
+import { SearchableSelect } from '@/components/SearchableSelect'
 import { api } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
@@ -393,35 +387,28 @@ export function TecnicosPage() {
           </div>
           <div className="flex flex-col">
             <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">Estado</Label>
-            <Select value={filtroEstado} onValueChange={(v) => { setFiltroEstado(v); setPage(0) }}>
-              <SelectTrigger className="h-9 w-24">
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                {ufs.map((uf) => (
-                  <SelectItem key={uf.id} value={uf.sigla}>
-                    {uf.sigla}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              className="h-9 w-52"
+              value={filtroEstado}
+              onChange={(v) => { setFiltroEstado(v); setPage(0) }}
+              options={[
+                { value: 'todos', label: 'Todos os estados' },
+                ...ufs.map((uf) => ({ value: uf.sigla, label: `${uf.sigla} – ${uf.nome}` })),
+              ]}
+            />
           </div>
           <div className="flex flex-col">
             <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">Status</Label>
-            <Select
+            <SearchableSelect
+              className="h-9 w-32"
               value={filtroStatus}
-              onValueChange={(v: 'todos' | 'ativo' | 'inativo') => { setFiltroStatus(v); setPage(0) }}
-            >
-              <SelectTrigger className="h-9 w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="ativo">Ativo</SelectItem>
-                <SelectItem value="inativo">Inativo</SelectItem>
-              </SelectContent>
-            </Select>
+              onChange={(v) => { setFiltroStatus(v as 'todos' | 'ativo' | 'inativo'); setPage(0) }}
+              options={[
+                { value: 'todos', label: 'Todos' },
+                { value: 'ativo', label: 'Ativo' },
+                { value: 'inativo', label: 'Inativo' },
+              ]}
+            />
           </div>
           {canCreate && (
             <div className="flex flex-col">

@@ -12,14 +12,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { MaterialIcon } from '@/components/MaterialIcon'
+import { SearchableSelect } from '@/components/SearchableSelect'
 import { api } from '@/lib/api'
 import { CargoModal } from './CargoModal'
 import { useAuth } from '@/contexts/AuthContext'
@@ -177,17 +171,17 @@ export function CargosPage() {
           </div>
           <div className="flex flex-col">
             <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Categoria</Label>
-            <Select value={categoriaFilter} onValueChange={setCategoriaFilter}>
-              <SelectTrigger className="w-40 h-9">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="TODAS">Todas</SelectItem>
-                <SelectItem value="OPERACIONAL">Operacional</SelectItem>
-                <SelectItem value="ADMINISTRATIVO">Administrativo</SelectItem>
-                <SelectItem value="GESTAO">Gestão</SelectItem>
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              className="w-40 h-9"
+              value={categoriaFilter}
+              onChange={setCategoriaFilter}
+              options={[
+                { value: 'TODAS', label: 'Todas' },
+                { value: 'OPERACIONAL', label: 'Operacional' },
+                { value: 'ADMINISTRATIVO', label: 'Administrativo' },
+                { value: 'GESTAO', label: 'Gestão' },
+              ]}
+            />
           </div>
           {canCreate && (
             <div className="flex flex-col">

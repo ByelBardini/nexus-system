@@ -12,14 +12,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { MaterialIcon } from '@/components/MaterialIcon'
+import { SearchableSelect } from '@/components/SearchableSelect'
 import { api } from '@/lib/api'
 import { STATUS_CONFIG_APARELHO, type StatusAparelho } from '@/lib/aparelho-status'
 import { formatarDataHora } from '@/lib/format'
@@ -68,6 +62,9 @@ export function EquipamentosPage() {
   const [busca, setBusca] = useState('')
   const [pipelineFilter, setPipelineFilter] = useState<PipelineFilter>('TODOS')
   const [statusFilter, setStatusFilter] = useState<string>('TODOS')
+  const [proprietarioFilter, setProprietarioFilter] = useState<'TODOS' | 'INFINITY' | 'CLIENTE'>('TODOS')
+  const [marcaFilter, setMarcaFilter] = useState<string>('TODOS')
+  const [operadoraFilter, setOperadoraFilter] = useState<string>('TODOS')
   const [page, setPage] = useState(0)
 
   const { data: aparelhos = [], isLoading } = useQuery<Aparelho[]>({
@@ -88,6 +85,18 @@ export function EquipamentosPage() {
       (a) => a.tipo === 'RASTREADOR' && a.simVinculado != null
     )
   }, [aparelhos])
+
+  const marcas = useMemo(() => {
+    const set = new Set<string>()
+    equipamentos.forEach((e) => { if (e.marca) set.add(e.marca) })
+    return Array.from(set).sort()
+  }, [equipamentos])
+
+  const operadoras = useMemo(() => {
+    const set = new Set<string>()
+    equipamentos.forEach((e) => { if (e.simVinculado?.operadora) set.add(e.simVinculado.operadora) })
+    return Array.from(set).sort()
+  }, [equipamentos])
 
   const pipelineCounts = useMemo(() => {
     const total = equipamentos.length
@@ -125,9 +134,13 @@ export function EquipamentosPage() {
         (statusFilter === 'COM_TECNICO' && e.status === 'COM_TECNICO') ||
         (statusFilter === 'INSTALADO' && e.status === 'INSTALADO')
 
-      return matchBusca && matchPipeline && matchStatus
+      const matchProprietario = proprietarioFilter === 'TODOS' || e.proprietario === proprietarioFilter
+      const matchMarca = marcaFilter === 'TODOS' || e.marca === marcaFilter
+      const matchOperadora = operadoraFilter === 'TODOS' || e.simVinculado?.operadora === operadoraFilter
+
+      return matchBusca && matchPipeline && matchStatus && matchProprietario && matchMarca && matchOperadora
     })
-  }, [equipamentos, busca, pipelineFilter, statusFilter])
+  }, [equipamentos, busca, pipelineFilter, statusFilter, proprietarioFilter, marcaFilter, operadoraFilter])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paginated = useMemo(() => {
@@ -252,43 +265,79 @@ export function EquipamentosPage() {
       </div>
 
       {/* Barra de ferramentas */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-xs">
-          <MaterialIcon
-            name="search"
-            className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-base"
-          />
-          <Input
-            className="pl-8 text-[11px]"
-            placeholder="Buscar IMEI, ICCID, Técnico, Kit..."
-            value={busca}
-            onChange={(e) => {
-              setBusca(e.target.value)
-              setPage(0)
-            }}
-          />
+      <div className="flex items-end justify-between gap-4">
+        <div className="flex flex-col">
+          <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Busca</label>
+          <div className="relative w-64">
+            <MaterialIcon
+              name="search"
+              className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-base"
+            />
+            <Input
+              className="pl-8 text-[11px]"
+              placeholder="IMEI, ICCID, Técnico, Kit..."
+              value={busca}
+              onChange={(e) => {
+                setBusca(e.target.value)
+                setPage(0)
+              }}
+            />
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Select
-            value={statusFilter}
-            onValueChange={(v) => {
-              setStatusFilter(v)
-              setPipelineFilter(v as PipelineFilter)
-              setPage(0)
-            }}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filtrar por status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="TODOS">Todos</SelectItem>
-              <SelectItem value="CONFIGURADO">Configurado</SelectItem>
-              <SelectItem value="EM_KIT">Em Kit</SelectItem>
-              <SelectItem value="DESPACHADO">Despachado</SelectItem>
-              <SelectItem value="COM_TECNICO">Com Técnico</SelectItem>
-              <SelectItem value="INSTALADO">Instalado</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex items-end gap-2 flex-wrap">
+          <div className="flex flex-col">
+            <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Status</label>
+            <SearchableSelect
+              className="w-[150px]"
+              value={statusFilter}
+              onChange={(v) => { setStatusFilter(v); setPipelineFilter(v as PipelineFilter); setPage(0) }}
+              options={[
+                { value: 'TODOS', label: 'Todos' },
+                { value: 'CONFIGURADO', label: 'Configurado' },
+                { value: 'EM_KIT', label: 'Em Kit' },
+                { value: 'DESPACHADO', label: 'Despachado' },
+                { value: 'COM_TECNICO', label: 'Com Técnico' },
+                { value: 'INSTALADO', label: 'Instalado' },
+              ]}
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Proprietário</label>
+            <SearchableSelect
+              className="w-[130px]"
+              value={proprietarioFilter}
+              onChange={(v) => { setProprietarioFilter(v as 'TODOS' | 'INFINITY' | 'CLIENTE'); setPage(0) }}
+              options={[
+                { value: 'TODOS', label: 'Todos' },
+                { value: 'INFINITY', label: 'Infinity' },
+                { value: 'CLIENTE', label: 'Cliente' },
+              ]}
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Marca</label>
+            <SearchableSelect
+              className="w-[130px]"
+              value={marcaFilter}
+              onChange={(v) => { setMarcaFilter(v); setPage(0) }}
+              options={[
+                { value: 'TODOS', label: 'Todas' },
+                ...marcas.map((m) => ({ value: m, label: m })),
+              ]}
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Operadora</label>
+            <SearchableSelect
+              className="w-[130px]"
+              value={operadoraFilter}
+              onChange={(v) => { setOperadoraFilter(v); setPage(0) }}
+              options={[
+                { value: 'TODOS', label: 'Todas' },
+                ...operadoras.map((o) => ({ value: o, label: o })),
+              ]}
+            />
+          </div>
           {canCreate && (
             <>
               <Link to="/equipamentos/pareamento">
@@ -298,11 +347,11 @@ export function EquipamentosPage() {
                 </Button>
               </Link>
               <Link to="/equipamentos/pareamento?modo=massa">
-            <Button className="bg-erp-blue hover:bg-blue-700 text-[11px] font-bold uppercase">
-              <MaterialIcon name="inventory_2" className="text-sm mr-1" />
-              Cadastro em Lote
-            </Button>
-          </Link>
+                <Button className="bg-erp-blue hover:bg-blue-700 text-[11px] font-bold uppercase">
+                  <MaterialIcon name="inventory_2" className="text-sm mr-1" />
+                  Cadastro em Lote
+                </Button>
+              </Link>
             </>
           )}
         </div>

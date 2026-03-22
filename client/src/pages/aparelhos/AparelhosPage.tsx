@@ -18,14 +18,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { MaterialIcon } from '@/components/MaterialIcon'
+import { SearchableSelect } from '@/components/SearchableSelect'
 import { api } from '@/lib/api'
 import { STATUS_CONFIG_APARELHO, type StatusAparelho } from '@/lib/aparelho-status'
 import {
@@ -277,93 +271,79 @@ export function AparelhosPage() {
       </div>
 
       {/* Barra de ferramentas */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-xs">
-          <MaterialIcon
-            name="search"
-            className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-base"
-          />
-          <Input
-            className="pl-8 text-[11px]"
-            placeholder="Buscar IMEI, ICCID, Lote, Kit, Técnico..."
-            value={busca}
-            onChange={(e) => {
-              setBusca(e.target.value)
-              setPage(0)
-            }}
-          />
+      <div className="flex items-end justify-between gap-4">
+        <div className="flex flex-col">
+          <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Busca</label>
+          <div className="relative w-64">
+            <MaterialIcon
+              name="search"
+              className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-base"
+            />
+            <Input
+              className="pl-8 text-[11px]"
+              placeholder="IMEI, ICCID, Lote, Técnico..."
+              value={busca}
+              onChange={(e) => {
+                setBusca(e.target.value)
+                setPage(0)
+              }}
+            />
+          </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <Select
-            value={statusFilter}
-            onValueChange={(v) => {
-              setStatusFilter(v as StatusAparelho | 'TODOS')
-              setPage(0)
-            }}
-          >
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Filtrar por status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="TODOS">Todos</SelectItem>
-              {(Object.keys(STATUS_CONFIG_APARELHO) as StatusAparelho[]).map((status) => (
-                <SelectItem key={status} value={status}>
-                  {STATUS_CONFIG_APARELHO[status].label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={tipoFilter}
-            onValueChange={(v) => {
-              setTipoFilter(v as TipoAparelho | 'TODOS')
-              setPage(0)
-            }}
-          >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="TODOS">Todos</SelectItem>
-              <SelectItem value="RASTREADOR">Rastreador</SelectItem>
-              <SelectItem value="SIM">SIM Card</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select
-            value={proprietarioFilter}
-            onValueChange={(v) => {
-              setProprietarioFilter(v as ProprietarioTipo | 'TODOS')
-              setPage(0)
-            }}
-          >
-            <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="Proprietário" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="TODOS">Todos</SelectItem>
-              <SelectItem value="INFINITY">Infinity</SelectItem>
-              <SelectItem value="CLIENTE">Cliente</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select
-            value={marcaFilter}
-            onValueChange={(v) => {
-              setMarcaFilter(v)
-              setPage(0)
-            }}
-          >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Marca/Operadora" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="TODOS">Todas</SelectItem>
-              {marcas.map((marca) => (
-                <SelectItem key={marca} value={marca}>
-                  {marca}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex items-end gap-2 flex-wrap">
+          <div className="flex flex-col">
+            <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Status</label>
+            <SearchableSelect
+              className="w-[160px]"
+              value={statusFilter}
+              onChange={(v) => { setStatusFilter(v as StatusAparelho | 'TODOS'); setPage(0) }}
+              options={[
+                { value: 'TODOS', label: 'Todos' },
+                ...(Object.keys(STATUS_CONFIG_APARELHO) as StatusAparelho[]).map((s) => ({
+                  value: s,
+                  label: STATUS_CONFIG_APARELHO[s].label,
+                })),
+              ]}
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Tipo</label>
+            <SearchableSelect
+              className="w-[140px]"
+              value={tipoFilter}
+              onChange={(v) => { setTipoFilter(v as TipoAparelho | 'TODOS'); setPage(0) }}
+              options={[
+                { value: 'TODOS', label: 'Todos' },
+                { value: 'RASTREADOR', label: 'Rastreador' },
+                { value: 'SIM', label: 'SIM Card' },
+              ]}
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Proprietário</label>
+            <SearchableSelect
+              className="w-[130px]"
+              value={proprietarioFilter}
+              onChange={(v) => { setProprietarioFilter(v as ProprietarioTipo | 'TODOS'); setPage(0) }}
+              options={[
+                { value: 'TODOS', label: 'Todos' },
+                { value: 'INFINITY', label: 'Infinity' },
+                { value: 'CLIENTE', label: 'Cliente' },
+              ]}
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Marca / Operadora</label>
+            <SearchableSelect
+              className="w-[140px]"
+              value={marcaFilter}
+              onChange={(v) => { setMarcaFilter(v); setPage(0) }}
+              options={[
+                { value: 'TODOS', label: 'Todas' },
+                ...marcas.map((m) => ({ value: m, label: m })),
+              ]}
+            />
+          </div>
           {canCreate && (
             <>
               <Link to="/aparelhos/lote">

@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { MaterialIcon } from '@/components/MaterialIcon'
+import { SearchableSelect } from '@/components/SearchableSelect'
 import { api } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
@@ -500,16 +501,16 @@ export function UsuariosPage() {
           </div>
           <div className="flex flex-col">
             <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Status</Label>
-            <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1) }}>
-              <SelectTrigger className="w-32 h-9">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="TODOS">Todos</SelectItem>
-                <SelectItem value="ATIVOS">Ativos</SelectItem>
-                <SelectItem value="INATIVOS">Inativos</SelectItem>
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              className="w-32 h-9"
+              value={statusFilter}
+              onChange={(v) => { setStatusFilter(v); setPage(1) }}
+              options={[
+                { value: 'TODOS', label: 'Todos' },
+                { value: 'ATIVOS', label: 'Ativos' },
+                { value: 'INATIVOS', label: 'Inativos' },
+              ]}
+            />
           </div>
           {canCreate && (
             <div className="flex flex-col">

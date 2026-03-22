@@ -14,13 +14,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { api, apiDownloadBlob } from '@/lib/api'
 import {
   formatarCEP,
@@ -33,6 +26,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { MaterialIcon } from '@/components/MaterialIcon'
+import { SearchableSelect } from '@/components/SearchableSelect'
 import { toast } from 'sonner'
 
 const statusLabels: Record<string, string> = {
@@ -414,33 +408,35 @@ export function OrdensServicoPage() {
         </button>
       </div>
 
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-xs">
-          <MaterialIcon
-            name="search"
-            className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-base"
-          />
-          <Input
-            className="pl-8 text-[11px]"
-            placeholder="Buscar OS, placa ou cliente"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+      <div className="flex items-end justify-between gap-4">
+        <div className="flex flex-col">
+          <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Busca</label>
+          <div className="relative w-64">
+            <MaterialIcon
+              name="search"
+              className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-base"
+            />
+            <Input
+              className="pl-8 text-[11px]"
+              placeholder="OS, placa ou cliente"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filtrar por status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="TODOS">Todos</SelectItem>
-              {Object.entries(statusLabels).map(([k, v]) => (
-                <SelectItem key={k} value={k}>
-                  {v}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex items-end gap-2">
+          <div className="flex flex-col">
+            <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Status</label>
+            <SearchableSelect
+              className="w-[180px]"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { value: 'TODOS', label: 'Todos' },
+                ...Object.entries(statusLabels).map(([k, v]) => ({ value: k, label: v })),
+              ]}
+            />
+          </div>
           {canCreate && (
             <Button
               onClick={() => navigate('/ordens-servico/nova')}

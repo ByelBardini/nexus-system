@@ -49,6 +49,7 @@ import { useUFs, useMunicipios } from '@/hooks/useBrasilAPI'
 import type { EnderecoCEP } from '@/hooks/useBrasilAPI'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { MaterialIcon } from '@/components/MaterialIcon'
+import { SearchableSelect } from '@/components/SearchableSelect'
 import { api } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
@@ -395,43 +396,31 @@ export function ClientesPage() {
             <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">
               Tipo Contrato
             </Label>
-            <Select
+            <SearchableSelect
+              className="h-9 w-36"
               value={filtroTipoContrato}
-              onValueChange={(v) => {
-                setFiltroTipoContrato(v)
-                setPage(0)
-              }}
-            >
-              <SelectTrigger className="h-9 w-36">
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="COMODATO">Comodato</SelectItem>
-                <SelectItem value="AQUISICAO">Aquisição</SelectItem>
-              </SelectContent>
-            </Select>
+              onChange={(v) => { setFiltroTipoContrato(v); setPage(0) }}
+              options={[
+                { value: 'todos', label: 'Todos' },
+                { value: 'COMODATO', label: 'Comodato' },
+                { value: 'AQUISICAO', label: 'Aquisição' },
+              ]}
+            />
           </div>
           <div className="flex flex-col">
             <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">
               Estoque
             </Label>
-            <Select
+            <SearchableSelect
+              className="h-9 w-32"
               value={filtroEstoque}
-              onValueChange={(v) => {
-                setFiltroEstoque(v)
-                setPage(0)
-              }}
-            >
-              <SelectTrigger className="h-9 w-32">
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="proprio">Próprio</SelectItem>
-                <SelectItem value="terceiro">Terceiro</SelectItem>
-              </SelectContent>
-            </Select>
+              onChange={(v) => { setFiltroEstoque(v); setPage(0) }}
+              options={[
+                { value: 'todos', label: 'Todos' },
+                { value: 'proprio', label: 'Próprio' },
+                { value: 'terceiro', label: 'Terceiro' },
+              ]}
+            />
           </div>
           {canCreate && (
             <div className="flex flex-col">
