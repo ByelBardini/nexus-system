@@ -171,6 +171,24 @@ export class PareamentoService {
       kitIdFinal = kit?.id ?? undefined;
     }
 
+    if (kitIdFinal !== undefined) {
+      const marcaModelo = await this.resolverMarcaModeloParaValidacao(
+        preview.linhas,
+        loteRastreadorId,
+        rastreadorManual,
+      );
+      const operadora = await this.resolverOperadoraParaValidacao(
+        preview.linhas,
+        loteSimId,
+        simManual,
+      );
+      await this.kitsService.validarDadosParaKit(kitIdFinal, {
+        marca: marcaModelo?.marca ?? null,
+        modelo: marcaModelo?.modelo ?? null,
+        operadora: operadora ?? null,
+      });
+    }
+
     return this.prisma.$transaction(async (tx) => {
       const criados: { rastreadorId: number; simId: number; equipamentoId: number }[] = [];
 
@@ -300,5 +318,50 @@ export class PareamentoService {
 
       return { criados: criados.length, equipamentos: criados };
     });
+  }
+
+  private async resolverMarcaModeloParaValidacao(
+    linhas: Array<{ tracker_status: string; marca?: string; modelo?: string }>,
+    loteRastreadorId?: number,
+    rastreadorManual?: { marca: string; modelo: string },
+  ): Promise<{ marca: string | null; modelo: string | null } | null> {
+    if (rastreadorManual?.marca || rastreadorManual?.modelo) {
+      return { marca: rastreadorManual.marca ?? null, modelo: rastreadorManual.modelo ?? null };
+    }
+    if (loteRastreadorId) {
+      const lote = await this.prisma.loteAparelho.findUnique({ where: { id: loteRastreadorId } });
+      return { marca: lote?.marca ?? null, modelo: lote?.modelo ?? null };
+    }
+    const linha = linhas.find((l) => l.tracker_status === 'FOUND_AVAILABLE');
+    if (linha) {
+      return { marca: linha.marca ?? null, modelo: linha.modelo ?? null };
+    }
+    return null;
+  }
+
+  private async resolverOperadoraParaValidacao(
+    linhas: Array<{ sim_status: string; operadora?: string }>,
+    loteSimId?: number,
+    simManual?: { operadora?: string; marcaSimcardId?: number; planoSimcardId?: number },
+  ): Promise<string | null> {
+    if (simManual?.operadora) {
+      return simManual.operadora;
+    }
+    if (simManual?.marcaSimcardId) {
+      const marca = await this.prisma.marcaSimcard.findUnique({
+        where: { id: simManual.marcaSimcardId },
+        include: { operadora: true },
+      });
+      return marca?.operadora?.nome ?? null;
+    }
+    if (loteSimId) {
+      const lote = await this.prisma.loteAparelho.findUnique({ where: { id: loteSimId } });
+      return lote?.operadora ?? null;
+    }
+    const linha = linhas.find((l) => l.sim_status === 'FOUND_AVAILABLE');
+    if (linha) {
+      return linha.operadora ?? null;
+    }
+    return null;
   }
 }

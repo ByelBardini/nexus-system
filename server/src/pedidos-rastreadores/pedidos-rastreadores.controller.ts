@@ -6,6 +6,7 @@ import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { PedidosRastreadoresService } from './pedidos-rastreadores.service';
 import { CreatePedidoRastreadorDto } from './dto/create-pedido-rastreador.dto';
 import { UpdateStatusPedidoDto } from './dto/update-status-pedido.dto';
+import { UpdateKitIdsDto } from './dto/update-kit-ids.dto';
 import { StatusPedidoRastreador } from '@prisma/client';
 
 @ApiTags('pedidos-rastreadores')
@@ -54,6 +55,13 @@ export class PedidosRastreadoresController {
   @ApiOperation({ summary: 'Atualizar status do pedido de rastreador' })
   updateStatus(@Param('id') id: string, @Body() dto: UpdateStatusPedidoDto) {
     return this.service.updateStatus(+id, dto);
+  }
+
+  @Patch(':id/kits')
+  @RequirePermissions('AGENDAMENTO.PEDIDO_RASTREADOR.EDITAR')
+  @ApiOperation({ summary: 'Atualizar kits vinculados ao pedido' })
+  updateKitIds(@Param('id') id: string, @Body() dto: UpdateKitIdsDto) {
+    return this.service.updateKitIds(+id, dto.kitIds);
   }
 
   @Delete(':id')

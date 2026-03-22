@@ -205,20 +205,10 @@ export class PedidosRastreadoresService {
       kitIds = this.extrairKitIds(pedido.kitIds);
     }
 
-    // Salva kitIds para CONFIGURADO, DESPACHADO e ENTREGUE (permite filtrar kits em uso no pareamento)
-    // Preserva os existentes se dto não enviou (evita desvincular ao concluir)
-    // Limpa kitIds ao retroceder para SOLICITADO ou EM_CONFIGURACAO
-    if (
-      dto.status === StatusPedidoRastreador.CONFIGURADO ||
-      dto.status === StatusPedidoRastreador.DESPACHADO ||
-      dto.status === StatusPedidoRastreador.ENTREGUE
-    ) {
-      if (kitIds.length > 0) {
-        dataUpdate.kitIds = kitIds;
-      }
-      // Se kitIds vazio, não altera - mantém os existentes no banco
-    } else if (dto.status === StatusPedidoRastreador.SOLICITADO || dto.status === StatusPedidoRastreador.EM_CONFIGURACAO) {
-      dataUpdate.kitIds = Prisma.DbNull;
+    // Salva kitIds em qualquer status quando fornecido (permite filtrar kits no pareamento independentemente do status)
+    // Se kitIds vazio, preserva os existentes no banco (evita desvincular sem intenção explícita)
+    if (kitIds.length > 0) {
+      dataUpdate.kitIds = kitIds;
     }
 
     const statusRestritivos = [
@@ -350,6 +340,15 @@ export class PedidosRastreadoresService {
     });
 
     return this.findOne(id);
+  }
+
+  async updateKitIds(id: number, kitIds: number[]) {
+    await this.findOne(id);
+    return this.prisma.pedidoRastreador.update({
+      where: { id },
+      data: { kitIds },
+      include: includeBase,
+    });
   }
 
   async remove(id: number) {

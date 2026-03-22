@@ -131,6 +131,10 @@ export class LotesService {
         id: l.id,
         referencia: l.referencia,
         quantidadeDisponivelSemId: l.aparelhos.length,
+        modelo: l.modelo ?? null,
+        marca: l.marca ?? null,
+        operadora: l.operadora ?? null,
+        marcaSimcardId: l.marcaSimcardId ?? null,
       }));
   }
 }

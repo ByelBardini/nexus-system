@@ -6,13 +6,86 @@ import { Prisma } from '@prisma/client';
 export class KitsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getKits() {
+  async getKits(params?: { modelo?: string; marca?: string; operadora?: string }) {
+    // Fonte 1: requisitos via PedidoRastreador.kitIds (disponível quando pedido está em CONFIGURADO+)
+    const pedidos = await this.prisma.pedidoRastreador.findMany({
+      where: { kitIds: { not: Prisma.DbNull } },
+      select: {
+        kitIds: true,
+        modeloEquipamento: { select: { nome: true } },
+        marcaEquipamento: { select: { nome: true } },
+        operadora: { select: { nome: true } },
+      },
+    });
+
+    const kitReqMap = new Map<
+      number,
+      { modeloNome: string | null; marcaNome: string | null; operadoraNome: string | null }
+    >();
+    for (const p of pedidos) {
+      for (const kitId of this.extrairKitIds(p.kitIds)) {
+        if (!kitReqMap.has(kitId)) {
+          kitReqMap.set(kitId, {
+            modeloNome: p.modeloEquipamento?.nome ?? null,
+            marcaNome: p.marcaEquipamento?.nome ?? null,
+            operadoraNome: p.operadora?.nome ?? null,
+          });
+        }
+      }
+    }
+
+    // Fonte 2: aparelhos já presentes no kit (rastreadores já vinculados)
     const kits = await this.prisma.kit.findMany({
       where: { kitConcluido: false },
       orderBy: { nome: 'asc' },
-      select: { id: true, nome: true },
+      select: {
+        id: true,
+        nome: true,
+        aparelhos: {
+          where: { tipo: 'RASTREADOR' },
+          select: {
+            modelo: true,
+            marca: true,
+            simVinculado: { select: { operadora: true } },
+          },
+          take: 1,
+        },
+      },
     });
-    return kits;
+
+    if (!params?.modelo && !params?.marca && !params?.operadora) {
+      return kits.map((k) => ({ id: k.id, nome: k.nome }));
+    }
+
+    return kits
+      .filter((kit) => {
+        // Prioridade 1: filtrar pelos aparelhos já existentes no kit
+        if (kit.aparelhos.length > 0) {
+          const a = kit.aparelhos[0];
+          if (params.modelo && a.modelo && a.modelo !== params.modelo) return false;
+          if (params.marca && a.marca && a.marca !== params.marca) return false;
+          const opAparelho = a.simVinculado?.operadora ?? null;
+          if (params.operadora && opAparelho && opAparelho !== params.operadora) return false;
+          return true;
+        }
+
+        // Prioridade 2: filtrar pelos requisitos do pedido vinculado (via kitIds)
+        const req = kitReqMap.get(kit.id);
+        if (!req) return true; // kit vazio sem pedido vinculado → sempre visível
+
+        if (req.modeloNome) {
+          if (params.modelo && req.modeloNome !== params.modelo) return false;
+          if (req.marcaNome && params.marca && req.marcaNome !== params.marca) return false;
+        } else if (req.marcaNome) {
+          if (params.marca && req.marcaNome !== params.marca) return false;
+        }
+
+        if (req.operadoraNome && params.operadora && req.operadoraNome !== params.operadora)
+          return false;
+
+        return true;
+      })
+      .map((k) => ({ id: k.id, nome: k.nome }));
   }
 
   async getKitsComDetalhes() {
@@ -20,17 +93,31 @@ export class KitsService {
       orderBy: { nome: 'asc' },
       include: {
         aparelhos: {
-          select: { marca: true, modelo: true, operadora: true },
+          select: {
+            marca: true,
+            modelo: true,
+            operadora: true,
+            simVinculado: { select: { operadora: true } },
+          },
         },
         _count: { select: { aparelhos: true } },
       },
     });
     return kits.map((k) => {
-      const modelos = new Set<string>();
-      const operadoras = new Set<string>();
+      const marcaModeloSet = new Set<string>();
+      const operadoraDisplaySet = new Set<string>();
+      const marcaSet = new Set<string>();
+      const modeloSet = new Set<string>();
+      const operadoraSet = new Set<string>();
       k.aparelhos.forEach((a) => {
-        if (a.marca || a.modelo) modelos.add([a.marca, a.modelo].filter(Boolean).join(' / '));
-        if (a.operadora) operadoras.add(a.operadora);
+        if (a.marca || a.modelo) marcaModeloSet.add([a.marca, a.modelo].filter(Boolean).join(' / '));
+        if (a.marca) marcaSet.add(a.marca);
+        if (a.modelo) modeloSet.add(a.modelo);
+        const op = a.simVinculado?.operadora ?? a.operadora;
+        if (op) {
+          operadoraDisplaySet.add(op);
+          operadoraSet.add(op);
+        }
       });
       return {
         id: k.id,
@@ -39,7 +126,10 @@ export class KitsService {
         kitConcluido: k.kitConcluido,
         quantidade: k._count.aparelhos,
         modelosOperadoras:
-          [...modelos, ...operadoras].filter(Boolean).join(', ') || '-',
+          [...marcaModeloSet, ...operadoraDisplaySet].filter(Boolean).join(', ') || '-',
+        marcas: Array.from(marcaSet),
+        modelos: Array.from(modeloSet),
+        operadoras: Array.from(operadoraSet),
       };
     });
   }
@@ -175,6 +265,51 @@ export class KitsService {
     return pedidos.find((p) => this.extrairKitIds(p.kitIds).includes(kitId)) ?? null;
   }
 
+  async validarDadosParaKit(
+    kitId: number,
+    dados: { marca?: string | null; modelo?: string | null; operadora?: string | null },
+  ): Promise<void> {
+    const pedido = await this.getPedidoParaKit(kitId);
+    if (!pedido) return;
+    this.aplicarValidacaoPedido(pedido, dados);
+  }
+
+  private aplicarValidacaoPedido(
+    pedido: {
+      modeloEquipamento: { nome: string } | null;
+      marcaEquipamento: { nome: string } | null;
+      operadora: { nome: string } | null;
+    },
+    dados: { marca?: string | null; modelo?: string | null; operadora?: string | null },
+  ): void {
+    if (pedido.modeloEquipamento) {
+      if (dados.modelo !== pedido.modeloEquipamento.nome) {
+        throw new BadRequestException(
+          `Aparelho não atende ao pedido: modelo deve ser "${pedido.modeloEquipamento.nome}"`,
+        );
+      }
+      if (pedido.marcaEquipamento && dados.marca !== pedido.marcaEquipamento.nome) {
+        throw new BadRequestException(
+          `Aparelho não atende ao pedido: marca deve ser "${pedido.marcaEquipamento.nome}"`,
+        );
+      }
+    } else if (pedido.marcaEquipamento) {
+      if (dados.marca !== pedido.marcaEquipamento.nome) {
+        throw new BadRequestException(
+          `Aparelho não atende ao pedido: marca deve ser "${pedido.marcaEquipamento.nome}"`,
+        );
+      }
+    }
+
+    if (pedido.operadora) {
+      if (dados.operadora !== pedido.operadora.nome) {
+        throw new BadRequestException(
+          `Aparelho não atende ao pedido: operadora do SIM deve ser "${pedido.operadora.nome}"`,
+        );
+      }
+    }
+  }
+
   private async validarAparelhoParaKit(aparelhoId: number, kitId: number): Promise<void> {
     const pedido = await this.getPedidoParaKit(kitId);
     if (!pedido) return;
@@ -185,33 +320,11 @@ export class KitsService {
     });
     if (!aparelho) return;
 
-    if (pedido.modeloEquipamento) {
-      if (aparelho.modelo !== pedido.modeloEquipamento.nome) {
-        throw new BadRequestException(
-          `Aparelho não atende ao pedido: modelo deve ser "${pedido.modeloEquipamento.nome}"`,
-        );
-      }
-      if (pedido.marcaEquipamento && aparelho.marca !== pedido.marcaEquipamento.nome) {
-        throw new BadRequestException(
-          `Aparelho não atende ao pedido: marca deve ser "${pedido.marcaEquipamento.nome}"`,
-        );
-      }
-    } else if (pedido.marcaEquipamento) {
-      if (aparelho.marca !== pedido.marcaEquipamento.nome) {
-        throw new BadRequestException(
-          `Aparelho não atende ao pedido: marca deve ser "${pedido.marcaEquipamento.nome}"`,
-        );
-      }
-    }
-
-    if (pedido.operadora) {
-      const simOperadora = aparelho.simVinculado?.operadora ?? null;
-      if (simOperadora !== pedido.operadora.nome) {
-        throw new BadRequestException(
-          `Aparelho não atende ao pedido: operadora do SIM deve ser "${pedido.operadora.nome}"`,
-        );
-      }
-    }
+    this.aplicarValidacaoPedido(pedido, {
+      marca: aparelho.marca,
+      modelo: aparelho.modelo,
+      operadora: aparelho.simVinculado?.operadora ?? null,
+    });
 
     if (pedido.deClienteId !== null && aparelho.clienteId !== pedido.deClienteId) {
       throw new BadRequestException(

@@ -126,8 +126,12 @@ export class AparelhosController {
   @Get('pareamento/kits')
   @RequirePermissions('CONFIGURACAO.APARELHO.LISTAR')
   @ApiOperation({ summary: 'Listar kits cadastrados' })
-  getKits() {
-    return this.kitsService.getKits();
+  getKits(
+    @Query('modelo') modelo?: string,
+    @Query('marca') marca?: string,
+    @Query('operadora') operadora?: string,
+  ) {
+    return this.kitsService.getKits({ modelo, marca, operadora });
   }
 
   @Get('pareamento/kits/detalhes')
