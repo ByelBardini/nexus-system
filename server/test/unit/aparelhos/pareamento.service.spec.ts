@@ -12,6 +12,7 @@ describe('PareamentoService', () => {
 
   const kitsMock = {
     criarOuBuscarKitPorNome: jest.fn(),
+    validarDadosParaKit: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -106,6 +107,123 @@ describe('PareamentoService', () => {
       expect(prisma.$transaction).toHaveBeenCalled();
       expect(result).toHaveProperty('criados');
       expect(result).toHaveProperty('equipamentos');
+    });
+
+    describe('validação contra pedido quando kitId informado', () => {
+      it('não chama validarDadosParaKit quando kitId não é informado', async () => {
+        prisma.aparelho.findFirst.mockResolvedValue(null);
+
+        await expect(
+          service.pareamento({
+            pares: [{ imei: '123456789012345', iccid: '123456789012345678901' }],
+            rastreadorManual: { marca: 'Teltonika', modelo: 'FMB920' },
+            simManual: { operadora: 'Claro' },
+          }),
+        ).rejects.toThrow(); // pode falhar por outra razão (lote), mas não por validarDadosParaKit
+
+        expect(kitsMock.validarDadosParaKit).not.toHaveBeenCalled();
+      });
+
+      it('chama validarDadosParaKit com dados do rastreadorManual e simManual quando kitId informado', async () => {
+        prisma.aparelho.findFirst.mockResolvedValue(null); // NEEDS_CREATE para ambos
+        kitsMock.validarDadosParaKit.mockResolvedValue(undefined);
+
+        // Vai falhar na transação (sem lote), mas a validação já terá sido chamada
+        await expect(
+          service.pareamento({
+            pares: [{ imei: '123456789012345', iccid: '123456789012345678901' }],
+            kitId: 5,
+            rastreadorManual: { marca: 'Teltonika', modelo: 'FMB920' },
+            simManual: { operadora: 'Claro' },
+          }),
+        ).rejects.toThrow();
+
+        expect(kitsMock.validarDadosParaKit).toHaveBeenCalledWith(5, {
+          marca: 'Teltonika',
+          modelo: 'FMB920',
+          operadora: 'Claro',
+        });
+      });
+
+      it('lança BadRequestException propagado de validarDadosParaKit quando modelo não atende pedido', async () => {
+        prisma.aparelho.findFirst.mockResolvedValue(null); // NEEDS_CREATE
+        kitsMock.validarDadosParaKit.mockRejectedValue(
+          new BadRequestException('Aparelho não atende ao pedido: modelo deve ser "FMB003"'),
+        );
+
+        await expect(
+          service.pareamento({
+            pares: [{ imei: '123456789012345', iccid: '123456789012345678901' }],
+            kitId: 5,
+            rastreadorManual: { marca: 'Teltonika', modelo: 'FMB920' },
+            simManual: { operadora: 'Claro' },
+          }),
+        ).rejects.toThrow('modelo deve ser "FMB003"');
+      });
+
+      it('lança BadRequestException propagado de validarDadosParaKit quando operadora não atende pedido', async () => {
+        prisma.aparelho.findFirst.mockResolvedValue(null); // NEEDS_CREATE
+        kitsMock.validarDadosParaKit.mockRejectedValue(
+          new BadRequestException('Aparelho não atende ao pedido: operadora do SIM deve ser "Claro"'),
+        );
+
+        await expect(
+          service.pareamento({
+            pares: [{ imei: '123456789012345', iccid: '123456789012345678901' }],
+            kitId: 5,
+            rastreadorManual: { marca: 'Teltonika', modelo: 'FMB920' },
+            simManual: { operadora: 'Vivo' },
+          }),
+        ).rejects.toThrow('operadora do SIM deve ser "Claro"');
+      });
+
+      it('chama validarDadosParaKit com dados do lote quando loteRastreadorId e loteSimId informados', async () => {
+        prisma.aparelho.findFirst.mockResolvedValue(null); // NEEDS_CREATE para ambos
+        prisma.loteAparelho.findUnique
+          .mockResolvedValueOnce({ id: 10, marca: 'Teltonika', modelo: 'FMB003', tipo: 'RASTREADOR' })
+          .mockResolvedValueOnce({ id: 20, operadora: 'Claro', tipo: 'SIM' });
+        kitsMock.validarDadosParaKit.mockResolvedValue(undefined);
+
+        // Vai falhar na transação (sem aparelhos sem id no lote), mas a validação já terá sido chamada
+        try {
+          await service.pareamento({
+            pares: [{ imei: '123456789012345', iccid: '123456789012345678901' }],
+            kitId: 5,
+            loteRastreadorId: 10,
+            loteSimId: 20,
+          });
+        } catch {
+          // ignorar erro da transação
+        }
+
+        expect(kitsMock.validarDadosParaKit).toHaveBeenCalledWith(5, {
+          marca: 'Teltonika',
+          modelo: 'FMB003',
+          operadora: 'Claro',
+        });
+      });
+
+      it('chama validarDadosParaKit com dados do aparelho encontrado (FOUND_AVAILABLE) quando kitId informado', async () => {
+        const rastreador = { id: 1, simVinculadoId: null, marca: 'Suntech', modelo: 'ST310U' };
+        const sim = { id: 2, aparelhosVinculados: [], operadora: 'Tim' };
+        prisma.aparelho.findFirst
+          .mockResolvedValueOnce(rastreador)
+          .mockResolvedValueOnce(sim);
+        kitsMock.validarDadosParaKit.mockResolvedValue(undefined);
+        prisma.aparelho.update.mockResolvedValue({});
+        prisma.aparelhoHistorico.create.mockResolvedValue({});
+
+        await service.pareamento({
+          pares: [{ imei: '123456789012345', iccid: '123456789012345678901' }],
+          kitId: 5,
+        });
+
+        expect(kitsMock.validarDadosParaKit).toHaveBeenCalledWith(5, {
+          marca: 'Suntech',
+          modelo: 'ST310U',
+          operadora: 'Tim',
+        });
+      });
     });
   });
 });

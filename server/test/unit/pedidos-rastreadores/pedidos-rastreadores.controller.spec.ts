@@ -13,6 +13,8 @@ describe('PedidosRastreadoresController', () => {
     findOne: jest.fn(),
     create: jest.fn(),
     updateStatus: jest.fn(),
+    updateKitIds: jest.fn(),
+    remove: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -99,6 +101,16 @@ describe('PedidosRastreadoresController', () => {
       await controller.updateStatus('7', dto);
 
       expect(service.updateStatus).toHaveBeenCalledWith(7, dto);
+    });
+  });
+
+  describe('updateKitIds', () => {
+    it('converte id com unary plus e chama o service updateKitIds com os kitIds', async () => {
+      (service.updateKitIds as jest.Mock).mockResolvedValue({});
+
+      await controller.updateKitIds('3', { kitIds: [10, 20] });
+
+      expect(service.updateKitIds).toHaveBeenCalledWith(3, [10, 20]);
     });
   });
 });
