@@ -111,16 +111,34 @@ function calcularPermissoesHerdadas(
   return { setoresHabilitados, acoesAltoRisco }
 }
 
+const ITEM_LABELS: Record<string, string> = {
+  USUARIO: 'Usuários',
+  CARGO: 'Cargos',
+  APARELHO: 'Aparelhos',
+  EQUIPAMENTO: 'Equipamentos',
+  CLIENTE: 'Clientes',
+  TECNICO: 'Técnicos',
+  OS: 'Ordens de Serviço',
+  PEDIDO_RASTREADOR: 'Pedidos de Rastreadores',
+  TESTES: 'Testes de Aparelhos',
+}
+
 function getModuloLabel(modulo: string): string {
   const labels: Record<string, string> = {
     'ADMINISTRATIVO.USUARIO': 'Usuários',
     'ADMINISTRATIVO.CARGO': 'Cargos',
     'CONFIGURACAO.APARELHO': 'Aparelhos',
+    'CONFIGURACAO.EQUIPAMENTO': 'Equipamentos',
     'AGENDAMENTO.CLIENTE': 'Clientes',
     'AGENDAMENTO.TECNICO': 'Técnicos',
     'AGENDAMENTO.OS': 'Ordens de Serviço',
+    'AGENDAMENTO.PEDIDO_RASTREADOR': 'Pedidos de Rastreadores',
+    'AGENDAMENTO.TESTES': 'Testes de Aparelhos',
   }
-  return labels[modulo] ?? modulo
+  if (labels[modulo]) return labels[modulo]
+  // Fallback: extrai o item (segunda parte) para permissões com código legado
+  const item = modulo.split('.')[1]
+  return ITEM_LABELS[item] ?? modulo
 }
 
 function getAcaoLabel(acao: string): string {
@@ -129,6 +147,7 @@ function getAcaoLabel(acao: string): string {
     CRIAR: 'Criar',
     EDITAR: 'Editar',
     EXCLUIR: 'Excluir',
+    EXECUTAR: 'Executar',
   }
   return labels[acao] ?? acao
 }
