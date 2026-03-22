@@ -41,7 +41,7 @@ export class AparelhosController {
   }
 
   @Get('para-testes')
-  @RequirePermissions('CONFIGURACAO.APARELHO.LISTAR')
+  @RequirePermissions('AGENDAMENTO.TESTES.LISTAR', 'AGENDAMENTO.OS.LISTAR')
   @ApiOperation({ summary: 'Listar rastreadores para testes (filtrados por cliente e técnico)' })
   findParaTestes(
     @Query('clienteId') clienteId: string,

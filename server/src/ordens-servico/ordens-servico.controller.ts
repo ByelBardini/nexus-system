@@ -25,7 +25,7 @@ export class OrdensServicoController {
   }
 
   @Get('cliente-infinity')
-  @RequirePermissions('AGENDAMENTO.OS.CRIAR')
+  @RequirePermissions('AGENDAMENTO.OS.LISTAR')
   @ApiOperation({ summary: 'Retorna o ID do cliente Infinity (empresa dona do sistema, hardcoded)' })
   async getClienteInfinity() {
     const clienteId = await this.service.getClienteInfinityOuCriar();
@@ -33,7 +33,7 @@ export class OrdensServicoController {
   }
 
   @Get('testando')
-  @RequirePermissions('AGENDAMENTO.OS.LISTAR')
+  @RequirePermissions('AGENDAMENTO.TESTES.LISTAR', 'AGENDAMENTO.OS.LISTAR')
   @ApiOperation({ summary: 'Listar OS em testes (status EM_TESTES) com tempo em testes' })
   findTestando(@Query('search') search?: string) {
     return this.service.findTestando(search);
@@ -104,7 +104,7 @@ export class OrdensServicoController {
   }
 
   @Patch(':id/aparelho')
-  @RequirePermissions('AGENDAMENTO.OS.EDITAR')
+  @RequirePermissions('AGENDAMENTO.TESTES.EXECUTAR', 'AGENDAMENTO.OS.EDITAR')
   @ApiOperation({ summary: 'Vincular aparelho (IMEI) à ordem de serviço' })
   updateIdAparelho(@Param('id') id: string, @Body() dto: UpdateIdAparelhoDto) {
     return this.service.updateIdAparelho(+id, dto.idAparelho.trim());
