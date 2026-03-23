@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils'
 interface ClienteOption {
   id: number
   nome: string
+  cidade?: string | null
+  estado?: string | null
 }
 
 interface SelectClienteSearchProps {
@@ -15,6 +17,12 @@ interface SelectClienteSearchProps {
   disabled?: boolean
   placeholder?: string
   className?: string
+}
+
+function getDisplayText(c?: ClienteOption | null) {
+  if (!c) return ''
+  const loc = c.cidade && c.estado ? `${c.cidade} - ${c.estado}` : c.cidade ?? c.estado ?? ''
+  return loc ? `${c.nome} (${loc})` : c.nome
 }
 
 export function SelectClienteSearch({
@@ -34,14 +42,18 @@ export function SelectClienteSearch({
   const filtered = useMemo(() => {
     if (!searchTerm.trim()) return clientes
     const term = searchTerm.toLowerCase()
-    return clientes.filter((c) => c.nome.toLowerCase().includes(term))
+    return clientes.filter((c) =>
+      c.nome.toLowerCase().includes(term) ||
+      c.cidade?.toLowerCase().includes(term) ||
+      c.estado?.toUpperCase().includes(term.toUpperCase())
+    )
   }, [clientes, searchTerm])
 
-  const displayValue = isOpen ? searchTerm : (clienteSelecionado?.nome ?? '')
+  const displayValue = isOpen ? searchTerm : getDisplayText(clienteSelecionado)
 
   useEffect(() => {
-    if (!isOpen) setSearchTerm(clienteSelecionado?.nome ?? '')
-  }, [isOpen, clienteSelecionado?.nome])
+    if (!isOpen) setSearchTerm(getDisplayText(clienteSelecionado))
+  }, [isOpen, clienteSelecionado])
 
   useEffect(() => {
     if (!isOpen) return
@@ -49,7 +61,7 @@ export function SelectClienteSearch({
       const el = e.target as Node
       if (containerRef.current?.contains(el)) return
       setIsOpen(false)
-      setSearchTerm(clienteSelecionado?.nome ?? '')
+      setSearchTerm(getDisplayText(clienteSelecionado))
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
@@ -58,7 +70,7 @@ export function SelectClienteSearch({
   function handleFocus() {
     if (disabled) return
     setIsOpen(true)
-    setSearchTerm(clienteSelecionado?.nome ?? '')
+    setSearchTerm('')
   }
 
   function handleSelect(c: ClienteOption) {
@@ -68,13 +80,14 @@ export function SelectClienteSearch({
 
   function handleClear() {
     onChange(undefined)
+    setIsOpen(false)
     setSearchTerm('')
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Escape') {
       setIsOpen(false)
-      setSearchTerm(clienteSelecionado?.nome ?? '')
+      setSearchTerm(getDisplayText(clienteSelecionado))
       return
     }
     if (e.key === 'Enter' && isOpen && filtered.length > 0) {
@@ -146,7 +159,12 @@ export function SelectClienteSearch({
                     handleSelect(c)
                   }}
                 >
-                {c.nome}
+                  <span className="font-medium">{c.nome}</span>
+                  {(c.cidade || c.estado) && (
+                    <span className="ml-1.5 text-slate-500 text-[11px]">
+                      {c.cidade && c.estado ? `${c.cidade} - ${c.estado}` : c.cidade ?? c.estado}
+                    </span>
+                  )}
               </button>
             ))
           )}
