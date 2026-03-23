@@ -282,6 +282,9 @@ export class AparelhosService {
       statusEntrada,
       categoriaFalha,
       destinoDefeito,
+      proprietario,
+      clienteId,
+      notaFiscal,
     } = dto;
 
     const existente = await this.prisma.aparelho.findFirst({
@@ -311,7 +314,8 @@ export class AparelhosService {
         tipo,
         identificador,
         status: statusAparelho,
-        proprietario: 'INFINITY',
+        proprietario: proprietario ?? 'INFINITY',
+        clienteId: proprietario === 'CLIENTE' ? (clienteId ?? null) : null,
         marca: tipo === 'RASTREADOR' ? marca : null,
         modelo: tipo === 'RASTREADOR' ? modelo : null,
         operadora: tipo === 'SIM' ? operadoraSim : null,
@@ -332,6 +336,8 @@ export class AparelhosService {
         observacao: [
           `Entrada individual - Origem: ${origem}`,
           responsavelEntrega ? `Responsável: ${responsavelEntrega}` : null,
+          notaFiscal ? `Nota Fiscal: ${notaFiscal}` : null,
+          proprietario === 'CLIENTE' ? `Vinculado ao cliente ID ${clienteId}` : 'Vinculado à Infinity',
           statusEntrada === 'CANCELADO_DEFEITO'
             ? `Status: Defeito - ${categoriaFalha} - Destino: ${destinoDefeito}`
             : statusEntrada === 'EM_MANUTENCAO'
