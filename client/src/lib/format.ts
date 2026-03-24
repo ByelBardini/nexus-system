@@ -262,3 +262,7 @@ export function formatarDuracao(dataInicio: string, dataFim: string): string {
   if (diffH === 0) return `${diffD} ${diffD === 1 ? 'dia' : 'dias'}`
   return `${diffD} ${diffD === 1 ? 'dia' : 'dias'} e ${diffH}h`
 }
+
+export function formatId(id: number): string {
+  return String(id).padStart(9, '0')
+}

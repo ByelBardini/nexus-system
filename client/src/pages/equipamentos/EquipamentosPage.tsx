@@ -16,7 +16,7 @@ import { MaterialIcon } from '@/components/MaterialIcon'
 import { SearchableSelect } from '@/components/SearchableSelect'
 import { api } from '@/lib/api'
 import { STATUS_CONFIG_APARELHO, type StatusAparelho } from '@/lib/aparelho-status'
-import { formatarDataHora } from '@/lib/format'
+import { formatarDataHora, formatId } from '@/lib/format'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
 
@@ -41,6 +41,7 @@ interface Aparelho {
     operadora?: string | null
     marcaSimcard?: { id: number; nome: string } | null
     planoSimcard?: { id: number; planoMb: number } | null
+    lote?: { id: number; referencia: string } | null
   } | null
   kitId?: number | null
   kit?: { id: number; nome: string } | null
@@ -499,154 +500,169 @@ export function EquipamentosPage() {
 
                   {isExpanded && (
                     <TableRow className="bg-white border-b border-slate-200">
-                      <TableCell colSpan={9} className="p-6">
-                        <div className="grid grid-cols-12 gap-8">
-                          <div className="col-span-3">
-                            <h4 className="text-[10px] font-bold text-slate-400 uppercase mb-4 border-b border-slate-100 pb-1">
-                              Dados Técnicos
+                      <TableCell colSpan={9} className="p-0">
+                        {/* Cabeçalho — resumo rápido */}
+                        <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center gap-5">
+                          <div
+                            className={cn(
+                              'flex items-center gap-2 px-3 py-2 rounded-lg border font-bold text-sm shrink-0',
+                              equip.status === 'CONFIGURADO' && equip.kitId
+                                ? 'bg-purple-50 text-purple-700 border-purple-200'
+                                : cn(statusConfig.bgColor, statusConfig.color, statusConfig.borderColor)
+                            )}
+                          >
+                            <span>{equip.status === 'CONFIGURADO' && equip.kitId ? '🟣' : statusConfig.icon}</span>
+                            <span className="uppercase tracking-wide text-xs">
+                              {equip.status === 'CONFIGURADO' && equip.kitId ? 'Em Kit' : statusConfig.label}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="font-mono font-bold text-slate-800 text-sm leading-tight">
+                              {equip.identificador || '-'}
+                            </div>
+                            <div className="text-xs text-slate-500 mt-0.5">
+                              {equip.marca ? `${equip.marca} ${equip.modelo || ''}`.trim() : '-'}
+                            </div>
+                          </div>
+                          <div className="ml-auto text-right space-y-0.5">
+                            <div className="text-[10px] text-slate-400">
+                              Kit:{' '}
+                              <span className="font-bold text-violet-600">
+                                {equip.kit?.nome ?? (equip.kitId ? kitsPorId.get(equip.kitId) : null) ?? '-'}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-slate-400">
+                              Técnico:{' '}
+                              <span className="font-bold text-slate-700">
+                                {equip.cliente?.nome ?? equip.tecnico?.nome ?? '-'}
+                              </span>
+                            </div>
+                            <div className="text-[10px] font-mono text-slate-400">
+                              {formatarDataHora(equip.atualizadoEm)}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 2 colunas: Equipamento | Operação */}
+                        <div className="grid grid-cols-2 divide-x divide-slate-100">
+                          {/* Coluna esquerda — Equipamento */}
+                          <div className="px-6 py-4 space-y-3">
+                            <h4 className="text-[10px] font-bold text-slate-400 uppercase pb-1 border-b border-slate-100">
+                              Equipamento
                             </h4>
-                            <div className="space-y-3">
-                              <div>
-                                <label className="block text-[10px] text-slate-500 uppercase font-medium">
-                                  IMEI / Identificação
-                                </label>
-                                <span className="text-xs font-bold text-slate-700">
-                                  {equip.identificador || '-'}
-                                </span>
+                            <div>
+                              <div className="text-[10px] text-slate-400 uppercase font-medium">IMEI</div>
+                              <div className="text-xs font-bold text-slate-700 font-mono">
+                                {equip.identificador || '-'}
                               </div>
-                              <div>
-                                <label className="block text-[10px] text-slate-500 uppercase font-medium">
-                                  Marca / Modelo
-                                </label>
-                                <span className="text-xs font-bold text-slate-700">
-                                  {equip.marca ? `${equip.marca} / ${equip.modelo || '-'}` : '-'}
-                                </span>
+                            </div>
+                            <div>
+                              <div className="text-[10px] text-slate-400 uppercase font-medium">Modelo</div>
+                              <div className="text-xs font-bold text-slate-700">
+                                {equip.marca ? `${equip.marca} ${equip.modelo || ''}`.trim() : '-'}
                               </div>
-                              <div>
-                                <label className="block text-[10px] text-slate-500 uppercase font-medium">
-                                  ICCID / Operadora
-                                </label>
-                                <span className="text-xs font-bold text-slate-700 block">
-                                  {equip.simVinculado
-                                    ? `${equip.simVinculado.identificador} (${equip.simVinculado.operadora || '-'})`
-                                    : '-'}
-                                </span>
-                                {(equip.simVinculado?.marcaSimcard?.nome || equip.simVinculado?.planoSimcard) && (
-                                  <span className="text-[10px] text-slate-500 mt-1 block">
-                                    Marca: {equip.simVinculado.marcaSimcard?.nome || '-'}
-                                    {equip.simVinculado.planoSimcard &&
-                                      ` · Plano: ${equip.simVinculado.planoSimcard.planoMb} MB`}
-                                  </span>
-                                )}
+                            </div>
+                            <div>
+                              <div className="text-[10px] text-slate-400 uppercase font-medium">ICCID</div>
+                              <div className="text-xs font-bold text-slate-700 font-mono">
+                                {equip.simVinculado?.identificador || '-'}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-[10px] text-slate-400 uppercase font-medium">Operadora</div>
+                              <div className="text-xs font-bold text-slate-700">
+                                {[
+                                  equip.simVinculado?.operadora,
+                                  equip.simVinculado?.marcaSimcard?.nome,
+                                  equip.simVinculado?.planoSimcard
+                                    ? `${equip.simVinculado.planoSimcard.planoMb} MB`
+                                    : null,
+                                ]
+                                  .filter(Boolean)
+                                  .join(' · ') || '-'}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-[10px] text-slate-400 uppercase font-medium">Lote</div>
+                              <div className="text-xs font-bold text-slate-700">
+                                {[equip.lote?.referencia, equip.simVinculado?.lote?.referencia]
+                                  .filter(Boolean)
+                                  .join(' · ') || '-'}
                               </div>
                             </div>
                           </div>
-                          <div className="col-span-3">
-                            <h4 className="text-[10px] font-bold text-slate-400 uppercase mb-4 border-b border-slate-100 pb-1">
-                              Logística
+
+                          {/* Coluna direita — Operação */}
+                          <div className="px-6 py-4 space-y-3">
+                            <h4 className="text-[10px] font-bold text-slate-400 uppercase pb-1 border-b border-slate-100">
+                              Operação
                             </h4>
-                            <div className="space-y-3">
-                              <div>
-                                <label className="block text-[10px] text-slate-500 uppercase font-medium">
-                                  Lotes Vinculados
-                                </label>
-                                <span className="text-xs font-bold text-slate-700">
-                                  {equip.lote?.referencia || '-'}
-                                </span>
-                              </div>
-                              <div>
-                                <label className="block text-[10px] text-slate-500 uppercase font-medium">
-                                  Kit / Nota Fiscal
-                                </label>
-                                <span className="text-xs font-bold text-slate-700">
-                                  {equip.kit?.nome ?? (equip.kitId ? kitsPorId.get(equip.kitId) : null) ?? '-'}
-                                </span>
-                              </div>
-                              <div>
-                                <label className="block text-[10px] text-slate-500 uppercase font-medium">
-                                  Transporte / Rastreio
-                                </label>
-                                <span className="text-xs font-bold text-slate-700">-</span>
+                            <div>
+                              <div className="text-[10px] text-slate-400 uppercase font-medium">Técnico / Cliente</div>
+                              <div className="text-xs font-bold text-slate-700">
+                                {equip.cliente?.nome ?? equip.tecnico?.nome ?? '-'}
                               </div>
                             </div>
-                          </div>
-                          <div className="col-span-3">
-                            <h4 className="text-[10px] font-bold text-slate-400 uppercase mb-4 border-b border-slate-100 pb-1">
-                              Destino
-                            </h4>
-                            <div className="space-y-3">
-                              <div>
-                                <label className="block text-[10px] text-slate-500 uppercase font-medium">
-                                  Técnico / Empresa
-                                </label>
-                                <span className="text-xs font-bold text-slate-700">
-                                  {equip.cliente?.nome
-                                    ? equip.cliente.nome
-                                    : equip.tecnico
-                                      ? `${equip.tecnico.nome} (ID: ${equip.tecnico.id})`
-                                      : '-'}
-                                </span>
-                              </div>
-                              <div>
-                                <label className="block text-[10px] text-slate-500 uppercase font-medium">
-                                  Subcliente / Placa
-                                </label>
-                                <span className="text-xs font-bold text-slate-700">
-                                  {equip.ordemServicoVinculada?.subclienteNome ||
-                                  equip.ordemServicoVinculada?.veiculoPlaca
-                                    ? [
-                                        equip.ordemServicoVinculada.subclienteNome,
-                                        equip.ordemServicoVinculada.veiculoPlaca,
-                                      ]
-                                        .filter(Boolean)
-                                        .join(' · ')
-                                    : '-'}
-                                </span>
-                              </div>
-                              <div>
-                                <label className="block text-[10px] text-slate-500 uppercase font-medium">
-                                  Ordem Instalação
-                                </label>
-                                <span className="text-xs font-bold text-slate-700">
-                                  {equip.ordemServicoVinculada?.numero ?? '-'}
-                                </span>
+                            <div>
+                              <div className="text-[10px] text-slate-400 uppercase font-medium">Kit</div>
+                              <div className="text-xs font-bold text-violet-600">
+                                {equip.kit?.nome ?? (equip.kitId ? kitsPorId.get(equip.kitId) : null) ?? '-'}
                               </div>
                             </div>
+                            <div>
+                              <div className="text-[10px] text-slate-400 uppercase font-medium">Transporte</div>
+                              <div className="text-xs font-bold text-slate-700">-</div>
+                            </div>
+                            <div>
+                              <div className="text-[10px] text-slate-400 uppercase font-medium">Ordem de Instalação</div>
+                              <div className="text-xs font-bold text-slate-700">
+                                {equip.ordemServicoVinculada?.numero != null ? `#${formatId(equip.ordemServicoVinculada.numero)}` : '-'}
+                              </div>
+                            </div>
+                            {(equip.ordemServicoVinculada?.subclienteNome ||
+                              equip.ordemServicoVinculada?.veiculoPlaca) && (
+                              <div>
+                                <div className="text-[10px] text-slate-400 uppercase font-medium">Subcliente / Placa</div>
+                                <div className="text-xs font-bold text-slate-700">
+                                  {[
+                                    equip.ordemServicoVinculada.subclienteNome,
+                                    equip.ordemServicoVinculada.veiculoPlaca,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(' · ')}
+                                </div>
+                              </div>
+                            )}
                           </div>
-                          <div className="col-span-3">
-                            <h4 className="text-[10px] font-bold text-slate-400 uppercase mb-4 border-b border-slate-100 pb-1">
-                              Histórico
-                            </h4>
-                            <div className="space-y-3">
-                              {equip.historico && equip.historico.length > 0 ? (
-                                equip.historico.map((item, idx) => (
+                        </div>
+
+                        {/* Histórico — largura total */}
+                        <div className="mx-4 mb-4 rounded-b-lg border border-t-0 border-slate-200 bg-slate-50 px-5 py-3">
+                          <div className="text-[10px] font-bold text-slate-400 uppercase mb-3">Histórico</div>
+                          {equip.historico && equip.historico.length > 0 ? (
+                            <div className="flex flex-wrap gap-6">
+                              {equip.historico.map((item, idx) => (
+                                <div key={idx} className="flex items-start gap-2">
                                   <div
-                                    key={idx}
-                                    className="relative pl-6 pb-4 border-l border-slate-200 last:pb-0 last:border-l-0"
-                                  >
-                                    <div
-                                      className={cn(
-                                        'absolute left-[-4.5px] top-1 w-2 h-2 rounded-full',
-                                        idx === 0 ? 'bg-blue-500 ring-4 ring-blue-100' : 'bg-slate-300'
-                                      )}
-                                    />
-                                    <div className="flex flex-col">
-                                      <span className="text-[10px] font-bold text-slate-800">
-                                        {STATUS_CONFIG_APARELHO[item.statusNovo as StatusAparelho]?.label ?? item.statusNovo}
-                                      </span>
-                                      <span className="text-[9px] text-slate-500">
-                                        {formatarDataHora(item.criadoEm)}
-                                      </span>
-                                    </div>
+                                    className={cn(
+                                      'mt-1 w-2 h-2 rounded-full shrink-0',
+                                      idx === 0 ? 'bg-blue-500 ring-4 ring-blue-100' : 'bg-slate-300'
+                                    )}
+                                  />
+                                  <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold text-slate-800">
+                                      {STATUS_CONFIG_APARELHO[item.statusNovo as StatusAparelho]?.label ?? item.statusNovo}
+                                    </span>
+                                    <span className="text-[9px] text-slate-500">
+                                      {formatarDataHora(item.criadoEm)}
+                                    </span>
                                   </div>
-                                ))
-                              ) : (
-                                <p className="text-[11px] text-slate-400 italic">
-                                  Sem histórico registrado
-                                </p>
-                              )}
+                                </div>
+                              ))}
                             </div>
-                          </div>
+                          ) : (
+                            <p className="text-[11px] text-slate-400 italic">Sem histórico registrado</p>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

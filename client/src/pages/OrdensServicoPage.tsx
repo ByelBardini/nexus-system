@@ -21,6 +21,7 @@ import {
   formatarDataHoraCurta,
   formatarTelefone,
   formatarTempoMinutos,
+  formatId,
   TIPO_OS_LABELS,
 } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -507,7 +508,7 @@ export function OrdensServicoPage() {
                             isExpanded ? 'text-erp-blue' : 'text-slate-950'
                           )}
                         >
-                          #{os.numero}
+                          #{formatId(os.numero)}
                         </td>
                         <td>{os.cliente?.nome ?? '-'}</td>
                         <td>{os.subclienteSnapshotNome ?? os.subcliente?.nome ?? '-'}</td>
