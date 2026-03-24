@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -24,7 +25,7 @@ export function SearchableSelect({
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState('')
-  const [openUpward, setOpenUpward] = useState(false)
+  const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({})
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -41,11 +42,24 @@ export function SearchableSelect({
       setSearch('')
       return
     }
-    // Detecta se o dropdown cabe abaixo ou deve abrir acima
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect()
+      const dropdownWidth = Math.max(rect.width, 128)
       const spaceBelow = window.innerHeight - rect.bottom
-      setOpenUpward(spaceBelow < 260)
+      const openUpward = spaceBelow < 260
+
+      // Horizontal: alinha à direita do trigger se o dropdown sairia da tela
+      const leftAligned = rect.left + dropdownWidth <= window.innerWidth - 4
+      const left = leftAligned ? rect.left : rect.right - dropdownWidth
+
+      setDropdownStyle({
+        position: 'fixed',
+        top: openUpward ? rect.top - 4 : rect.bottom + 4,
+        ...(openUpward ? { transform: 'translateY(-100%)' } : {}),
+        left: Math.max(4, left),
+        width: dropdownWidth,
+        zIndex: 9999,
+      })
     }
   }, [isOpen])
 
@@ -55,8 +69,14 @@ export function SearchableSelect({
       if (containerRef.current?.contains(e.target as Node)) return
       setIsOpen(false)
     }
+    // Fecha ao rolar a página
+    function handleScroll() { setIsOpen(false) }
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    window.addEventListener('scroll', handleScroll, true)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      window.removeEventListener('scroll', handleScroll, true)
+    }
   }, [isOpen])
 
   function open() {
@@ -114,13 +134,11 @@ export function SearchableSelect({
         </div>
       )}
 
-      {/* Dropdown */}
-      {isOpen && (
+      {/* Dropdown via portal — imune a overflow dos ancestrais */}
+      {isOpen && createPortal(
         <div
-          className={cn(
-            'absolute z-50 max-h-60 w-full min-w-[8rem] overflow-y-auto overflow-x-hidden rounded-md border bg-popover py-1 text-popover-foreground shadow-md',
-            openUpward ? 'bottom-full mb-1' : 'top-full mt-1'
-          )}
+          className="max-h-60 overflow-y-auto overflow-x-hidden rounded-md border bg-popover py-1 text-popover-foreground shadow-md"
+          style={dropdownStyle}
         >
           {filtered.length === 0 ? (
             <div className="px-3 py-4 text-center text-sm text-muted-foreground">
@@ -142,7 +160,8 @@ export function SearchableSelect({
               </button>
             ))
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
