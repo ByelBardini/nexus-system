@@ -41,6 +41,9 @@ const PedidosConfigPage = lazy(() =>
 const TestesPage = lazy(() =>
   import('@/pages/testes/TestesPage').then((m) => ({ default: m.TestesPage }))
 )
+const DebitosEquipamentosPage = lazy(() =>
+  import('@/pages/debitos-equipamentos/DebitosEquipamentosPage').then((m) => ({ default: m.DebitosEquipamentosPage }))
+)
 
 function PageLoader() {
   return (
@@ -107,6 +110,14 @@ function App() {
           element={
             <Suspense fallback={<PageLoader />}>
               <ConfiguracoesPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="debitos-equipamentos"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <DebitosEquipamentosPage />
             </Suspense>
           }
         />
