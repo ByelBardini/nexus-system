@@ -112,6 +112,7 @@ export class AparelhosService {
             operadora: true,
             marcaSimcard: { select: { id: true, nome: true } },
             planoSimcard: { select: { id: true, planoMb: true } },
+            lote: { select: { id: true, referencia: true } },
           },
         },
         aparelhosVinculados: {
