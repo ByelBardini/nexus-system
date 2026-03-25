@@ -51,7 +51,7 @@ export function KanbanCardConfig({
         {pedido.destinatario}
       </h3>
       <div className="text-[11px] text-slate-500 mb-3 space-y-0.5">
-        <span>{pedido.tipo === 'tecnico' ? 'Técnico' : 'Cliente'}</span>
+        <span>{pedido.tipo === 'tecnico' ? 'Técnico' : pedido.tipo === 'misto' ? 'Misto' : 'Cliente'}</span>
         {pedido.cidadeEstado && (
           <span className="block text-slate-400">{pedido.cidadeEstado}</span>
         )}

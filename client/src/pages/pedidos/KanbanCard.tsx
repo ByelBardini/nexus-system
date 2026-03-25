@@ -11,8 +11,8 @@ export function KanbanCard({
   pedido: PedidoRastreadorView
   onClick: () => void
 }) {
-  const tipoLabel = pedido.tipo === 'tecnico' ? 'Técnico' : 'Cliente'
-  const tipoIcon = pedido.tipo === 'tecnico' ? 'person' : 'business'
+  const tipoLabel = pedido.tipo === 'tecnico' ? 'Técnico' : pedido.tipo === 'misto' ? 'Misto' : 'Cliente'
+  const tipoIcon = pedido.tipo === 'tecnico' ? 'person' : pedido.tipo === 'misto' ? 'merge_type' : 'business'
   const isEntregue = pedido.status === 'entregue'
   const urgencia = pedido.urgencia ?? 'Média'
   const urgenciaStyle = URGENCIA_STYLE[urgencia] ?? URGENCIA_STYLE['Média']

@@ -1,9 +1,9 @@
 import { useEffect, useMemo } from 'react'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm, Controller, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Loader2, X } from 'lucide-react'
+import { Loader2, Plus, Trash2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -24,9 +24,20 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import type { ClienteResumo, SubclienteResumo, TecnicoResumo } from './types'
 
+const schemaItemMisto = z.object({
+  proprietario: z.enum(['INFINITY', 'CLIENTE']),
+  clienteId: z.number().optional(),
+  quantidade: z.number().min(1, 'Mínimo 1'),
+  marcaModeloEspecifico: z.boolean().optional(),
+  marcaEquipamentoId: z.number().optional(),
+  modeloEquipamentoId: z.number().optional(),
+  operadoraEspecifica: z.boolean().optional(),
+  operadoraId: z.number().optional(),
+})
+
 const schemaNovoPedido = z
   .object({
-    tipoDestino: z.enum(['TECNICO', 'CLIENTE']),
+    tipoDestino: z.enum(['TECNICO', 'CLIENTE', 'MISTO']),
     tecnicoId: z.number().optional(),
     destinoCliente: z.string().optional(),
     deCliente: z.boolean().optional(),
@@ -37,14 +48,16 @@ const schemaNovoPedido = z
     modeloEquipamentoId: z.number().optional(),
     operadoraEspecifica: z.boolean().optional(),
     operadoraId: z.number().optional(),
-    quantidade: z.number().min(1, 'Mínimo 1 unidade'),
+    quantidade: z.number().min(1, 'Mínimo 1 unidade').optional(),
+    itensMisto: z.array(schemaItemMisto).optional(),
     urgencia: z.enum(['BAIXA', 'MEDIA', 'ALTA', 'URGENTE']).optional(),
     observacao: z.string().optional(),
   })
   .refine(
     (d) =>
       (d.tipoDestino === 'TECNICO' && d.tecnicoId && d.tecnicoId > 0) ||
-      (d.tipoDestino === 'CLIENTE' && d.destinoCliente && d.destinoCliente.length > 0),
+      (d.tipoDestino === 'CLIENTE' && d.destinoCliente && d.destinoCliente.length > 0) ||
+      (d.tipoDestino === 'MISTO' && d.itensMisto && d.itensMisto.length > 0),
     { message: 'Selecione o destinatário' },
   )
 
@@ -80,6 +93,7 @@ export function ModalNovoPedido({
     operadoraEspecifica: false,
     operadoraId: undefined,
     quantidade: 1,
+    itensMisto: [{ proprietario: 'INFINITY', quantidade: 1 }],
     urgencia: 'MEDIA',
     observacao: '',
   }
@@ -87,6 +101,11 @@ export function ModalNovoPedido({
   const form = useForm<FormNovoPedido>({
     resolver: zodResolver(schemaNovoPedido),
     defaultValues,
+  })
+
+  const { fields: itensMistoFields, append: appendItem, remove: removeItem } = useFieldArray({
+    control: form.control,
+    name: 'itensMisto',
   })
 
   useEffect(() => {
@@ -184,6 +203,25 @@ export function ModalNovoPedido({
 
   const createMutation = useMutation({
     mutationFn: (data: FormNovoPedido) => {
+      if (data.tipoDestino === 'MISTO') {
+        return api('/pedidos-rastreadores', {
+          method: 'POST',
+          body: JSON.stringify({
+            tipoDestino: 'MISTO',
+            dataSolicitacao: data.dataSolicitacao,
+            urgencia: data.urgencia ?? 'MEDIA',
+            observacao: data.observacao ?? undefined,
+            itens: data.itensMisto?.map((item) => ({
+              proprietario: item.proprietario,
+              clienteId: item.proprietario === 'CLIENTE' ? item.clienteId : undefined,
+              quantidade: item.quantidade,
+              marcaEquipamentoId: item.marcaModeloEspecifico ? item.marcaEquipamentoId : undefined,
+              modeloEquipamentoId: item.marcaModeloEspecifico ? item.modeloEquipamentoId : undefined,
+              operadoraId: item.operadoraEspecifica ? item.operadoraId : undefined,
+            })),
+          }),
+        })
+      }
       const dest = data.destinoCliente ?? ''
       const [tipo, idStr] = dest.split('-')
       const id = parseInt(idStr, 10)
@@ -460,8 +498,27 @@ export function ModalNovoPedido({
                 >
                   Cliente
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    form.setValue('tipoDestino', 'MISTO')
+                    form.setValue('tecnicoId', undefined)
+                    form.setValue('destinoCliente', '')
+                    form.setValue('deCliente', false)
+                    form.setValue('deClienteId', undefined)
+                  }}
+                  className={cn(
+                    'flex-1 py-2 text-xs font-bold uppercase tracking-wider border border-slate-200 transition-all',
+                    tipoDestino === 'MISTO'
+                      ? 'bg-erp-blue text-white border-erp-blue'
+                      : 'bg-white text-slate-500 hover:bg-slate-50'
+                  )}
+                >
+                  Misto
+                </button>
               </div>
 
+              {tipoDestino !== 'MISTO' && (
               <div>
                 <Label className="text-[10px] font-bold uppercase text-slate-500 block mb-1.5">
                   Pesquisar Destinatário
@@ -516,6 +573,37 @@ export function ModalNovoPedido({
                   </p>
                 )}
               </div>
+              )}
+
+              {tipoDestino !== 'MISTO' && destinatarioSelecionado && (
+                <div className="bg-slate-50 border border-slate-200 rounded p-4 flex items-start gap-4">
+                  <div className="bg-blue-100 text-blue-600 p-2 rounded shrink-0">
+                    <MaterialIcon
+                      name={tipoDestino === 'TECNICO' ? 'engineering' : 'business'}
+                      className="text-lg"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-slate-800 mb-0.5">
+                      {destinatarioSelecionado.nome}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+                      {cidadeDisplay && (
+                        <span className="flex items-center gap-1">
+                          <MaterialIcon name="location_on" className="text-[14px]" />
+                          {cidadeDisplay}
+                        </span>
+                      )}
+                      {filialDisplay && (
+                        <span className="flex items-center gap-1">
+                          <MaterialIcon name="apartment" className="text-[14px]" />
+                          {filialDisplay}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {tipoDestino === 'TECNICO' && (
                 <div className="space-y-3">
@@ -570,61 +658,260 @@ export function ModalNovoPedido({
                 </div>
               )}
 
-              {destinatarioSelecionado && (
-                <div className="bg-slate-50 border border-slate-200 rounded p-4 flex items-start gap-4">
-                  <div className="bg-blue-100 text-blue-600 p-2 rounded shrink-0">
-                    <MaterialIcon
-                      name={tipoDestino === 'TECNICO' ? 'engineering' : 'business'}
-                      className="text-lg"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-slate-800 mb-0.5">
-                      {destinatarioSelecionado.nome}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
-                      {cidadeDisplay && (
-                        <span className="flex items-center gap-1">
-                          <MaterialIcon name="location_on" className="text-[14px]" />
-                          {cidadeDisplay}
-                        </span>
-                      )}
-                      {filialDisplay && (
-                        <span className="flex items-center gap-1">
-                          <MaterialIcon name="apartment" className="text-[14px]" />
-                          {filialDisplay}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+              {tipoDestino === 'MISTO' && (
+                <div className="space-y-3">
+                  {itensMistoFields.map((field, index) => {
+                    const itemProprietario = form.watch(`itensMisto.${index}.proprietario`)
+                    const itemMarcaId = form.watch(`itensMisto.${index}.marcaEquipamentoId`)
+                    const itemMarcaModelo = form.watch(`itensMisto.${index}.marcaModeloEspecifico`)
+                    const itemOperadora = form.watch(`itensMisto.${index}.operadoraEspecifica`)
+                    const modelosFiltradosItem = itemMarcaId
+                      ? modelosRaw.filter((m) => m.marcaId === itemMarcaId)
+                      : modelosRaw
+                    return (
+                      <div key={field.id} className="border border-slate-200 rounded p-3 space-y-3 bg-slate-50">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex rounded overflow-hidden flex-1">
+                            <button
+                              type="button"
+                              onClick={() => form.setValue(`itensMisto.${index}.proprietario`, 'INFINITY')}
+                              className={cn(
+                                'flex-1 py-1.5 text-[11px] font-bold uppercase tracking-wider border border-slate-200 transition-all',
+                                itemProprietario === 'INFINITY'
+                                  ? 'bg-erp-blue text-white border-erp-blue'
+                                  : 'bg-white text-slate-500 hover:bg-slate-50'
+                              )}
+                            >
+                              Infinity
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => form.setValue(`itensMisto.${index}.proprietario`, 'CLIENTE')}
+                              className={cn(
+                                'flex-1 py-1.5 text-[11px] font-bold uppercase tracking-wider border border-slate-200 transition-all',
+                                itemProprietario === 'CLIENTE'
+                                  ? 'bg-erp-blue text-white border-erp-blue'
+                                  : 'bg-white text-slate-500 hover:bg-slate-50'
+                              )}
+                            >
+                              Cliente
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeItem(index)}
+                            disabled={itensMistoFields.length <= 1}
+                            className="text-slate-400 hover:text-red-500 disabled:opacity-30"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+
+                        {itemProprietario === 'CLIENTE' && (
+                          <div>
+                            <Label className="text-[10px] font-bold uppercase text-slate-500 block mb-1.5">
+                              Cliente
+                            </Label>
+                            <Controller
+                              name={`itensMisto.${index}.clienteId`}
+                              control={form.control}
+                              render={({ field: f }) => (
+                                <Select
+                                  value={f.value ? `cliente-${f.value}` : ''}
+                                  onValueChange={(v) => {
+                                    if (v.startsWith('cliente-')) {
+                                      f.onChange(parseInt(v.replace('cliente-', ''), 10))
+                                    }
+                                  }}
+                                  disabled={loadingClientes}
+                                >
+                                  <SelectTrigger className="h-9 text-xs">
+                                    <SelectValue placeholder="Selecione o cliente" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {clientes.map((c) => (
+                                      <SelectItem key={c.id} value={`cliente-${c.id}`}>
+                                        {c.nome}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
+                          </div>
+                        )}
+
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1">
+                            <Label className="text-[10px] font-bold uppercase text-slate-500 block mb-1.5">
+                              Quantidade
+                            </Label>
+                            <Controller
+                              name={`itensMisto.${index}.quantidade`}
+                              control={form.control}
+                              render={({ field: f }) => (
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  className="h-9 text-xs"
+                                  value={f.value}
+                                  onChange={(e) => {
+                                    const v = parseInt(e.target.value, 10)
+                                    f.onChange(isNaN(v) ? 1 : Math.max(1, v))
+                                  }}
+                                />
+                              )}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Controller
+                              name={`itensMisto.${index}.marcaModeloEspecifico`}
+                              control={form.control}
+                              render={({ field: f }) => (
+                                <Checkbox
+                                  checked={f.value ?? false}
+                                  onCheckedChange={(checked) => {
+                                    f.onChange(checked)
+                                    if (!checked) {
+                                      form.setValue(`itensMisto.${index}.marcaEquipamentoId`, undefined)
+                                      form.setValue(`itensMisto.${index}.modeloEquipamentoId`, undefined)
+                                    }
+                                  }}
+                                />
+                              )}
+                            />
+                            <span className="text-xs font-medium">Marca/modelo específico</span>
+                          </div>
+                          {itemMarcaModelo && (
+                            <div className="grid grid-cols-2 gap-2">
+                              <Controller
+                                name={`itensMisto.${index}.marcaEquipamentoId`}
+                                control={form.control}
+                                render={({ field: f }) => (
+                                  <Select
+                                    value={f.value ? String(f.value) : ''}
+                                    onValueChange={(v) => {
+                                      f.onChange(v ? +v : undefined)
+                                      form.setValue(`itensMisto.${index}.modeloEquipamentoId`, undefined)
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-8 text-xs">
+                                      <SelectValue placeholder="Marca" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {marcas.map((m) => (
+                                        <SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              />
+                              <Controller
+                                name={`itensMisto.${index}.modeloEquipamentoId`}
+                                control={form.control}
+                                render={({ field: f }) => (
+                                  <Select
+                                    value={f.value ? String(f.value) : ''}
+                                    onValueChange={(v) => f.onChange(v ? +v : undefined)}
+                                    disabled={!itemMarcaId}
+                                  >
+                                    <SelectTrigger className="h-8 text-xs">
+                                      <SelectValue placeholder="Modelo" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {modelosFiltradosItem.map((m) => (
+                                        <SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              />
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-2">
+                            <Controller
+                              name={`itensMisto.${index}.operadoraEspecifica`}
+                              control={form.control}
+                              render={({ field: f }) => (
+                                <Checkbox
+                                  checked={f.value ?? false}
+                                  onCheckedChange={(checked) => {
+                                    f.onChange(checked)
+                                    if (!checked) form.setValue(`itensMisto.${index}.operadoraId`, undefined)
+                                  }}
+                                />
+                              )}
+                            />
+                            <span className="text-xs font-medium">Operadora específica</span>
+                          </div>
+                          {itemOperadora && (
+                            <Controller
+                              name={`itensMisto.${index}.operadoraId`}
+                              control={form.control}
+                              render={({ field: f }) => (
+                                <Select
+                                  value={f.value ? String(f.value) : ''}
+                                  onValueChange={(v) => f.onChange(v ? +v : undefined)}
+                                >
+                                  <SelectTrigger className="h-8 text-xs">
+                                    <SelectValue placeholder="Operadora" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {operadoras.map((o) => (
+                                      <SelectItem key={o.id} value={String(o.id)}>{o.nome}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+
+                  <button
+                    type="button"
+                    onClick={() => appendItem({ proprietario: 'INFINITY', quantidade: 1 })}
+                    className="w-full py-2 text-xs font-bold text-erp-blue border border-dashed border-erp-blue rounded hover:bg-blue-50 flex items-center justify-center gap-1"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Adicionar Destino
+                  </button>
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4 w-full">
-                <div>
-                  <Label className="text-[10px] font-bold uppercase text-slate-500 block mb-1.5">
-                    Quantidade <span className="text-red-500">*</span>
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <Controller
-                      name="quantidade"
-                      control={form.control}
-                      render={({ field }) => (
-                        <Input
-                          type="number"
-                          min={1}
-                          className="h-9 text-xs flex-1"
-                          {...field}
-                          onChange={(e) => {
-                            const v = parseInt(e.target.value, 10)
-                            field.onChange(isNaN(v) ? 1 : Math.max(1, v))
-                          }}
-                        />
-                      )}
-                    />
-                    <span className="text-[11px] font-bold text-slate-500 shrink-0">Unidades</span>
+              <div className={cn('grid gap-4 w-full', tipoDestino !== 'MISTO' ? 'grid-cols-2' : 'grid-cols-1')}>
+                {tipoDestino !== 'MISTO' && (
+                  <div>
+                    <Label className="text-[10px] font-bold uppercase text-slate-500 block mb-1.5">
+                      Quantidade <span className="text-red-500">*</span>
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <Controller
+                        name="quantidade"
+                        control={form.control}
+                        render={({ field }) => (
+                          <Input
+                            type="number"
+                            min={1}
+                            className="h-9 text-xs flex-1"
+                            {...field}
+                            onChange={(e) => {
+                              const v = parseInt(e.target.value, 10)
+                              field.onChange(isNaN(v) ? 1 : Math.max(1, v))
+                            }}
+                          />
+                        )}
+                      />
+                      <span className="text-[11px] font-bold text-slate-500 shrink-0">Unidades</span>
+                    </div>
                   </div>
-                </div>
+                )}
                 <div>
                   <Label className="text-[10px] font-bold uppercase text-slate-500 block mb-1.5">
                     Urgência
@@ -667,7 +954,24 @@ export function ModalNovoPedido({
               />
             </div>
 
-            {(destinatarioSelecionado ?? quantidade > 0) && (
+            {tipoDestino === 'MISTO' && itensMistoFields.length > 0 && (
+              <div className="bg-blue-50 border border-blue-100 rounded p-3 space-y-1">
+                <p className="text-xs font-bold text-blue-800">Distribuição do pedido:</p>
+                {itensMistoFields.map((f, i) => {
+                  const item = form.watch(`itensMisto.${i}`)
+                  const label =
+                    item.proprietario === 'INFINITY'
+                      ? 'Infinity'
+                      : clientes.find((c) => c.id === item.clienteId)?.nome ?? 'Cliente'
+                  return (
+                    <p key={f.id} className="text-xs text-blue-700">
+                      {item.quantidade}× → {label}
+                    </p>
+                  )
+                })}
+              </div>
+            )}
+            {tipoDestino !== 'MISTO' && (destinatarioSelecionado ?? (quantidade ?? 0) > 0) && (
               <div className="bg-blue-50 border border-blue-100 rounded p-3">
                 <p className="text-xs text-blue-800 font-medium flex items-center gap-2">
                   <MaterialIcon name="info" className="text-sm" />

@@ -11,6 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { MaterialIcon } from '@/components/MaterialIcon'
+import { SearchableSelect } from '@/components/SearchableSelect'
 import { cn } from '@/lib/utils'
 
 type TipoEntidade = 'cliente' | 'infinity'
@@ -117,6 +118,19 @@ function formatarDataHora(iso: string) {
 export function DebitosEquipamentosPage() {
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [busca, setBusca] = useState('')
+  const [filtroStatus, setFiltroStatus] = useState<StatusDebito | 'todos'>('todos')
+  const [filtroDevedor, setFiltroDevedor] = useState('')
+  const [filtroModelo, setFiltroModelo] = useState('')
+
+  const opcoesDevedor = useMemo(() => {
+    const nomes = new Set(MOCK_DEBITOS.flatMap((d) => [d.devedor.nome, d.credor.nome]))
+    return [{ value: '', label: 'Todos' }, ...[...nomes].map((n) => ({ value: n, label: n }))]
+  }, [])
+
+  const opcoesModelo = useMemo(() => {
+    const nomes = new Set(MOCK_DEBITOS.flatMap((d) => d.modelos.map((m) => m.nome)))
+    return [{ value: '', label: 'Todos' }, ...[...nomes].map((n) => ({ value: n, label: n }))]
+  }, [])
 
   const stats = useMemo(() => {
     const ativos = MOCK_DEBITOS.filter((d) => d.status !== 'quitado')
@@ -170,9 +184,13 @@ export function DebitosEquipamentosPage() {
         !termo ||
         d.devedor.nome.toLowerCase().includes(termo) ||
         d.credor.nome.toLowerCase().includes(termo)
-      return matchBusca
+      const matchStatus = filtroStatus === 'todos' || d.status === filtroStatus
+      const matchDevedor =
+        !filtroDevedor || d.devedor.nome === filtroDevedor || d.credor.nome === filtroDevedor
+      const matchModelo = !filtroModelo || d.modelos.some((m) => m.nome === filtroModelo)
+      return matchBusca && matchStatus && matchDevedor && matchModelo
     })
-  }, [busca])
+  }, [busca, filtroStatus, filtroDevedor, filtroModelo])
 
   return (
     <div className="space-y-4">
@@ -257,21 +275,88 @@ export function DebitosEquipamentosPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="flex items-end justify-between gap-4">
-        <div className="flex flex-col">
-          <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Busca</label>
-          <div className="relative w-64">
-            <MaterialIcon
-              name="search"
-              className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-base"
-            />
-            <Input
-              className="pl-8 text-[11px]"
-              placeholder="Devedor ou credor..."
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-            />
+      <div className="space-y-3">
+        <div className="flex items-end gap-3 flex-wrap">
+          <div className="flex flex-col">
+            <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Busca</label>
+            <div className="relative w-52">
+              <MaterialIcon
+                name="search"
+                className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-base"
+              />
+              <Input
+                className="pl-8 text-[11px]"
+                placeholder="Devedor ou credor..."
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+              />
+            </div>
           </div>
+          <div className="flex flex-col">
+            <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Devedor / Credor</label>
+            <div className="w-52">
+              <SearchableSelect
+                options={opcoesDevedor}
+                value={filtroDevedor}
+                onChange={setFiltroDevedor}
+                placeholder="Todos"
+              />
+            </div>
+          </div>
+          <div className="flex flex-col">
+            <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Modelo</label>
+            <div className="w-44">
+              <SearchableSelect
+                options={opcoesModelo}
+                value={filtroModelo}
+                onChange={setFiltroModelo}
+                placeholder="Todos"
+              />
+            </div>
+          </div>
+          {(busca || filtroDevedor || filtroModelo || filtroStatus !== 'todos') && (
+            <div className="flex flex-col justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setBusca('')
+                  setFiltroDevedor('')
+                  setFiltroModelo('')
+                  setFiltroStatus('todos')
+                }}
+                className="h-9 px-3 text-[11px] font-bold text-slate-500 hover:text-slate-700 border border-slate-200 rounded bg-white hover:bg-slate-50 flex items-center gap-1"
+              >
+                <MaterialIcon name="close" className="text-sm" />
+                Limpar
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Status tabs */}
+        <div className="flex gap-1">
+          {(
+            [
+              { value: 'todos', label: 'Todos' },
+              { value: 'aberto', label: 'Aberto' },
+              { value: 'parcial', label: 'Parcial' },
+              { value: 'quitado', label: 'Quitado' },
+            ] as const
+          ).map((tab) => (
+            <button
+              key={tab.value}
+              type="button"
+              onClick={() => setFiltroStatus(tab.value)}
+              className={cn(
+                'px-3 py-1 text-[11px] font-bold rounded border transition-colors',
+                filtroStatus === tab.value
+                  ? 'bg-erp-blue text-white border-erp-blue'
+                  : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -423,9 +508,9 @@ export function DebitosEquipamentosPage() {
                           </div>
                         </div>
 
-                        {/* 2 colunas: Modelos | Histórico */}
-                        <div className="grid grid-cols-2 divide-x divide-slate-100">
-                          {/* Coluna esquerda: Distribuição de modelos */}
+                        {/* 3 colunas: Modelos | Histórico | Ações */}
+                        <div className="grid grid-cols-3 divide-x divide-slate-100">
+                          {/* Coluna 1: Distribuição de modelos */}
                           <div className="px-6 py-4 space-y-3">
                             <h4 className="text-[10px] font-bold text-slate-400 uppercase pb-1 border-b border-slate-100">
                               Distribuição de Modelos
@@ -451,7 +536,7 @@ export function DebitosEquipamentosPage() {
                             </div>
                           </div>
 
-                          {/* Coluna direita: Histórico */}
+                          {/* Coluna 2: Histórico */}
                           <div className="px-6 py-4 space-y-3">
                             <h4 className="text-[10px] font-bold text-slate-400 uppercase pb-1 border-b border-slate-100">
                               Histórico de Movimentações
@@ -475,18 +560,39 @@ export function DebitosEquipamentosPage() {
                               ))}
                             </div>
                           </div>
-                        </div>
 
-                        {/* Footer ações */}
-                        <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 flex justify-end">
-                          <Button
-                            variant="outline"
-                            className="text-[11px] font-bold uppercase gap-1.5"
-                            onClick={() => toast('Funcionalidade em breve')}
-                          >
-                            <MaterialIcon name="swap_horiz" className="text-base" />
-                            Transferência Direta
-                          </Button>
+                          {/* Coluna 3: Ações Corretivas */}
+                          <div className="px-6 py-4 space-y-3">
+                            <h4 className="text-[10px] font-bold text-slate-400 uppercase pb-1 border-b border-slate-100">
+                              Ações Corretivas
+                            </h4>
+                            <div className="space-y-2">
+                              <Button
+                                variant="outline"
+                                className="w-full justify-start text-[11px] font-bold uppercase gap-1.5"
+                                onClick={(e) => { e.stopPropagation(); toast('Funcionalidade em breve') }}
+                              >
+                                <MaterialIcon name="check_circle" className="text-base text-emerald-600" />
+                                Resolver Pendência
+                              </Button>
+                              <Button
+                                variant="outline"
+                                className="w-full justify-start text-[11px] font-bold uppercase gap-1.5"
+                                onClick={(e) => { e.stopPropagation(); toast('Funcionalidade em breve') }}
+                              >
+                                <MaterialIcon name="swap_horiz" className="text-base text-blue-600" />
+                                Transferência Direta
+                              </Button>
+                              <Button
+                                variant="outline"
+                                className="w-full justify-start text-[11px] font-bold uppercase gap-1.5"
+                                onClick={(e) => { e.stopPropagation(); toast('Funcionalidade em breve') }}
+                              >
+                                <MaterialIcon name="remove_circle" className="text-base text-amber-600" />
+                                Abater Dívida
+                              </Button>
+                            </div>
+                          </div>
                         </div>
                       </TableCell>
                     </TableRow>

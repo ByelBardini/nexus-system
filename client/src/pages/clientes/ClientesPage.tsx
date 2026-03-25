@@ -476,7 +476,7 @@ export function ClientesPage() {
                         onClick={() => setExpandedId(isExpanded ? null : c.id)}
                       >
                         <TableCell className="px-4 py-4 text-xs font-bold text-slate-400 text-center">
-                          {String(c.id).padStart(4, '0')}
+                          {String(c.id - 1).padStart(4, '0')}
                         </TableCell>
                         <TableCell className="px-4 py-4">
                           <div className="flex flex-col">

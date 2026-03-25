@@ -115,7 +115,7 @@ export function DrawerDetalhes({
                   Tipo de Destino
                 </p>
                 <p className="text-xs font-bold text-slate-800">
-                  {pedido.tipo === 'tecnico' ? 'Técnico' : 'Cliente'}
+                  {pedido.tipo === 'tecnico' ? 'Técnico' : pedido.tipo === 'misto' ? 'Misto' : 'Cliente'}
                 </p>
               </div>
               <div className="bg-slate-50 p-3 rounded border border-slate-100">
@@ -183,6 +183,38 @@ export function DrawerDetalhes({
               )}
             </div>
           </div>
+
+          {pedido.tipo === 'misto' && pedido.itensMisto && pedido.itensMisto.length > 0 && (
+            <div className="mb-8">
+              <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-4">
+                Distribuição dos Itens
+              </h3>
+              <div className="bg-white border border-slate-200 rounded overflow-hidden shadow-sm">
+                <table className="w-full text-xs">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-2 text-left font-bold text-slate-500 text-[10px] uppercase">Destino</th>
+                      <th className="px-4 py-2 text-right font-bold text-slate-500 text-[10px] uppercase">Qtd</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {pedido.itensMisto.map((item, i) => (
+                      <tr key={i}>
+                        <td className="px-4 py-2 text-slate-700">{item.label}</td>
+                        <td className="px-4 py-2 text-right font-bold text-slate-800">{item.quantidade}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-slate-50 border-t border-slate-200">
+                    <tr>
+                      <td className="px-4 py-2 font-bold text-slate-500 text-[10px] uppercase">Total</td>
+                      <td className="px-4 py-2 text-right font-bold text-slate-800">{pedido.quantidade}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          )}
 
           {(pedido.endereco || pedido.contato) && (
             <div className="mb-8">
