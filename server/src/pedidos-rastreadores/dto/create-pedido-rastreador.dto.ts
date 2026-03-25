@@ -1,5 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  ArrayMinSize,
+  IsArray,
   IsDateString,
   IsEnum,
   IsInt,
@@ -8,11 +10,14 @@ import {
   Min,
   Validate,
   ValidateIf,
+  ValidateNested,
   ValidationArguments,
   ValidatorConstraint,
   ValidatorConstraintInterface,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { TipoDestinoPedido, UrgenciaPedido } from '@prisma/client';
+import { CreatePedidoRastreadorItemDto } from './create-pedido-rastreador-item.dto';
 
 @ValidatorConstraint({ name: 'DestinatarioCliente', async: false })
 class DestinatarioClienteConstraint implements ValidatorConstraintInterface {
@@ -83,10 +88,19 @@ export class CreatePedidoRastreadorDto {
   @Min(1)
   deClienteId?: number;
 
-  @ApiProperty({ example: 10 })
+  @ApiProperty({ example: 10, description: 'Obrigatório para TECNICO/CLIENTE; omitido para MISTO (calculado como soma dos itens)' })
+  @ValidateIf((o) => o.tipoDestino !== 'MISTO')
   @IsInt()
   @Min(1)
-  quantidade: number;
+  quantidade?: number;
+
+  @ApiPropertyOptional({ type: [CreatePedidoRastreadorItemDto], description: 'Itens obrigatórios quando tipoDestino = MISTO' })
+  @ValidateIf((o) => o.tipoDestino === 'MISTO')
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreatePedidoRastreadorItemDto)
+  @ArrayMinSize(1)
+  itens?: CreatePedidoRastreadorItemDto[];
 
   @ApiPropertyOptional({ enum: UrgenciaPedido, default: UrgenciaPedido.MEDIA })
   @IsOptional()

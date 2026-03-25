@@ -20,6 +20,14 @@ const includeBase = {
   modeloEquipamento: { include: { marca: true } },
   operadora: true,
   criadoPor: true,
+  itens: {
+    include: {
+      cliente: { select: { id: true, nome: true } },
+      marcaEquipamento: true,
+      modeloEquipamento: { include: { marca: true } },
+      operadora: true,
+    },
+  },
 };
 
 @Injectable()
@@ -53,6 +61,13 @@ export class PedidosRastreadoresService {
         {
           subcliente: {
             cliente: { nome: { contains: s, mode: 'insensitive' as const } },
+          },
+        },
+        {
+          itens: {
+            some: {
+              cliente: { nome: { contains: s, mode: 'insensitive' as const } },
+            },
           },
         },
       ];
@@ -138,9 +153,13 @@ export class PedidosRastreadoresService {
       : 1;
     const codigo = `PED-${String(seq).padStart(4, '0')}`;
 
+    const isMisto = dto.tipoDestino === TipoDestinoPedido.MISTO;
     const tecnicoId = dto.tipoDestino === TipoDestinoPedido.TECNICO ? dto.tecnicoId : null;
     const clienteId = dto.tipoDestino === TipoDestinoPedido.CLIENTE ? dto.clienteId ?? null : null;
     const subclienteId = dto.tipoDestino === TipoDestinoPedido.CLIENTE ? dto.subclienteId ?? null : null;
+    const quantidade = isMisto
+      ? dto.itens!.reduce((s, i) => s + i.quantidade, 0)
+      : dto.quantidade!;
 
     const dataSolicitacao = dto.dataSolicitacao ? new Date(dto.dataSolicitacao) : new Date();
     const marcaEquipamentoId = dto.marcaEquipamentoId ?? null;
@@ -156,7 +175,7 @@ export class PedidosRastreadoresService {
         clienteId,
         subclienteId,
         deClienteId,
-        quantidade: dto.quantidade,
+        quantidade,
         urgencia: dto.urgencia ?? UrgenciaPedido.MEDIA,
         dataSolicitacao,
         marcaEquipamentoId,
@@ -164,6 +183,18 @@ export class PedidosRastreadoresService {
         operadoraId,
         criadoPorId,
         observacao: dto.observacao,
+        ...(isMisto && dto.itens && {
+          itens: {
+            create: dto.itens.map((item) => ({
+              proprietario: item.proprietario,
+              clienteId: item.proprietario === 'CLIENTE' ? item.clienteId ?? null : null,
+              quantidade: item.quantidade,
+              marcaEquipamentoId: item.marcaEquipamentoId ?? null,
+              modeloEquipamentoId: item.modeloEquipamentoId ?? null,
+              operadoraId: item.operadoraId ?? null,
+            })),
+          },
+        }),
       },
       include: includeBase,
     });
@@ -294,6 +325,10 @@ export class PedidosRastreadoresService {
                 ? pedido.subcliente.clienteId
                 : null);
             dataAparelho.clienteId = targetClienteId ?? null;
+            dataAparelho.tecnicoId = null;
+          } else if (pedido.tipoDestino === TipoDestinoPedido.MISTO) {
+            // Pedido misto: sem destino único — aparelhos ficam neutros
+            dataAparelho.clienteId = null;
             dataAparelho.tecnicoId = null;
           } else {
             // Pedido para técnico: vincular ao técnico e à empresa remetente (deCliente)

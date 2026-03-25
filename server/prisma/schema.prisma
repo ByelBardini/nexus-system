@@ -125,6 +125,7 @@ model Cliente {
   lotesAparelhos             LoteAparelho[]
   pedidosRastreadoresDestino   PedidoRastreador[] @relation("ClienteDestino")
   pedidosRastreadoresDeCliente PedidoRastreador[] @relation("ClienteRemetente")
+  pedidosRastreadoresItens     PedidoRastreadorItem[] @relation("ClienteItemDestino")
 
   @@map("clientes")
 }
@@ -307,6 +308,7 @@ model MarcaEquipamento {
   criadoEm             DateTime           @default(now()) @map("criado_em")
   modelos              ModeloEquipamento[]
   pedidosRastreadores  PedidoRastreador[]
+  pedidosRastreadoresItens PedidoRastreadorItem[]
 
   @@map("marcas_equipamentos")
 }
@@ -320,6 +322,7 @@ model ModeloEquipamento {
   criadoEm             DateTime           @default(now()) @map("criado_em")
   marca                MarcaEquipamento   @relation(fields: [marcaId], references: [id], onDelete: Cascade)
   pedidosRastreadores  PedidoRastreador[]
+  pedidosRastreadoresItens PedidoRastreadorItem[]
 
   @@unique([marcaId, nome])
   @@index([marcaId])
@@ -333,6 +336,7 @@ model Operadora {
   criadoEm             DateTime           @default(now()) @map("criado_em")
   marcasSimcard        MarcaSimcard[]
   pedidosRastreadores  PedidoRastreador[]
+  pedidosRastreadoresItens PedidoRastreadorItem[]
 
   @@map("operadoras")
 }
@@ -488,6 +492,7 @@ enum ProprietarioTipo {
 enum TipoDestinoPedido {
   TECNICO
   CLIENTE
+  MISTO
 }
 
 enum StatusPedidoRastreador {
@@ -536,6 +541,7 @@ model PedidoRastreador {
   operadora            Operadora?              @relation(fields: [operadoraId], references: [id])
   criadoPor            Usuario?                @relation(fields: [criadoPorId], references: [id])
   historico            PedidoRastreadorHistorico[]
+  itens                PedidoRastreadorItem[]
 
   @@index([tecnicoId])
   @@index([clienteId])
@@ -562,4 +568,26 @@ model PedidoRastreadorHistorico {
 
   @@index([pedidoRastreadorId])
   @@map("pedidos_rastreadores_historico")
+}
+
+model PedidoRastreadorItem {
+  id                   Int                @id @default(autoincrement())
+  pedidoRastreadorId   Int                @map("pedido_rastreador_id")
+  proprietario         ProprietarioTipo   @default(INFINITY)
+  clienteId            Int?               @map("cliente_id")
+  quantidade           Int
+  marcaEquipamentoId   Int?               @map("marca_equipamento_id")
+  modeloEquipamentoId  Int?               @map("modelo_equipamento_id")
+  operadoraId          Int?               @map("operadora_id")
+  criadoEm             DateTime           @default(now()) @map("criado_em")
+
+  pedidoRastreador     PedidoRastreador   @relation(fields: [pedidoRastreadorId], references: [id], onDelete: Cascade)
+  cliente              Cliente?           @relation("ClienteItemDestino", fields: [clienteId], references: [id])
+  marcaEquipamento     MarcaEquipamento?  @relation(fields: [marcaEquipamentoId], references: [id])
+  modeloEquipamento    ModeloEquipamento? @relation(fields: [modeloEquipamentoId], references: [id])
+  operadora            Operadora?         @relation(fields: [operadoraId], references: [id])
+
+  @@index([pedidoRastreadorId])
+  @@index([clienteId])
+  @@map("pedidos_rastreadores_itens")
 }

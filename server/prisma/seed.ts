@@ -144,7 +144,8 @@ async function main() {
       VALUES (${CLIENTE_INFINITY_ID}, 'Infinity', 'Infinity', 'COMODATO', 0, 'ATIVO')
       ON DUPLICATE KEY UPDATE nome = 'Infinity', nome_fantasia = 'Infinity'
     `;
-    console.log('Cliente Infinity (id 999999) criado');
+    await prisma.$executeRaw`ALTER TABLE clientes AUTO_INCREMENT = 1`;
+    console.log('Cliente Infinity (id 1) criado');
   }
 
   console.log('Seed concluído: admin@admin.com / 12345');
