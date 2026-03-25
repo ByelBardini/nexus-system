@@ -91,6 +91,23 @@ describe('PedidosRastreadoresController', () => {
       expect(service.create).toHaveBeenCalledWith(dto, 100);
       expect(result).toEqual(criado);
     });
+
+    it('repassa DTO MISTO com itens para o service sem transformação', async () => {
+      const dto = {
+        tipoDestino: 'MISTO' as TipoDestinoPedido,
+        itens: [
+          { proprietario: 'INFINITY', quantidade: 5 },
+          { proprietario: 'CLIENTE', clienteId: 2, quantidade: 3 },
+        ],
+      };
+      const criado = { id: 1, codigo: 'PED-0001', quantidade: 8, itens: dto.itens };
+      (service.create as jest.Mock).mockResolvedValue(criado);
+
+      const result = await controller.create(dto as any, 50);
+
+      expect(service.create).toHaveBeenCalledWith(dto, 50);
+      expect(result).toEqual(criado);
+    });
   });
 
   describe('updateStatus', () => {

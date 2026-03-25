@@ -96,6 +96,29 @@ describe('PedidosRastreadoresService', () => {
         }),
       );
     });
+
+    it('busca por nome do cliente de um item MISTO inclui pedidos mistos no resultado', async () => {
+      prisma.pedidoRastreador.findMany.mockResolvedValue([]);
+      prisma.pedidoRastreador.count.mockResolvedValue(0);
+
+      await service.findAll({ page: 1, limit: 15, search: 'Cliente XYZ' });
+
+      expect(prisma.pedidoRastreador.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: expect.arrayContaining([
+              expect.objectContaining({
+                itens: {
+                  some: {
+                    cliente: { nome: { contains: 'Cliente XYZ', mode: 'insensitive' } },
+                  },
+                },
+              }),
+            ]),
+          }),
+        }),
+      );
+    });
   });
 
   describe('findOne', () => {
@@ -222,6 +245,133 @@ describe('PedidosRastreadoresService', () => {
           }),
         }),
       );
+    });
+
+    it('cria pedido MISTO com quantidade derivada da soma dos itens', async () => {
+      const dto: CreatePedidoRastreadorDto = {
+        tipoDestino: 'MISTO' as TipoDestinoPedido,
+        itens: [
+          { proprietario: 'INFINITY' as any, quantidade: 5 },
+          { proprietario: 'CLIENTE' as any, clienteId: 3, quantidade: 3 },
+        ],
+        urgencia: UrgenciaPedido.MEDIA,
+      } as any;
+      prisma.pedidoRastreador.findFirst.mockResolvedValue({ codigo: 'PED-0010' });
+      prisma.pedidoRastreador.create.mockResolvedValue({
+        id: 11,
+        codigo: 'PED-0011',
+        quantidade: 8,
+        itens: [],
+      });
+
+      await service.create(dto, 1);
+
+      expect(prisma.pedidoRastreador.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            tipoDestino: 'MISTO',
+            quantidade: 8,
+            tecnicoId: null,
+            clienteId: null,
+            subclienteId: null,
+            itens: {
+              create: expect.arrayContaining([
+                expect.objectContaining({ proprietario: 'INFINITY', quantidade: 5, clienteId: null }),
+                expect.objectContaining({ proprietario: 'CLIENTE', clienteId: 3, quantidade: 3 }),
+              ]),
+            },
+          }),
+        }),
+      );
+    });
+
+    it('item INFINITY nunca envia clienteId ao banco mesmo que presente no DTO', async () => {
+      const dto: CreatePedidoRastreadorDto = {
+        tipoDestino: 'MISTO' as TipoDestinoPedido,
+        itens: [{ proprietario: 'INFINITY' as any, clienteId: 99, quantidade: 2 }],
+      } as any;
+      prisma.pedidoRastreador.findFirst.mockResolvedValue(null);
+      prisma.pedidoRastreador.create.mockResolvedValue({ id: 1, codigo: 'PED-0001', quantidade: 2, itens: [] });
+
+      await service.create(dto);
+
+      expect(prisma.pedidoRastreador.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            itens: {
+              create: [expect.objectContaining({ proprietario: 'INFINITY', clienteId: null })],
+            },
+          }),
+        }),
+      );
+    });
+
+    it('cria pedido MISTO com marca/modelo/operadora independentes por item', async () => {
+      const dto: CreatePedidoRastreadorDto = {
+        tipoDestino: 'MISTO' as TipoDestinoPedido,
+        itens: [
+          {
+            proprietario: 'CLIENTE' as any,
+            clienteId: 1,
+            quantidade: 4,
+            marcaEquipamentoId: 10,
+            modeloEquipamentoId: 20,
+            operadoraId: 5,
+          },
+          { proprietario: 'INFINITY' as any, quantidade: 2 },
+        ],
+      } as any;
+      prisma.pedidoRastreador.findFirst.mockResolvedValue(null);
+      prisma.pedidoRastreador.create.mockResolvedValue({ id: 1, codigo: 'PED-0001', quantidade: 6, itens: [] });
+
+      await service.create(dto);
+
+      expect(prisma.pedidoRastreador.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            itens: {
+              create: expect.arrayContaining([
+                expect.objectContaining({
+                  proprietario: 'CLIENTE',
+                  clienteId: 1,
+                  marcaEquipamentoId: 10,
+                  modeloEquipamentoId: 20,
+                  operadoraId: 5,
+                }),
+                expect.objectContaining({
+                  proprietario: 'INFINITY',
+                  marcaEquipamentoId: null,
+                  modeloEquipamentoId: null,
+                  operadoraId: null,
+                }),
+              ]),
+            },
+          }),
+        }),
+      );
+    });
+
+    it('cria pedido MISTO com 3 itens e quantidade total correta', async () => {
+      const dto: CreatePedidoRastreadorDto = {
+        tipoDestino: 'MISTO' as TipoDestinoPedido,
+        itens: [
+          { proprietario: 'INFINITY' as any, quantidade: 5 },
+          { proprietario: 'CLIENTE' as any, clienteId: 1, quantidade: 3 },
+          { proprietario: 'CLIENTE' as any, clienteId: 2, quantidade: 7 },
+        ],
+      } as any;
+      prisma.pedidoRastreador.findFirst.mockResolvedValue(null);
+      prisma.pedidoRastreador.create.mockResolvedValue({ id: 1, codigo: 'PED-0001', quantidade: 15, itens: [] });
+
+      await service.create(dto);
+
+      expect(prisma.pedidoRastreador.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ quantidade: 15 }),
+        }),
+      );
+      const chamada = (prisma.pedidoRastreador.create as jest.Mock).mock.calls[0][0];
+      expect(chamada.data.itens.create).toHaveLength(3);
     });
   });
 
@@ -357,6 +507,73 @@ describe('PedidosRastreadoresService', () => {
 
       expect(prisma.aparelho.update).toHaveBeenCalledWith({
         where: { id: 201 },
+        data: { status: StatusAparelho.CONFIGURADO, tecnicoId: null, clienteId: null },
+      });
+    });
+
+    it('MISTO ao atingir ENTREGUE não vincula clienteId nem tecnicoId nos aparelhos', async () => {
+      const pedidoDespachado = {
+        id: 1,
+        codigo: 'PED-0001',
+        status: StatusPedidoRastreador.DESPACHADO,
+        tipoDestino: 'MISTO' as TipoDestinoPedido,
+        kitIds: [10],
+        tecnicoId: null,
+        clienteId: null,
+        tecnico: null,
+        subcliente: null,
+        historico: [],
+      };
+      const aparelhosNoKit = [
+        { id: 201, kitId: 10, status: StatusAparelho.DESPACHADO, tipo: 'RASTREADOR', simVinculadoId: null },
+      ];
+      prisma.pedidoRastreador.findUnique
+        .mockResolvedValueOnce(pedidoDespachado)
+        .mockResolvedValueOnce({ ...pedidoDespachado, status: StatusPedidoRastreador.ENTREGUE });
+      prisma.pedidoRastreador.update.mockResolvedValue({});
+      prisma.aparelho.findMany.mockResolvedValue(aparelhosNoKit);
+      prisma.aparelhoHistorico.create.mockResolvedValue({});
+      prisma.aparelho.update.mockResolvedValue({});
+
+      await service.updateStatus(1, { status: StatusPedidoRastreador.ENTREGUE });
+
+      expect(prisma.aparelho.update).toHaveBeenCalledWith({
+        where: { id: 201 },
+        data: expect.objectContaining({
+          status: StatusAparelho.COM_TECNICO,
+          clienteId: null,
+          tecnicoId: null,
+        }),
+      });
+    });
+
+    it('MISTO ao retroceder de DESPACHADO para CONFIGURADO limpa aparelhos sem vincular destino', async () => {
+      const pedidoDespachado = {
+        id: 1,
+        codigo: 'PED-0001',
+        status: StatusPedidoRastreador.DESPACHADO,
+        tipoDestino: 'MISTO' as TipoDestinoPedido,
+        kitIds: [10],
+        tecnicoId: null,
+        tecnico: null,
+        subcliente: null,
+        historico: [],
+      };
+      const aparelhosNoKit = [
+        { id: 101, kitId: 10, status: StatusAparelho.DESPACHADO, tipo: 'RASTREADOR', simVinculadoId: null },
+      ];
+      prisma.pedidoRastreador.findUnique
+        .mockResolvedValueOnce(pedidoDespachado)
+        .mockResolvedValueOnce({ ...pedidoDespachado, status: StatusPedidoRastreador.CONFIGURADO });
+      prisma.pedidoRastreador.update.mockResolvedValue({});
+      prisma.aparelho.findMany.mockResolvedValue(aparelhosNoKit);
+      prisma.aparelhoHistorico.create.mockResolvedValue({});
+      prisma.aparelho.update.mockResolvedValue({});
+
+      await service.updateStatus(1, { status: StatusPedidoRastreador.CONFIGURADO });
+
+      expect(prisma.aparelho.update).toHaveBeenCalledWith({
+        where: { id: 101 },
         data: { status: StatusAparelho.CONFIGURADO, tecnicoId: null, clienteId: null },
       });
     });
