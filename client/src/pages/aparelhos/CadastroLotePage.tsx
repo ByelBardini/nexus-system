@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useEffect } from 'react'
 import { useForm, Controller, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -6,9 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Loader2,
-  Search,
   ArrowLeft,
-  X,
   CheckCircle,
   AlertTriangle,
 } from 'lucide-react'
@@ -23,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { MaterialIcon } from '@/components/MaterialIcon'
+import { SelectClienteSearch } from '@/components/SelectClienteSearch'
 import { InputPreco } from '@/components/InputPreco'
 import { api } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
@@ -36,6 +35,8 @@ interface Cliente {
   id: number
   nome: string
   nomeFantasia?: string | null
+  cidade?: string | null
+  estado?: string | null
 }
 
 interface IdValidation {
@@ -65,6 +66,27 @@ interface Operadora {
   ativo: boolean
 }
 
+interface DebitoRastreadorApi {
+  id: number
+  devedorTipo: 'INFINITY' | 'CLIENTE'
+  devedorClienteId: number | null
+  devedorCliente: { id: number; nome: string } | null
+  credorTipo: 'INFINITY' | 'CLIENTE'
+  credorClienteId: number | null
+  credorCliente: { id: number; nome: string } | null
+  marcaId: number
+  marca: { id: number; nome: string }
+  modeloId: number
+  modelo: { id: number; nome: string }
+  quantidade: number
+}
+
+function formatDebitoLabel(d: DebitoRastreadorApi): string {
+  const devedor = d.devedorCliente?.nome ?? 'Infinity'
+  const credor = d.credorCliente?.nome ?? 'Infinity'
+  return `${devedor} deve ${d.quantidade}x ${d.marca.nome} ${d.modelo.nome} → ${credor}`
+}
+
 const schema = z
   .object({
     referencia: z.preprocess((val) => val ?? '', z.string().refine((s) => s.length >= 1, 'Referência obrigatória')),
@@ -82,10 +104,21 @@ const schema = z
     definirIds: z.boolean(),
     idsTexto: z.string().optional(),
     valorUnitario: z.number().min(1, 'Valor unitário deve ser maior que zero'),
+    abaterDivida: z.boolean(),
+    abaterDebitoId: z.number().nullable(),
+    abaterQuantidade: z.number().nullable(),
   })
   .superRefine((data, ctx) => {
     if (data.proprietarioTipo === 'CLIENTE' && !data.clienteId) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Selecione o cliente', path: ['clienteId'] })
+    }
+    if (data.abaterDivida) {
+      if (!data.abaterDebitoId) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Selecione o débito', path: ['abaterDebitoId'] })
+      }
+      if (!data.abaterQuantidade || data.abaterQuantidade <= 0) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Informe a quantidade a abater', path: ['abaterQuantidade'] })
+      }
     }
     if (data.tipo === 'RASTREADOR') {
       if (!data.marca) ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Marca obrigatória', path: ['marca'] })
@@ -160,6 +193,9 @@ const defaultValues: FormData = {
   definirIds: true,
   idsTexto: '',
   valorUnitario: 0,
+  abaterDivida: false,
+  abaterDebitoId: null,
+  abaterQuantidade: null,
 }
 
 export function CadastroLotePage() {
@@ -167,8 +203,6 @@ export function CadastroLotePage() {
   const queryClient = useQueryClient()
   const { hasPermission } = useAuth()
   const canCreate = hasPermission('CONFIGURACAO.APARELHO.CRIAR')
-
-  const [buscaCliente, setBuscaCliente] = useState('')
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema) as Resolver<FormData>,
@@ -187,11 +221,12 @@ export function CadastroLotePage() {
   const watchIdsTexto = form.watch('idsTexto') ?? ''
   const watchQuantidade = form.watch('quantidade')
   const watchValorUnitario = form.watch('valorUnitario')
+  const watchAbaterDivida = form.watch('abaterDivida')
+  const watchAbaterDebitoId = form.watch('abaterDebitoId')
 
   const { data: clientes = [] } = useQuery<Cliente[]>({
     queryKey: ['clientes-lista'],
     queryFn: () => api('/clientes'),
-    enabled: watchProprietario === 'CLIENTE',
   })
 
   const { data: marcas = [] } = useQuery<Marca[]>({
@@ -219,6 +254,12 @@ export function CadastroLotePage() {
         : api('/equipamentos/marcas-simcard'),
   })
 
+  const { data: debitosData } = useQuery<{ data: DebitoRastreadorApi[] }>({
+    queryKey: ['debitos-rastreadores', 'aberto'],
+    queryFn: () => api('/debitos-rastreadores?status=aberto&limit=500'),
+    enabled: watchTipo === 'RASTREADOR',
+  })
+
   const marcasAtivas = useMemo(() => marcas.filter((m) => m.ativo), [marcas])
   const operadorasAtivas = useMemo(() => operadoras.filter((o) => o.ativo), [operadoras])
   const marcasSimcardFiltradas = useMemo(
@@ -237,21 +278,42 @@ export function CadastroLotePage() {
     [aparelhosExistentes]
   )
 
-  const clientesFiltrados = useMemo(() => {
-    if (!buscaCliente.trim()) return clientes.slice(0, 10)
-    return clientes
-      .filter(
-        (c) =>
-          c.nome.toLowerCase().includes(buscaCliente.toLowerCase()) ||
-          c.nomeFantasia?.toLowerCase().includes(buscaCliente.toLowerCase())
-      )
-      .slice(0, 10)
-  }, [clientes, buscaCliente])
-
   const clienteSelecionado = useMemo(
     () => clientes.find((c) => c.id === watchClienteId),
     [clientes, watchClienteId]
   )
+
+  const debitosFiltrados = useMemo(() => {
+    const todos = debitosData?.data ?? []
+    return todos.filter((d) => {
+      // Only show debts where the selected proprietário is the devedor
+      const isDevedor =
+        watchProprietario === 'INFINITY'
+          ? d.devedorTipo === 'INFINITY'
+          : watchClienteId
+            ? d.devedorTipo === 'CLIENTE' && d.devedorClienteId === watchClienteId
+            : false
+      if (!isDevedor) return false
+      // If brand/model selected, also filter by them
+      if (watchMarca && watchModelo) {
+        return d.marcaId === Number(watchMarca) && d.modeloId === Number(watchModelo)
+      }
+      return true
+    })
+  }, [debitosData, watchProprietario, watchClienteId, watchMarca, watchModelo])
+
+  const selectedDebito = useMemo(
+    () => debitosFiltrados.find((d) => d.id === watchAbaterDebitoId) ?? null,
+    [debitosFiltrados, watchAbaterDebitoId]
+  )
+
+  useEffect(() => {
+    if (debitosFiltrados.length === 0 && form.getValues('abaterDivida')) {
+      form.setValue('abaterDivida', false)
+      form.setValue('abaterDebitoId', null)
+      form.setValue('abaterQuantidade', null)
+    }
+  }, [debitosFiltrados.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const idValidation = useMemo(() => {
     if (!watchDefinirIds || !watchIdsTexto.trim()) {
@@ -324,7 +386,7 @@ export function CadastroLotePage() {
         notaFiscal: (data.notaFiscal?.trim() || null) as string | null,
         dataChegada: String(data.dataChegada ?? new Date().toISOString().split('T')[0]),
         proprietarioTipo: data.proprietarioTipo,
-        clienteId: data.proprietarioTipo === 'CLIENTE' ? data.clienteId : null,
+        clienteId: data.clienteId,
         tipo: data.tipo,
         marca: data.tipo === 'RASTREADOR' ? (marcaSelecionada?.nome ?? null) : null,
         modelo: data.tipo === 'RASTREADOR' ? (modeloSelecionado?.nome ?? null) : null,
@@ -337,11 +399,16 @@ export function CadastroLotePage() {
       }
       return api('/aparelhos/lote', {
         method: 'POST',
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          ...payload,
+          abaterDebitoId: data.abaterDivida ? data.abaterDebitoId : undefined,
+          abaterQuantidade: data.abaterDivida ? data.abaterQuantidade : undefined,
+        }),
       })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['aparelhos'] })
+      queryClient.invalidateQueries({ queryKey: ['debitos-rastreadores'] })
       toast.success('Lote registrado com sucesso!')
       navigate('/aparelhos')
     },
@@ -453,92 +520,57 @@ export function CadastroLotePage() {
                 </h3>
               </div>
               <div className="space-y-6">
-                <div>
-                  <Label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">
-                    Pertence a
-                  </Label>
-                  <Controller
-                    name="proprietarioTipo"
-                    control={form.control}
-                    render={({ field }) => (
-                      <div className="flex rounded-sm overflow-hidden">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            field.onChange('INFINITY')
-                            form.setValue('clienteId', null)
-                          }}
-                          className={cn(
-                            'flex-1 py-2.5 px-4 text-xs font-bold uppercase border transition-all',
-                            field.value === 'INFINITY'
-                              ? 'bg-slate-800 text-white border-slate-800'
-                              : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
-                          )}
-                        >
-                          Infinity
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => field.onChange('CLIENTE')}
-                          className={cn(
-                            'flex-1 py-2.5 px-4 text-xs font-bold uppercase border-t border-b border-r transition-all',
-                            field.value === 'CLIENTE'
-                              ? 'bg-slate-800 text-white border-slate-800'
-                              : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
-                          )}
-                        >
-                          Cliente
-                        </button>
-                      </div>
-                    )}
-                  />
-                  {watchProprietario === 'CLIENTE' && (
-                    <div className="mt-3">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                        <Input
-                          value={buscaCliente}
-                          onChange={(e) => setBuscaCliente(e.target.value)}
-                          placeholder="Buscar cliente..."
-                          className="h-9 pl-10"
-                        />
-                      </div>
-                      {clientesFiltrados.length > 0 && (
-                        <div className="mt-2 border border-slate-200 rounded-sm max-h-40 overflow-y-auto">
-                          {clientesFiltrados.map((cliente) => (
-                            <button
-                              key={cliente.id}
-                              type="button"
-                              onClick={() => {
-                                form.setValue('clienteId', cliente.id)
-                                setBuscaCliente('')
-                              }}
-                              className={cn(
-                                'w-full px-3 py-2 text-left text-sm hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-b-0',
-                                watchClienteId === cliente.id && 'bg-blue-50'
-                              )}
-                            >
-                              <span className="font-medium">{cliente.nome}</span>
-                              {cliente.nomeFantasia && (
-                                <span className="text-slate-400 ml-2 text-xs">({cliente.nomeFantasia})</span>
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      {watchClienteId && clienteSelecionado && (
-                        <div className="mt-2 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-sm px-3 py-2">
-                          <MaterialIcon name="check_circle" className="text-erp-blue text-sm" />
-                          <span className="text-sm font-medium text-blue-800">{clienteSelecionado.nome}</span>
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">
+                      Pertence a
+                    </Label>
+                    <Controller
+                      name="proprietarioTipo"
+                      control={form.control}
+                      render={({ field }) => (
+                        <div className="flex rounded-sm overflow-hidden">
                           <button
                             type="button"
-                            onClick={() => form.setValue('clienteId', null)}
-                            className="ml-auto text-erp-blue hover:text-blue-800"
+                            onClick={() => {
+                              field.onChange('INFINITY')
+                              form.setValue('clienteId', null)
+                            }}
+                            className={cn(
+                              'flex-1 py-2.5 px-4 text-xs font-bold uppercase border transition-all',
+                              field.value === 'INFINITY'
+                                ? 'bg-slate-800 text-white border-slate-800'
+                                : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                            )}
                           >
-                            <X className="h-4 w-4" />
+                            Infinity
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => field.onChange('CLIENTE')}
+                            className={cn(
+                              'flex-1 py-2.5 px-4 text-xs font-bold uppercase border-t border-b border-r transition-all',
+                              field.value === 'CLIENTE'
+                                ? 'bg-slate-800 text-white border-slate-800'
+                                : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                            )}
+                          >
+                            Cliente
                           </button>
                         </div>
                       )}
+                    />
+                  </div>
+                  {watchProprietario === 'CLIENTE' && (
+                    <div>
+                      <Label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">
+                        Cliente <span className="text-red-500">*</span>
+                      </Label>
+                      <SelectClienteSearch
+                        clientes={clientes}
+                        value={watchClienteId ?? undefined}
+                        onChange={(id) => form.setValue('clienteId', id ?? null, { shouldValidate: true })}
+                      />
                       {form.formState.errors.clienteId && (
                         <p className="text-[10px] text-red-600 mt-1">{form.formState.errors.clienteId.message}</p>
                       )}
@@ -966,6 +998,132 @@ export function CadastroLotePage() {
                 </div>
               </div>
             </div>
+
+            {/* Bloco 5 - Abater Dívida */}
+            {watchTipo === 'RASTREADOR' && debitosFiltrados.length > 0 && (
+              <div className="bg-white border border-slate-200 rounded-sm p-6">
+                <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <MaterialIcon name="account_balance_wallet" className="text-amber-600" />
+                    <div>
+                      <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                        Abater Dívida
+                      </h3>
+                      <p className="text-[10px] text-slate-400 mt-0.5">
+                        Parte deste lote como pagamento de débito existente
+                      </p>
+                    </div>
+                  </div>
+                  <Controller
+                    name="abaterDivida"
+                    control={form.control}
+                    render={({ field }) => (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          field.onChange(!field.value)
+                          if (field.value) {
+                            form.setValue('abaterDebitoId', null)
+                            form.setValue('abaterQuantidade', null)
+                          }
+                        }}
+                        className={cn(
+                          'w-10 h-5 rounded-full relative transition-colors',
+                          field.value ? 'bg-amber-500' : 'bg-slate-300'
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            'absolute top-1 w-3 h-3 bg-white rounded-full transition-all',
+                            field.value ? 'right-1' : 'left-1'
+                          )}
+                        />
+                      </button>
+                    )}
+                  />
+                </div>
+
+                {watchAbaterDivida && (
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                        Débito a Abater <span className="text-red-500">*</span>
+                      </Label>
+                      <Controller
+                        name="abaterDebitoId"
+                        control={form.control}
+                        render={({ field, fieldState }) => (
+                          <>
+                            <Select
+                              value={field.value ? String(field.value) : ''}
+                              onValueChange={(v) => {
+                                field.onChange(Number(v))
+                                form.setValue('abaterQuantidade', null)
+                              }}
+                            >
+                              <SelectTrigger className={cn('h-9', fieldState.error && 'border-red-500')}>
+                                <SelectValue placeholder="Selecione o débito..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {debitosFiltrados.map((d) => (
+                                  <SelectItem key={d.id} value={String(d.id)}>
+                                    {formatDebitoLabel(d)}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {fieldState.error && (
+                              <p className="text-[10px] text-red-600 mt-1">{fieldState.error.message}</p>
+                            )}
+                          </>
+                        )}
+                      />
+                    </div>
+
+                    {watchAbaterDebitoId && selectedDebito && (
+                      <div>
+                        <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                          Quantidade a Abater{' '}
+                          <span className="text-slate-400 normal-case font-normal">
+                            (máx: {Math.min(selectedDebito.quantidade, quantidadeFinal || 9999)})
+                          </span>{' '}
+                          <span className="text-red-500">*</span>
+                        </Label>
+                        <Controller
+                          name="abaterQuantidade"
+                          control={form.control}
+                          render={({ field, fieldState }) => (
+                            <>
+                              <Input
+                                type="number"
+                                min={1}
+                                max={Math.min(selectedDebito.quantidade, quantidadeFinal || 9999)}
+                                value={field.value ?? ''}
+                                onChange={(e) => {
+                                  const v = parseInt(e.target.value, 10)
+                                  field.onChange(isNaN(v) ? null : v)
+                                }}
+                                placeholder="0"
+                                className={cn('h-9 w-40', fieldState.error && 'border-red-500')}
+                              />
+                              {fieldState.error && (
+                                <p className="text-[10px] text-red-600 mt-1">{fieldState.error.message}</p>
+                              )}
+                              {field.value && field.value > 0 && (
+                                <p className="text-[10px] text-amber-700 mt-1.5 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                                  {field.value} unidade(s) serão vinculadas ao credor:{' '}
+                                  <strong>{selectedDebito.credorCliente?.nome ?? 'Infinity'}</strong>
+                                </p>
+                              )}
+                            </>
+                          )}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="w-80 shrink-0 sticky top-[calc(50vh-300px)] h-fit">
@@ -1003,7 +1161,7 @@ export function CadastroLotePage() {
                       Proprietário
                     </label>
                     <p className="text-sm font-medium">
-                      {watchProprietario === 'INFINITY' ? 'Infinity' : clienteSelecionado?.nome ?? 'Cliente'}
+                      {clienteSelecionado?.nome ?? '—'}
                     </p>
                   </div>
                 </div>

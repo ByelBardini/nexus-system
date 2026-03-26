@@ -27,6 +27,7 @@ export function SearchableSelect({
   const [search, setSearch] = useState('')
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({})
   const containerRef = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const selected = options.find((o) => o.value === value)
@@ -67,6 +68,7 @@ export function SearchableSelect({
     if (!isOpen) return
     function handleClickOutside(e: MouseEvent) {
       if (containerRef.current?.contains(e.target as Node)) return
+      if (dropdownRef.current?.contains(e.target as Node)) return
       setIsOpen(false)
     }
     // Fecha ao rolar a página
@@ -134,11 +136,12 @@ export function SearchableSelect({
         </div>
       )}
 
-      {/* Dropdown via portal — imune a overflow dos ancestrais */}
+      {/* Dropdown via portal com position:fixed */}
       {isOpen && createPortal(
         <div
+          ref={dropdownRef}
           className="max-h-60 overflow-y-auto overflow-x-hidden rounded-md border bg-popover py-1 text-popover-foreground shadow-md"
-          style={dropdownStyle}
+          style={{ ...dropdownStyle, pointerEvents: 'auto' }}
         >
           {filtered.length === 0 ? (
             <div className="px-3 py-4 text-center text-sm text-muted-foreground">

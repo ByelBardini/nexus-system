@@ -23,7 +23,7 @@ import { SearchableSelect } from '@/components/SearchableSelect'
 import { api } from '@/lib/api'
 import { STATUS_CONFIG_APARELHO, type StatusAparelho } from '@/lib/aparelho-status'
 import {
-  formatarDataCompleta,
+  parseDataLocal,
   formatarDataHora,
   formatarMoedaOpcional,
 } from '@/lib/format'
@@ -395,6 +395,9 @@ export function AparelhosPage() {
                   Técnico
                 </TableHead>
                 <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                  Proprietário
+                </TableHead>
+                <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                   Lote
                 </TableHead>
                 <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
@@ -510,11 +513,22 @@ export function AparelhosPage() {
                       <TableCell className="px-4 py-3 text-sm text-slate-600">
                         {(() => {
                           const rastreador = aparelho.tipo === 'SIM' ? aparelho.aparelhosVinculados?.[0] : null
-                          return aparelho.cliente?.nome
-                            ?? aparelho.tecnico?.nome
-                            ?? rastreador?.cliente?.nome
-                            ?? rastreador?.tecnico?.nome
-                            ?? '-'
+                          const tecnicoNome = aparelho.tecnico?.nome ?? rastreador?.tecnico?.nome
+                          return tecnicoNome
+                            ? <div className="text-xs font-medium">{tecnicoNome}</div>
+                            : <span className="text-slate-400">-</span>
+                        })()}
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-sm text-slate-600">
+                        {(() => {
+                          const rastreador = aparelho.tipo === 'SIM' ? aparelho.aparelhosVinculados?.[0] : null
+                          const prop = aparelho.proprietario ?? rastreador?.proprietario
+                          const clienteNome = aparelho.cliente?.nome ?? rastreador?.cliente?.nome
+                          return (
+                            <div className="text-xs font-medium">
+                              {clienteNome ?? (prop === 'INFINITY' ? 'Infinity' : '-')}
+                            </div>
+                          )
                         })()}
                       </TableCell>
                       <TableCell className="px-4 py-3">
@@ -527,7 +541,7 @@ export function AparelhosPage() {
                         )}
                       </TableCell>
                       <TableCell className="px-4 py-3 text-xs text-slate-500">
-                        {formatarDataCompleta(aparelho.criadoEm)}
+                        {parseDataLocal(aparelho.criadoEm).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                       </TableCell>
                     </TableRow>
 

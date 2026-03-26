@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useForm, Controller, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -22,7 +22,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MaterialIcon } from "@/components/MaterialIcon";
-import { SelectTecnicoSearch } from "@/components/SelectTecnicoSearch";
 import { SelectClienteSearch } from "@/components/SelectClienteSearch";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,13 +37,6 @@ type CategoriaFalha =
   | "CURTO_CIRCUITO"
   | "OUTRO";
 type DestinoDefeito = "SUCATA" | "GARANTIA" | "LABORATORIO";
-
-interface Tecnico {
-  id: number;
-  nome: string;
-  cidade?: string | null;
-  estado?: string | null;
-}
 
 interface Cliente {
   id: number;
@@ -131,6 +123,27 @@ const STATUS_CONFIG: Record<
   },
 };
 
+interface DebitoRastreadorApi {
+  id: number
+  devedorTipo: "INFINITY" | "CLIENTE"
+  devedorClienteId: number | null
+  devedorCliente: { id: number; nome: string } | null
+  credorTipo: "INFINITY" | "CLIENTE"
+  credorClienteId: number | null
+  credorCliente: { id: number; nome: string } | null
+  marcaId: number
+  marca: { id: number; nome: string }
+  modeloId: number
+  modelo: { id: number; nome: string }
+  quantidade: number
+}
+
+function formatDebitoLabel(d: DebitoRastreadorApi): string {
+  const devedor = d.devedorCliente?.nome ?? "Infinity"
+  const credor = d.credorCliente?.nome ?? "Infinity"
+  return `${devedor} deve ${d.quantidade}x ${d.marca.nome} ${d.modelo.nome} → ${credor}`
+}
+
 const schema = z
   .object({
     identificador: z.preprocess(
@@ -145,7 +158,6 @@ const schema = z
     planoSimcardId: z.preprocess((v) => v ?? "", z.string().optional()),
     origem: z.enum(["RETIRADA_CLIENTE", "DEVOLUCAO_TECNICO", "COMPRA_AVULSA"]),
     responsavelEntrega: z.preprocess((v) => v ?? "", z.string().optional()),
-    tecnicoId: z.number().nullable(),
     proprietario: z.enum(["INFINITY", "CLIENTE"]),
     clienteId: z.number().nullable(),
     notaFiscal: z.preprocess((v) => v ?? "", z.string().optional()),
@@ -159,6 +171,8 @@ const schema = z
       "OUTRO",
     ]),
     destinoDefeito: z.enum(["SUCATA", "GARANTIA", "LABORATORIO"]),
+    abaterDivida: z.boolean(),
+    abaterDebitoId: z.number().nullable(),
   })
   .superRefine((data, ctx) => {
     if (data.tipo === "RASTREADOR") {
@@ -182,13 +196,6 @@ const schema = z
         path: ["operadora"],
       });
     }
-    if (data.origem === "DEVOLUCAO_TECNICO" && !data.tecnicoId) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Selecione o técnico",
-        path: ["tecnicoId"],
-      });
-    }
     if (data.proprietario === "CLIENTE" && !data.clienteId) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -210,7 +217,6 @@ const defaultValues: FormData = {
   planoSimcardId: "",
   origem: "DEVOLUCAO_TECNICO",
   responsavelEntrega: "",
-  tecnicoId: null,
   proprietario: "INFINITY",
   clienteId: null,
   notaFiscal: "",
@@ -218,6 +224,8 @@ const defaultValues: FormData = {
   status: "EM_MANUTENCAO",
   categoriaFalha: "FALHA_COMUNICACAO",
   destinoDefeito: "LABORATORIO",
+  abaterDivida: false,
+  abaterDebitoId: null,
 };
 
 function formatDate(date: Date): string {
@@ -245,17 +253,12 @@ export function CadastroIndividualPage() {
   const watchMarca = form.watch("marca");
   const watchOperadora = form.watch("operadora");
   const watchOrigem = form.watch("origem");
-  const watchTecnicoId = form.watch("tecnicoId");
   const watchStatus = form.watch("status");
   const watchIdentificador = form.watch("identificador");
   const watchProprietario = form.watch("proprietario");
   const watchClienteId = form.watch("clienteId");
-
-  const { data: tecnicos = [] } = useQuery<Tecnico[]>({
-    queryKey: ["tecnicos-lista"],
-    queryFn: () => api("/tecnicos"),
-    enabled: watchOrigem === "DEVOLUCAO_TECNICO",
-  });
+  const watchAbaterDivida = form.watch("abaterDivida");
+  const watchAbaterDebitoId = form.watch("abaterDebitoId");
 
   const { data: clientes = [] } = useQuery<Cliente[]>({
     queryKey: ["clientes-lista"],
@@ -301,6 +304,12 @@ export function CadastroIndividualPage() {
           )
         : api("/equipamentos/marcas-simcard"),
     enabled: watchTipo === "SIM",
+  });
+
+  const { data: debitosData } = useQuery<{ data: DebitoRastreadorApi[] }>({
+    queryKey: ["debitos-rastreadores", "aberto"],
+    queryFn: () => api("/debitos-rastreadores?status=aberto&limit=500"),
+    enabled: watchTipo === "RASTREADOR",
   });
 
   const marcasAtivas = useMemo(() => marcas.filter((m) => m.ativo), [marcas]);
@@ -373,6 +382,41 @@ export function CadastroIndividualPage() {
 
   const watchModelo = form.watch("modelo");
 
+  const debitosFiltrados = useMemo(() => {
+    const todos = debitosData?.data ?? [];
+    return todos.filter((d) => {
+      // Only show debts where the selected proprietário is the devedor
+      const isDevedor =
+        watchProprietario === "INFINITY"
+          ? d.devedorTipo === "INFINITY"
+          : watchClienteId
+            ? d.devedorTipo === "CLIENTE" && d.devedorClienteId === watchClienteId
+            : false;
+      if (!isDevedor) return false;
+      // If brand/model selected, also filter by them
+      if (watchMarca && watchModelo) {
+        const marcaEncontrada = marcasAtivas.find((m) => m.nome === watchMarca);
+        const modeloEncontrado = modelosDisponiveis.find((m) => m.nome === watchModelo);
+        if (marcaEncontrada && modeloEncontrado) {
+          return d.marcaId === marcaEncontrada.id && d.modeloId === modeloEncontrado.id;
+        }
+      }
+      return true;
+    });
+  }, [debitosData, watchProprietario, watchClienteId, watchMarca, watchModelo, marcasAtivas, modelosDisponiveis]);
+
+  const selectedDebito = useMemo(
+    () => debitosFiltrados.find((d) => d.id === watchAbaterDebitoId) ?? null,
+    [debitosFiltrados, watchAbaterDebitoId],
+  );
+
+  useEffect(() => {
+    if (debitosFiltrados.length === 0 && form.getValues("abaterDivida")) {
+      form.setValue("abaterDivida", false);
+      form.setValue("abaterDebitoId", null);
+    }
+  }, [debitosFiltrados.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const statusDisponiveis = useMemo((): StatusAparelho[] => {
     if (watchOrigem === "COMPRA_AVULSA") return ["NOVO_OK"];
     return ["EM_MANUTENCAO", "CANCELADO_DEFEITO"];
@@ -383,7 +427,6 @@ export function CadastroIndividualPage() {
     if (watchTipo === "RASTREADOR" && (!watchMarca || !watchModelo))
       return false;
     if (watchTipo === "SIM" && !watchOperadora) return false;
-    if (watchOrigem === "DEVOLUCAO_TECNICO" && !watchTecnicoId) return false;
     if (watchProprietario === "CLIENTE" && !watchClienteId) return false;
     return true;
   }, [
@@ -393,8 +436,6 @@ export function CadastroIndividualPage() {
     watchMarca,
     watchModelo,
     watchOperadora,
-    watchOrigem,
-    watchTecnicoId,
     watchProprietario,
     watchClienteId,
   ]);
@@ -410,11 +451,9 @@ export function CadastroIndividualPage() {
   const createAparelhoMutation = useMutation({
     mutationFn: async (data: FormData) => {
       const cleanId = data.identificador.replace(/\D/g, "");
-      const tecnicoSel = tecnicos.find((t) => t.id === data.tecnicoId);
       const clienteSel = clientes.find((c) => c.id === data.clienteId);
 
       const responsavelEntrega = (() => {
-        if (data.origem === "DEVOLUCAO_TECNICO") return tecnicoSel?.nome ?? null;
         if (data.origem === "RETIRADA_CLIENTE")
           return data.proprietario === "CLIENTE"
             ? (clienteSel?.nome ?? null)
@@ -424,8 +463,6 @@ export function CadastroIndividualPage() {
       })();
 
       const obsPartes: string[] = [];
-      if (data.origem === "DEVOLUCAO_TECNICO" && tecnicoSel)
-        obsPartes.push(`Veio de técnico: ${tecnicoSel.nome}`);
       if (data.observacoes?.trim()) obsPartes.push(data.observacoes.trim());
 
       const payload = {
@@ -444,9 +481,8 @@ export function CadastroIndividualPage() {
             : undefined,
         origem: data.origem,
         responsavelEntrega,
-        tecnicoId: data.origem === "DEVOLUCAO_TECNICO" ? data.tecnicoId : null,
         proprietario: data.proprietario,
-        clienteId: data.proprietario === "CLIENTE" ? data.clienteId : null,
+        clienteId: data.clienteId,
         notaFiscal: data.origem === "COMPRA_AVULSA" ? (data.notaFiscal || null) : null,
         observacoes: obsPartes.length > 0 ? obsPartes.join(" | ") : null,
         statusEntrada: data.status,
@@ -457,12 +493,16 @@ export function CadastroIndividualPage() {
       };
       return api("/aparelhos/individual", {
         method: "POST",
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          ...payload,
+          abaterDebitoId: data.abaterDivida ? data.abaterDebitoId : undefined,
+        }),
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["aparelhos"] });
       queryClient.invalidateQueries({ queryKey: ["aparelhos-ids"] });
+      queryClient.invalidateQueries({ queryKey: ["debitos-rastreadores"] });
       setQuantidadeCadastrada((prev) => prev + 1);
       toast.success("Equipamento cadastrado com sucesso!");
     },
@@ -857,7 +897,6 @@ export function CadastroIndividualPage() {
                           field.onChange(v);
                           form.setValue("proprietario", "INFINITY");
                           form.setValue("clienteId", null);
-                          form.setValue("tecnicoId", null);
                           form.setValue("notaFiscal", "");
                           const currentStatus = form.getValues("status");
                           if (v === "COMPRA_AVULSA" && currentStatus !== "NOVO_OK")
@@ -884,33 +923,8 @@ export function CadastroIndividualPage() {
                   />
                 </div>
 
-                {/* Coluna direita: conteúdo condicional por origem */}
-                <div>
-                  {watchOrigem === "DEVOLUCAO_TECNICO" && (
-                    <div>
-                      <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                        Técnico Responsável <span className="text-red-500">*</span>
-                      </Label>
-                      <Controller
-                        name="tecnicoId"
-                        control={form.control}
-                        render={({ field }) => (
-                          <SelectTecnicoSearch
-                            tecnicos={tecnicos}
-                            value={field.value ?? undefined}
-                            onChange={(id) => field.onChange(id ?? null)}
-                            placeholder="Digite para buscar técnico..."
-                          />
-                        )}
-                      />
-                      {form.formState.errors.tecnicoId && (
-                        <p className="text-[10px] text-red-600 mt-1">
-                          {form.formState.errors.tecnicoId.message}
-                        </p>
-                      )}
-                    </div>
-                  )}
-
+                {/* Coluna direita: nota fiscal (COMPRA_AVULSA) */}
+                <div className="space-y-4">
                   {watchOrigem === "COMPRA_AVULSA" && (
                     <div>
                       <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
@@ -936,141 +950,72 @@ export function CadastroIndividualPage() {
                       />
                     </div>
                   )}
+                </div>
 
-                  {watchOrigem === "RETIRADA_CLIENTE" && (
-                    <div>
-                      <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                        Vinculação / Destino <span className="text-red-500">*</span>
-                      </Label>
+                {/* Vinculação / Cliente — sempre visível */}
+                <div className="col-span-2">
+                  <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                    Vinculação / Destino <span className="text-red-500">*</span>
+                  </Label>
+                  <Controller
+                    name="proprietario"
+                    control={form.control}
+                    render={({ field }) => (
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            field.onChange("INFINITY");
+                            form.setValue("clienteId", null);
+                          }}
+                          className={cn(
+                            "flex-1 h-9 flex items-center justify-center gap-2 border rounded-sm text-sm font-medium transition-all",
+                            field.value === "INFINITY"
+                              ? "border-erp-blue bg-blue-50 text-erp-blue"
+                              : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100",
+                          )}
+                        >
+                          <MaterialIcon name="business" className="text-sm" />
+                          Infinity
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => field.onChange("CLIENTE")}
+                          className={cn(
+                            "flex-1 h-9 flex items-center justify-center gap-2 border rounded-sm text-sm font-medium transition-all",
+                            field.value === "CLIENTE"
+                              ? "border-erp-blue bg-blue-50 text-erp-blue"
+                              : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100",
+                          )}
+                        >
+                          <MaterialIcon name="person" className="text-sm" />
+                          Cliente
+                        </button>
+                      </div>
+                    )}
+                  />
+                  {watchProprietario === "CLIENTE" && (
+                    <div className="mt-2">
                       <Controller
-                        name="proprietario"
+                        name="clienteId"
                         control={form.control}
                         render={({ field }) => (
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                field.onChange("INFINITY");
-                                form.setValue("clienteId", null);
-                              }}
-                              className={cn(
-                                "flex-1 h-9 flex items-center justify-center gap-2 border rounded-sm text-sm font-medium transition-all",
-                                field.value === "INFINITY"
-                                  ? "border-erp-blue bg-blue-50 text-erp-blue"
-                                  : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100",
-                              )}
-                            >
-                              <MaterialIcon name="business" className="text-sm" />
-                              Infinity
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => field.onChange("CLIENTE")}
-                              className={cn(
-                                "flex-1 h-9 flex items-center justify-center gap-2 border rounded-sm text-sm font-medium transition-all",
-                                field.value === "CLIENTE"
-                                  ? "border-erp-blue bg-blue-50 text-erp-blue"
-                                  : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100",
-                              )}
-                            >
-                              <MaterialIcon name="person" className="text-sm" />
-                              Cliente
-                            </button>
-                          </div>
+                          <SelectClienteSearch
+                            clientes={clientes}
+                            value={field.value ?? undefined}
+                            onChange={(id) => field.onChange(id ?? null)}
+                            placeholder="Digite para pesquisar cliente..."
+                          />
                         )}
                       />
-                      {watchProprietario === "CLIENTE" && (
-                        <div className="mt-2">
-                          <Controller
-                            name="clienteId"
-                            control={form.control}
-                            render={({ field }) => (
-                              <SelectClienteSearch
-                                clientes={clientes}
-                                value={field.value ?? undefined}
-                                onChange={(id) => field.onChange(id ?? null)}
-                                placeholder="Digite para pesquisar cliente..."
-                              />
-                            )}
-                          />
-                          {form.formState.errors.clienteId && (
-                            <p className="text-[10px] text-red-600 mt-1">
-                              {form.formState.errors.clienteId.message}
-                            </p>
-                          )}
-                        </div>
+                      {form.formState.errors.clienteId && (
+                        <p className="text-[10px] text-red-600 mt-1">
+                          {form.formState.errors.clienteId.message}
+                        </p>
                       )}
                     </div>
                   )}
                 </div>
-
-                {/* Vinculação col-span-2 para Devolução de Técnico e Compra Avulsa */}
-                {(watchOrigem === "DEVOLUCAO_TECNICO" ||
-                  watchOrigem === "COMPRA_AVULSA") && (
-                  <div className="col-span-2">
-                    <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                      Vinculação / Destino <span className="text-red-500">*</span>
-                    </Label>
-                    <Controller
-                      name="proprietario"
-                      control={form.control}
-                      render={({ field }) => (
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              field.onChange("INFINITY");
-                              form.setValue("clienteId", null);
-                            }}
-                            className={cn(
-                              "flex-1 h-9 flex items-center justify-center gap-2 border rounded-sm text-sm font-medium transition-all",
-                              field.value === "INFINITY"
-                                ? "border-erp-blue bg-blue-50 text-erp-blue"
-                                : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100",
-                            )}
-                          >
-                            <MaterialIcon name="business" className="text-sm" />
-                            Infinity
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => field.onChange("CLIENTE")}
-                            className={cn(
-                              "flex-1 h-9 flex items-center justify-center gap-2 border rounded-sm text-sm font-medium transition-all",
-                              field.value === "CLIENTE"
-                                ? "border-erp-blue bg-blue-50 text-erp-blue"
-                                : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100",
-                            )}
-                          >
-                            <MaterialIcon name="person" className="text-sm" />
-                            Cliente
-                          </button>
-                        </div>
-                      )}
-                    />
-                    {watchProprietario === "CLIENTE" && (
-                      <div className="mt-2">
-                        <Controller
-                          name="clienteId"
-                          control={form.control}
-                          render={({ field }) => (
-                            <SelectClienteSearch
-                              clientes={clientes}
-                              value={field.value ?? undefined}
-                              onChange={(id) => field.onChange(id ?? null)}
-                              placeholder="Digite para pesquisar cliente..."
-                            />
-                          )}
-                        />
-                        {form.formState.errors.clienteId && (
-                          <p className="text-[10px] text-red-600 mt-1">
-                            {form.formState.errors.clienteId.message}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
 
                 <div className="col-span-2">
                   <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
@@ -1222,6 +1167,106 @@ export function CadastroIndividualPage() {
                 )}
               </div>
             </div>
+
+            {/* Bloco 4 - Abater Dívida */}
+            {watchTipo === "RASTREADOR" && debitosFiltrados.length > 0 && (
+              <div className="bg-white border border-slate-200 rounded-sm p-6">
+                <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <MaterialIcon
+                      name="account_balance_wallet"
+                      className="text-amber-600"
+                    />
+                    <div>
+                      <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                        Abater Dívida
+                      </h3>
+                      <p className="text-[10px] text-slate-400 mt-0.5">
+                        Este aparelho como pagamento de débito existente
+                      </p>
+                    </div>
+                  </div>
+                  <Controller
+                    name="abaterDivida"
+                    control={form.control}
+                    render={({ field }) => (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          field.onChange(!field.value);
+                          if (field.value) {
+                            form.setValue("abaterDebitoId", null);
+                          }
+                        }}
+                        className={cn(
+                          "w-10 h-5 rounded-full relative transition-colors",
+                          field.value ? "bg-amber-500" : "bg-slate-300",
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "absolute top-1 w-3 h-3 bg-white rounded-full transition-all",
+                            field.value ? "right-1" : "left-1",
+                          )}
+                        />
+                      </button>
+                    )}
+                  />
+                </div>
+
+                {watchAbaterDivida && (
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                        Débito a Abater{" "}
+                        <span className="text-red-500">*</span>
+                      </Label>
+                      <Controller
+                        name="abaterDebitoId"
+                        control={form.control}
+                        render={({ field, fieldState }) => (
+                          <>
+                            <Select
+                              value={field.value ? String(field.value) : ""}
+                              onValueChange={(v) => field.onChange(Number(v))}
+                            >
+                              <SelectTrigger
+                                className={cn(
+                                  "h-9",
+                                  fieldState.error && "border-red-500",
+                                )}
+                              >
+                                <SelectValue placeholder="Selecione o débito..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {debitosFiltrados.map((d) => (
+                                  <SelectItem key={d.id} value={String(d.id)}>
+                                    {formatDebitoLabel(d)}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {fieldState.error && (
+                              <p className="text-[10px] text-red-600 mt-1">
+                                {fieldState.error.message}
+                              </p>
+                            )}
+                            {selectedDebito && (
+                              <p className="text-[10px] text-amber-700 mt-1.5 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                                Este aparelho será vinculado ao credor:{" "}
+                                <strong>
+                                  {selectedDebito.credorCliente?.nome ?? "Infinity"}
+                                </strong>
+                              </p>
+                            )}
+                          </>
+                        )}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="w-80 shrink-0">
@@ -1285,16 +1330,6 @@ export function CadastroIndividualPage() {
                         {watchIdentificador.trim() || "--- não definido ---"}
                       </p>
                     </div>
-                    {watchOrigem === "DEVOLUCAO_TECNICO" && (
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                          Técnico
-                        </label>
-                        <p className="text-sm font-medium">
-                          {tecnicos.find((t) => t.id === watchTecnicoId)?.nome ?? "--- não definido ---"}
-                        </p>
-                      </div>
-                    )}
                     {watchOrigem === "COMPRA_AVULSA" && form.watch("notaFiscal")?.trim() && (
                       <div>
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
