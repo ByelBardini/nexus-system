@@ -96,4 +96,9 @@ export class CreateIndividualDto {
   @IsOptional()
   @IsString()
   destinoDefeito?: string | null;
+
+  @ApiPropertyOptional({ description: 'ID do débito a ser abatido (unidade vai para o credor)' })
+  @IsOptional()
+  @IsNumber()
+  abaterDebitoId?: number | null;
 }

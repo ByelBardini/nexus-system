@@ -79,4 +79,20 @@ export class CreateLoteDto {
   @IsArray()
   @IsString({ each: true })
   identificadores?: string[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  tecnicoId?: number;
+
+  @ApiPropertyOptional({ description: 'ID do débito a ser abatido' })
+  @IsOptional()
+  @IsNumber()
+  abaterDebitoId?: number | null;
+
+  @ApiPropertyOptional({ description: 'Quantidade a abater do débito' })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  abaterQuantidade?: number | null;
 }

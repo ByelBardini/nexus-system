@@ -120,6 +120,9 @@ export class AparelhosController {
       simManual: dto.simManual,
       kitId: dto.kitId,
       kitNome: dto.kitNome,
+      proprietario: dto.proprietario ?? 'INFINITY',
+      clienteId: dto.clienteId,
+      tecnicoId: dto.tecnicoId,
     });
   }
 
@@ -163,14 +166,19 @@ export class AparelhosController {
   @ApiOperation({ summary: 'Listar aparelhos disponíveis para adicionar ao kit' })
   getAparelhosDisponiveisParaKit(
     @Query('clienteId') clienteIdStr?: string,
+    @Query('clienteIds') clienteIdsRaw?: string | string[],
+    @Query('includeInfinity') includeInfinityStr?: string,
     @Query('modeloEquipamentoId') modeloEquipamentoIdStr?: string,
     @Query('marcaEquipamentoId') marcaEquipamentoIdStr?: string,
     @Query('operadoraId') operadoraIdStr?: string,
   ) {
-    const toInt = (s?: string) => (s ? parseInt(s, 10) : undefined);
-    const parse = (s?: string) => { const n = toInt(s); return n && !isNaN(n) ? n : undefined; };
+    const parse = (s?: string) => { const n = s ? parseInt(s, 10) : NaN; return !isNaN(n) ? n : undefined; };
+    const rawArr = Array.isArray(clienteIdsRaw) ? clienteIdsRaw : clienteIdsRaw ? [clienteIdsRaw] : [];
+    const clienteIds = rawArr.map((s) => parseInt(s, 10)).filter((n) => !isNaN(n));
     return this.kitsService.getAparelhosDisponiveisParaKit({
       clienteId: parse(clienteIdStr),
+      clienteIds: clienteIds.length > 0 ? clienteIds : undefined,
+      includeInfinity: includeInfinityStr === 'true',
       modeloEquipamentoId: parse(modeloEquipamentoIdStr),
       marcaEquipamentoId: parse(marcaEquipamentoIdStr),
       operadoraId: parse(operadoraIdStr),

@@ -1,12 +1,16 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, ProprietarioTipo } from '@prisma/client';
 import { StatusAparelho, StatusOS } from '@prisma/client';
 import { CreateIndividualDto } from './dto/create-individual.dto';
+import { DebitosRastreadoresService } from '../debitos-rastreadores/debitos-rastreadores.service';
 
 @Injectable()
 export class AparelhosService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly debitosService: DebitosRastreadoresService,
+  ) {}
 
   private readonly selectParaTestes = {
     id: true,
@@ -286,6 +290,7 @@ export class AparelhosService {
       proprietario,
       clienteId,
       notaFiscal,
+      abaterDebitoId,
     } = dto;
 
     const existente = await this.prisma.aparelho.findFirst({
@@ -308,49 +313,87 @@ export class AparelhosService {
       operadoraSim = marcaSim.operadora.nome;
     }
 
+    // If abating a debt, override the owner to the creditor
+    let finalProprietario: ProprietarioTipo = proprietario ?? 'INFINITY';
+    let finalClienteId: number | null = proprietario === 'CLIENTE' ? (clienteId ?? null) : null;
+    let debitoAbater: { devedorTipo: ProprietarioTipo; devedorClienteId: number | null; credorTipo: ProprietarioTipo; credorClienteId: number | null; marcaId: number; modeloId: number } | null = null;
+
+    if (abaterDebitoId) {
+      const debito = await this.prisma.debitoRastreador.findUnique({
+        where: { id: abaterDebitoId },
+      });
+      if (!debito) throw new BadRequestException('Débito não encontrado');
+      if (debito.quantidade < 1) throw new BadRequestException('Débito já quitado');
+
+      finalProprietario = debito.credorTipo;
+      finalClienteId = debito.credorClienteId;
+      debitoAbater = {
+        devedorTipo: debito.devedorTipo,
+        devedorClienteId: debito.devedorClienteId,
+        credorTipo: debito.credorTipo,
+        credorClienteId: debito.credorClienteId,
+        marcaId: debito.marcaId,
+        modeloId: debito.modeloId,
+      };
+    }
+
     const statusAparelho: StatusAparelho = 'EM_ESTOQUE';
 
-    const aparelho = await this.prisma.aparelho.create({
-      data: {
-        tipo,
-        identificador,
-        status: statusAparelho,
-        proprietario: proprietario ?? 'INFINITY',
-        clienteId: proprietario === 'CLIENTE' ? (clienteId ?? null) : null,
-        marca: tipo === 'RASTREADOR' ? marca : null,
-        modelo: tipo === 'RASTREADOR' ? modelo : null,
-        operadora: tipo === 'SIM' ? operadoraSim : null,
-        marcaSimcardId: tipo === 'SIM' ? marcaSimcardId ?? null : null,
-        planoSimcardId: tipo === 'SIM' ? planoSimcardId ?? null : null,
-        tecnicoId: tecnicoId || null,
-      },
-      include: {
-        tecnico: { select: { id: true, nome: true } },
-      },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      const aparelho = await tx.aparelho.create({
+        data: {
+          tipo,
+          identificador,
+          status: statusAparelho,
+          proprietario: finalProprietario,
+          clienteId: finalClienteId,
+          marca: tipo === 'RASTREADOR' ? marca : null,
+          modelo: tipo === 'RASTREADOR' ? modelo : null,
+          operadora: tipo === 'SIM' ? operadoraSim : null,
+          marcaSimcardId: tipo === 'SIM' ? marcaSimcardId ?? null : null,
+          planoSimcardId: tipo === 'SIM' ? planoSimcardId ?? null : null,
+          tecnicoId: tecnicoId || null,
+        },
+        include: {
+          tecnico: { select: { id: true, nome: true } },
+        },
+      });
 
-    await this.prisma.aparelhoHistorico.create({
-      data: {
-        aparelhoId: aparelho.id,
-        statusAnterior: statusAparelho,
-        statusNovo: statusAparelho,
-        observacao: [
-          `Entrada individual - Origem: ${origem}`,
-          responsavelEntrega ? `Responsável: ${responsavelEntrega}` : null,
-          notaFiscal ? `Nota Fiscal: ${notaFiscal}` : null,
-          proprietario === 'CLIENTE' ? `Vinculado ao cliente ID ${clienteId}` : 'Vinculado à Infinity',
-          statusEntrada === 'CANCELADO_DEFEITO'
-            ? `Status: Defeito - ${categoriaFalha} - Destino: ${destinoDefeito}`
-            : statusEntrada === 'EM_MANUTENCAO'
-              ? 'Status: Em manutenção'
-              : 'Status: Novo/OK',
-          observacoes ? `Obs: ${observacoes}` : null,
-        ]
-          .filter(Boolean)
-          .join(' | '),
-      },
-    });
+      await tx.aparelhoHistorico.create({
+        data: {
+          aparelhoId: aparelho.id,
+          statusAnterior: statusAparelho,
+          statusNovo: statusAparelho,
+          observacao: [
+            `Entrada individual - Origem: ${origem}`,
+            responsavelEntrega ? `Responsável: ${responsavelEntrega}` : null,
+            notaFiscal ? `Nota Fiscal: ${notaFiscal}` : null,
+            debitoAbater
+              ? `Abate de dívida (débito ID ${abaterDebitoId})`
+              : finalProprietario === 'CLIENTE'
+                ? `Vinculado ao cliente ID ${finalClienteId}`
+                : 'Vinculado à Infinity',
+            statusEntrada === 'CANCELADO_DEFEITO'
+              ? `Status: Defeito - ${categoriaFalha} - Destino: ${destinoDefeito}`
+              : statusEntrada === 'EM_MANUTENCAO'
+                ? 'Status: Em manutenção'
+                : 'Status: Novo/OK',
+            observacoes ? `Obs: ${observacoes}` : null,
+          ]
+            .filter(Boolean)
+            .join(' | '),
+        },
+      });
 
-    return aparelho;
+      if (debitoAbater) {
+        await this.debitosService.consolidarDebitoTx(tx, {
+          ...debitoAbater,
+          delta: -1,
+          aparelhoId: aparelho.id,
+        });
+      }
+
+      return aparelho;
+    });
   }
 }

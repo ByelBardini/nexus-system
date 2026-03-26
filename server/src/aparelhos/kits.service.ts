@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, TipoDestinoPedido } from '@prisma/client';
 
 @Injectable()
 export class KitsService {
@@ -172,11 +172,13 @@ export class KitsService {
 
   async getAparelhosDisponiveisParaKit(params: {
     clienteId?: number;
+    clienteIds?: number[];
+    includeInfinity?: boolean;
     modeloEquipamentoId?: number;
     marcaEquipamentoId?: number;
     operadoraId?: number;
   }) {
-    const { clienteId, modeloEquipamentoId, marcaEquipamentoId, operadoraId } = params;
+    const { clienteId, clienteIds, includeInfinity, modeloEquipamentoId, marcaEquipamentoId, operadoraId } = params;
 
     let modeloNome: string | undefined;
     let marcaNome: string | undefined;
@@ -205,15 +207,28 @@ export class KitsService {
       if (operadora) operadoraNome = operadora.nome;
     }
 
+    const nenhumFiltroCliente = !clienteId && !(clienteIds && clienteIds.length > 0) && !includeInfinity;
+    const usarFiltroMultiCliente = (clienteIds && clienteIds.length > 0) || includeInfinity;
+    const clienteWhere: Prisma.AparelhoWhereInput = nenhumFiltroCliente
+      ? {}
+      : usarFiltroMultiCliente
+        ? {
+            OR: [
+              ...(clienteIds && clienteIds.length > 0 ? [{ clienteId: { in: clienteIds } }] : []),
+              ...(includeInfinity ? [{ clienteId: null }] : []),
+            ],
+          }
+        : { clienteId: clienteId ?? null };
+
     const where: Prisma.AparelhoWhereInput = {
       tipo: 'RASTREADOR',
       status: 'CONFIGURADO',
       kitId: null,
-      clienteId: clienteId ?? null,
       tecnicoId: null,
       ...(marcaNome ? { marca: marcaNome } : {}),
       ...(modeloNome ? { modelo: modeloNome } : {}),
       ...(operadoraNome ? { simVinculado: { operadora: operadoraNome } } : {}),
+      ...clienteWhere,
     };
 
     return this.prisma.aparelho.findMany({
@@ -326,7 +341,12 @@ export class KitsService {
       operadora: aparelho.simVinculado?.operadora ?? null,
     });
 
-    if (pedido.deClienteId !== null && aparelho.clienteId !== pedido.deClienteId) {
+    // Pedidos MISTO usam aparelhos de múltiplos proprietários intencionalmente
+    if (
+      pedido.tipoDestino !== TipoDestinoPedido.MISTO &&
+      pedido.deClienteId !== null &&
+      aparelho.clienteId !== pedido.deClienteId
+    ) {
       throw new BadRequestException(
         `Aparelho não atende ao pedido: deve pertencer ao cliente remetente especificado`,
       );

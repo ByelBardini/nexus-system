@@ -139,8 +139,12 @@ export class PareamentoService {
     simManual?: { operadora?: string; marcaSimcardId?: number; planoSimcardId?: number };
     kitId?: number;
     kitNome?: string;
+    proprietario?: 'INFINITY' | 'CLIENTE';
+    clienteId?: number;
+    tecnicoId?: number;
   }) {
-    const { pares, loteRastreadorId, loteSimId, rastreadorManual, simManual, kitId, kitNome } = dto;
+    const { pares, loteRastreadorId, loteSimId, rastreadorManual, simManual, kitId, kitNome, proprietario, clienteId, tecnicoId } = dto;
+    const proprietarioFinal = proprietario ?? 'INFINITY';
     if (!pares?.length) {
       throw new BadRequestException('Nenhum par informado');
     }
@@ -216,7 +220,12 @@ export class PareamentoService {
           const cleanImei = linha.imei.replace(/\D/g, '');
           await tx.aparelho.update({
             where: { id: aparelhoSemId.id },
-            data: { identificador: cleanImei },
+            data: {
+              identificador: cleanImei,
+              proprietario: proprietarioFinal,
+              clienteId: clienteId ?? null,
+              tecnicoId: tecnicoId ?? null,
+            },
           });
           rastreadorId = aparelhoSemId.id;
         } else if (linha.tracker_status === 'NEEDS_CREATE' && rastreadorManual?.marca && rastreadorManual?.modelo) {
@@ -226,7 +235,9 @@ export class PareamentoService {
               tipo: 'RASTREADOR',
               identificador: cleanImei,
               status: 'EM_ESTOQUE',
-              proprietario: 'INFINITY',
+              proprietario: proprietarioFinal,
+              clienteId: clienteId ?? null,
+              tecnicoId: tecnicoId ?? null,
               marca: rastreadorManual.marca,
               modelo: rastreadorManual.modelo,
             },
@@ -256,7 +267,11 @@ export class PareamentoService {
           const cleanIccid = linha.iccid.replace(/\D/g, '');
           await tx.aparelho.update({
             where: { id: aparelhoSemId.id },
-            data: { identificador: cleanIccid },
+            data: {
+              identificador: cleanIccid,
+              proprietario: 'INFINITY',
+              clienteId: null,
+            },
           });
           simId = aparelhoSemId.id;
         } else if (linha.sim_status === 'NEEDS_CREATE' && (simManual?.operadora || simManual?.marcaSimcardId)) {
@@ -276,6 +291,7 @@ export class PareamentoService {
               identificador: cleanIccid,
               status: 'EM_ESTOQUE',
               proprietario: 'INFINITY',
+              clienteId: null,
               operadora: operadoraNome ?? null,
               marcaSimcardId: simManual.marcaSimcardId ?? null,
               planoSimcardId: simManual.planoSimcardId ?? null,
@@ -293,6 +309,8 @@ export class PareamentoService {
             simVinculadoId: simId,
             status: 'CONFIGURADO',
             kitId: kitIdFinal ?? null,
+            clienteId: clienteId ?? null,
+            ...(tecnicoId !== undefined ? { tecnicoId } : {}),
           },
         });
         await tx.aparelho.update({
