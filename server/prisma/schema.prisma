@@ -126,6 +126,9 @@ model Cliente {
   pedidosRastreadoresDestino   PedidoRastreador[] @relation("ClienteDestino")
   pedidosRastreadoresDeCliente PedidoRastreador[] @relation("ClienteRemetente")
   pedidosRastreadoresItens     PedidoRastreadorItem[] @relation("ClienteItemDestino")
+  aparelhosComoDestinatario    PedidoRastreadorAparelho[] @relation("DestinatarioPedidoAparelho")
+  debitosComoDevedor           DebitoRastreador[] @relation("DevedorDebito")
+  debitosComoCredor            DebitoRastreador[] @relation("CredorDebito")
 
   @@map("clientes")
 }
@@ -309,6 +312,7 @@ model MarcaEquipamento {
   modelos              ModeloEquipamento[]
   pedidosRastreadores  PedidoRastreador[]
   pedidosRastreadoresItens PedidoRastreadorItem[]
+  debitosRastreadores  DebitoRastreador[]
 
   @@map("marcas_equipamentos")
 }
@@ -323,6 +327,7 @@ model ModeloEquipamento {
   marca                MarcaEquipamento   @relation(fields: [marcaId], references: [id], onDelete: Cascade)
   pedidosRastreadores  PedidoRastreador[]
   pedidosRastreadoresItens PedidoRastreadorItem[]
+  debitosRastreadores  DebitoRastreador[]
 
   @@unique([marcaId, nome])
   @@index([marcaId])
@@ -415,6 +420,8 @@ model Aparelho {
   simVinculado    Aparelho?         @relation("SimVinculo", fields: [simVinculadoId], references: [id])
   aparelhosVinculados Aparelho[]    @relation("SimVinculo")
   historico       AparelhoHistorico[]
+  pedidosDestinatario PedidoRastreadorAparelho[]
+  historicosDebitos HistoricoDebitoRastreador[]
 
   @@index([clienteId])
   @@index([kitId])
@@ -448,6 +455,7 @@ model LoteAparelho {
   marcaSimcard    MarcaSimcard?     @relation(fields: [marcaSimcardId], references: [id])
   planoSimcard    PlanoSimcard?     @relation(fields: [planoSimcardId], references: [id])
   aparelhos       Aparelho[]
+  historicosDebitos HistoricoDebitoRastreador[]
 
   @@index([clienteId])
   @@index([marcaSimcardId])
@@ -542,6 +550,8 @@ model PedidoRastreador {
   criadoPor            Usuario?                @relation(fields: [criadoPorId], references: [id])
   historico            PedidoRastreadorHistorico[]
   itens                PedidoRastreadorItem[]
+  aparelhosDestinatarios PedidoRastreadorAparelho[]
+  historicosDebitos    HistoricoDebitoRastreador[]
 
   @@index([tecnicoId])
   @@index([clienteId])
@@ -590,4 +600,70 @@ model PedidoRastreadorItem {
   @@index([pedidoRastreadorId])
   @@index([clienteId])
   @@map("pedidos_rastreadores_itens")
+}
+
+model PedidoRastreadorAparelho {
+  id                       Int              @id @default(autoincrement())
+  pedidoRastreadorId       Int              @map("pedido_rastreador_id")
+  aparelhoId               Int              @map("aparelho_id")
+  destinatarioProprietario ProprietarioTipo @map("destinatario_proprietario")
+  destinatarioClienteId    Int?             @map("destinatario_cliente_id")
+  criadoEm                 DateTime         @default(now()) @map("criado_em")
+  atualizadoEm             DateTime         @updatedAt @map("atualizado_em")
+
+  pedidoRastreador    PedidoRastreador @relation(fields: [pedidoRastreadorId], references: [id], onDelete: Cascade)
+  aparelho            Aparelho         @relation(fields: [aparelhoId], references: [id], onDelete: Cascade)
+  destinatarioCliente Cliente?         @relation("DestinatarioPedidoAparelho", fields: [destinatarioClienteId], references: [id])
+
+  @@unique([pedidoRastreadorId, aparelhoId])
+  @@index([pedidoRastreadorId])
+  @@index([aparelhoId])
+  @@map("pedidos_rastreadores_aparelhos")
+}
+
+model DebitoRastreador {
+  id               Int              @id @default(autoincrement())
+  devedorTipo      ProprietarioTipo @map("devedor_tipo")
+  devedorClienteId Int?             @map("devedor_cliente_id")
+  credorTipo       ProprietarioTipo @map("credor_tipo")
+  credorClienteId  Int?             @map("credor_cliente_id")
+  marcaId          Int              @map("marca_id")
+  modeloId         Int              @map("modelo_id")
+  quantidade       Int              @default(0)
+  criadoEm         DateTime         @default(now()) @map("criado_em")
+  atualizadoEm     DateTime         @updatedAt @map("atualizado_em")
+
+  devedorCliente Cliente?          @relation("DevedorDebito", fields: [devedorClienteId], references: [id])
+  credorCliente  Cliente?          @relation("CredorDebito", fields: [credorClienteId], references: [id])
+  marca          MarcaEquipamento  @relation(fields: [marcaId], references: [id])
+  modelo         ModeloEquipamento @relation(fields: [modeloId], references: [id])
+  historicos     HistoricoDebitoRastreador[]
+
+  @@unique([devedorTipo, devedorClienteId, credorTipo, credorClienteId, marcaId, modeloId])
+  @@index([devedorClienteId])
+  @@index([credorClienteId])
+  @@index([marcaId])
+  @@index([modeloId])
+  @@map("debitos_rastreadores")
+}
+
+model HistoricoDebitoRastreador {
+  id         Int      @id @default(autoincrement())
+  debitoId   Int      @map("debito_id")
+  pedidoId   Int?     @map("pedido_id")
+  loteId     Int?     @map("lote_id")
+  aparelhoId Int?     @map("aparelho_id")
+  delta      Int
+  criadoEm   DateTime @default(now()) @map("criado_em")
+
+  debito   DebitoRastreador  @relation(fields: [debitoId], references: [id])
+  pedido   PedidoRastreador? @relation(fields: [pedidoId], references: [id])
+  lote     LoteAparelho?     @relation(fields: [loteId], references: [id])
+  aparelho Aparelho?         @relation(fields: [aparelhoId], references: [id])
+
+  @@index([debitoId])
+  @@index([pedidoId])
+  @@index([loteId])
+  @@index([aparelhoId])
+  @@map("historico_debitos_rastreadores")
 }
