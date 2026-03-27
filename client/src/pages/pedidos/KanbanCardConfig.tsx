@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils'
+import { formatarFromNow } from '@/lib/format'
 import type { PedidoRastreadorView } from './types'
 
 export function KanbanCardConfig({
@@ -80,6 +81,9 @@ export function KanbanCardConfig({
           </div>
         )}
       </div>
+      {pedido.solicitadoEm && (
+        <p className="text-[10px] text-slate-400 mb-3">{formatarFromNow(pedido.solicitadoEm)}</p>
+      )}
       <div className="space-y-1.5">
         <div className="flex justify-between text-[10px] font-bold text-slate-600">
           <span>Progresso de Montagem</span>
