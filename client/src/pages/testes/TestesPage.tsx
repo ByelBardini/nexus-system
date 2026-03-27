@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { X } from 'lucide-react'
@@ -16,7 +17,11 @@ import {
 
 export function TestesPage() {
   const queryClient = useQueryClient()
-  const [selectedOsId, setSelectedOsId] = useState<number | null>(null)
+  const [searchParams] = useSearchParams()
+  const [selectedOsId, setSelectedOsId] = useState<number | null>(() => {
+    const id = searchParams.get('osId')
+    return id ? Number(id) : null
+  })
   const [search, setSearch] = useState('')
   const [imeiSearch, setImeiSearch] = useState('')
   const [comunicacaoResult, setComunicacaoResult] = useState<ComunicacaoResult | null>('AGUARDANDO')
@@ -276,10 +281,11 @@ export function TestesPage() {
   }, [listaTestando, selectedOsId])
 
   useEffect(() => {
-    if (!selectedOsId && listaTestando.length > 0) {
+    const fromUrl = searchParams.get('osId')
+    if (!selectedOsId && listaTestando.length > 0 && !fromUrl) {
       setSelectedOsId(listaTestando[0].id)
     }
-  }, [listaTestando, selectedOsId])
+  }, [listaTestando, selectedOsId, searchParams])
 
   useEffect(() => {
     setImeiSearch(selectedOs?.idAparelho ?? '')
