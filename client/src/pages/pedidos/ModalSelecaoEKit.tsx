@@ -7,11 +7,12 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Checkbox } from '@/components/ui/checkbox'
 import { MaterialIcon } from '@/components/MaterialIcon'
+import { SearchableSelect } from '@/components/SearchableSelect'
 import { api } from '@/lib/api'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { formatarDataHora } from '@/lib/format'
-import type { PedidoRastreadorView } from './types'
+import type { PedidoRastreadorView, PedidoRastreadorApi, AparelhosDestinatariosResponse } from './types'
 import type {
   KitResumo,
   KitVinculado,
@@ -24,6 +25,7 @@ export function ModalSelecaoEKit({
   open,
   onOpenChange,
   pedido,
+  pedidoApi,
   onVincular,
   kitParaEditar,
   kitsPorPedido,
@@ -32,6 +34,7 @@ export function ModalSelecaoEKit({
   open: boolean
   onOpenChange: (o: boolean) => void
   pedido: PedidoRastreadorView | null
+  pedidoApi: PedidoRastreadorApi | null
   onVincular: (kit: KitResumo, qtd: number) => void
   kitParaEditar?: { id: number; nome: string } | null
   kitsPorPedido?: Record<number, KitVinculado[]>
@@ -53,6 +56,13 @@ export function ModalSelecaoEKit({
   const [filtroMarcaModelo, setFiltroMarcaModelo] = useState('')
   const [filtroOperadora, setFiltroOperadora] = useState('')
   const [filtroCliente, setFiltroCliente] = useState('')
+
+  const isMisto = pedidoApi?.tipoDestino === 'MISTO'
+  const [destinatarioLote, setDestinatarioLote] = useState<{
+    proprietario: 'INFINITY' | 'CLIENTE'
+    clienteId: number | null
+  } | null>(null)
+  const [showAllClientes, setShowAllClientes] = useState(false)
 
   useEffect(() => {
     if (open && kitParaEditar) {
@@ -78,11 +88,28 @@ export function ModalSelecaoEKit({
     enabled: open && step === 'edicao' && kitSelecionado != null,
   })
 
+  const { data: destinatariosData } = useQuery<AparelhosDestinatariosResponse>({
+    queryKey: ['pedido-aparelhos-destinatarios', pedidoApi?.id],
+    queryFn: () => api(`/pedidos-rastreadores/${pedidoApi!.id}/aparelhos-destinatarios`),
+    enabled: open && step === 'edicao' && isMisto && pedidoApi != null,
+  })
+
   const { data: aparelhosDisponiveis = [] } = useQuery<AparelhoNoKit[]>({
-    queryKey: ['aparelhos', 'disponiveis', kitSelecionado?.id, filtrosPedido],
+    queryKey: ['aparelhos', 'disponiveis', kitSelecionado?.id, filtrosPedido, isMisto, showAllClientes],
     queryFn: () => {
       const params = new URLSearchParams()
-      if (filtrosPedido?.clienteId) params.set('clienteId', String(filtrosPedido.clienteId))
+      if (isMisto && !showAllClientes && pedidoApi?.itens) {
+        pedidoApi.itens.forEach((item) => {
+          if (item.proprietario === 'CLIENTE' && item.clienteId) {
+            params.append('clienteIds', String(item.clienteId))
+          }
+        })
+        if (pedidoApi.itens.some((item) => item.proprietario === 'INFINITY')) {
+          params.set('includeInfinity', 'true')
+        }
+      } else if (!isMisto && !showAllClientes && filtrosPedido?.clienteId) {
+        params.set('clienteId', String(filtrosPedido.clienteId))
+      }
       if (filtrosPedido?.modeloEquipamentoId) params.set('modeloEquipamentoId', String(filtrosPedido.modeloEquipamentoId))
       if (filtrosPedido?.marcaEquipamentoId) params.set('marcaEquipamentoId', String(filtrosPedido.marcaEquipamentoId))
       if (filtrosPedido?.operadoraId) params.set('operadoraId', String(filtrosPedido.operadoraId))
@@ -124,6 +151,41 @@ export function ModalSelecaoEKit({
     },
     onError: (err) =>
       toast.error(err instanceof Error ? err.message : 'Erro ao atualizar'),
+  })
+
+  const setDestinatariosMutation = useMutation({
+    mutationFn: ({
+      pedidoId,
+      aparelhoIds,
+      destinatarioProprietario,
+      destinatarioClienteId,
+    }: {
+      pedidoId: number
+      aparelhoIds: number[]
+      destinatarioProprietario: 'INFINITY' | 'CLIENTE'
+      destinatarioClienteId: number | null
+    }) =>
+      api(`/pedidos-rastreadores/${pedidoId}/aparelhos-destinatarios`, {
+        method: 'POST',
+        body: JSON.stringify({ aparelhoIds, destinatarioProprietario, destinatarioClienteId }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pedido-aparelhos-destinatarios'] })
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : 'Erro ao atribuir destinatário'),
+  })
+
+  const removeDestinatarioMutation = useMutation({
+    mutationFn: ({ pedidoId, aparelhoId }: { pedidoId: number; aparelhoId: number }) =>
+      api(`/pedidos-rastreadores/${pedidoId}/aparelhos-destinatarios/${aparelhoId}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pedido-aparelhos-destinatarios'] })
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : 'Erro ao remover destinatário'),
   })
 
   const kitIdsEmOutrosPedidos = useMemo(() => {
@@ -256,18 +318,35 @@ export function ModalSelecaoEKit({
     setStep('selecao')
     setKitSelecionado(null)
     setAparelhosSelecionados(new Set())
+    setDestinatarioLote(null)
+    setShowAllClientes(false)
   }
 
   function handleRemoverAparelho(aparelhoId: number) {
     if (!kitSelecionado) return
     updateKitMutation.mutate({ aparelhoId, kitId: null })
+    if (isMisto && pedidoApi) {
+      removeDestinatarioMutation.mutate({ pedidoId: pedidoApi.id, aparelhoId })
+    }
   }
 
   function handleAdicionarSelecionados() {
     if (!kitSelecionado) return
+    if (isMisto && !destinatarioLote) {
+      toast.error('Selecione o cliente destinatário antes de adicionar')
+      return
+    }
     aparelhosSelecionados.forEach((apId) => {
       updateKitMutation.mutate({ aparelhoId: apId, kitId: kitSelecionado.id })
     })
+    if (isMisto && destinatarioLote && pedidoApi) {
+      setDestinatariosMutation.mutate({
+        pedidoId: pedidoApi.id,
+        aparelhoIds: Array.from(aparelhosSelecionados),
+        destinatarioProprietario: destinatarioLote.proprietario,
+        destinatarioClienteId: destinatarioLote.clienteId,
+      })
+    }
     setAparelhosSelecionados(new Set())
   }
 
@@ -291,6 +370,8 @@ export function ModalSelecaoEKit({
     setFiltroMarcaModelo('')
     setFiltroOperadora('')
     setFiltroCliente('')
+    setDestinatarioLote(null)
+    setShowAllClientes(false)
   }
 
   const aparelhosNoKit = kitComAparelhos?.aparelhos ?? []
@@ -448,9 +529,6 @@ export function ModalSelecaoEKit({
                   <h2 className="text-base font-bold text-slate-800 uppercase tracking-tight">
                     Editar Kit — {kitSelecionado?.nome}
                   </h2>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                    Gestão de Configuração Industrial
-                  </p>
                 </div>
               </div>
               <Button variant="ghost" size="sm" onClick={handleVoltar}>
@@ -508,39 +586,61 @@ export function ModalSelecaoEKit({
                         <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 text-left">Marca / Modelo</th>
                         <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 text-left">Kit</th>
                         <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 text-left">Cliente</th>
+                        {isMisto && (
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 text-left">Destino</th>
+                        )}
                         <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 text-right">Ação</th>
                       </tr>
                     </thead>
                     <tbody>
                       {aparelhosNoKit.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="px-3 py-6 text-center text-slate-500 text-[11px]">
+                          <td colSpan={isMisto ? 7 : 6} className="px-3 py-6 text-center text-slate-500 text-[11px]">
                             Nenhum rastreador no kit.
                           </td>
                         </tr>
                       ) : (
-                        aparelhosNoKit.map((a) => (
-                          <tr key={a.id} className="border-b border-slate-100">
-                            <td className="px-3 py-2 font-bold">{a.identificador ?? '-'}</td>
-                            <td className="px-3 py-2">{a.simVinculado?.identificador ?? '-'}</td>
-                            <td className="px-3 py-2">{[a.marca, a.modelo].filter(Boolean).join(' / ') || '-'}</td>
-                            <td className="px-3 py-2">
-                              <span className="text-[11px] font-bold text-violet-600">
-                                {a.kit?.nome ?? kitComAparelhos?.nome ?? '-'}
-                              </span>
-                            </td>
-                            <td className="px-3 py-2">{getClienteLabel(a)}</td>
-                            <td className="px-3 py-2 text-right">
-                              <button
-                                type="button"
-                                onClick={() => handleRemoverAparelho(a.id)}
-                                className="text-red-500 hover:text-red-700 font-bold text-[10px] uppercase"
-                              >
-                                Remover
-                              </button>
-                            </td>
-                          </tr>
-                        ))
+                        aparelhosNoKit.map((a) => {
+                          const asg = destinatariosData?.assignments.find((x) => x.aparelhoId === a.id)
+                          const destinatarioLabel = asg
+                            ? asg.destinatarioProprietario === 'INFINITY'
+                              ? 'Infinity'
+                              : pedidoApi?.itens?.find((i) => i.clienteId === asg.destinatarioClienteId)?.cliente?.nome ?? `#${asg.destinatarioClienteId}`
+                            : null
+                          return (
+                            <tr key={a.id} className="border-b border-slate-100">
+                              <td className="px-3 py-2 font-bold">{a.identificador ?? '-'}</td>
+                              <td className="px-3 py-2">{a.simVinculado?.identificador ?? '-'}</td>
+                              <td className="px-3 py-2">{[a.marca, a.modelo].filter(Boolean).join(' / ') || '-'}</td>
+                              <td className="px-3 py-2">
+                                <span className="text-[11px] font-bold text-violet-600">
+                                  {a.kit?.nome ?? kitComAparelhos?.nome ?? '-'}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2">{getClienteLabel(a)}</td>
+                              {isMisto && (
+                                <td className="px-3 py-2">
+                                  {destinatarioLabel ? (
+                                    <span className="bg-purple-50 text-purple-700 text-[10px] font-bold px-1.5 py-0.5 rounded border border-purple-200">
+                                      {destinatarioLabel}
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-400 text-[10px]">—</span>
+                                  )}
+                                </td>
+                              )}
+                              <td className="px-3 py-2 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoverAparelho(a.id)}
+                                  className="text-red-500 hover:text-red-700 font-bold text-[10px] uppercase"
+                                >
+                                  Remover
+                                </button>
+                              </td>
+                            </tr>
+                          )
+                        })
                       )}
                     </tbody>
                   </table>
@@ -559,6 +659,57 @@ export function ModalSelecaoEKit({
                     )}
                   </div>
                 )}
+                {isMisto && destinatariosData?.quotaUsage && destinatariosData.quotaUsage.length > 0 && (
+                  <div className="flex gap-2 flex-wrap mb-3">
+                    {destinatariosData.quotaUsage.map((q) => {
+                      const label = q.proprietario === 'INFINITY' ? 'Infinity' : (q.clienteNome ?? `Cliente #${q.clienteId}`)
+                      return (
+                        <div
+                          key={`${q.proprietario}-${q.clienteId}`}
+                          className={cn(
+                            'flex items-center gap-1 border rounded px-2 py-0.5 text-[10px] font-bold',
+                            q.atribuido >= q.total
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : 'bg-amber-50 text-amber-700 border-amber-200'
+                          )}
+                        >
+                          <span>{label}:</span>
+                          <span>{q.atribuido}/{q.total}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+                {isMisto && pedidoApi?.itens && (
+                  <div className="flex items-end gap-4 mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                    <div className="flex-1">
+                      <Label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Destino deste lote</Label>
+                      <SearchableSelect
+                        options={pedidoApi.itens.map((item) => ({
+                          value: JSON.stringify({ proprietario: item.proprietario, clienteId: item.clienteId ?? null }),
+                          label: item.proprietario === 'INFINITY' ? 'Infinity' : (item.cliente?.nome ?? `Cliente #${item.clienteId}`),
+                        }))}
+                        value={destinatarioLote ? JSON.stringify(destinatarioLote) : ''}
+                        onChange={(val) => {
+                          if (!val) { setDestinatarioLote(null); return }
+                          setDestinatarioLote(JSON.parse(val) as { proprietario: 'INFINITY' | 'CLIENTE'; clienteId: number | null })
+                        }}
+                        placeholder="Selecionar destino..."
+                      />
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 mb-4">
+                  <Checkbox
+                    id="showAllClientes"
+                    checked={showAllClientes}
+                    onCheckedChange={(v) => setShowAllClientes(!!v)}
+                    className="rounded border-slate-300 data-[state=checked]:bg-erp-blue data-[state=checked]:border-erp-blue"
+                  />
+                  <label htmlFor="showAllClientes" className="text-[10px] font-bold text-slate-500 cursor-pointer select-none">
+                    Exibir rastreadores de outros proprietários
+                  </label>
+                </div>
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
                     <MaterialIcon name="search" className="text-sm" />
@@ -567,7 +718,7 @@ export function ModalSelecaoEKit({
                   <Button
                     size="sm"
                     onClick={handleAdicionarSelecionados}
-                    disabled={aparelhosSelecionados.size === 0}
+                    disabled={aparelhosSelecionados.size === 0 || (isMisto && !destinatarioLote)}
                   >
                     <MaterialIcon name="add" className="text-sm" /> Adicionar ao Kit
                   </Button>
@@ -657,19 +808,30 @@ export function ModalSelecaoEKit({
                           </td>
                         </tr>
                       ) : (
-                        aparelhosFiltrados.map((a) => (
-                          <tr key={a.id} className="border-b border-slate-100">
+                        aparelhosFiltrados.map((a) => {
+                          const selecionado = aparelhosSelecionados.has(a.id)
+                          const toggleSelecao = () => {
+                            setAparelhosSelecionados((prev) => {
+                              const next = new Set(prev)
+                              if (selecionado) next.delete(a.id)
+                              else next.add(a.id)
+                              return next
+                            })
+                          }
+                          return (
+                          <tr
+                            key={a.id}
+                            onClick={toggleSelecao}
+                            className={cn(
+                              'border-b border-slate-100 cursor-pointer select-none',
+                              selecionado ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-slate-50'
+                            )}
+                          >
                             <td className="px-3 py-2">
                               <Checkbox
-                                checked={aparelhosSelecionados.has(a.id)}
-                                onCheckedChange={(v) => {
-                                  setAparelhosSelecionados((prev) => {
-                                    const next = new Set(prev)
-                                    if (v) next.add(a.id)
-                                    else next.delete(a.id)
-                                    return next
-                                  })
-                                }}
+                                checked={selecionado}
+                                onCheckedChange={toggleSelecao}
+                                onClick={(e) => e.stopPropagation()}
                                 className="rounded border-slate-300 data-[state=checked]:bg-erp-blue data-[state=checked]:border-erp-blue"
                               />
                             </td>
@@ -683,7 +845,8 @@ export function ModalSelecaoEKit({
                               </span>
                             </td>
                           </tr>
-                        ))
+                          )
+                        })
                       )}
                     </tbody>
                   </table>

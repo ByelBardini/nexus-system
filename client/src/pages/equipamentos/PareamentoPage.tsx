@@ -31,10 +31,12 @@ import {
   TRACKER_STATUS_LABELS,
   type PreviewResult,
 } from './PreviewPareamentoTable'
+import { SelectClienteSearch } from '@/components/SelectClienteSearch'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
 type ModoPareamento = 'individual' | 'massa' | 'csv'
+type ProprietarioTipo = 'INFINITY' | 'CLIENTE'
 
 function parseIds(text: string): string[] {
   if (!text?.trim()) return []
@@ -73,6 +75,8 @@ export function PareamentoPage() {
   const [kitIdExistente, setKitIdExistente] = useState<string>('')
   const [kitNomeNovo, setKitNomeNovo] = useState<string>('')
   const [kitBuscaIndividual, setKitBuscaIndividual] = useState('')
+  const [proprietarioIndividual, setProprietarioIndividual] = useState<ProprietarioTipo>('INFINITY')
+  const [clienteIdIndividual, setClienteIdIndividual] = useState<number | null>(null)
   const [quantidadeCriada, setQuantidadeCriada] = useState(0)
 
   // Massa
@@ -95,6 +99,8 @@ export function PareamentoPage() {
   const [kitBuscaMassa, setKitBuscaMassa] = useState('')
   const [loteBuscaRastreador, setLoteBuscaRastreador] = useState('')
   const [loteBuscaSim, setLoteBuscaSim] = useState('')
+  const [proprietarioMassa, setProprietarioMassa] = useState<ProprietarioTipo>('INFINITY')
+  const [clienteIdMassa, setClienteIdMassa] = useState<number | null>(null)
 
   const imeis = useMemo(() => parseIds(textImeis), [textImeis])
   const iccids = useMemo(() => parseIds(textIccids), [textIccids])
@@ -139,6 +145,13 @@ export function PareamentoPage() {
     queryFn: () => api('/equipamentos/marcas-simcard'),
     enabled: modo === 'individual' || modo === 'massa',
   })
+
+  const { data: clientes = [] } = useQuery<{ id: number; nome: string; cidade?: string | null; estado?: string | null }[]>({
+    queryKey: ['clientes-lista'],
+    queryFn: () => api('/clientes'),
+    enabled: proprietarioIndividual === 'CLIENTE' || proprietarioMassa === 'CLIENTE',
+  })
+
   const kitFiltroIndividual = useMemo(() => {
     let modelo: string | undefined
     let marca: string | undefined
@@ -340,6 +353,9 @@ export function PareamentoPage() {
                 : {}
             : {}
 
+      const proprietario = modo === 'individual' ? proprietarioIndividual : proprietarioMassa
+      const clienteId = modo === 'individual' ? clienteIdIndividual : clienteIdMassa
+
       return api<{ criados: number }>('/aparelhos/pareamento', {
         method: 'POST',
         body: JSON.stringify({
@@ -372,6 +388,8 @@ export function PareamentoPage() {
                   ? { marcaSimcardId: +marcaSimcardIdSimMassa, planoSimcardId: planoSimcardIdSimMassa ? +planoSimcardIdSimMassa : undefined }
                   : { operadora: operadoraSimMassa }
                 : undefined,
+          proprietario,
+          clienteId: clienteId ?? undefined,
           ...kitPayload,
         }),
       })
@@ -395,6 +413,8 @@ export function PareamentoPage() {
         setLoteSimId('')
         setKitIdExistente('')
         setKitNomeNovo('')
+        setProprietarioIndividual('INFINITY')
+        setClienteIdIndividual(null)
       } else {
         setPreview(null)
         setTextImeis('')
@@ -412,6 +432,8 @@ export function PareamentoPage() {
         setKitModoMassa('existente')
         setKitIdExistenteMassa('')
         setKitNomeMassa('')
+        setProprietarioMassa('INFINITY')
+        setClienteIdMassa(null)
       }
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : 'Erro ao criar equipamentos'),
@@ -591,6 +613,8 @@ export function PareamentoPage() {
     setLoteRastreadorId('')
     setLoteSimId('')
     setPreview(null)
+    setProprietarioIndividual('INFINITY')
+    setClienteIdIndividual(null)
     lastPreviewAttemptRef.current = null
   }
 
@@ -609,6 +633,9 @@ export function PareamentoPage() {
     setKitModoMassa('existente')
     setKitIdExistenteMassa('')
     setKitNomeMassa('')
+    setProprietarioMassa('INFINITY')
+    setClienteIdMassa(null)
+    setTecnicoIdMassa(null)
   }
 
   const subtituloPorModo: Record<ModoPareamento, string> = {
@@ -974,6 +1001,50 @@ export function PareamentoPage() {
                       </span>
                     </div>
                   </div>
+                </div>
+
+                {/* Proprietário */}
+                <div className="rounded-sm border border-slate-200 bg-white p-5">
+                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
+                    <MaterialIcon name="business_center" className="text-erp-blue" />
+                    <h3 className="text-[10px] font-bold text-slate-800 uppercase tracking-wide">Pertence a</h3>
+                  </div>
+                  <div className="flex rounded-sm overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => { setProprietarioIndividual('INFINITY'); setClienteIdIndividual(null) }}
+                      className={cn(
+                        'flex-1 py-2.5 px-4 text-xs font-bold uppercase border transition-all',
+                        proprietarioIndividual === 'INFINITY'
+                          ? 'bg-slate-800 text-white border-slate-800'
+                          : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                      )}
+                    >
+                      Infinity
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setProprietarioIndividual('CLIENTE')}
+                      className={cn(
+                        'flex-1 py-2.5 px-4 text-xs font-bold uppercase border-t border-b border-r transition-all',
+                        proprietarioIndividual === 'CLIENTE'
+                          ? 'bg-slate-800 text-white border-slate-800'
+                          : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                      )}
+                    >
+                      Cliente
+                    </button>
+                  </div>
+                  {proprietarioIndividual === 'CLIENTE' && (
+                    <div className="mt-3">
+                      <SelectClienteSearch
+                        clientes={clientes}
+                        value={clienteIdIndividual ?? undefined}
+                        onChange={(id) => setClienteIdIndividual(id ?? null)}
+                        placeholder="Digite para pesquisar cliente..."
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="rounded-sm border border-slate-200 bg-white p-5">
@@ -1503,6 +1574,50 @@ export function PareamentoPage() {
                         )}
                       </div>
                     </div>
+                  </div>
+
+                  {/* Proprietário Massa */}
+                  <div className="mt-6 rounded-sm border border-slate-200 bg-white p-5">
+                    <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
+                      <MaterialIcon name="business_center" className="text-erp-blue" />
+                      <h3 className="text-[10px] font-bold text-slate-800 uppercase tracking-wide">Pertence a</h3>
+                    </div>
+                    <div className="flex rounded-sm overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => { setProprietarioMassa('INFINITY'); setClienteIdMassa(null) }}
+                        className={cn(
+                          'flex-1 py-2.5 px-4 text-xs font-bold uppercase border transition-all',
+                          proprietarioMassa === 'INFINITY'
+                            ? 'bg-slate-800 text-white border-slate-800'
+                            : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                        )}
+                      >
+                        Infinity
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setProprietarioMassa('CLIENTE')}
+                        className={cn(
+                          'flex-1 py-2.5 px-4 text-xs font-bold uppercase border-t border-b border-r transition-all',
+                          proprietarioMassa === 'CLIENTE'
+                            ? 'bg-slate-800 text-white border-slate-800'
+                            : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                        )}
+                      >
+                        Cliente
+                      </button>
+                    </div>
+                    {proprietarioMassa === 'CLIENTE' && (
+                      <div className="mt-3">
+                        <SelectClienteSearch
+                          clientes={clientes}
+                          value={clienteIdMassa ?? undefined}
+                          onChange={(id) => setClienteIdMassa(id ?? null)}
+                          placeholder="Digite para pesquisar cliente..."
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <div className="mt-6 rounded-sm border border-slate-200 bg-white p-5">

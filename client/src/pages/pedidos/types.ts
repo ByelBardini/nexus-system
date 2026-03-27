@@ -122,6 +122,25 @@ export interface PedidosListResponse {
   totalPages: number
 }
 
+export interface AparelhoDestinatarioAssignment {
+  aparelhoId: number
+  destinatarioProprietario: 'INFINITY' | 'CLIENTE'
+  destinatarioClienteId: number | null
+}
+
+export interface QuotaUsageItem {
+  proprietario: 'INFINITY' | 'CLIENTE'
+  clienteId: number | null
+  clienteNome: string | null
+  atribuido: number
+  total: number
+}
+
+export interface AparelhosDestinatariosResponse {
+  assignments: AparelhoDestinatarioAssignment[]
+  quotaUsage: QuotaUsageItem[]
+}
+
 /** Status em minúsculo para o kanban */
 export type StatusPedidoKey =
   | 'solicitado'
@@ -224,11 +243,9 @@ export interface PedidoRastreadorView {
 
 export function mapPedidoToView(p: PedidoRastreadorApi): PedidoRastreadorView {
   const destinatario =
-    p.tipoDestino === 'TECNICO'
+    p.tipoDestino === 'TECNICO' || p.tipoDestino === 'MISTO'
       ? p.tecnico?.nome ?? 'Técnico'
-      : p.tipoDestino === 'MISTO'
-        ? `Misto (${p.itens?.length ?? 0} destinos)`
-        : p.subcliente?.nome ?? p.cliente?.nome ?? p.subcliente?.cliente?.nome ?? 'Cliente'
+      : p.subcliente?.nome ?? p.cliente?.nome ?? p.subcliente?.cliente?.nome ?? 'Cliente'
   const tipo = p.tipoDestino === 'TECNICO' ? 'tecnico' : p.tipoDestino === 'MISTO' ? 'misto' : 'cliente'
   const itensMisto =
     p.tipoDestino === 'MISTO' && p.itens
@@ -256,7 +273,7 @@ export function mapPedidoToView(p: PedidoRastreadorApi): PedidoRastreadorView {
   const deCliente = p.deCliente?.nome
 
   const cidadeEstado =
-    p.tipoDestino === 'TECNICO'
+    p.tipoDestino === 'TECNICO' || p.tipoDestino === 'MISTO'
       ? (() => {
           const t = p.tecnico
           if (!t) return undefined
@@ -276,7 +293,7 @@ export function mapPedidoToView(p: PedidoRastreadorApi): PedidoRastreadorView {
         })()
 
   const endereco =
-    p.tipoDestino === 'TECNICO'
+    p.tipoDestino === 'TECNICO' || p.tipoDestino === 'MISTO'
       ? (() => {
           const t = p.tecnico
           if (!t) return undefined
@@ -299,12 +316,12 @@ export function mapPedidoToView(p: PedidoRastreadorApi): PedidoRastreadorView {
         : p.subcliente?.cidade ?? undefined
 
   const cpfCnpj =
-    p.tipoDestino === 'TECNICO'
+    p.tipoDestino === 'TECNICO' || p.tipoDestino === 'MISTO'
       ? p.tecnico?.cpfCnpj ?? undefined
       : p.subcliente?.cpf ?? p.cliente?.cnpj ?? undefined
 
   const contato =
-    p.tipoDestino === 'TECNICO'
+    p.tipoDestino === 'TECNICO' || p.tipoDestino === 'MISTO'
       ? p.tecnico
         ? {
             nome: p.tecnico.nome,

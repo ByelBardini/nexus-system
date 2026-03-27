@@ -382,6 +382,9 @@ export function EquipamentosPage() {
                 Técnico
               </TableHead>
               <TableHead className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                Proprietário
+              </TableHead>
+              <TableHead className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                 Última Mov.
               </TableHead>
               <TableHead className="w-10 px-3 py-2.5" />
@@ -473,9 +476,16 @@ export function EquipamentosPage() {
                       )}
                     </TableCell>
                     <TableCell className="px-3 py-3">
-                      <span className="text-[11px] text-slate-400">
-                        {equip.cliente?.nome ?? equip.tecnico?.nome ?? '-'}
-                      </span>
+                      {equip.tecnico?.nome ? (
+                        <div className="text-[11px] font-medium text-slate-600">{equip.tecnico.nome}</div>
+                      ) : (
+                        <span className="text-slate-400">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="px-3 py-3">
+                      <div className="text-[11px] font-medium text-slate-600">
+                        {equip.cliente?.nome ?? (equip.proprietario === 'INFINITY' ? 'Infinity' : '-')}
+                      </div>
                     </TableCell>
                     <TableCell className="px-3 py-3">
                       <span className="text-[10px] font-mono text-slate-500">
@@ -533,8 +543,12 @@ export function EquipamentosPage() {
                             </div>
                             <div className="text-[10px] text-slate-400">
                               Técnico:{' '}
+                              <span className="font-bold text-slate-700">{equip.tecnico?.nome ?? '-'}</span>
+                            </div>
+                            <div className="text-[10px] text-slate-400">
+                              Proprietário:{' '}
                               <span className="font-bold text-slate-700">
-                                {equip.cliente?.nome ?? equip.tecnico?.nome ?? '-'}
+                                {equip.cliente?.nome ?? (equip.proprietario === 'INFINITY' ? 'Infinity' : '-')}
                               </span>
                             </div>
                             <div className="text-[10px] font-mono text-slate-400">
@@ -598,9 +612,15 @@ export function EquipamentosPage() {
                               Operação
                             </h4>
                             <div>
-                              <div className="text-[10px] text-slate-400 uppercase font-medium">Técnico / Cliente</div>
+                              <div className="text-[10px] text-slate-400 uppercase font-medium">Técnico</div>
                               <div className="text-xs font-bold text-slate-700">
-                                {equip.cliente?.nome ?? equip.tecnico?.nome ?? '-'}
+                                {equip.tecnico?.nome ?? '-'}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-[10px] text-slate-400 uppercase font-medium">Proprietário</div>
+                              <div className="text-xs font-bold text-slate-700">
+                                {equip.cliente?.nome ?? (equip.proprietario === 'INFINITY' ? 'Infinity' : '-')}
                               </div>
                             </div>
                             <div>

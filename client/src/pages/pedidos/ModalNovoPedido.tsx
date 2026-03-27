@@ -54,11 +54,16 @@ const schemaNovoPedido = z
     observacao: z.string().optional(),
   })
   .refine(
-    (d) =>
-      (d.tipoDestino === 'TECNICO' && d.tecnicoId && d.tecnicoId > 0) ||
-      (d.tipoDestino === 'CLIENTE' && d.destinoCliente && d.destinoCliente.length > 0) ||
-      (d.tipoDestino === 'MISTO' && d.itensMisto && d.itensMisto.length > 0),
-    { message: 'Selecione o destinatário' },
+    (d) => d.tipoDestino !== 'TECNICO' || (d.tecnicoId != null && d.tecnicoId > 0),
+    { message: 'Selecione o técnico', path: ['tecnicoId'] },
+  )
+  .refine(
+    (d) => d.tipoDestino !== 'MISTO' || (d.tecnicoId != null && d.tecnicoId > 0),
+    { message: 'Selecione o técnico', path: ['tecnicoId'] },
+  )
+  .refine(
+    (d) => d.tipoDestino !== 'CLIENTE' || (d.destinoCliente != null && d.destinoCliente.length > 0),
+    { message: 'Selecione o destinatário', path: ['destinoCliente'] },
   )
 
 type FormNovoPedido = z.infer<typeof schemaNovoPedido>
@@ -122,6 +127,7 @@ export function ModalNovoPedido({
   const marcaEquipamentoId = form.watch('marcaEquipamentoId')
   const operadoraEspecifica = form.watch('operadoraEspecifica')
   const quantidade = form.watch('quantidade')
+  const itensMistoValues = form.watch('itensMisto')
 
   const { clienteId, subclienteId } = useMemo((): { clienteId?: number; subclienteId?: number } => {
     if (!destinoCliente || (!destinoCliente.startsWith('cliente-') && !destinoCliente.startsWith('subcliente-')))
@@ -208,6 +214,7 @@ export function ModalNovoPedido({
           method: 'POST',
           body: JSON.stringify({
             tipoDestino: 'MISTO',
+            tecnicoId: data.tecnicoId,
             dataSolicitacao: data.dataSolicitacao,
             urgencia: data.urgencia ?? 'MEDIA',
             observacao: data.observacao ?? undefined,
@@ -215,9 +222,15 @@ export function ModalNovoPedido({
               proprietario: item.proprietario,
               clienteId: item.proprietario === 'CLIENTE' ? item.clienteId : undefined,
               quantidade: item.quantidade,
-              marcaEquipamentoId: item.marcaModeloEspecifico ? item.marcaEquipamentoId : undefined,
-              modeloEquipamentoId: item.marcaModeloEspecifico ? item.modeloEquipamentoId : undefined,
-              operadoraId: item.operadoraEspecifica ? item.operadoraId : undefined,
+              marcaEquipamentoId: data.marcaModeloEspecifico
+                ? data.marcaEquipamentoId
+                : item.marcaModeloEspecifico ? item.marcaEquipamentoId : undefined,
+              modeloEquipamentoId: data.marcaModeloEspecifico
+                ? data.modeloEquipamentoId
+                : item.marcaModeloEspecifico ? item.modeloEquipamentoId : undefined,
+              operadoraId: data.operadoraEspecifica
+                ? data.operadoraId
+                : item.operadoraEspecifica ? item.operadoraId : undefined,
             })),
           }),
         })
@@ -475,7 +488,7 @@ export function ModalNovoPedido({
                   }}
                   className={cn(
                     'flex-1 py-2 text-xs font-bold uppercase tracking-wider border border-slate-200 transition-all',
-                    tipoDestino === 'TECNICO'
+                    tipoDestino === 'TECNICO' || tipoDestino === 'MISTO'
                       ? 'bg-erp-blue text-white border-erp-blue'
                       : 'bg-white text-slate-500 hover:bg-slate-50'
                   )}
@@ -488,6 +501,7 @@ export function ModalNovoPedido({
                     form.setValue('tipoDestino', 'CLIENTE')
                     form.setValue('tecnicoId', undefined)
                     form.setValue('destinoCliente', '')
+                    form.setValue('itensMisto', [{ proprietario: 'INFINITY', quantidade: 1 }])
                   }}
                   className={cn(
                     'flex-1 py-2 text-xs font-bold uppercase tracking-wider border border-slate-200 transition-all',
@@ -498,32 +512,29 @@ export function ModalNovoPedido({
                 >
                   Cliente
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    form.setValue('tipoDestino', 'MISTO')
-                    form.setValue('tecnicoId', undefined)
-                    form.setValue('destinoCliente', '')
-                    form.setValue('deCliente', false)
-                    form.setValue('deClienteId', undefined)
-                  }}
-                  className={cn(
-                    'flex-1 py-2 text-xs font-bold uppercase tracking-wider border border-slate-200 transition-all',
-                    tipoDestino === 'MISTO'
-                      ? 'bg-erp-blue text-white border-erp-blue'
-                      : 'bg-white text-slate-500 hover:bg-slate-50'
-                  )}
-                >
-                  Misto
-                </button>
               </div>
 
-              {tipoDestino !== 'MISTO' && (
+              {(tipoDestino === 'TECNICO' || tipoDestino === 'MISTO') && (
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="pedidoMisto"
+                    checked={tipoDestino === 'MISTO'}
+                    onCheckedChange={(checked) => {
+                      form.setValue('tipoDestino', checked ? 'MISTO' : 'TECNICO')
+                      if (!checked) form.setValue('itensMisto', [{ proprietario: 'INFINITY', quantidade: 1 }])
+                    }}
+                  />
+                  <Label htmlFor="pedidoMisto" className="text-xs font-medium cursor-pointer">
+                    Pedido misto (múltiplos proprietários para o mesmo técnico)
+                  </Label>
+                </div>
+              )}
+
               <div>
                 <Label className="text-[10px] font-bold uppercase text-slate-500 block mb-1.5">
                   Pesquisar Destinatário
                 </Label>
-                {tipoDestino === 'TECNICO' ? (
+                {tipoDestino !== 'CLIENTE' ? (
                   <Controller
                     name="tecnicoId"
                     control={form.control}
@@ -573,13 +584,12 @@ export function ModalNovoPedido({
                   </p>
                 )}
               </div>
-              )}
 
-              {tipoDestino !== 'MISTO' && destinatarioSelecionado && (
+              {destinatarioSelecionado && (
                 <div className="bg-slate-50 border border-slate-200 rounded p-4 flex items-start gap-4">
                   <div className="bg-blue-100 text-blue-600 p-2 rounded shrink-0">
                     <MaterialIcon
-                      name={tipoDestino === 'TECNICO' ? 'engineering' : 'business'}
+                      name={tipoDestino === 'CLIENTE' ? 'business' : 'engineering'}
                       className="text-lg"
                     />
                   </div>
@@ -668,6 +678,16 @@ export function ModalNovoPedido({
                     const modelosFiltradosItem = itemMarcaId
                       ? modelosRaw.filter((m) => m.marcaId === itemMarcaId)
                       : modelosRaw
+                    const infinityTaken = (itensMistoValues ?? []).some(
+                      (item, i) => i !== index && item.proprietario === 'INFINITY'
+                    )
+                    const clientesJaUsados = new Set(
+                      (itensMistoValues ?? [])
+                        .filter((item, i) => i !== index && item.proprietario === 'CLIENTE')
+                        .map((item) => item.clienteId)
+                        .filter((id): id is number => id != null)
+                    )
+                    const clientesDisponiveis = clientes.filter((c) => !clientesJaUsados.has(c.id))
                     return (
                       <div key={field.id} className="border border-slate-200 rounded p-3 space-y-3 bg-slate-50">
                         <div className="flex items-center justify-between gap-3">
@@ -675,11 +695,14 @@ export function ModalNovoPedido({
                             <button
                               type="button"
                               onClick={() => form.setValue(`itensMisto.${index}.proprietario`, 'INFINITY')}
+                              disabled={infinityTaken && itemProprietario !== 'INFINITY'}
                               className={cn(
                                 'flex-1 py-1.5 text-[11px] font-bold uppercase tracking-wider border border-slate-200 transition-all',
                                 itemProprietario === 'INFINITY'
                                   ? 'bg-erp-blue text-white border-erp-blue'
-                                  : 'bg-white text-slate-500 hover:bg-slate-50'
+                                  : infinityTaken
+                                    ? 'bg-slate-50 text-slate-300 cursor-not-allowed'
+                                    : 'bg-white text-slate-500 hover:bg-slate-50'
                               )}
                             >
                               Infinity
@@ -729,7 +752,7 @@ export function ModalNovoPedido({
                                     <SelectValue placeholder="Selecione o cliente" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {clientes.map((c) => (
+                                    {clientesDisponiveis.map((c) => (
                                       <SelectItem key={c.id} value={`cliente-${c.id}`}>
                                         {c.nome}
                                       </SelectItem>
@@ -766,108 +789,130 @@ export function ModalNovoPedido({
                         </div>
 
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Controller
-                              name={`itensMisto.${index}.marcaModeloEspecifico`}
-                              control={form.control}
-                              render={({ field: f }) => (
-                                <Checkbox
-                                  checked={f.value ?? false}
-                                  onCheckedChange={(checked) => {
-                                    f.onChange(checked)
-                                    if (!checked) {
-                                      form.setValue(`itensMisto.${index}.marcaEquipamentoId`, undefined)
-                                      form.setValue(`itensMisto.${index}.modeloEquipamentoId`, undefined)
-                                    }
-                                  }}
-                                />
-                              )}
-                            />
-                            <span className="text-xs font-medium">Marca/modelo específico</span>
-                          </div>
-                          {itemMarcaModelo && (
-                            <div className="grid grid-cols-2 gap-2">
-                              <Controller
-                                name={`itensMisto.${index}.marcaEquipamentoId`}
-                                control={form.control}
-                                render={({ field: f }) => (
-                                  <Select
-                                    value={f.value ? String(f.value) : ''}
-                                    onValueChange={(v) => {
-                                      f.onChange(v ? +v : undefined)
-                                      form.setValue(`itensMisto.${index}.modeloEquipamentoId`, undefined)
-                                    }}
-                                  >
-                                    <SelectTrigger className="h-8 text-xs">
-                                      <SelectValue placeholder="Marca" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {marcas.map((m) => (
-                                        <SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                )}
-                              />
-                              <Controller
-                                name={`itensMisto.${index}.modeloEquipamentoId`}
-                                control={form.control}
-                                render={({ field: f }) => (
-                                  <Select
-                                    value={f.value ? String(f.value) : ''}
-                                    onValueChange={(v) => f.onChange(v ? +v : undefined)}
-                                    disabled={!itemMarcaId}
-                                  >
-                                    <SelectTrigger className="h-8 text-xs">
-                                      <SelectValue placeholder="Modelo" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {modelosFiltradosItem.map((m) => (
-                                        <SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                )}
-                              />
+                          {marcaModeloEspecifico ? (
+                            <div className="flex items-center gap-2 opacity-60">
+                              <Checkbox checked disabled />
+                              <span className="text-xs font-medium text-slate-500">
+                                Marca/modelo do pedido aplicado
+                              </span>
                             </div>
+                          ) : (
+                            <>
+                              <div className="flex items-center gap-2">
+                                <Controller
+                                  name={`itensMisto.${index}.marcaModeloEspecifico`}
+                                  control={form.control}
+                                  render={({ field: f }) => (
+                                    <Checkbox
+                                      checked={f.value ?? false}
+                                      onCheckedChange={(checked) => {
+                                        f.onChange(checked)
+                                        if (!checked) {
+                                          form.setValue(`itensMisto.${index}.marcaEquipamentoId`, undefined)
+                                          form.setValue(`itensMisto.${index}.modeloEquipamentoId`, undefined)
+                                        }
+                                      }}
+                                    />
+                                  )}
+                                />
+                                <span className="text-xs font-medium">Marca/modelo específico</span>
+                              </div>
+                              {itemMarcaModelo && (
+                                <div className="grid grid-cols-2 gap-2">
+                                  <Controller
+                                    name={`itensMisto.${index}.marcaEquipamentoId`}
+                                    control={form.control}
+                                    render={({ field: f }) => (
+                                      <Select
+                                        value={f.value ? String(f.value) : ''}
+                                        onValueChange={(v) => {
+                                          f.onChange(v ? +v : undefined)
+                                          form.setValue(`itensMisto.${index}.modeloEquipamentoId`, undefined)
+                                        }}
+                                      >
+                                        <SelectTrigger className="h-8 text-xs">
+                                          <SelectValue placeholder="Marca" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {marcas.map((m) => (
+                                            <SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    )}
+                                  />
+                                  <Controller
+                                    name={`itensMisto.${index}.modeloEquipamentoId`}
+                                    control={form.control}
+                                    render={({ field: f }) => (
+                                      <Select
+                                        value={f.value ? String(f.value) : ''}
+                                        onValueChange={(v) => f.onChange(v ? +v : undefined)}
+                                        disabled={!itemMarcaId}
+                                      >
+                                        <SelectTrigger className="h-8 text-xs">
+                                          <SelectValue placeholder="Modelo" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {modelosFiltradosItem.map((m) => (
+                                            <SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    )}
+                                  />
+                                </div>
+                              )}
+                            </>
                           )}
 
-                          <div className="flex items-center gap-2">
-                            <Controller
-                              name={`itensMisto.${index}.operadoraEspecifica`}
-                              control={form.control}
-                              render={({ field: f }) => (
-                                <Checkbox
-                                  checked={f.value ?? false}
-                                  onCheckedChange={(checked) => {
-                                    f.onChange(checked)
-                                    if (!checked) form.setValue(`itensMisto.${index}.operadoraId`, undefined)
-                                  }}
+                          {operadoraEspecifica ? (
+                            <div className="flex items-center gap-2 opacity-60">
+                              <Checkbox checked disabled />
+                              <span className="text-xs font-medium text-slate-500">
+                                Operadora do pedido aplicada
+                              </span>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="flex items-center gap-2">
+                                <Controller
+                                  name={`itensMisto.${index}.operadoraEspecifica`}
+                                  control={form.control}
+                                  render={({ field: f }) => (
+                                    <Checkbox
+                                      checked={f.value ?? false}
+                                      onCheckedChange={(checked) => {
+                                        f.onChange(checked)
+                                        if (!checked) form.setValue(`itensMisto.${index}.operadoraId`, undefined)
+                                      }}
+                                    />
+                                  )}
+                                />
+                                <span className="text-xs font-medium">Operadora específica</span>
+                              </div>
+                              {itemOperadora && (
+                                <Controller
+                                  name={`itensMisto.${index}.operadoraId`}
+                                  control={form.control}
+                                  render={({ field: f }) => (
+                                    <Select
+                                      value={f.value ? String(f.value) : ''}
+                                      onValueChange={(v) => f.onChange(v ? +v : undefined)}
+                                    >
+                                      <SelectTrigger className="h-8 text-xs">
+                                        <SelectValue placeholder="Operadora" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {operadoras.map((o) => (
+                                          <SelectItem key={o.id} value={String(o.id)}>{o.nome}</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  )}
                                 />
                               )}
-                            />
-                            <span className="text-xs font-medium">Operadora específica</span>
-                          </div>
-                          {itemOperadora && (
-                            <Controller
-                              name={`itensMisto.${index}.operadoraId`}
-                              control={form.control}
-                              render={({ field: f }) => (
-                                <Select
-                                  value={f.value ? String(f.value) : ''}
-                                  onValueChange={(v) => f.onChange(v ? +v : undefined)}
-                                >
-                                  <SelectTrigger className="h-8 text-xs">
-                                    <SelectValue placeholder="Operadora" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {operadoras.map((o) => (
-                                      <SelectItem key={o.id} value={String(o.id)}>{o.nome}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              )}
-                            />
+                            </>
                           )}
                         </div>
                       </div>
@@ -876,7 +921,10 @@ export function ModalNovoPedido({
 
                   <button
                     type="button"
-                    onClick={() => appendItem({ proprietario: 'INFINITY', quantidade: 1 })}
+                    onClick={() => {
+                      const infinityTomado = (itensMistoValues ?? []).some(i => i.proprietario === 'INFINITY')
+                      appendItem({ proprietario: infinityTomado ? 'CLIENTE' : 'INFINITY', quantidade: 1 })
+                    }}
                     className="w-full py-2 text-xs font-bold text-erp-blue border border-dashed border-erp-blue rounded hover:bg-blue-50 flex items-center justify-center gap-1"
                   >
                     <Plus className="h-3.5 w-3.5" />

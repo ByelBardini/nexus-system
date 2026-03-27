@@ -126,7 +126,7 @@ export function SidePanel({
 
   const estaConcluido = pedido.status === 'entregue'
   const statusIdx = STATUS_ORDER.indexOf(pedido.status)
-  const podeRetroceder = statusIdx > 0 && podeEditar && !estaConcluido
+  const podeRetroceder = statusIdx > 0 && podeEditar && !estaConcluido && pedido.status !== 'despachado'
   const statusAnterior = podeRetroceder ? STATUS_ORDER[statusIdx - 1] : null
 
   const proximoStatus: StatusPedidoKey | null = (() => {
@@ -250,9 +250,14 @@ export function SidePanel({
             <div>
               <p className="text-slate-500 mb-1">Destinatário</p>
               <p className="font-semibold">{pedido.destinatario}</p>
-              <p className="text-slate-400">
-                {pedido.tipo === 'tecnico' ? 'Técnico' : pedido.tipo === 'misto' ? 'Misto' : 'Cliente'}
-              </p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-slate-400">{pedido.tipo === 'cliente' ? 'Cliente' : 'Técnico'}</p>
+                {pedido.tipo === 'misto' && (
+                  <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border bg-purple-50 text-purple-700 border-purple-200">
+                    Misto
+                  </span>
+                )}
+              </div>
               {pedido.cidadeEstado && (
                 <p className="text-slate-500 text-[11px] mt-0.5">{pedido.cidadeEstado}</p>
               )}
@@ -660,6 +665,7 @@ export function SidePanel({
             if (!o) setKitParaEditar(null)
           }}
           pedido={pedido}
+          pedidoApi={pedidoApi}
           onVincular={handleVincularKit}
           kitParaEditar={kitParaEditar}
           kitsPorPedido={kitsPorPedido}

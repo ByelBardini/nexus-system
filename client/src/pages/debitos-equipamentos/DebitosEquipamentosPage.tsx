@@ -1,5 +1,7 @@
 import { useState, useMemo, Fragment } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { api } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -39,52 +41,63 @@ interface DebitoEquipamento {
   historico: HistoricoItem[]
 }
 
-const MOCK_DEBITOS: DebitoEquipamento[] = [
-  {
-    id: 1,
-    devedor: { nome: 'LogiTech Solutions', tipo: 'cliente' },
-    credor: { nome: 'Infinity', tipo: 'infinity' },
-    status: 'aberto',
-    ultimaMovimentacao: '2023-10-12T09:15:00',
-    modelos: [
-      { nome: 'ST310U', quantidade: 5 },
-      { nome: 'ST310', quantidade: 2 },
-    ],
-    historico: [
-      { descricao: '+10 enviados (Pedido #42)', data: '2023-10-08T14:22:00', tipo: 'entrada', quantidade: 10 },
-      { descricao: '-3 retirados por LogiTech', data: '2023-10-12T09:15:00', tipo: 'saida', quantidade: 3 },
-    ],
-  },
-  {
-    id: 2,
-    devedor: { nome: 'Infinity', tipo: 'infinity' },
-    credor: { nome: 'AASC', tipo: 'cliente' },
-    status: 'parcial',
-    ultimaMovimentacao: '2023-10-05T11:30:00',
-    modelos: [
-      { nome: 'GV55', quantidade: 8 },
-      { nome: 'GV300W', quantidade: 4 },
-    ],
-    historico: [
-      { descricao: '+20 enviados (Remessa #109)', data: '2023-09-20T10:00:00', tipo: 'entrada', quantidade: 20 },
-      { descricao: '-8 devolvidos por AASC', data: '2023-10-05T11:30:00', tipo: 'saida', quantidade: 8 },
-    ],
-  },
-  {
-    id: 3,
-    devedor: { nome: 'Swift Transport', tipo: 'cliente' },
-    credor: { nome: 'LogiTech Solutions', tipo: 'cliente' },
-    status: 'quitado',
-    ultimaMovimentacao: '2023-10-01T08:00:00',
-    modelos: [
-      { nome: 'ST310U', quantidade: 0 },
-    ],
-    historico: [
-      { descricao: '+6 recebidos de LogiTech', data: '2023-09-01T09:00:00', tipo: 'entrada', quantidade: 6 },
-      { descricao: '-6 devolvidos (Finalizado)', data: '2023-10-01T08:00:00', tipo: 'saida', quantidade: 6 },
-    ],
-  },
-]
+interface DebitoRastreadorApi {
+  id: number
+  devedorTipo: 'INFINITY' | 'CLIENTE'
+  devedorCliente?: { id: number; nome: string } | null
+  credorTipo: 'INFINITY' | 'CLIENTE'
+  credorCliente?: { id: number; nome: string } | null
+  marca: { id: number; nome: string }
+  modelo: { id: number; nome: string }
+  quantidade: number
+  criadoEm: string
+  atualizadoEm: string
+  historicos?: Array<{
+    id: number
+    delta: number
+    criadoEm: string
+    pedido?: { id: number; codigo: string } | null
+    lote?: { id: number; referencia: string } | null
+    aparelho?: { id: number; identificador: string | null } | null
+  }>
+}
+
+interface DebitosApiResponse {
+  data: DebitoRastreadorApi[]
+  total: number
+  page: number
+  totalPages: number
+}
+
+function mapDebitoApiToView(d: DebitoRastreadorApi): DebitoEquipamento {
+  const status: StatusDebito = d.quantidade <= 0 ? 'quitado' : 'aberto'
+  return {
+    id: d.id,
+    devedor: {
+      nome: d.devedorTipo === 'INFINITY' ? 'Infinity' : (d.devedorCliente?.nome ?? 'Cliente'),
+      tipo: d.devedorTipo === 'INFINITY' ? 'infinity' : 'cliente',
+    },
+    credor: {
+      nome: d.credorTipo === 'INFINITY' ? 'Infinity' : (d.credorCliente?.nome ?? 'Cliente'),
+      tipo: d.credorTipo === 'INFINITY' ? 'infinity' : 'cliente',
+    },
+    status,
+    ultimaMovimentacao: d.atualizadoEm,
+    modelos: [{ nome: `${d.marca.nome} ${d.modelo.nome}`, quantidade: d.quantidade }],
+    historico: (d.historicos ?? []).map((h) => {
+      let descricao = 'Registro manual'
+      if (h.pedido) descricao = `Pedido ${h.pedido.codigo}`
+      else if (h.lote) descricao = `Lote ${h.lote.referencia}`
+      else if (h.aparelho) descricao = `Individual — ${h.aparelho.identificador ?? `ID ${h.aparelho.id}`}`
+      return {
+        descricao,
+        data: h.criadoEm,
+        tipo: h.delta > 0 ? 'entrada' as const : 'saida' as const,
+        quantidade: Math.abs(h.delta),
+      }
+    }),
+  }
+}
 
 const STATUS_CONFIG: Record<StatusDebito, { label: string; className: string }> = {
   aberto:  { label: 'Aberto',  className: 'bg-amber-50 text-amber-800 border-amber-200' },
@@ -122,18 +135,28 @@ export function DebitosEquipamentosPage() {
   const [filtroDevedor, setFiltroDevedor] = useState('')
   const [filtroModelo, setFiltroModelo] = useState('')
 
+  const { data: apiResponse } = useQuery<DebitosApiResponse>({
+    queryKey: ['debitos-rastreadores'],
+    queryFn: () => api('/debitos-rastreadores?limit=500'),
+  })
+
+  const debitos = useMemo(
+    () => (apiResponse?.data ?? []).map(mapDebitoApiToView),
+    [apiResponse]
+  )
+
   const opcoesDevedor = useMemo(() => {
-    const nomes = new Set(MOCK_DEBITOS.flatMap((d) => [d.devedor.nome, d.credor.nome]))
+    const nomes = new Set(debitos.flatMap((d) => [d.devedor.nome, d.credor.nome]))
     return [{ value: '', label: 'Todos' }, ...[...nomes].map((n) => ({ value: n, label: n }))]
-  }, [])
+  }, [debitos])
 
   const opcoesModelo = useMemo(() => {
-    const nomes = new Set(MOCK_DEBITOS.flatMap((d) => d.modelos.map((m) => m.nome)))
+    const nomes = new Set(debitos.flatMap((d) => d.modelos.map((m) => m.nome)))
     return [{ value: '', label: 'Todos' }, ...[...nomes].map((n) => ({ value: n, label: n }))]
-  }, [])
+  }, [debitos])
 
   const stats = useMemo(() => {
-    const ativos = MOCK_DEBITOS.filter((d) => d.status !== 'quitado')
+    const ativos = debitos.filter((d) => d.status !== 'quitado')
 
     // Total de aparelhos devidos (soma das quantidades dos modelos nos débitos ativos)
     const totalAparelhosDevidos = ativos.reduce(
@@ -175,10 +198,10 @@ export function DebitosEquipamentosPage() {
       modelosAtivos: modelosMap.size,
       modeloPredominante,
     }
-  }, [])
+  }, [debitos])
 
   const filtered = useMemo(() => {
-    return MOCK_DEBITOS.filter((d) => {
+    return debitos.filter((d) => {
       const termo = busca.trim().toLowerCase()
       const matchBusca =
         !termo ||
@@ -190,7 +213,7 @@ export function DebitosEquipamentosPage() {
       const matchModelo = !filtroModelo || d.modelos.some((m) => m.nome === filtroModelo)
       return matchBusca && matchStatus && matchDevedor && matchModelo
     })
-  }, [busca, filtroStatus, filtroDevedor, filtroModelo])
+  }, [debitos, busca, filtroStatus, filtroDevedor, filtroModelo])
 
   return (
     <div className="space-y-4">
@@ -542,6 +565,9 @@ export function DebitosEquipamentosPage() {
                               Histórico de Movimentações
                             </h4>
                             <div className="space-y-2">
+                              {debito.historico.length === 0 && (
+                                <p className="text-[11px] text-slate-400 italic">Nenhuma movimentação registrada.</p>
+                              )}
                               {debito.historico.map((item, idx) => (
                                 <div key={idx} className="flex items-start gap-3">
                                   <div
@@ -551,7 +577,15 @@ export function DebitosEquipamentosPage() {
                                     )}
                                   />
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-xs text-slate-700">{item.descricao}</p>
+                                    <div className="flex items-center justify-between gap-2">
+                                      <p className="text-xs text-slate-700">{item.descricao}</p>
+                                      <span className={cn(
+                                        'text-[10px] font-bold shrink-0',
+                                        item.tipo === 'entrada' ? 'text-emerald-600' : 'text-red-500'
+                                      )}>
+                                        {item.tipo === 'entrada' ? '+' : '-'}{item.quantidade} un.
+                                      </span>
+                                    </div>
                                     <p className="text-[10px] font-mono text-slate-400 mt-0.5">
                                       {formatarDataHora(item.data)}
                                     </p>
