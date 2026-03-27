@@ -65,9 +65,7 @@ export function AppLayout() {
     <div className="flex h-screen overflow-hidden">
       <aside className="w-60 min-w-[240px] bg-slate-950 text-slate-300 flex flex-col border-r border-slate-800 shrink-0 overflow-hidden">
         <div className="p-4 flex items-center gap-3 border-b border-slate-800">
-          <div className="size-7 bg-white flex items-center justify-center text-slate-950">
-            <MaterialIcon name="precision_manufacturing" className="text-xl" />
-          </div>
+          <img src="/logo.png" alt="Nexus" className="size-7 rounded" />
           <div>
             <h1 className="text-white text-base font-bold leading-none font-condensed">NEXUS</h1>
             <p className="text-[9px] uppercase tracking-widest text-slate-500 font-bold">Agend. e Conf.</p>
