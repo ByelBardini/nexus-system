@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PedidosRastreadoresService } from 'src/pedidos-rastreadores/pedidos-rastreadores.service';
+import { DebitosRastreadoresService } from 'src/debitos-rastreadores/debitos-rastreadores.service';
 import { CreatePedidoRastreadorDto } from 'src/pedidos-rastreadores/dto/create-pedido-rastreador.dto';
 import { UpdateStatusPedidoDto } from 'src/pedidos-rastreadores/dto/update-status-pedido.dto';
 import {
@@ -23,6 +24,7 @@ describe('PedidosRastreadoresService', () => {
       providers: [
         PedidosRastreadoresService,
         { provide: PrismaService, useValue: prisma },
+        { provide: DebitosRastreadoresService, useValue: { consolidarDebitoTx: jest.fn() } },
       ],
     }).compile();
 
@@ -271,7 +273,7 @@ describe('PedidosRastreadoresService', () => {
           data: expect.objectContaining({
             tipoDestino: 'MISTO',
             quantidade: 8,
-            tecnicoId: null,
+            tecnicoId: undefined,
             clienteId: null,
             subclienteId: null,
             itens: {
@@ -417,7 +419,7 @@ describe('PedidosRastreadoresService', () => {
     it('preenche entregueEm quando status é ENTREGUE', async () => {
       const pedidoExistente = {
         id: 1,
-        status: StatusPedidoRastreador.DESPACHADO,
+        status: StatusPedidoRastreador.EM_CONFIGURACAO,
         tecnico: {},
         subcliente: null,
         historico: [],
@@ -440,7 +442,7 @@ describe('PedidosRastreadoresService', () => {
       });
     });
 
-    it('ao retroceder de DESPACHADO para CONFIGURADO, atualiza aparelhos dos kits', async () => {
+    it('ao retroceder de DESPACHADO para CONFIGURADO, lança BadRequestException', async () => {
       const pedidoDespachado = {
         id: 1,
         codigo: 'PED-0001',
@@ -451,32 +453,13 @@ describe('PedidosRastreadoresService', () => {
         subcliente: null,
         historico: [],
       };
-      const aparelhosNoKit = [
-        { id: 101, kitId: 10, status: StatusAparelho.DESPACHADO, tipo: 'RASTREADOR' },
-        { id: 102, kitId: 10, status: StatusAparelho.DESPACHADO, tipo: 'RASTREADOR' },
-      ];
-      prisma.pedidoRastreador.findUnique
-        .mockResolvedValueOnce(pedidoDespachado)
-        .mockResolvedValueOnce({ ...pedidoDespachado, status: StatusPedidoRastreador.CONFIGURADO });
-      prisma.pedidoRastreador.update.mockResolvedValue({});
-      prisma.aparelho.findMany.mockResolvedValue(aparelhosNoKit);
-      prisma.aparelhoHistorico.create.mockResolvedValue({});
-      prisma.aparelho.update.mockResolvedValue({});
+      prisma.pedidoRastreador.findUnique.mockResolvedValueOnce(pedidoDespachado);
 
       const dto: UpdateStatusPedidoDto = { status: StatusPedidoRastreador.CONFIGURADO };
 
-      await service.updateStatus(1, dto);
-
-      expect(prisma.aparelho.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { kitId: { in: [10, 11] }, tipo: 'RASTREADOR' },
-        }),
+      await expect(service.updateStatus(1, dto)).rejects.toThrow(
+        'Não é possível retroceder um pedido que já foi despachado.',
       );
-      expect(prisma.aparelho.update).toHaveBeenCalledTimes(2);
-      expect(prisma.aparelho.update).toHaveBeenCalledWith({
-        where: { id: 101 },
-        data: { status: StatusAparelho.CONFIGURADO, tecnicoId: null, clienteId: null },
-      });
     });
 
     it('ao retroceder de ENTREGUE para CONFIGURADO, atualiza aparelhos dos kits', async () => {
@@ -515,7 +498,7 @@ describe('PedidosRastreadoresService', () => {
       const pedidoDespachado = {
         id: 1,
         codigo: 'PED-0001',
-        status: StatusPedidoRastreador.DESPACHADO,
+        status: StatusPedidoRastreador.EM_CONFIGURACAO,
         tipoDestino: 'MISTO' as TipoDestinoPedido,
         kitIds: [10],
         tecnicoId: null,
@@ -534,6 +517,9 @@ describe('PedidosRastreadoresService', () => {
       prisma.aparelho.findMany.mockResolvedValue(aparelhosNoKit);
       prisma.aparelhoHistorico.create.mockResolvedValue({});
       prisma.aparelho.update.mockResolvedValue({});
+      (prisma as any).pedidoRastreadorAparelho.findMany.mockResolvedValue([
+        { aparelhoId: 201, destinatarioProprietario: 'INFINITY', destinatarioClienteId: null },
+      ]);
 
       await service.updateStatus(1, { status: StatusPedidoRastreador.ENTREGUE });
 
@@ -547,7 +533,7 @@ describe('PedidosRastreadoresService', () => {
       });
     });
 
-    it('MISTO ao retroceder de DESPACHADO para CONFIGURADO limpa aparelhos sem vincular destino', async () => {
+    it('MISTO ao retroceder de DESPACHADO para CONFIGURADO lança BadRequestException', async () => {
       const pedidoDespachado = {
         id: 1,
         codigo: 'PED-0001',
@@ -559,23 +545,11 @@ describe('PedidosRastreadoresService', () => {
         subcliente: null,
         historico: [],
       };
-      const aparelhosNoKit = [
-        { id: 101, kitId: 10, status: StatusAparelho.DESPACHADO, tipo: 'RASTREADOR', simVinculadoId: null },
-      ];
-      prisma.pedidoRastreador.findUnique
-        .mockResolvedValueOnce(pedidoDespachado)
-        .mockResolvedValueOnce({ ...pedidoDespachado, status: StatusPedidoRastreador.CONFIGURADO });
-      prisma.pedidoRastreador.update.mockResolvedValue({});
-      prisma.aparelho.findMany.mockResolvedValue(aparelhosNoKit);
-      prisma.aparelhoHistorico.create.mockResolvedValue({});
-      prisma.aparelho.update.mockResolvedValue({});
+      prisma.pedidoRastreador.findUnique.mockResolvedValueOnce(pedidoDespachado);
 
-      await service.updateStatus(1, { status: StatusPedidoRastreador.CONFIGURADO });
-
-      expect(prisma.aparelho.update).toHaveBeenCalledWith({
-        where: { id: 101 },
-        data: { status: StatusAparelho.CONFIGURADO, tecnicoId: null, clienteId: null },
-      });
+      await expect(
+        service.updateStatus(1, { status: StatusPedidoRastreador.CONFIGURADO }),
+      ).rejects.toThrow('Não é possível retroceder um pedido que já foi despachado.');
     });
   });
 

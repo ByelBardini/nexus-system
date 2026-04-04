@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { LotesService } from 'src/aparelhos/lotes.service';
+import { DebitosRastreadoresService } from 'src/debitos-rastreadores/debitos-rastreadores.service';
 import { createPrismaMock } from '../helpers/prisma-mock';
 
 describe('LotesService', () => {
@@ -15,6 +16,7 @@ describe('LotesService', () => {
       providers: [
         LotesService,
         { provide: PrismaService, useValue: prisma },
+        { provide: DebitosRastreadoresService, useValue: { consolidarDebitoTx: jest.fn() } },
       ],
     }).compile();
 

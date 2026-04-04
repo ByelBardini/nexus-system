@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AparelhosService } from 'src/aparelhos/aparelhos.service';
+import { DebitosRastreadoresService } from 'src/debitos-rastreadores/debitos-rastreadores.service';
 import { createPrismaMock } from '../helpers/prisma-mock';
 
 describe('AparelhosService', () => {
@@ -15,6 +16,7 @@ describe('AparelhosService', () => {
       providers: [
         AparelhosService,
         { provide: PrismaService, useValue: prisma },
+        { provide: DebitosRastreadoresService, useValue: { consolidarDebitoTx: jest.fn() } },
       ],
     }).compile();
 

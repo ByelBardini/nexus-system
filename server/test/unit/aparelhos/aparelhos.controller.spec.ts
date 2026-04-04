@@ -163,9 +163,20 @@ describe('AparelhosController', () => {
       const dto = { pares: [{ imei: '123', iccid: '456' }] };
       (pareamentoService.pareamento as jest.Mock).mockResolvedValue({ criados: 1 });
 
-      await controller.pareamento(dto);
+      await controller.pareamento(dto as any);
 
-      expect(pareamentoService.pareamento).toHaveBeenCalledWith(dto);
+      expect(pareamentoService.pareamento).toHaveBeenCalledWith({
+        pares: dto.pares,
+        loteRastreadorId: undefined,
+        loteSimId: undefined,
+        rastreadorManual: undefined,
+        simManual: undefined,
+        kitId: undefined,
+        kitNome: undefined,
+        proprietario: 'INFINITY',
+        clienteId: undefined,
+        tecnicoId: undefined,
+      });
     });
   });
 
