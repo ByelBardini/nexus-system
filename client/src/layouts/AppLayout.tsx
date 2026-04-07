@@ -9,7 +9,7 @@ const navSections = [
     items: [
       { to: '/', label: 'Ordens de Serviço', icon: 'list_alt' },
       { to: '/testes', label: 'Bancada de Testes', icon: 'biotech' },
-      { to: '/pedidos-rastreadores', label: 'Pedidos de Rastreadores', icon: 'package_2' },
+      { to: '/pedidos-rastreadores', label: 'Pedidos', icon: 'package_2' },
     ],
   },
   {
@@ -18,7 +18,8 @@ const navSections = [
       { to: '/pedidos-config', label: 'Config. Pedidos', icon: 'settings_suggest' },
       { to: '/equipamentos', label: 'Equipamentos', icon: 'settings_input_component' },
       { to: '/aparelhos', label: 'Rastreadores/Simcards', icon: 'router' },
-      { to: '/debitos-equipamentos', label: 'Débitos de Equipamentos', icon: 'account_balance' },
+      { to: '/debitos-equipamentos', label: 'Débitos', icon: 'account_balance' },
+      { to: '/cadastro-rastreamento', label: 'Cadastro', icon: 'add_location_alt' },
     ],
   },
 ]

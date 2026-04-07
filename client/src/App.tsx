@@ -44,6 +44,11 @@ const TestesPage = lazy(() =>
 const DebitosEquipamentosPage = lazy(() =>
   import('@/pages/debitos-equipamentos/DebitosEquipamentosPage').then((m) => ({ default: m.DebitosEquipamentosPage }))
 )
+const CadastroRastreamentoPage = lazy(() =>
+  import('@/pages/cadastro-rastreamento/CadastroRastreamentoPage').then((m) => ({
+    default: m.CadastroRastreamentoPage,
+  }))
+)
 
 function PageLoader() {
   return (
@@ -118,6 +123,14 @@ function App() {
           element={
             <Suspense fallback={<PageLoader />}>
               <DebitosEquipamentosPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="cadastro-rastreamento"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <CadastroRastreamentoPage />
             </Suspense>
           }
         />
