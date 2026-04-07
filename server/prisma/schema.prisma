@@ -17,7 +17,8 @@ model Usuario {
   senhaExpiradaEm DateTime?      @map("senha_expirada_em")
   createdAt     DateTime       @default(now()) @map("created_at")
   updatedAt     DateTime       @updatedAt @map("updated_at")
-  ordensServico      OrdemServico[]
+  ordensServicoCriadoPor     OrdemServico[]  @relation("OSCriadoPor")
+  ordensServicoConcluidoPor  OrdemServico[]  @relation("OSConcluidoPor")
   usuarioCargos      UsuarioCargo[]
   pedidosRastreadores PedidoRastreador[]
 
@@ -173,6 +174,7 @@ model Subcliente {
   cobrancaTipo  String?        @map("cobranca_tipo") @db.VarChar(20)
   ordensServico      OrdemServico[]
   pedidosRastreadores PedidoRastreador[]
+  aparelhos          Aparelho[]
   cliente            Cliente        @relation(fields: [clienteId], references: [id], onDelete: Cascade)
 
   @@index([clienteId], map: "subclientes_cliente_id_fkey")
@@ -223,6 +225,7 @@ model Veiculo {
   ano           Int?
   cor           String?        @db.VarChar(50)
   ordensServico OrdemServico[]
+  aparelhos     Aparelho[]
 
   @@map("veiculos")
 }
@@ -255,10 +258,17 @@ model OrdemServico {
   subclienteSnapshotEmail      String?  @map("subcliente_snapshot_email") @db.VarChar(255)
   subclienteSnapshotTelefone   String?  @map("subcliente_snapshot_telefone") @db.VarChar(20)
   subclienteSnapshotCobrancaTipo String? @map("subcliente_snapshot_cobranca_tipo") @db.VarChar(20)
+  statusCadastro   StatusCadastro?  @map("status_cadastro")
+  plataforma       Plataforma?
+  iccidAparelho    String?          @map("iccid_aparelho") @db.VarChar(50)
+  iccidEntrada     String?          @map("iccid_entrada") @db.VarChar(50)
+  concluidoEm      DateTime?        @map("concluido_em")
+  concluidoPorId   Int?             @map("concluido_por_id")
   criadoEm     DateTime      @default(now()) @map("criado_em")
   atualizadoEm DateTime      @updatedAt @map("atualizado_em")
   cliente      Cliente       @relation(fields: [clienteId], references: [id], onDelete: Cascade)
-  criadoPor    Usuario?      @relation(fields: [criadoPorId], references: [id])
+  criadoPor    Usuario?      @relation("OSCriadoPor", fields: [criadoPorId], references: [id])
+  concluidoPor Usuario?      @relation("OSConcluidoPor", fields: [concluidoPorId], references: [id])
   subcliente   Subcliente?   @relation(fields: [subclienteId], references: [id])
   tecnico      Tecnico?      @relation(fields: [tecnicoId], references: [id])
   veiculo      Veiculo?      @relation(fields: [veiculoId], references: [id])
@@ -266,6 +276,7 @@ model OrdemServico {
 
   @@index([clienteId], map: "ordens_servico_cliente_id_fkey")
   @@index([criadoPorId], map: "ordens_servico_criado_por_id_fkey")
+  @@index([concluidoPorId], map: "ordens_servico_concluido_por_id_fkey")
   @@index([subclienteId], map: "ordens_servico_subcliente_id_fkey")
   @@index([tecnicoId], map: "ordens_servico_tecnico_id_fkey")
   @@index([veiculoId], map: "ordens_servico_veiculo_id_fkey")
@@ -300,6 +311,18 @@ enum StatusOS {
   AGUARDANDO_CADASTRO
   FINALIZADO
   CANCELADO
+}
+
+enum StatusCadastro {
+  AGUARDANDO
+  EM_CADASTRO
+  CONCLUIDO
+}
+
+enum Plataforma {
+  GETRAK
+  GEOMAPS
+  SELSYN
 }
 
 // ============= APARELHOS / EQUIPAMENTOS =============
@@ -408,15 +431,20 @@ model Aparelho {
   tecnicoId       Int?              @map("tecnico_id")
   kitId           Int?              @map("kit_id")
   simVinculadoId  Int?              @map("sim_vinculado_id")
+  observacao      String?           @db.VarChar(500)
+  subclienteId    Int?              @map("subcliente_id")
+  veiculoId       Int?              @map("veiculo_id")
   criadoEm        DateTime          @default(now()) @map("criado_em")
   atualizadoEm    DateTime          @updatedAt @map("atualizado_em")
-  
+
   cliente         Cliente?          @relation(fields: [clienteId], references: [id])
   kit             Kit?              @relation(fields: [kitId], references: [id])
   lote            LoteAparelho?     @relation(fields: [loteId], references: [id])
   marcaSimcard    MarcaSimcard?     @relation(fields: [marcaSimcardId], references: [id])
   planoSimcard    PlanoSimcard?     @relation(fields: [planoSimcardId], references: [id])
   tecnico         Tecnico?          @relation(fields: [tecnicoId], references: [id])
+  subcliente      Subcliente?       @relation(fields: [subclienteId], references: [id])
+  veiculo         Veiculo?          @relation(fields: [veiculoId], references: [id])
   simVinculado    Aparelho?         @relation("SimVinculo", fields: [simVinculadoId], references: [id])
   aparelhosVinculados Aparelho[]    @relation("SimVinculo")
   historico       AparelhoHistorico[]
@@ -430,6 +458,8 @@ model Aparelho {
   @@index([simVinculadoId])
   @@index([marcaSimcardId])
   @@index([planoSimcardId])
+  @@index([subclienteId])
+  @@index([veiculoId])
   @@map("aparelhos")
 }
 
