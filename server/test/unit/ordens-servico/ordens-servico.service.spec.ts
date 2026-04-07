@@ -4,7 +4,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { OrdensServicoService } from 'src/ordens-servico/ordens-servico.service';
 import { HtmlOrdemServicoGenerator } from 'src/ordens-servico/html-ordem-servico.generator';
 import { PdfOrdemServicoGenerator } from 'src/ordens-servico/pdf-ordem-servico.generator';
-import { StatusOS } from '@prisma/client';
+import { StatusOS, StatusCadastro } from '@prisma/client';
 import { createPrismaMock } from '../helpers/prisma-mock';
 
 describe('OrdensServicoService', () => {
@@ -530,6 +530,49 @@ describe('OrdensServicoService', () => {
       const result = await service.updateStatus(1, { status: StatusOS.CANCELADO });
 
       expect(result).toMatchObject({ status: StatusOS.CANCELADO });
+    });
+
+    it('define statusCadastro=AGUARDANDO quando OS transita para AGUARDANDO_CADASTRO', async () => {
+      const os = {
+        id: 1,
+        numero: 1,
+        status: StatusOS.TESTES_REALIZADOS,
+        historico: [],
+      };
+      prisma.ordemServico.findUnique
+        .mockResolvedValueOnce(os)
+        .mockResolvedValueOnce({
+          ...os,
+          status: StatusOS.AGUARDANDO_CADASTRO,
+          statusCadastro: StatusCadastro.AGUARDANDO,
+        });
+      prisma.oSHistorico.create.mockResolvedValue({});
+      prisma.ordemServico.update.mockResolvedValue({});
+
+      await service.updateStatus(1, { status: StatusOS.AGUARDANDO_CADASTRO });
+
+      expect(prisma.ordemServico.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            status: StatusOS.AGUARDANDO_CADASTRO,
+            statusCadastro: StatusCadastro.AGUARDANDO,
+          }),
+        }),
+      );
+    });
+
+    it('não define statusCadastro quando OS transita para outros status', async () => {
+      const os = { id: 1, numero: 1, status: StatusOS.AGENDADO, historico: [] };
+      prisma.ordemServico.findUnique
+        .mockResolvedValueOnce(os)
+        .mockResolvedValueOnce({ ...os, status: StatusOS.EM_TESTES });
+      prisma.oSHistorico.create.mockResolvedValue({});
+      prisma.ordemServico.update.mockResolvedValue({});
+
+      await service.updateStatus(1, { status: StatusOS.EM_TESTES });
+
+      const updateCall = prisma.ordemServico.update.mock.calls[0]?.[0];
+      expect(updateCall?.data).not.toHaveProperty('statusCadastro');
     });
   });
 
