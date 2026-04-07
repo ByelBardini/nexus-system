@@ -3,7 +3,7 @@ import { paginateParams } from '../common/pagination.helper';
 import { CLIENTE_INFINITY_ID } from '../common/constants';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
-import { StatusOS, StatusAparelho } from '@prisma/client';
+import { StatusCadastro, StatusOS, StatusAparelho } from '@prisma/client';
 import { CreateOrdemServicoDto } from './dto/create-ordem-servico.dto';
 import { UpdateOrdemServicoDto } from './dto/update-ordem-servico.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
@@ -190,6 +190,7 @@ export class OrdensServicoService {
         veiculo: true,
         tecnico: true,
         criadoPor: true,
+        concluidoPor: true,
         historico: { orderBy: { criadoEm: 'desc' }, take: 20 },
       },
     });
@@ -406,10 +407,15 @@ export class OrdensServicoService {
 
     const updateData: {
       status: StatusOS
+      statusCadastro?: StatusCadastro
       localInstalacao?: string | null
       posChave?: string | null
       observacoes?: string | null
     } = { status: dto.status };
+
+    if (dto.status === StatusOS.AGUARDANDO_CADASTRO) {
+      updateData.statusCadastro = StatusCadastro.AGUARDANDO;
+    }
     if (dto.localInstalacao !== undefined) {
       updateData.localInstalacao = dto.localInstalacao?.trim() || null;
     }
