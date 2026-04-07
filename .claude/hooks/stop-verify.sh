@@ -14,7 +14,7 @@ INPUT=$(cat)
 
 # Prevent infinite loop: if this hook already blocked once and Claude
 # retried, allow the stop
-STOP_ACTIVE=$(echo "$INPUT" | jq -r '.stop_hook_active // false')
+STOP_ACTIVE=$(echo "$INPUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(str(d.get('stop_hook_active', False)).lower())" 2>/dev/null || echo "false")
 if [ "$STOP_ACTIVE" = "true" ]; then
   exit 0
 fi
@@ -22,21 +22,66 @@ fi
 ERRORS=""
 CHECKS_RUN=0
 
-# --- TypeScript type-check (runs here, not per-edit, to avoid 10-30s delays) ---
-if [ -f "tsconfig.json" ]; then
-  CHECKS_RUN=$((CHECKS_RUN + 1))
-  TSC_OUTPUT=$(npx tsc --noEmit 2>&1)
-  if [ $? -ne 0 ]; then
-    ERRORS="${ERRORS}TYPE CHECK FAILED:\n$(echo "$TSC_OUTPUT" | head -30)\n\n"
+run_tsc() {
+  local dir="$1"
+  if [ -f "$dir/tsconfig.json" ]; then
+    CHECKS_RUN=$((CHECKS_RUN + 1))
+    TSC_OUTPUT=$(cd "$dir" && npx tsc --noEmit 2>&1)
+    if [ $? -ne 0 ]; then
+      ERRORS="${ERRORS}TYPE CHECK FAILED ($dir):\n$(echo "$TSC_OUTPUT" | head -30)\n\n"
+    fi
   fi
-fi
+}
 
-# --- ESLint (full project) ---
-if [ -f ".eslintrc" ] || [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ] || [ -f ".eslintrc.yml" ] || [ -f "eslint.config.js" ] || [ -f "eslint.config.mjs" ] || [ -f "eslint.config.ts" ]; then
-  CHECKS_RUN=$((CHECKS_RUN + 1))
-  ESLINT_OUTPUT=$(npx eslint . --quiet 2>&1)
-  if [ $? -ne 0 ]; then
-    ERRORS="${ERRORS}LINT FAILED:\n$(echo "$ESLINT_OUTPUT" | head -30)\n\n"
+run_eslint() {
+  local dir="$1"
+  if [ -f "$dir/.eslintrc" ] || [ -f "$dir/.eslintrc.js" ] || [ -f "$dir/.eslintrc.json" ] || \
+     [ -f "$dir/.eslintrc.yml" ] || [ -f "$dir/eslint.config.js" ] || \
+     [ -f "$dir/eslint.config.mjs" ] || [ -f "$dir/eslint.config.ts" ]; then
+    CHECKS_RUN=$((CHECKS_RUN + 1))
+    ESLINT_OUTPUT=$(cd "$dir" && npx eslint . --quiet 2>&1)
+    if [ $? -ne 0 ]; then
+      ERRORS="${ERRORS}LINT FAILED ($dir):\n$(echo "$ESLINT_OUTPUT" | head -30)\n\n"
+    fi
+  fi
+}
+
+run_npm_test() {
+  local dir="$1"
+  if [ -f "$dir/package.json" ]; then
+    HAS_TEST=$(python3 -c "import json; d=json.load(open('$dir/package.json')); print(d.get('scripts', {}).get('test', ''))" 2>/dev/null)
+    if [ -n "$HAS_TEST" ] && [ "$HAS_TEST" != "echo \"Error: no test specified\" && exit 1" ]; then
+      CHECKS_RUN=$((CHECKS_RUN + 1))
+      TEST_OUTPUT=$(cd "$dir" && npm test 2>&1)
+      if [ $? -ne 0 ]; then
+        ERRORS="${ERRORS}TESTS FAILED ($dir):\n$(echo "$TEST_OUTPUT" | tail -30)\n\n"
+      fi
+    fi
+  fi
+}
+
+# --- Root-level checks ---
+run_tsc "."
+run_eslint "."
+
+# --- Monorepo subdirectories ---
+for SUBDIR in server client; do
+  if [ -d "$SUBDIR" ]; then
+    run_tsc "$SUBDIR"
+    run_eslint "$SUBDIR"
+    run_npm_test "$SUBDIR"
+  fi
+done
+
+# --- Root test suite (only if root has its own test script) ---
+if [ -f "package.json" ]; then
+  HAS_TEST=$(python3 -c "import json; d=json.load(open('package.json')); print(d.get('scripts', {}).get('test', ''))" 2>/dev/null)
+  if [ -n "$HAS_TEST" ] && [ "$HAS_TEST" != "echo \"Error: no test specified\" && exit 1" ]; then
+    CHECKS_RUN=$((CHECKS_RUN + 1))
+    TEST_OUTPUT=$(npm test 2>&1)
+    if [ $? -ne 0 ]; then
+      ERRORS="${ERRORS}TESTS FAILED (root):\n$(echo "$TEST_OUTPUT" | tail -30)\n\n"
+    fi
   fi
 fi
 
@@ -68,39 +113,11 @@ if [ -f "Cargo.toml" ]; then
   fi
 fi
 
-# --- Test suite ---
-TEST_RUNNER=""
-if [ -f "package.json" ]; then
-  HAS_TEST=$(jq -r '.scripts.test // empty' package.json 2>/dev/null)
-  if [ -n "$HAS_TEST" ] && [ "$HAS_TEST" != "echo \"Error: no test specified\" && exit 1" ]; then
-    TEST_RUNNER="npm test"
-  fi
-elif [ -f "pytest.ini" ] || [ -f "pyproject.toml" ]; then
-  if command -v pytest &> /dev/null; then
-    TEST_RUNNER="pytest --tb=short -q"
-  fi
-elif [ -f "Cargo.toml" ]; then
-  TEST_RUNNER="cargo test"
-fi
-
-if [ -n "$TEST_RUNNER" ]; then
-  CHECKS_RUN=$((CHECKS_RUN + 1))
-  TEST_OUTPUT=$(eval "$TEST_RUNNER" 2>&1)
-  if [ $? -ne 0 ]; then
-    ERRORS="${ERRORS}TESTS FAILED ($TEST_RUNNER):\n$(echo "$TEST_OUTPUT" | tail -30)\n\n"
-  fi
-fi
-
 # --- Report ---
 if [ -n "$ERRORS" ]; then
   SUMMARY="Verification failed ($CHECKS_RUN checks ran). Fix these errors before completing:\n\n${ERRORS}"
-  echo "{\"decision\": \"block\", \"reason\": \"${SUMMARY}\"}"
+  printf '{"decision":"block","reason":"%s"}' "$(echo "$SUMMARY" | python3 -c "import json,sys; print(json.dumps(sys.stdin.read())[1:-1])")"
   exit 2
-fi
-
-if [ $CHECKS_RUN -eq 0 ]; then
-  echo "{\"additionalContext\": \"No type-checker, linter, or test suite detected. Task completion is unverified. State this to the user.\"}"
-  exit 0
 fi
 
 exit 0

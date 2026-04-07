@@ -35,7 +35,7 @@ describe('CadastroRastreamentoService', () => {
   describe('findPendentes', () => {
     it('retorna resultado paginado com defaults de page=1 e limit=20', async () => {
       const items = [
-        { id: 1, statusCadastro: StatusCadastro.AGUARDANDO, status: StatusOS.AGUARDANDO_CADASTRO },
+        { id: 1, statusCadastro: StatusCadastro.AGUARDANDO, status: StatusOS.AGUARDANDO_CADASTRO, aparelhoEntrada: null, aparelhoSaida: null },
       ];
       prisma.ordemServico.findMany.mockResolvedValue(items);
       prisma.ordemServico.count.mockResolvedValue(1);

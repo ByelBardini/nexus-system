@@ -32,24 +32,23 @@ export class CadastroRastreamentoService {
       where.plataforma = params.plataforma;
     }
 
-    const dataFimFinal = params.dataFim
-      ? new Date(new Date(params.dataFim).setUTCHours(23, 59, 59, 999))
-      : undefined;
-
     const dateRange =
-      params.dataInicio && dataFimFinal
-        ? { gte: params.dataInicio, lte: dataFimFinal }
+      params.dataInicio && params.dataFim
+        ? { gte: params.dataInicio, lte: params.dataFim }
         : undefined;
 
     if (params.statusCadastro) {
       where.statusCadastro = params.statusCadastro;
       if (params.statusCadastro === StatusCadastro.CONCLUIDO && dateRange) {
-        where.concluidoEm = dateRange;
+        where.criadoEm = dateRange;
       }
     } else {
       where.OR = [
-        { statusCadastro: { in: [StatusCadastro.AGUARDANDO, StatusCadastro.EM_CADASTRO] } },
-        { statusCadastro: StatusCadastro.CONCLUIDO, ...(dateRange ? { concluidoEm: dateRange } : {}) },
+        { statusCadastro: StatusCadastro.AGUARDANDO },
+        {
+          statusCadastro: { in: [StatusCadastro.EM_CADASTRO, StatusCadastro.CONCLUIDO] },
+          ...(dateRange ? { criadoEm: dateRange } : {}),
+        },
       ];
     }
 
