@@ -7,7 +7,10 @@
       "Bash(git commit -m \"fix\\(pedidos\\): substituir window.confirm por modal do sistema na exclusão de pedido\" -m \"Substitui o confirm nativo do navegador por um Dialog do Radix UI \\(componente já existente no projeto\\) no DrawerDetalhes, exibindo o código do pedido na mensagem de confirmação com botões ''Cancelar'' e ''Excluir''.:*)",
       "Bash(npx jest:*)",
       "Bash(npx prisma:*)",
-      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")"
+      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
+      "Bash(npm run:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(git commit:*)"
     ]
   }
 }
