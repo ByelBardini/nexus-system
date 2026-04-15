@@ -545,6 +545,12 @@ export function OrdensServicoPage() {
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              {os.status === 'EM_TESTES' && (
+                                <DropdownMenuItem onClick={() => navigate(`/testes?osId=${os.id}`)}>
+                                  <MaterialIcon name="biotech" className="text-sm mr-2" />
+                                  Ir para Testes
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem
                                 onClick={() => handleAbrirImpressao(os.id)}
                                 disabled={downloadingPdf}

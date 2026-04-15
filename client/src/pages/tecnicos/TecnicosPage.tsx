@@ -508,11 +508,6 @@ export function TecnicosPage() {
                                     )}
                                   </p>
                                 </div>
-                                <div className="flex items-end justify-end">
-                                  <Button variant="outline" size="sm" className="h-auto px-3 py-1.5 text-[11px] uppercase" disabled>
-                                    Visualizar Contrato
-                                  </Button>
-                                </div>
                               </div>
                               <div className="mt-6">
                                 <h4 className="mb-3 text-[10px] font-bold uppercase text-slate-500">Tabela de Custos Operacionais</h4>
