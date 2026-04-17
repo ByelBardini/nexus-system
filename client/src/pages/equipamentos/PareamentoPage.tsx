@@ -21,42 +21,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { Checkbox } from '@/components/ui/checkbox'
 import { MaterialIcon } from '@/components/MaterialIcon'
 import { api } from '@/lib/api'
+import {
+  PreviewPareamentoTable,
+  TRACKER_STATUS_LABELS,
+  type PreviewResult,
+} from './PreviewPareamentoTable'
+import { SelectClienteSearch } from '@/components/SelectClienteSearch'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
 type ModoPareamento = 'individual' | 'massa' | 'csv'
-
-type TrackerStatus = 'FOUND_AVAILABLE' | 'FOUND_ALREADY_LINKED' | 'NEEDS_CREATE' | 'INVALID_FORMAT'
-type SimStatus = TrackerStatus
-type ActionNeeded = 'OK' | 'SELECT_TRACKER_LOT' | 'SELECT_SIM_LOT' | 'FIX_ERROR'
-
-interface PreviewLinha {
-  imei: string
-  iccid: string
-  tracker_status: TrackerStatus
-  sim_status: SimStatus
-  action_needed: ActionNeeded
-  trackerId?: number
-  simId?: number
-  marca?: string
-  modelo?: string
-  operadora?: string
-}
-
-interface PreviewResult {
-  linhas: PreviewLinha[]
-  contadores: { validos: number; exigemLote: number; erros: number }
-}
+type ProprietarioTipo = 'INFINITY' | 'CLIENTE'
 
 function parseIds(text: string): string[] {
   if (!text?.trim()) return []
@@ -64,20 +42,6 @@ function parseIds(text: string): string[] {
     .split(/[,;\n\r]+/)
     .map((s) => s.replace(/\s+/g, '').replace(/[\u200B-\u200D\uFEFF]/g, '').trim())
     .filter(Boolean)
-}
-
-const TRACKER_STATUS_LABELS: Record<TrackerStatus, { label: string; className: string }> = {
-  FOUND_AVAILABLE: { label: 'Disponível', className: 'bg-emerald-100 text-emerald-700' },
-  FOUND_ALREADY_LINKED: { label: 'Em Uso', className: 'bg-red-100 text-red-700' },
-  NEEDS_CREATE: { label: 'Não Encontrado', className: 'bg-blue-100 text-blue-700' },
-  INVALID_FORMAT: { label: 'Formato Inválido', className: 'bg-amber-100 text-amber-700' },
-}
-
-const ACTION_LABELS: Record<ActionNeeded, { label: string; className: string }> = {
-  OK: { label: '✔ Pronto para vincular', className: 'font-bold text-emerald-600' },
-  SELECT_TRACKER_LOT: { label: '➕ Será criado (lote rastreador)', className: 'font-bold text-blue-600' },
-  SELECT_SIM_LOT: { label: '➕ Será criado (lote SIM)', className: 'font-bold text-blue-600' },
-  FIX_ERROR: { label: '✖ Erro', className: 'font-bold text-red-600' },
 }
 
 export function PareamentoPage() {
@@ -102,14 +66,13 @@ export function PareamentoPage() {
   const [marcaRastreador, setMarcaRastreador] = useState('')
   const [modeloRastreador, setModeloRastreador] = useState('')
   const [operadoraSim, setOperadoraSim] = useState('')
-  const [adicionarKit, setAdicionarKit] = useState(false)
-  const [kitModo, setKitModo] = useState<'existente' | 'novo'>('existente')
-  const [kitIdExistente, setKitIdExistente] = useState<string>('')
-  const [kitNomeNovo, setKitNomeNovo] = useState<string>('')
+  const [marcaSimcardIdSim, setMarcaSimcardIdSim] = useState('')
+  const [planoSimcardIdSim, setPlanoSimcardIdSim] = useState('')
+  const [proprietarioIndividual, setProprietarioIndividual] = useState<ProprietarioTipo>('INFINITY')
+  const [clienteIdIndividual, setClienteIdIndividual] = useState<number | null>(null)
   const [quantidadeCriada, setQuantidadeCriada] = useState(0)
 
   // Massa
-  const [kitNomeMassa, setKitNomeMassa] = useState<string>('')
   const [textImeis, setTextImeis] = useState('')
   const [textIccids, setTextIccids] = useState('')
   const [preview, setPreview] = useState<PreviewResult | null>(null)
@@ -120,9 +83,12 @@ export function PareamentoPage() {
   const [marcaRastreadorMassa, setMarcaRastreadorMassa] = useState('')
   const [modeloRastreadorMassa, setModeloRastreadorMassa] = useState('')
   const [operadoraSimMassa, setOperadoraSimMassa] = useState('')
-  const [adicionarKitMassa, setAdicionarKitMassa] = useState(false)
-  const [kitModoMassa, setKitModoMassa] = useState<'existente' | 'novo'>('existente')
-  const [kitIdExistenteMassa, setKitIdExistenteMassa] = useState<string>('')
+  const [marcaSimcardIdSimMassa, setMarcaSimcardIdSimMassa] = useState('')
+  const [planoSimcardIdSimMassa, setPlanoSimcardIdSimMassa] = useState('')
+  const [loteBuscaRastreador, setLoteBuscaRastreador] = useState('')
+  const [loteBuscaSim, setLoteBuscaSim] = useState('')
+  const [proprietarioMassa, setProprietarioMassa] = useState<ProprietarioTipo>('INFINITY')
+  const [clienteIdMassa, setClienteIdMassa] = useState<number | null>(null)
 
   const imeis = useMemo(() => parseIds(textImeis), [textImeis])
   const iccids = useMemo(() => parseIds(textIccids), [textIccids])
@@ -133,13 +99,13 @@ export function PareamentoPage() {
     return imeis.map((imei, i) => ({ imei, iccid: iccids[i] ?? '' }))
   }, [imeis, iccids, quantidadeBate])
 
-  const { data: lotesRastreadores = [] } = useQuery<{ id: number; referencia: string; quantidadeDisponivelSemId: number }[]>({
+  const { data: lotesRastreadores = [] } = useQuery<{ id: number; referencia: string; quantidadeDisponivelSemId: number; modelo: string | null; marca: string | null; operadora: string | null; marcaSimcardId: number | null }[]>({
     queryKey: ['lotes-rastreadores'],
     queryFn: () => api('/aparelhos/pareamento/lotes-rastreadores'),
     enabled: modo === 'massa' || modo === 'individual',
   })
 
-  const { data: lotesSims = [] } = useQuery<{ id: number; referencia: string; quantidadeDisponivelSemId: number }[]>({
+  const { data: lotesSims = [] } = useQuery<{ id: number; referencia: string; quantidadeDisponivelSemId: number; modelo: string | null; marca: string | null; operadora: string | null; marcaSimcardId: number | null }[]>({
     queryKey: ['lotes-sims'],
     queryFn: () => api('/aparelhos/pareamento/lotes-sims'),
     enabled: modo === 'massa' || modo === 'individual',
@@ -150,7 +116,7 @@ export function PareamentoPage() {
     queryFn: () => api('/equipamentos/marcas'),
     enabled: modo === 'individual' || modo === 'massa',
   })
-  const { data: modelos = [] } = useQuery<{ id: number; nome: string; marca: { id: number } }[]>({
+  const { data: modelos = [] } = useQuery<{ id: number; nome: string; marca: { id: number }; minCaracteresImei?: number | null }[]>({
     queryKey: ['modelos'],
     queryFn: () => api('/equipamentos/modelos'),
     enabled: modo === 'individual' || modo === 'massa',
@@ -160,11 +126,38 @@ export function PareamentoPage() {
     queryFn: () => api('/equipamentos/operadoras'),
     enabled: modo === 'individual' || modo === 'massa',
   })
-  const { data: kits = [] } = useQuery<{ id: number; nome: string }[]>({
-    queryKey: ['kits'],
-    queryFn: () => api('/aparelhos/pareamento/kits'),
-    enabled: (modo === 'individual' && adicionarKit) || (modo === 'massa' && adicionarKitMassa),
+  const { data: marcasSimcard = [] } = useQuery<
+    { id: number; nome: string; operadoraId: number; temPlanos: boolean; minCaracteresIccid?: number | null; operadora: { id: number; nome: string }; planos?: { id: number; planoMb: number; ativo: boolean }[] }[]
+  >({
+    queryKey: ['marcas-simcard'],
+    queryFn: () => api('/equipamentos/marcas-simcard'),
+    enabled: modo === 'individual' || modo === 'massa',
   })
+
+  const { data: clientes = [] } = useQuery<{ id: number; nome: string; cidade?: string | null; estado?: string | null }[]>({
+    queryKey: ['clientes-lista'],
+    queryFn: () => api('/clientes'),
+    enabled: proprietarioIndividual === 'CLIENTE' || proprietarioMassa === 'CLIENTE',
+  })
+
+  const lotesRastreadoresFiltrados = useMemo(() => {
+    const s = loteBuscaRastreador.trim().toLowerCase()
+    if (!s) return lotesRastreadores
+    return lotesRastreadores.filter((l) => {
+      const info = [l.marca, l.modelo].filter(Boolean).join(' / ')
+      return l.referencia.toLowerCase().includes(s) || info.toLowerCase().includes(s)
+    })
+  }, [lotesRastreadores, loteBuscaRastreador])
+
+  const lotesSimsFiltrados = useMemo(() => {
+    const s = loteBuscaSim.trim().toLowerCase()
+    if (!s) return lotesSims
+    return lotesSims.filter((l) => {
+      const marcaNome = marcasSimcard.find((m) => m.id === l.marcaSimcardId)?.nome ?? null
+      const info = [l.operadora, marcaNome].filter(Boolean).join(' / ')
+      return l.referencia.toLowerCase().includes(s) || info.toLowerCase().includes(s)
+    })
+  }, [lotesSims, loteBuscaSim, marcasSimcard])
 
   const marcasAtivas = useMemo(() => marcas.filter((m) => m.ativo), [marcas])
   const operadorasAtivas = useMemo(() => operadoras.filter((o) => o.ativo), [operadoras])
@@ -182,13 +175,50 @@ export function PareamentoPage() {
     return modelos.filter((m) => m.marca.id === marcaEncontrada.id)
   }, [marcaRastreadorMassa, marcasAtivas, modelos])
 
+  const marcasSimcardPorOperadora = useMemo(() => {
+    const opId = operadorasAtivas.find((o) => o.nome === operadoraSim)?.id
+    if (!opId) return []
+    return marcasSimcard.filter((m) => m.operadoraId === opId)
+  }, [marcasSimcard, operadoraSim, operadorasAtivas])
+
+  const marcasSimcardPorOperadoraMassa = useMemo(() => {
+    const opId = operadorasAtivas.find((o) => o.nome === operadoraSimMassa)?.id
+    if (!opId) return []
+    return marcasSimcard.filter((m) => m.operadoraId === opId)
+  }, [marcasSimcard, operadoraSimMassa, operadorasAtivas])
+
+  const minImeiIndividual = useMemo(() => {
+    if (pertenceLoteRastreador) return 0
+    const modelo = modelosPorMarca.find((m) => m.nome === modeloRastreador)
+    return modelo?.minCaracteresImei ?? 0
+  }, [pertenceLoteRastreador, modeloRastreador, modelosPorMarca])
+
+  const minIccidIndividual = useMemo(() => {
+    if (pertenceLoteSim) return 0
+    const marca = marcasSimcard.find((m) => String(m.id) === marcaSimcardIdSim)
+    return marca?.minCaracteresIccid ?? 0
+  }, [pertenceLoteSim, marcaSimcardIdSim, marcasSimcard])
+
+  const minImeiMassa = useMemo(() => {
+    if (pertenceLoteRastreadorMassa) return 0
+    const modelo = modelosPorMarcaMassa.find((m) => m.nome === modeloRastreadorMassa)
+    return modelo?.minCaracteresImei ?? 0
+  }, [pertenceLoteRastreadorMassa, modeloRastreadorMassa, modelosPorMarcaMassa])
+
+  const minIccidMassa = useMemo(() => {
+    if (pertenceLoteSimMassa) return 0
+    const marca = marcasSimcard.find((m) => String(m.id) === marcaSimcardIdSimMassa)
+    return marca?.minCaracteresIccid ?? 0
+  }, [pertenceLoteSimMassa, marcaSimcardIdSimMassa, marcasSimcard])
+
   const paresIndividual = useMemo(() => {
     const imei = imeiIndividual.replace(/\D/g, '')
     const iccid = iccidIndividual.replace(/\D/g, '')
-    // Alinhado com backend: IMEI 14-16 dígitos, ICCID 18-21 dígitos
-    if (imei.length < 14 || imei.length > 16 || iccid.length < 18 || iccid.length > 21) return []
+    if (imei.length < 1 || iccid.length < 1) return []
+    if (minImeiIndividual > 0 && imei.length < minImeiIndividual) return []
+    if (minIccidIndividual > 0 && iccid.length < minIccidIndividual) return []
     return [{ imei: imeiIndividual.trim(), iccid: iccidIndividual.trim() }]
-  }, [imeiIndividual, iccidIndividual])
+  }, [imeiIndividual, iccidIndividual, minImeiIndividual, minIccidIndividual])
 
   const fetchPreview = useCallback(async () => {
     const pares = modo === 'individual' ? paresIndividual : paresMassa
@@ -220,20 +250,8 @@ export function PareamentoPage() {
               )
               .map((l) => ({ imei: l.imei, iccid: l.iccid })) ?? [])
 
-      const kitPayload =
-        modo === 'individual' && adicionarKit
-          ? kitModo === 'existente' && kitIdExistente
-            ? { kitId: +kitIdExistente }
-            : kitModo === 'novo' && kitNomeNovo.trim()
-              ? { kitNome: kitNomeNovo.trim() }
-              : {}
-          : modo === 'massa' && adicionarKitMassa
-            ? kitModoMassa === 'existente' && kitIdExistenteMassa
-              ? { kitId: +kitIdExistenteMassa }
-              : kitModoMassa === 'novo' && kitNomeMassa.trim()
-                ? { kitNome: kitNomeMassa.trim() }
-                : {}
-            : {}
+      const proprietario = modo === 'individual' ? proprietarioIndividual : proprietarioMassa
+      const clienteId = modo === 'individual' ? clienteIdIndividual : clienteIdMassa
 
       return api<{ criados: number }>('/aparelhos/pareamento', {
         method: 'POST',
@@ -258,18 +276,22 @@ export function PareamentoPage() {
                 ? { marca: marcaRastreadorMassa, modelo: modeloRastreadorMassa }
                 : undefined,
           simManual:
-            modo === 'individual' && !pertenceLoteSim && operadoraSim
-              ? { operadora: operadoraSim }
-              : modo === 'massa' && !pertenceLoteSimMassa && operadoraSimMassa
-                ? { operadora: operadoraSimMassa }
+            modo === 'individual' && !pertenceLoteSim && (marcaSimcardIdSim || operadoraSim)
+              ? marcaSimcardIdSim
+                ? { marcaSimcardId: +marcaSimcardIdSim, planoSimcardId: planoSimcardIdSim ? +planoSimcardIdSim : undefined }
+                : { operadora: operadoraSim }
+              : modo === 'massa' && !pertenceLoteSimMassa && (marcaSimcardIdSimMassa || operadoraSimMassa)
+                ? marcaSimcardIdSimMassa
+                  ? { marcaSimcardId: +marcaSimcardIdSimMassa, planoSimcardId: planoSimcardIdSimMassa ? +planoSimcardIdSimMassa : undefined }
+                  : { operadora: operadoraSimMassa }
                 : undefined,
-          ...kitPayload,
+          proprietario,
+          clienteId: clienteId ?? undefined,
         }),
       })
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['aparelhos'] })
-      queryClient.invalidateQueries({ queryKey: ['kits'] })
       setQuantidadeCriada((prev) => prev + (data?.criados ?? 0))
       toast.success(`${data?.criados ?? 0} equipamento(s) criado(s) com sucesso!`)
       if (modo === 'individual') {
@@ -280,10 +302,12 @@ export function PareamentoPage() {
         setMarcaRastreador('')
         setModeloRastreador('')
         setOperadoraSim('')
+        setMarcaSimcardIdSim('')
+        setPlanoSimcardIdSim('')
         setLoteRastreadorId('')
         setLoteSimId('')
-        setKitIdExistente('')
-        setKitNomeNovo('')
+        setProprietarioIndividual('INFINITY')
+        setClienteIdIndividual(null)
       } else {
         setPreview(null)
         setTextImeis('')
@@ -295,10 +319,10 @@ export function PareamentoPage() {
         setMarcaRastreadorMassa('')
         setModeloRastreadorMassa('')
         setOperadoraSimMassa('')
-        setAdicionarKitMassa(false)
-        setKitModoMassa('existente')
-        setKitIdExistenteMassa('')
-        setKitNomeMassa('')
+        setMarcaSimcardIdSimMassa('')
+        setPlanoSimcardIdSimMassa('')
+        setProprietarioMassa('INFINITY')
+        setClienteIdMassa(null)
       }
     },
     onError: (err) => toast.error(err instanceof Error ? err.message : 'Erro ao criar equipamentos'),
@@ -307,9 +331,11 @@ export function PareamentoPage() {
   const podeConfirmarIndividual = useMemo(() => {
     const imei = imeiIndividual.replace(/\D/g, '')
     const iccid = iccidIndividual.replace(/\D/g, '')
-    // Alinhado com backend: IMEI 14-16, ICCID 18-21
-    return imei.length >= 14 && imei.length <= 16 && iccid.length >= 18 && iccid.length <= 21
-  }, [imeiIndividual, iccidIndividual])
+    if (imei.length < 1 || iccid.length < 1) return false
+    if (minImeiIndividual > 0 && imei.length < minImeiIndividual) return false
+    if (minIccidIndividual > 0 && iccid.length < minIccidIndividual) return false
+    return true
+  }, [imeiIndividual, iccidIndividual, minImeiIndividual, minIccidIndividual])
 
   const loteRastreadorSelecionado = useMemo(
     () =>
@@ -331,12 +357,12 @@ export function PareamentoPage() {
   const progressoVinculoIndividual = useMemo(() => {
     const imei = imeiIndividual.replace(/\D/g, '')
     const iccid = iccidIndividual.replace(/\D/g, '')
-    const imeiOk = imei.length >= 14
-    const iccidOk = iccid.length >= 18
+    const imeiOk = imei.length >= 1 && (minImeiIndividual === 0 || imei.length >= minImeiIndividual)
+    const iccidOk = iccid.length >= 1 && (minIccidIndividual === 0 || iccid.length >= minIccidIndividual)
     const rastreadorOk = pertenceLoteRastreador
       ? loteRastreadorSelecionado
       : !!(marcaRastreador && modeloRastreador)
-    const simOk = pertenceLoteSim ? loteSimSelecionado : !!operadoraSim
+    const simOk = pertenceLoteSim ? loteSimSelecionado : !!(marcaSimcardIdSim || operadoraSim)
     const itensCompletos =
       (imeiOk ? 1 : 0) + (iccidOk ? 1 : 0) + (rastreadorOk ? 1 : 0) + (simOk ? 1 : 0)
     return (itensCompletos / 4) * 100
@@ -349,6 +375,7 @@ export function PareamentoPage() {
     loteSimSelecionado,
     marcaRastreador,
     modeloRastreador,
+    marcaSimcardIdSim,
     operadoraSim,
   ])
 
@@ -365,7 +392,7 @@ export function PareamentoPage() {
       }
       if (needSim) {
         const temLote = pertenceLoteSim && loteSimId
-        const temManual = !pertenceLoteSim && operadoraSim
+        const temManual = !pertenceLoteSim && (marcaSimcardIdSim || operadoraSim)
         if (!temLote && !temManual) return false
       }
       return true
@@ -380,6 +407,7 @@ export function PareamentoPage() {
     pertenceLoteSim,
     marcaRastreador,
     modeloRastreador,
+    marcaSimcardIdSim,
     operadoraSim,
   ])
 
@@ -400,7 +428,7 @@ export function PareamentoPage() {
       }
       if (needSim) {
         const temLote = pertenceLoteSimMassa && loteSimId
-        const temManual = !pertenceLoteSimMassa && operadoraSimMassa
+        const temManual = !pertenceLoteSimMassa && (marcaSimcardIdSimMassa || operadoraSimMassa)
         if (!temLote && !temManual) return false
       }
     }
@@ -415,6 +443,7 @@ export function PareamentoPage() {
     pertenceLoteSimMassa,
     marcaRastreadorMassa,
     modeloRastreadorMassa,
+    marcaSimcardIdSimMassa,
     operadoraSimMassa,
   ])
 
@@ -444,7 +473,9 @@ export function PareamentoPage() {
   const handleGerarPreview = () => {
     if (modo === 'individual') {
       if (paresIndividual.length === 0) {
-        toast.error('Informe IMEI (15 dígitos) e ICCID (19-20 dígitos)')
+        const imeiMsg = minImeiIndividual > 0 ? `${minImeiIndividual} dígitos` : 'ao menos 1 dígito'
+        const iccidMsg = minIccidIndividual > 0 ? `${minIccidIndividual} dígitos` : 'ao menos 1 dígito'
+        toast.error(`Informe IMEI (${imeiMsg}) e ICCID (${iccidMsg})`)
         return
       }
     } else {
@@ -471,6 +502,8 @@ export function PareamentoPage() {
     setLoteRastreadorId('')
     setLoteSimId('')
     setPreview(null)
+    setProprietarioIndividual('INFINITY')
+    setClienteIdIndividual(null)
     lastPreviewAttemptRef.current = null
   }
 
@@ -485,10 +518,8 @@ export function PareamentoPage() {
     setMarcaRastreadorMassa('')
     setModeloRastreadorMassa('')
     setOperadoraSimMassa('')
-    setAdicionarKitMassa(false)
-    setKitModoMassa('existente')
-    setKitIdExistenteMassa('')
-    setKitNomeMassa('')
+    setProprietarioMassa('INFINITY')
+    setClienteIdMassa(null)
   }
 
   const subtituloPorModo: Record<ModoPareamento, string> = {
@@ -591,11 +622,10 @@ export function PareamentoPage() {
                         </div>
                       </div>
                       <label className="flex cursor-pointer items-center gap-2">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={pertenceLoteRastreador}
-                          onChange={(e) => setPertenceLoteRastreador(e.target.checked)}
-                          className="h-4 w-4 rounded border-slate-300 text-blue-600"
+                          onCheckedChange={(v) => setPertenceLoteRastreador(!!v)}
+                          className="border-slate-300 data-[state=checked]:bg-erp-blue data-[state=checked]:border-erp-blue"
                         />
                         <span className="text-[11px] font-bold uppercase text-slate-600">
                           Pertence a um lote
@@ -603,21 +633,36 @@ export function PareamentoPage() {
                       </label>
                       {pertenceLoteRastreador ? (
                         <div>
-                          <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-500">
+                          <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-600">
                             Lote
                           </Label>
-                          <Select value={loteRastreadorId} onValueChange={setLoteRastreadorId}>
+                          <Select value={loteRastreadorId} onValueChange={setLoteRastreadorId} onOpenChange={(o) => { if (!o) setLoteBuscaRastreador('') }}>
                             <SelectTrigger className="h-9">
                               <SelectValue placeholder="Selecione o lote..." />
                             </SelectTrigger>
                             <SelectContent>
-                              {lotesRastreadores.map((l) => (
-                                <SelectItem key={l.id} value={String(l.id)}>
-                                  {l.referencia} ({l.quantidadeDisponivelSemId} disp.)
-                                </SelectItem>
-                              ))}
-                              {lotesRastreadores.length === 0 && (
-                                <SelectItem value="_" disabled>Nenhum lote disponível</SelectItem>
+                              <div className="px-2 pb-1 pt-1">
+                                <Input
+                                  placeholder="Buscar lote..."
+                                  value={loteBuscaRastreador}
+                                  onChange={(e) => setLoteBuscaRastreador(e.target.value)}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  className="h-7 text-xs"
+                                />
+                              </div>
+                              {lotesRastreadoresFiltrados.map((l) => {
+                                const info = [l.marca, l.modelo].filter(Boolean).join(' / ')
+                                return (
+                                  <SelectItem key={l.id} value={String(l.id)} textValue={l.referencia}>
+                                    <span className="flex w-full items-center justify-between gap-3">
+                                      <span>{l.referencia}</span>
+                                      {info && <span className="text-[11px] text-slate-400">({info})</span>}
+                                    </span>
+                                  </SelectItem>
+                                )
+                              })}
+                              {lotesRastreadoresFiltrados.length === 0 && (
+                                <SelectItem value="_" disabled>Nenhum lote encontrado</SelectItem>
                               )}
                             </SelectContent>
                           </Select>
@@ -625,7 +670,7 @@ export function PareamentoPage() {
                       ) : (
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-500">
+                            <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-600">
                               Marca (se criar novo)
                             </Label>
                             <Select value={marcaRastreador} onValueChange={(v) => { setMarcaRastreador(v); setModeloRastreador('') }}>
@@ -640,7 +685,7 @@ export function PareamentoPage() {
                             </Select>
                           </div>
                           <div>
-                            <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-500">
+                            <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-600">
                               Modelo (se criar novo)
                             </Label>
                             <Select value={modeloRastreador} onValueChange={setModeloRastreador} disabled={!marcaRastreador}>
@@ -659,11 +704,11 @@ export function PareamentoPage() {
                       {preview?.linhas[0]?.tracker_status === 'FOUND_AVAILABLE' && (
                         <div className="grid grid-cols-2 gap-3 rounded-sm bg-slate-50 p-2">
                           <div>
-                            <Label className="mb-1 block text-[9px] font-bold uppercase text-slate-400">Marca</Label>
+                            <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">Marca</Label>
                             <span className="text-xs font-medium">{preview.linhas[0].marca ?? '--'}</span>
                           </div>
                           <div>
-                            <Label className="mb-1 block text-[9px] font-bold uppercase text-slate-400">Modelo</Label>
+                            <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">Modelo</Label>
                             <span className="text-xs font-medium">{preview.linhas[0].modelo ?? '--'}</span>
                           </div>
                         </div>
@@ -695,11 +740,10 @@ export function PareamentoPage() {
                         </div>
                       </div>
                       <label className="flex cursor-pointer items-center gap-2">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={pertenceLoteSim}
-                          onChange={(e) => setPertenceLoteSim(e.target.checked)}
-                          className="h-4 w-4 rounded border-slate-300 text-blue-600"
+                          onCheckedChange={(v) => setPertenceLoteSim(!!v)}
+                          className="border-slate-300 data-[state=checked]:bg-erp-blue data-[state=checked]:border-erp-blue"
                         />
                         <span className="text-[11px] font-bold uppercase text-slate-600">
                           Pertence a um lote
@@ -707,45 +751,111 @@ export function PareamentoPage() {
                       </label>
                       {pertenceLoteSim ? (
                         <div>
-                          <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-500">
+                          <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-600">
                             Lote
                           </Label>
-                          <Select value={loteSimId} onValueChange={setLoteSimId}>
+                          <Select value={loteSimId} onValueChange={setLoteSimId} onOpenChange={(o) => { if (!o) setLoteBuscaSim('') }}>
                             <SelectTrigger className="h-9">
                               <SelectValue placeholder="Selecione o lote..." />
                             </SelectTrigger>
                             <SelectContent>
-                              {lotesSims.map((l) => (
-                                <SelectItem key={l.id} value={String(l.id)}>
-                                  {l.referencia} ({l.quantidadeDisponivelSemId} disp.)
-                                </SelectItem>
-                              ))}
-                              {lotesSims.length === 0 && (
-                                <SelectItem value="_" disabled>Nenhum lote disponível</SelectItem>
+                              <div className="px-2 pb-1 pt-1">
+                                <Input
+                                  placeholder="Buscar lote..."
+                                  value={loteBuscaSim}
+                                  onChange={(e) => setLoteBuscaSim(e.target.value)}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  className="h-7 text-xs"
+                                />
+                              </div>
+                              {lotesSimsFiltrados.map((l) => {
+                                const marcaNome = marcasSimcard.find((m) => m.id === l.marcaSimcardId)?.nome ?? null
+                                const info = [l.operadora, marcaNome].filter(Boolean).join(' / ')
+                                return (
+                                  <SelectItem key={l.id} value={String(l.id)} textValue={l.referencia}>
+                                    <span className="flex w-full items-center justify-between gap-3">
+                                      <span>{l.referencia}</span>
+                                      {info && <span className="text-[11px] text-slate-400">({info})</span>}
+                                    </span>
+                                  </SelectItem>
+                                )
+                              })}
+                              {lotesSimsFiltrados.length === 0 && (
+                                <SelectItem value="_" disabled>Nenhum lote encontrado</SelectItem>
                               )}
                             </SelectContent>
                           </Select>
                         </div>
                       ) : (
-                        <div>
-                          <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-500">
-                            Operadora (se criar novo)
-                          </Label>
-                          <Select value={operadoraSim} onValueChange={setOperadoraSim}>
-                            <SelectTrigger className="h-9">
-                              <SelectValue placeholder="Selecione..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {operadorasAtivas.map((o) => (
-                                <SelectItem key={o.id} value={o.nome}>{o.nome}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                        <div className="space-y-3">
+                          <div>
+                            <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-600">
+                              Operadora
+                            </Label>
+                            <Select
+                              value={operadoraSim}
+                              onValueChange={(v) => {
+                                setOperadoraSim(v)
+                                setMarcaSimcardIdSim('')
+                                setPlanoSimcardIdSim('')
+                              }}
+                            >
+                              <SelectTrigger className="h-9">
+                                <SelectValue placeholder="Selecione..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {operadorasAtivas.map((o) => (
+                                  <SelectItem key={o.id} value={o.nome}>{o.nome}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-600">
+                              Marca do Simcard
+                            </Label>
+                            <Select
+                              value={marcaSimcardIdSim}
+                              onValueChange={(v) => {
+                                setMarcaSimcardIdSim(v)
+                                setPlanoSimcardIdSim('')
+                              }}
+                              disabled={!operadoraSim}
+                            >
+                              <SelectTrigger className="h-9">
+                                <SelectValue placeholder={operadoraSim ? 'Ex: Getrak, 1nce...' : 'Selecione operadora'} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {marcasSimcardPorOperadora.map((m) => (
+                                  <SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {marcaSimcardIdSim && (() => {
+                            const marcaSel = marcasSimcardPorOperadora.find((m) => String(m.id) === marcaSimcardIdSim)
+                            const planos = (marcaSel?.planos ?? []).filter((p) => p.ativo)
+                            return marcaSel?.temPlanos && planos.length > 0 ? (
+                              <div>
+                                <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-600">Plano</Label>
+                                <Select value={planoSimcardIdSim} onValueChange={setPlanoSimcardIdSim}>
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Selecione o plano..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {planos.map((p) => (
+                                      <SelectItem key={p.id} value={String(p.id)}>{p.planoMb} MB</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            ) : null
+                          })()}
                         </div>
                       )}
                       {preview?.linhas[0]?.sim_status === 'FOUND_AVAILABLE' && (
                         <div className="rounded-sm bg-slate-50 p-2">
-                          <Label className="mb-1 block text-[9px] font-bold uppercase text-slate-400">Operadora</Label>
+                          <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">Operadora</Label>
                           <span className="text-xs font-medium">{preview.linhas[0].operadora ?? '--'}</span>
                         </div>
                       )}
@@ -777,97 +887,50 @@ export function PareamentoPage() {
                   </div>
                 </div>
 
+                {/* Proprietário */}
                 <div className="rounded-sm border border-slate-200 bg-white p-5">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100">
-                        <MaterialIcon name="inventory" className="text-slate-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-slate-800">Vinculação a Kit</h3>
-                        <p className="text-[10px] font-medium uppercase text-slate-500">
-                          Opcional: Associar este par a um kit de instalação
-                        </p>
-                      </div>
-                    </div>
-                    <label className="relative inline-flex shrink-0 cursor-pointer items-center">
-                      <input
-                        type="checkbox"
-                        checked={adicionarKit}
-                        onChange={(e) => setAdicionarKit(e.target.checked)}
-                        className="peer sr-only"
-                      />
-                      <div className="relative h-6 w-11 shrink-0 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:left-[22px] peer-checked:bg-blue-600 peer-focus:outline-none" />
-                      <span className="ml-3 shrink-0 whitespace-nowrap text-[10px] font-bold uppercase text-slate-600">
-                        Ativar Vínculo
-                      </span>
-                    </label>
+                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
+                    <MaterialIcon name="business_center" className="text-erp-blue" />
+                    <h3 className="text-[10px] font-bold text-slate-800 uppercase tracking-wide">Pertence a</h3>
                   </div>
-                  {adicionarKit && (
-                    <div className="mt-4 space-y-4 bg-slate-50/30 p-5">
-                      <div className="flex gap-4">
-                        <label className="flex cursor-pointer items-center gap-2">
-                          <input
-                            type="radio"
-                            name="kitModo"
-                            checked={kitModo === 'existente'}
-                            onChange={() => setKitModo('existente')}
-                            className="h-4 w-4 border-slate-300 text-blue-600"
-                          />
-                          <span className="text-[11px] font-bold uppercase text-slate-600">
-                            Selecionar kit existente
-                          </span>
-                        </label>
-                        <label className="flex cursor-pointer items-center gap-2">
-                          <input
-                            type="radio"
-                            name="kitModo"
-                            checked={kitModo === 'novo'}
-                            onChange={() => setKitModo('novo')}
-                            className="h-4 w-4 border-slate-300 text-blue-600"
-                          />
-                          <span className="text-[11px] font-bold uppercase text-slate-600">
-                            Criar novo kit
-                          </span>
-                        </label>
-                      </div>
-                      {kitModo === 'existente' ? (
-                        <div>
-                          <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-500">
-                            Kit
-                          </Label>
-                          <Select value={kitIdExistente} onValueChange={setKitIdExistente}>
-                            <SelectTrigger className="h-9">
-                              <SelectValue placeholder="Selecione um kit..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {kits.map((k) => (
-                                <SelectItem key={k.id} value={String(k.id)}>
-                                  {k.nome}
-                                </SelectItem>
-                              ))}
-                              {kits.length === 0 && (
-                                <SelectItem value="_" disabled>Nenhum kit cadastrado</SelectItem>
-                              )}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      ) : (
-                        <div>
-                          <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-500">
-                            Nome do novo kit
-                          </Label>
-                          <Input
-                            value={kitNomeNovo}
-                            onChange={(e) => setKitNomeNovo(e.target.value)}
-                            placeholder="Ex: Kit Padrão Caminhão"
-                            className="h-9"
-                          />
-                        </div>
+                  <div className="flex rounded-sm overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => { setProprietarioIndividual('INFINITY'); setClienteIdIndividual(null) }}
+                      className={cn(
+                        'flex-1 py-2.5 px-4 text-xs font-bold uppercase border transition-all',
+                        proprietarioIndividual === 'INFINITY'
+                          ? 'bg-slate-800 text-white border-slate-800'
+                          : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
                       )}
+                    >
+                      Infinity
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setProprietarioIndividual('CLIENTE')}
+                      className={cn(
+                        'flex-1 py-2.5 px-4 text-xs font-bold uppercase border-t border-b border-r transition-all',
+                        proprietarioIndividual === 'CLIENTE'
+                          ? 'bg-slate-800 text-white border-slate-800'
+                          : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                      )}
+                    >
+                      Cliente
+                    </button>
+                  </div>
+                  {proprietarioIndividual === 'CLIENTE' && (
+                    <div className="mt-3">
+                      <SelectClienteSearch
+                        clientes={clientes}
+                        value={clienteIdIndividual ?? undefined}
+                        onChange={(id) => setClienteIdIndividual(id ?? null)}
+                        placeholder="Digite para pesquisar cliente..."
+                      />
                     </div>
                   )}
                 </div>
+
               </div>
 
               <div className="col-span-4">
@@ -922,7 +985,7 @@ export function PareamentoPage() {
                       </div>
                       <div className="border-t border-slate-800 pt-4">
                         <div className="mb-2 flex items-center justify-between">
-                          <span className="text-[10px] font-bold uppercase text-slate-500">
+                          <span className="text-[10px] font-bold uppercase text-slate-600">
                             Status do Vínculo
                           </span>
                           <span
@@ -936,7 +999,7 @@ export function PareamentoPage() {
                         </div>
                         <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
                           <div
-                            className="h-full bg-blue-600 transition-all duration-300"
+                            className="h-full bg-erp-blue transition-all duration-300"
                             style={{
                               width: podeConfirmarPareamentoIndividual
                                 ? '100%'
@@ -947,7 +1010,9 @@ export function PareamentoPage() {
                         {!podeConfirmarPareamentoIndividual && !podeConfirmarIndividual &&
                           (imeiIndividual.replace(/\D/g, '').length > 0 || iccidIndividual.replace(/\D/g, '').length > 0) && (
                           <p className="mt-2 text-[10px] text-amber-400">
-                            IMEI deve ter 14–16 dígitos. ICCID deve ter 18–21 dígitos.
+                            {minImeiIndividual > 0 ? `IMEI deve ter ao menos ${minImeiIndividual} dígito(s).` : 'Informe o IMEI.'}
+                            {' '}
+                            {minIccidIndividual > 0 ? `ICCID deve ter ao menos ${minIccidIndividual} dígito(s).` : 'Informe o ICCID.'}
                           </p>
                         )}
                         {!podeConfirmarPareamentoIndividual && podeConfirmarIndividual && (
@@ -1064,6 +1129,9 @@ export function PareamentoPage() {
                         placeholder={`358942109982341\n358942109982342\n358942109982343...`}
                         className="h-48 w-full resize-none rounded-sm border border-slate-300 p-3 font-mono text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                       />
+                      {minImeiMassa > 0 && (
+                        <p className="mt-1 text-[10px] text-slate-400">Mínimo {minImeiMassa} dígito(s) por IMEI</p>
+                      )}
                     </div>
                     <div>
                       <div className="mb-2 flex items-center gap-2">
@@ -1080,6 +1148,9 @@ export function PareamentoPage() {
                         placeholder={`895501100000001\n895501100000002\n895501100000003...`}
                         className="h-48 w-full resize-none rounded-sm border border-slate-300 p-3 font-mono text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                       />
+                      {minIccidMassa > 0 && (
+                        <p className="mt-1 text-[10px] text-slate-400">Mínimo {minIccidMassa} dígito(s) por ICCID</p>
+                      )}
                     </div>
                   </div>
 
@@ -1106,29 +1177,43 @@ export function PareamentoPage() {
                           <Label className="text-[10px] font-bold uppercase text-slate-600">Rastreadores</Label>
                         </div>
                         <label className="flex cursor-pointer items-center gap-2">
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             checked={pertenceLoteRastreadorMassa}
-                            onChange={(e) => setPertenceLoteRastreadorMassa(e.target.checked)}
-                            className="h-4 w-4 rounded border-slate-300 text-blue-600"
+                            onCheckedChange={(v) => setPertenceLoteRastreadorMassa(!!v)}
+                            className="border-slate-300 data-[state=checked]:bg-erp-blue data-[state=checked]:border-erp-blue"
                           />
                           <span className="text-[11px] font-bold uppercase text-slate-600">
                             Pertence a um lote
                           </span>
                         </label>
                         {pertenceLoteRastreadorMassa ? (
-                          <Select value={loteRastreadorId} onValueChange={setLoteRastreadorId}>
+                          <Select value={loteRastreadorId} onValueChange={setLoteRastreadorId} onOpenChange={(o) => { if (!o) setLoteBuscaRastreador('') }}>
                             <SelectTrigger className="h-9">
                               <SelectValue placeholder="Selecione o lote..." />
                             </SelectTrigger>
                             <SelectContent>
-                              {lotesRastreadores.map((l) => (
-                                <SelectItem key={l.id} value={String(l.id)}>
-                                  {l.referencia} ({l.quantidadeDisponivelSemId} disp.)
-                                </SelectItem>
-                              ))}
-                              {lotesRastreadores.length === 0 && (
-                                <SelectItem value="_" disabled>Nenhum lote disponível</SelectItem>
+                              <div className="px-2 pb-1 pt-1">
+                                <Input
+                                  placeholder="Buscar lote..."
+                                  value={loteBuscaRastreador}
+                                  onChange={(e) => setLoteBuscaRastreador(e.target.value)}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  className="h-7 text-xs"
+                                />
+                              </div>
+                              {lotesRastreadoresFiltrados.map((l) => {
+                                const info = [l.marca, l.modelo].filter(Boolean).join(' / ')
+                                return (
+                                  <SelectItem key={l.id} value={String(l.id)} textValue={l.referencia}>
+                                    <span className="flex w-full items-center justify-between gap-3">
+                                      <span>{l.referencia}</span>
+                                      {info && <span className="text-[11px] text-slate-400">({info})</span>}
+                                    </span>
+                                  </SelectItem>
+                                )
+                              })}
+                              {lotesRastreadoresFiltrados.length === 0 && (
+                                <SelectItem value="_" disabled>Nenhum lote encontrado</SelectItem>
                               )}
                             </SelectContent>
                           </Select>
@@ -1181,135 +1266,154 @@ export function PareamentoPage() {
                           <Label className="text-[10px] font-bold uppercase text-slate-600">SIM Cards</Label>
                         </div>
                         <label className="flex cursor-pointer items-center gap-2">
-                          <input
-                            type="checkbox"
+                          <Checkbox
                             checked={pertenceLoteSimMassa}
-                            onChange={(e) => setPertenceLoteSimMassa(e.target.checked)}
-                            className="h-4 w-4 rounded border-slate-300 text-blue-600"
+                            onCheckedChange={(v) => setPertenceLoteSimMassa(!!v)}
+                            className="border-slate-300 data-[state=checked]:bg-erp-blue data-[state=checked]:border-erp-blue"
                           />
                           <span className="text-[11px] font-bold uppercase text-slate-600">
                             Pertence a um lote
                           </span>
                         </label>
                         {pertenceLoteSimMassa ? (
-                          <Select value={loteSimId} onValueChange={setLoteSimId}>
+                          <Select value={loteSimId} onValueChange={setLoteSimId} onOpenChange={(o) => { if (!o) setLoteBuscaSim('') }}>
                             <SelectTrigger className="h-9">
                               <SelectValue placeholder="Selecione o lote..." />
                             </SelectTrigger>
                             <SelectContent>
-                              {lotesSims.map((l) => (
-                                <SelectItem key={l.id} value={String(l.id)}>
-                                  {l.referencia} ({l.quantidadeDisponivelSemId} disp.)
-                                </SelectItem>
-                              ))}
-                              {lotesSims.length === 0 && (
-                                <SelectItem value="_" disabled>Nenhum lote disponível</SelectItem>
+                              <div className="px-2 pb-1 pt-1">
+                                <Input
+                                  placeholder="Buscar lote..."
+                                  value={loteBuscaSim}
+                                  onChange={(e) => setLoteBuscaSim(e.target.value)}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  className="h-7 text-xs"
+                                />
+                              </div>
+                              {lotesSimsFiltrados.map((l) => {
+                                const marcaNome = marcasSimcard.find((m) => m.id === l.marcaSimcardId)?.nome ?? null
+                                const info = [l.operadora, marcaNome].filter(Boolean).join(' / ')
+                                return (
+                                  <SelectItem key={l.id} value={String(l.id)} textValue={l.referencia}>
+                                    <span className="flex w-full items-center justify-between gap-3">
+                                      <span>{l.referencia}</span>
+                                      {info && <span className="text-[11px] text-slate-400">({info})</span>}
+                                    </span>
+                                  </SelectItem>
+                                )
+                              })}
+                              {lotesSimsFiltrados.length === 0 && (
+                                <SelectItem value="_" disabled>Nenhum lote encontrado</SelectItem>
                               )}
                             </SelectContent>
                           </Select>
                         ) : (
-                          <div>
-                            <Label className="mb-1 block text-[10px] font-bold text-slate-500">Operadora</Label>
-                            <Select value={operadoraSimMassa} onValueChange={setOperadoraSimMassa}>
-                              <SelectTrigger className="h-9">
-                                <SelectValue placeholder="Selecione..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {operadorasAtivas.map((o) => (
-                                  <SelectItem key={o.id} value={o.nome}>{o.nome}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                          <div className="space-y-3">
+                            <div>
+                              <Label className="mb-1 block text-[10px] font-bold text-slate-500">Operadora</Label>
+                              <Select
+                                value={operadoraSimMassa}
+                                onValueChange={(v) => {
+                                  setOperadoraSimMassa(v)
+                                  setMarcaSimcardIdSimMassa('')
+                                  setPlanoSimcardIdSimMassa('')
+                                }}
+                              >
+                                <SelectTrigger className="h-9">
+                                  <SelectValue placeholder="Selecione..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {operadorasAtivas.map((o) => (
+                                    <SelectItem key={o.id} value={o.nome}>{o.nome}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label className="mb-1 block text-[10px] font-bold text-slate-500">Marca do Simcard</Label>
+                              <Select
+                                value={marcaSimcardIdSimMassa}
+                                onValueChange={(v) => {
+                                  setMarcaSimcardIdSimMassa(v)
+                                  setPlanoSimcardIdSimMassa('')
+                                }}
+                                disabled={!operadoraSimMassa}
+                              >
+                                <SelectTrigger className="h-9">
+                                  <SelectValue placeholder={operadoraSimMassa ? 'Ex: Getrak, 1nce...' : 'Selecione operadora'} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {marcasSimcardPorOperadoraMassa.map((m) => (
+                                    <SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            {marcaSimcardIdSimMassa && (() => {
+                              const marcaSel = marcasSimcardPorOperadoraMassa.find((m) => String(m.id) === marcaSimcardIdSimMassa)
+                              const planos = (marcaSel?.planos ?? []).filter((p) => p.ativo)
+                              return marcaSel?.temPlanos && planos.length > 0 ? (
+                                <div>
+                                  <Label className="mb-1 block text-[10px] font-bold text-slate-500">Plano</Label>
+                                  <Select value={planoSimcardIdSimMassa} onValueChange={setPlanoSimcardIdSimMassa}>
+                                    <SelectTrigger className="h-9">
+                                      <SelectValue placeholder="Selecione o plano..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {planos.map((p) => (
+                                        <SelectItem key={p.id} value={String(p.id)}>{p.planoMb} MB</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              ) : null
+                            })()}
                           </div>
                         )}
                       </div>
                     </div>
                   </div>
 
+                  {/* Proprietário Massa */}
                   <div className="mt-6 rounded-sm border border-slate-200 bg-white p-5">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100">
-                          <MaterialIcon name="inventory" className="text-slate-600" />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-bold text-slate-800">Vinculação a Kit</h3>
-                          <p className="text-[10px] font-medium uppercase text-slate-500">
-                            Opcional: Associar os equipamentos a um kit de instalação
-                          </p>
-                        </div>
-                      </div>
-                      <label className="relative inline-flex shrink-0 cursor-pointer items-center">
-                        <input
-                          type="checkbox"
-                          checked={adicionarKitMassa}
-                          onChange={(e) => setAdicionarKitMassa(e.target.checked)}
-                          className="peer sr-only"
-                        />
-                        <div className="relative h-6 w-11 shrink-0 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:after:left-[22px] peer-checked:bg-blue-600 peer-focus:outline-none" />
-                        <span className="ml-3 shrink-0 whitespace-nowrap text-[10px] font-bold uppercase text-slate-600">
-                          Ativar Vínculo
-                        </span>
-                      </label>
+                    <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
+                      <MaterialIcon name="business_center" className="text-erp-blue" />
+                      <h3 className="text-[10px] font-bold text-slate-800 uppercase tracking-wide">Pertence a</h3>
                     </div>
-                    {adicionarKitMassa && (
-                      <div className="mt-4 space-y-4 bg-slate-50/30 p-5">
-                        <div className="flex gap-4">
-                          <label className="flex cursor-pointer items-center gap-2">
-                            <input
-                              type="radio"
-                              name="kitModoMassa"
-                              checked={kitModoMassa === 'existente'}
-                              onChange={() => setKitModoMassa('existente')}
-                              className="h-4 w-4 border-slate-300 text-blue-600"
-                            />
-                            <span className="text-[11px] font-bold uppercase text-slate-600">
-                              Selecionar kit existente
-                            </span>
-                          </label>
-                          <label className="flex cursor-pointer items-center gap-2">
-                            <input
-                              type="radio"
-                              name="kitModoMassa"
-                              checked={kitModoMassa === 'novo'}
-                              onChange={() => setKitModoMassa('novo')}
-                              className="h-4 w-4 border-slate-300 text-blue-600"
-                            />
-                            <span className="text-[11px] font-bold uppercase text-slate-600">
-                              Criar novo kit
-                            </span>
-                          </label>
-                        </div>
-                        {kitModoMassa === 'existente' ? (
-                          <div>
-                            <Label className="mb-1 block text-[10px] font-bold text-slate-500">Kit</Label>
-                            <Select value={kitIdExistenteMassa} onValueChange={setKitIdExistenteMassa}>
-                              <SelectTrigger className="h-9">
-                                <SelectValue placeholder="Selecione um kit..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {kits.map((k) => (
-                                  <SelectItem key={k.id} value={String(k.id)}>
-                                    {k.nome}
-                                  </SelectItem>
-                                ))}
-                                {kits.length === 0 && (
-                                  <SelectItem value="_" disabled>Nenhum kit cadastrado</SelectItem>
-                                )}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        ) : (
-                          <div>
-                            <Label className="mb-1 block text-[10px] font-bold text-slate-500">Nome do novo kit</Label>
-                            <Input
-                              value={kitNomeMassa}
-                              onChange={(e) => setKitNomeMassa(e.target.value)}
-                              placeholder="Ex: Kit Padrão Caminhão"
-                              className="h-9"
-                            />
-                          </div>
+                    <div className="flex rounded-sm overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => { setProprietarioMassa('INFINITY'); setClienteIdMassa(null) }}
+                        className={cn(
+                          'flex-1 py-2.5 px-4 text-xs font-bold uppercase border transition-all',
+                          proprietarioMassa === 'INFINITY'
+                            ? 'bg-slate-800 text-white border-slate-800'
+                            : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
                         )}
+                      >
+                        Infinity
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setProprietarioMassa('CLIENTE')}
+                        className={cn(
+                          'flex-1 py-2.5 px-4 text-xs font-bold uppercase border-t border-b border-r transition-all',
+                          proprietarioMassa === 'CLIENTE'
+                            ? 'bg-slate-800 text-white border-slate-800'
+                            : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+                        )}
+                      >
+                        Cliente
+                      </button>
+                    </div>
+                    {proprietarioMassa === 'CLIENTE' && (
+                      <div className="mt-3">
+                        <SelectClienteSearch
+                          clientes={clientes}
+                          value={clienteIdMassa ?? undefined}
+                          onChange={(id) => setClienteIdMassa(id ?? null)}
+                          placeholder="Digite para pesquisar cliente..."
+                        />
                       </div>
                     )}
                   </div>
@@ -1327,105 +1431,7 @@ export function PareamentoPage() {
                   )}
                 </div>
 
-                {preview && (
-                  <>
-                    <div className="grid grid-cols-4 gap-4">
-                      <div className="flex-1 rounded-sm border-l-4 border-emerald-500 bg-white p-4 shadow-sm">
-                        <Label className="block text-[10px] font-bold uppercase text-slate-400">
-                          Válidos
-                        </Label>
-                        <p className="text-2xl font-bold text-slate-800">{preview.contadores.validos}</p>
-                      </div>
-                      <div className="flex-1 rounded-sm border-l-4 border-blue-500 bg-white p-4 shadow-sm">
-                        <Label className="block text-[10px] font-bold uppercase text-slate-400">
-                          Exigem Lote
-                        </Label>
-                        <p className="text-2xl font-bold text-slate-800">{preview.contadores.exigemLote}</p>
-                      </div>
-                      <div className="flex-1 rounded-sm border-l-4 border-amber-500 bg-white p-4 shadow-sm">
-                        <Label className="block text-[10px] font-bold uppercase text-slate-400">
-                          Duplicados
-                        </Label>
-                        <p className="text-2xl font-bold text-slate-800">0</p>
-                      </div>
-                      <div className="flex-1 rounded-sm border-l-4 border-red-500 bg-white p-4 shadow-sm">
-                        <Label className="block text-[10px] font-bold uppercase text-slate-400">
-                          Erros
-                        </Label>
-                        <p className="text-2xl font-bold text-slate-800">{preview.contadores.erros}</p>
-                      </div>
-                    </div>
-
-                    <div className="overflow-hidden rounded-sm border border-slate-200 bg-white shadow-sm">
-                      <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 bg-slate-50">
-                        <span className="text-[10px] font-bold uppercase text-slate-500">
-                          Preview de Associação
-                        </span>
-                        <span className="rounded bg-slate-200 px-2 py-0.5 text-[9px] text-slate-600">
-                          {preview.linhas.length} itens processados
-                        </span>
-                      </div>
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="border-slate-200 bg-slate-50 hover:bg-slate-50">
-                            <TableHead className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500">
-                              IMEI
-                            </TableHead>
-                            <TableHead className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500">
-                              ICCID
-                            </TableHead>
-                            <TableHead className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500">
-                              Status Rastreador
-                            </TableHead>
-                            <TableHead className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500">
-                              Status SIM
-                            </TableHead>
-                            <TableHead className="px-4 py-3 text-[10px] font-bold uppercase text-slate-500">
-                              Resultado
-                            </TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {preview.linhas.map((linha, idx) => (
-                            <TableRow key={idx} className="border-slate-100">
-                              <TableCell className="px-4 py-3 font-mono text-xs">
-                                {linha.imei}
-                              </TableCell>
-                              <TableCell className="px-4 py-3 font-mono text-xs">
-                                {linha.iccid}
-                              </TableCell>
-                              <TableCell className="px-4 py-3">
-                                <span
-                                  className={cn(
-                                    'rounded-full px-2 py-0.5 text-[10px] font-bold',
-                                    TRACKER_STATUS_LABELS[linha.tracker_status].className
-                                  )}
-                                >
-                                  {TRACKER_STATUS_LABELS[linha.tracker_status].label}
-                                </span>
-                              </TableCell>
-                              <TableCell className="px-4 py-3">
-                                <span
-                                  className={cn(
-                                    'rounded-full px-2 py-0.5 text-[10px] font-bold',
-                                    TRACKER_STATUS_LABELS[linha.sim_status].className
-                                  )}
-                                >
-                                  {TRACKER_STATUS_LABELS[linha.sim_status].label}
-                                </span>
-                              </TableCell>
-                              <TableCell className="px-4 py-3 text-[11px]">
-                                <span className={ACTION_LABELS[linha.action_needed].className}>
-                                  {ACTION_LABELS[linha.action_needed].label}
-                                </span>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </>
-                )}
+                {preview && <PreviewPareamentoTable preview={preview} />}
               </div>
 
               <div className="col-span-4">
@@ -1517,7 +1523,7 @@ export function PareamentoPage() {
               type="button"
               onClick={() => pareamentoMutation.mutate()}
               disabled={!podeConfirmarPareamentoIndividual || pareamentoMutation.isPending}
-              className="h-11 gap-2 px-8 bg-blue-600 text-[11px] font-bold uppercase hover:bg-blue-700"
+              className="h-11 gap-2 px-8 bg-erp-blue text-[11px] font-bold uppercase hover:bg-blue-700"
             >
               {pareamentoMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -1554,7 +1560,7 @@ export function PareamentoPage() {
               type="button"
               onClick={() => pareamentoMutation.mutate()}
               disabled={!podeConfirmarMassa || pareamentoMutation.isPending}
-              className="h-11 gap-2 px-8 bg-blue-600 text-[11px] font-bold uppercase shadow-lg shadow-blue-500/20 hover:bg-blue-700"
+              className="h-11 gap-2 px-8 bg-erp-blue text-[11px] font-bold uppercase shadow-lg shadow-blue-500/20 hover:bg-blue-700"
             >
               {pareamentoMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

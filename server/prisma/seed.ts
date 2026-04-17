@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 
+import { CLIENTE_INFINITY_ID } from '../src/common/constants';
 import { PERMISSION_CODES } from './permission-codes';
 
 dotenv.config();
@@ -38,7 +39,7 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   // Setores
-  const setorAgendamento = await prisma.setor.upsert({
+  await prisma.setor.upsert({
     where: { code: 'AGENDAMENTO' },
     update: {},
     create: { code: 'AGENDAMENTO', nome: 'Agendamento & Ordens' },
@@ -48,7 +49,7 @@ async function main() {
     update: {},
     create: { code: 'ADMINISTRATIVO', nome: 'Administrativo' },
   });
-  const setorConfig = await prisma.setor.upsert({
+  await prisma.setor.upsert({
     where: { code: 'CONFIGURACAO' },
     update: {},
     create: { code: 'CONFIGURACAO', nome: 'Configuração' },
@@ -94,10 +95,7 @@ async function main() {
   // Vincular todas as permissões a TODOS os cargos admin existentes (qualquer setor)
   const todosCargosAdmin = await prisma.cargo.findMany({
     where: {
-      OR: [
-        { code: 'ADMIN' },
-        { nome: { contains: 'Administrador' } },
-      ],
+      OR: [{ code: 'ADMIN' }, { nome: { contains: 'Administrador' } }],
     },
   });
 
@@ -127,10 +125,27 @@ async function main() {
   });
 
   await prisma.usuarioCargo.upsert({
-    where: { usuarioId_cargoId: { usuarioId: usuarioAdmin.id, cargoId: cargoAdmin.id } },
+    where: {
+      usuarioId_cargoId: { usuarioId: usuarioAdmin.id, cargoId: cargoAdmin.id },
+    },
     update: {},
     create: { usuarioId: usuarioAdmin.id, cargoId: cargoAdmin.id },
   });
+
+  // Cliente Infinity (empresa dona do sistema, ID fixo) - usado em ordens no modo Infinity
+  // Não aparece na lista de Empresas (excluído em ClientesService.findAll)
+  const existe = await prisma.cliente.findUnique({
+    where: { id: CLIENTE_INFINITY_ID },
+  });
+  if (!existe) {
+    await prisma.$executeRaw`
+      INSERT INTO clientes (id, nome, nome_fantasia, tipo_contrato, estoque_proprio, status)
+      VALUES (${CLIENTE_INFINITY_ID}, 'Infinity', 'Infinity', 'COMODATO', 0, 'ATIVO')
+      ON DUPLICATE KEY UPDATE nome = 'Infinity', nome_fantasia = 'Infinity'
+    `;
+    await prisma.$executeRaw`ALTER TABLE clientes AUTO_INCREMENT = 1`;
+    console.log('Cliente Infinity (id 1) criado');
+  }
 
   console.log('Seed concluído: admin@admin.com / 12345');
 }

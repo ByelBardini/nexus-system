@@ -52,5 +52,50 @@ export async function api<T>(
     throw new Error(err.message || res.statusText || 'Erro na requisição');
   }
   if (res.status === 204) return undefined as T;
-  return res.json();
+  const text = await res.text();
+  if (!text) return undefined as T;
+  return JSON.parse(text);
+}
+
+/**
+ * Busca conteúdo como texto (ex: HTML)
+ */
+export async function apiGetText(path: string): Promise<string> {
+  const url = `${API_BASE}${path}`;
+  const res = await fetchWithTimeout(
+    url,
+    {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    },
+    FETCH_TIMEOUT_MS
+  );
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { message?: string };
+    throw new Error(err.message || res.statusText || 'Erro na requisição');
+  }
+  return res.text();
+}
+
+/**
+ * Baixa um arquivo (ex: PDF) e retorna o Blob para download
+ * @param timeoutMs timeout opcional (padrão 15s); use valor maior para PDF
+ */
+export async function apiDownloadBlob(path: string, timeoutMs?: number): Promise<Blob> {
+  const url = `${API_BASE}${path}`;
+  const res = await fetchWithTimeout(
+    url,
+    {
+      method: 'GET',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    },
+    timeoutMs ?? FETCH_TIMEOUT_MS
+  );
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { message?: string };
+    throw new Error(err.message || res.statusText || 'Erro na requisição');
+  }
+  return res.blob();
 }

@@ -12,10 +12,7 @@ describe('UsersService', () => {
     prisma = createPrismaMock();
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        UsersService,
-        { provide: PrismaService, useValue: prisma },
-      ],
+      providers: [UsersService, { provide: PrismaService, useValue: prisma }],
     }).compile();
 
     service = module.get<UsersService>(UsersService);
@@ -41,7 +38,9 @@ describe('UsersService', () => {
 
   describe('findAllPaginated', () => {
     it('retorna resultado paginado com total e totalPages', async () => {
-      const users = [{ id: 1, nome: 'Alice', senhaHash: 'hash', usuarioCargos: [] }];
+      const users = [
+        { id: 1, nome: 'Alice', senhaHash: 'hash', usuarioCargos: [] },
+      ];
       prisma.usuario.findMany.mockResolvedValue(users);
       prisma.usuario.count.mockResolvedValue(1);
 
@@ -97,12 +96,18 @@ describe('UsersService', () => {
     it('lança NotFoundException quando usuário não existe', async () => {
       prisma.usuario.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
-      await expect(service.findOne(999)).rejects.toThrow('Usuário não encontrado');
+      const promise = service.findOne(999);
+      await expect(promise).rejects.toThrow(NotFoundException);
+      await expect(promise).rejects.toThrow('Usuário não encontrado');
     });
 
     it('retorna usuário sem senhaHash quando encontrado', async () => {
-      const user = { id: 1, nome: 'Alice', senhaHash: 'hash', usuarioCargos: [] };
+      const user = {
+        id: 1,
+        nome: 'Alice',
+        senhaHash: 'hash',
+        usuarioCargos: [],
+      };
       prisma.usuario.findUnique.mockResolvedValue(user);
 
       const result = await service.findOne(1);
@@ -114,28 +119,45 @@ describe('UsersService', () => {
 
   describe('create', () => {
     it('lança ConflictException quando email já está cadastrado', async () => {
-      prisma.usuario.findUnique.mockResolvedValue({ id: 1, email: 'alice@test.com' });
+      prisma.usuario.findUnique.mockResolvedValue({
+        id: 1,
+        email: 'alice@test.com',
+      });
 
-      await expect(
-        service.create({ nome: 'Alice', email: 'alice@test.com', password: '123' }),
-      ).rejects.toThrow(ConflictException);
-      await expect(
-        service.create({ nome: 'Alice', email: 'alice@test.com', password: '123' }),
-      ).rejects.toThrow('Email já cadastrado');
+      const promise = service.create({
+        nome: 'Alice',
+        email: 'alice@test.com',
+        password: '123',
+      });
+      await expect(promise).rejects.toThrow(ConflictException);
+      await expect(promise).rejects.toThrow('Email já cadastrado');
     });
 
     it('cria usuário e retorna sem senhaHash', async () => {
       prisma.usuario.findUnique.mockResolvedValue(null);
-      const created = { id: 1, nome: 'Alice', email: 'alice@test.com', senhaHash: 'hash', ativo: true };
+      const created = {
+        id: 1,
+        nome: 'Alice',
+        email: 'alice@test.com',
+        senhaHash: 'hash',
+        ativo: true,
+      };
       prisma.usuario.create.mockResolvedValue(created);
 
-      const result = await service.create({ nome: 'Alice', email: 'alice@test.com', password: 'senha123' });
+      const result = await service.create({
+        nome: 'Alice',
+        email: 'alice@test.com',
+        password: 'senha123',
+      });
 
       expect(result).not.toHaveProperty('senhaHash');
       expect(result).toMatchObject({ id: 1, nome: 'Alice' });
       expect(prisma.usuario.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ nome: 'Alice', email: 'alice@test.com' }),
+          data: expect.objectContaining({
+            nome: 'Alice',
+            email: 'alice@test.com',
+          }),
         }),
       );
     });
@@ -145,21 +167,38 @@ describe('UsersService', () => {
     it('lança NotFoundException quando usuário não existe', async () => {
       prisma.usuario.findUnique.mockResolvedValue(null);
 
-      await expect(service.update(999, { nome: 'Novo' })).rejects.toThrow(NotFoundException);
+      await expect(service.update(999, { nome: 'Novo' })).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('lança ConflictException quando novo email já pertence a outro usuário', async () => {
-      prisma.usuario.findUnique.mockResolvedValue({ id: 1, nome: 'Alice', senhaHash: 'h', usuarioCargos: [] });
-      prisma.usuario.findFirst.mockResolvedValue({ id: 2, email: 'bob@test.com' });
+      prisma.usuario.findUnique.mockResolvedValue({
+        id: 1,
+        nome: 'Alice',
+        senhaHash: 'h',
+        usuarioCargos: [],
+      });
+      prisma.usuario.findFirst.mockResolvedValue({
+        id: 2,
+        email: 'bob@test.com',
+      });
 
-      await expect(service.update(1, { email: 'bob@test.com' })).rejects.toThrow(ConflictException);
+      await expect(
+        service.update(1, { email: 'bob@test.com' }),
+      ).rejects.toThrow(ConflictException);
     });
 
     it('atualiza usuário e retorna sem senhaHash', async () => {
       const user = { id: 1, nome: 'Alice', senhaHash: 'h', usuarioCargos: [] };
       prisma.usuario.findUnique.mockResolvedValue(user);
       prisma.usuario.findFirst.mockResolvedValue(null);
-      const updated = { id: 1, nome: 'Alice Atualizada', email: 'alice@test.com', senhaHash: 'h' };
+      const updated = {
+        id: 1,
+        nome: 'Alice Atualizada',
+        email: 'alice@test.com',
+        senhaHash: 'h',
+      };
       prisma.usuario.update.mockResolvedValue(updated);
 
       const result = await service.update(1, { nome: 'Alice Atualizada' });
@@ -173,11 +212,18 @@ describe('UsersService', () => {
     it('lança NotFoundException quando usuário não existe', async () => {
       prisma.usuario.findUnique.mockResolvedValue(null);
 
-      await expect(service.resetPassword(999)).rejects.toThrow(NotFoundException);
+      await expect(service.resetPassword(999)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('reseta senha e retorna mensagem de sucesso', async () => {
-      const user = { id: 1, nome: 'Alice', senhaHash: 'hash', usuarioCargos: [] };
+      const user = {
+        id: 1,
+        nome: 'Alice',
+        senhaHash: 'hash',
+        usuarioCargos: [],
+      };
       prisma.usuario.findUnique.mockResolvedValue(user);
       prisma.usuario.update.mockResolvedValue({ ...user });
 
@@ -217,7 +263,9 @@ describe('UsersService', () => {
             },
           },
         ],
-      } as unknown as NonNullable<Awaited<ReturnType<typeof service.findByEmail>>>;
+      } as unknown as NonNullable<
+        Awaited<ReturnType<typeof service.findByEmail>>
+      >;
 
       const permissions = service.getPermissions(user);
 
@@ -233,7 +281,9 @@ describe('UsersService', () => {
         ativo: true,
         senhaHash: 'h',
         usuarioCargos: [],
-      } as unknown as NonNullable<Awaited<ReturnType<typeof service.findByEmail>>>;
+      } as unknown as NonNullable<
+        Awaited<ReturnType<typeof service.findByEmail>>
+      >;
 
       const permissions = service.getPermissions(user);
 

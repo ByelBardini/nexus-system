@@ -2,7 +2,7 @@
  * Tipos para Pedidos de Rastreadores (API)
  */
 
-export type TipoDestinoPedido = 'TECNICO' | 'CLIENTE'
+export type TipoDestinoPedido = 'TECNICO' | 'CLIENTE' | 'MISTO'
 
 export type StatusPedidoRastreador =
   | 'SOLICITADO'
@@ -63,6 +63,20 @@ export interface ModeloEquipamentoResumo {
   marca?: MarcaEquipamentoResumo
 }
 
+export interface PedidoRastreadorItemApi {
+  id: number
+  proprietario: 'INFINITY' | 'CLIENTE'
+  clienteId: number | null
+  quantidade: number
+  marcaEquipamentoId?: number | null
+  modeloEquipamentoId?: number | null
+  operadoraId?: number | null
+  cliente?: { id: number; nome: string } | null
+  marcaEquipamento?: MarcaEquipamentoResumo | null
+  modeloEquipamento?: ModeloEquipamentoResumo | null
+  operadora?: { id: number; nome: string } | null
+}
+
 export interface PedidoRastreadorApi {
   id: number
   codigo: string
@@ -92,6 +106,7 @@ export interface PedidoRastreadorApi {
   deCliente?: ClienteResumo | null
   criadoPor?: { id: number; nome: string } | null
   kitIds?: number[] | null
+  itens?: PedidoRastreadorItemApi[]
   historico?: Array<{
     statusAnterior: StatusPedidoRastreador
     statusNovo: StatusPedidoRastreador
@@ -107,6 +122,25 @@ export interface PedidosListResponse {
   totalPages: number
 }
 
+export interface AparelhoDestinatarioAssignment {
+  aparelhoId: number
+  destinatarioProprietario: 'INFINITY' | 'CLIENTE'
+  destinatarioClienteId: number | null
+}
+
+export interface QuotaUsageItem {
+  proprietario: 'INFINITY' | 'CLIENTE'
+  clienteId: number | null
+  clienteNome: string | null
+  atribuido: number
+  total: number
+}
+
+export interface AparelhosDestinatariosResponse {
+  assignments: AparelhoDestinatarioAssignment[]
+  quotaUsage: QuotaUsageItem[]
+}
+
 /** Status em minúsculo para o kanban */
 export type StatusPedidoKey =
   | 'solicitado'
@@ -114,6 +148,67 @@ export type StatusPedidoKey =
   | 'configurado'
   | 'despachado'
   | 'entregue'
+
+export const URGENCIA_LABELS: Record<string, string> = {
+  BAIXA: 'Baixa',
+  MEDIA: 'Média',
+  ALTA: 'Alta',
+  URGENTE: 'Urgente',
+}
+
+export const STATUS_CONFIG: Record<
+  StatusPedidoKey,
+  { label: string; color: string; dotColor: string }
+> = {
+  solicitado: {
+    label: 'Solicitado',
+    color: 'amber',
+    dotColor: 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]',
+  },
+  em_configuracao: {
+    label: 'Em Configuração',
+    color: 'blue',
+    dotColor: 'bg-blue-500',
+  },
+  configurado: {
+    label: 'Configurado',
+    color: 'purple',
+    dotColor: 'bg-purple-500',
+  },
+  despachado: {
+    label: 'Despachado',
+    color: 'orange',
+    dotColor: 'bg-orange-500',
+  },
+  entregue: {
+    label: 'Entregue',
+    color: 'emerald',
+    dotColor: 'bg-emerald-500',
+  },
+}
+
+export const STATUS_ORDER: StatusPedidoKey[] = [
+  'solicitado',
+  'em_configuracao',
+  'configurado',
+  'despachado',
+  'entregue',
+]
+
+export const STATUS_TO_API: Record<StatusPedidoKey, StatusPedidoRastreador> = {
+  solicitado: 'SOLICITADO',
+  em_configuracao: 'EM_CONFIGURACAO',
+  configurado: 'CONFIGURADO',
+  despachado: 'DESPACHADO',
+  entregue: 'ENTREGUE',
+}
+
+export const URGENCIA_STYLE: Record<string, { bar: string; badge: string }> = {
+  Baixa: { bar: 'border-l-slate-300', badge: 'bg-slate-50 text-slate-500 border-slate-200' },
+  Média: { bar: 'border-l-blue-400', badge: 'bg-blue-50 text-blue-700 border-blue-200' },
+  Alta: { bar: 'border-l-amber-500', badge: 'bg-amber-100 text-amber-700 border-amber-200' },
+  Urgente: { bar: 'border-l-red-500', badge: 'bg-red-100 text-red-700 border-red-200' },
+}
 
 const STATUS_TO_KEY: Record<StatusPedidoRastreador, StatusPedidoKey> = {
   SOLICITADO: 'solicitado',
@@ -128,8 +223,9 @@ export interface PedidoRastreadorView {
   id: number
   codigo: string
   destinatario: string
-  tipo: 'tecnico' | 'cliente'
+  tipo: 'tecnico' | 'cliente' | 'misto'
   quantidade: number
+  itensMisto?: Array<{ label: string; quantidade: number }>
   status: StatusPedidoKey
   dataSolicitacao?: string
   marcaModelo?: string
@@ -147,16 +243,20 @@ export interface PedidoRastreadorView {
 
 export function mapPedidoToView(p: PedidoRastreadorApi): PedidoRastreadorView {
   const destinatario =
-    p.tipoDestino === 'TECNICO'
+    p.tipoDestino === 'TECNICO' || p.tipoDestino === 'MISTO'
       ? p.tecnico?.nome ?? 'Técnico'
       : p.subcliente?.nome ?? p.cliente?.nome ?? p.subcliente?.cliente?.nome ?? 'Cliente'
-  const tipo = p.tipoDestino === 'TECNICO' ? 'tecnico' : 'cliente'
-  const URGENCIA_LABELS: Record<string, string> = {
-    BAIXA: 'Baixa',
-    MEDIA: 'Média',
-    ALTA: 'Alta',
-    URGENTE: 'Urgente',
-  }
+  const tipo = p.tipoDestino === 'TECNICO' ? 'tecnico' : p.tipoDestino === 'MISTO' ? 'misto' : 'cliente'
+  const itensMisto =
+    p.tipoDestino === 'MISTO' && p.itens
+      ? p.itens.map((item) => ({
+          label:
+            item.proprietario === 'INFINITY'
+              ? 'Infinity'
+              : item.cliente?.nome ?? `Cliente #${item.clienteId}`,
+          quantidade: item.quantidade,
+        }))
+      : undefined
   const urgenciaLabel = URGENCIA_LABELS[p.urgencia] ?? 'Média'
 
   const dataSolicitacao = p.dataSolicitacao ?? p.criadoEm
@@ -173,7 +273,7 @@ export function mapPedidoToView(p: PedidoRastreadorApi): PedidoRastreadorView {
   const deCliente = p.deCliente?.nome
 
   const cidadeEstado =
-    p.tipoDestino === 'TECNICO'
+    p.tipoDestino === 'TECNICO' || p.tipoDestino === 'MISTO'
       ? (() => {
           const t = p.tecnico
           if (!t) return undefined
@@ -193,7 +293,7 @@ export function mapPedidoToView(p: PedidoRastreadorApi): PedidoRastreadorView {
         })()
 
   const endereco =
-    p.tipoDestino === 'TECNICO'
+    p.tipoDestino === 'TECNICO' || p.tipoDestino === 'MISTO'
       ? (() => {
           const t = p.tecnico
           if (!t) return undefined
@@ -216,12 +316,12 @@ export function mapPedidoToView(p: PedidoRastreadorApi): PedidoRastreadorView {
         : p.subcliente?.cidade ?? undefined
 
   const cpfCnpj =
-    p.tipoDestino === 'TECNICO'
+    p.tipoDestino === 'TECNICO' || p.tipoDestino === 'MISTO'
       ? p.tecnico?.cpfCnpj ?? undefined
       : p.subcliente?.cpf ?? p.cliente?.cnpj ?? undefined
 
   const contato =
-    p.tipoDestino === 'TECNICO'
+    p.tipoDestino === 'TECNICO' || p.tipoDestino === 'MISTO'
       ? p.tecnico
         ? {
             nome: p.tecnico.nome,
@@ -250,6 +350,7 @@ export function mapPedidoToView(p: PedidoRastreadorApi): PedidoRastreadorView {
     codigo: p.codigo,
     destinatario,
     tipo,
+    itensMisto,
     quantidade: p.quantidade,
     status: STATUS_TO_KEY[p.status],
     dataSolicitacao,

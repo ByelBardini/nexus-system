@@ -13,25 +13,37 @@ describe('PedidosRastreadoresController', () => {
     findOne: jest.fn(),
     create: jest.fn(),
     updateStatus: jest.fn(),
+    updateKitIds: jest.fn(),
+    remove: jest.fn(),
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PedidosRastreadoresController],
-      providers: [{ provide: PedidosRastreadoresService, useValue: serviceMock }],
+      providers: [
+        { provide: PedidosRastreadoresService, useValue: serviceMock },
+      ],
     })
       .overrideGuard(PermissionsGuard)
       .useValue({ canActivate: () => true })
       .compile();
 
-    controller = module.get<PedidosRastreadoresController>(PedidosRastreadoresController);
-    service = module.get<PedidosRastreadoresService>(PedidosRastreadoresService);
+    controller = module.get<PedidosRastreadoresController>(
+      PedidosRastreadoresController,
+    );
+    service = module.get<PedidosRastreadoresService>(
+      PedidosRastreadoresService,
+    );
     jest.clearAllMocks();
   });
 
   describe('findOne', () => {
     it('converte id de string para número com unary plus e chama o service', async () => {
-      const pedido = { id: 1, codigo: 'PED-0001', tipoDestino: TipoDestinoPedido.TECNICO };
+      const pedido = {
+        id: 1,
+        codigo: 'PED-0001',
+        tipoDestino: TipoDestinoPedido.TECNICO,
+      };
       (service.findOne as jest.Mock).mockResolvedValue(pedido);
 
       const result = await controller.findOne('1');
@@ -54,7 +66,12 @@ describe('PedidosRastreadoresController', () => {
       const lista = { data: [], total: 0, page: 1, totalPages: 0 };
       (service.findAll as jest.Mock).mockResolvedValue(lista);
 
-      await controller.findAll('2', '20', StatusPedidoRastreador.SOLICITADO, 'PED-0042');
+      await controller.findAll(
+        '2',
+        '20',
+        StatusPedidoRastreador.SOLICITADO,
+        'PED-0042',
+      );
 
       expect(service.findAll).toHaveBeenCalledWith({
         page: 2,
@@ -80,13 +97,39 @@ describe('PedidosRastreadoresController', () => {
 
   describe('create', () => {
     it('chama o service create com o DTO e criadoPorId do usuário logado', async () => {
-      const dto = { tipoDestino: TipoDestinoPedido.TECNICO, tecnicoId: 1, quantidade: 5 };
+      const dto = {
+        tipoDestino: TipoDestinoPedido.TECNICO,
+        tecnicoId: 1,
+        quantidade: 5,
+      };
       const criado = { id: 1, codigo: 'PED-0001', ...dto };
       (service.create as jest.Mock).mockResolvedValue(criado);
 
       const result = await controller.create(dto, 100);
 
       expect(service.create).toHaveBeenCalledWith(dto, 100);
+      expect(result).toEqual(criado);
+    });
+
+    it('repassa DTO MISTO com itens para o service sem transformação', async () => {
+      const dto = {
+        tipoDestino: 'MISTO' as TipoDestinoPedido,
+        itens: [
+          { proprietario: 'INFINITY', quantidade: 5 },
+          { proprietario: 'CLIENTE', clienteId: 2, quantidade: 3 },
+        ],
+      };
+      const criado = {
+        id: 1,
+        codigo: 'PED-0001',
+        quantidade: 8,
+        itens: dto.itens,
+      };
+      (service.create as jest.Mock).mockResolvedValue(criado);
+
+      const result = await controller.create(dto as any, 50);
+
+      expect(service.create).toHaveBeenCalledWith(dto, 50);
       expect(result).toEqual(criado);
     });
   });
@@ -99,6 +142,16 @@ describe('PedidosRastreadoresController', () => {
       await controller.updateStatus('7', dto);
 
       expect(service.updateStatus).toHaveBeenCalledWith(7, dto);
+    });
+  });
+
+  describe('updateKitIds', () => {
+    it('converte id com unary plus e chama o service updateKitIds com os kitIds', async () => {
+      (service.updateKitIds as jest.Mock).mockResolvedValue({});
+
+      await controller.updateKitIds('3', { kitIds: [10, 20] });
+
+      expect(service.updateKitIds).toHaveBeenCalledWith(3, [10, 20]);
     });
   });
 });

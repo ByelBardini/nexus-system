@@ -7,6 +7,7 @@ const createTableMock = () => ({
   createMany: jest.fn(),
   update: jest.fn(),
   updateMany: jest.fn(),
+  upsert: jest.fn(),
   delete: jest.fn(),
   deleteMany: jest.fn(),
   count: jest.fn(),
@@ -25,6 +26,7 @@ export function createPrismaMock() {
     cargoPermissao: createTableMock(),
     usuarioCargo: createTableMock(),
     cliente: createTableMock(),
+    subcliente: createTableMock(),
     contatoCliente: createTableMock(),
     tecnico: createTableMock(),
     precoTecnico: createTableMock(),
@@ -32,6 +34,8 @@ export function createPrismaMock() {
     marcaEquipamento: createTableMock(),
     modeloEquipamento: createTableMock(),
     operadora: createTableMock(),
+    marcaSimcard: createTableMock(),
+    planoSimcard: createTableMock(),
     aparelho: createTableMock(),
     aparelhoHistorico: createTableMock(),
     loteAparelho: createTableMock(),
@@ -40,16 +44,17 @@ export function createPrismaMock() {
     oSHistorico: createTableMock(),
     pedidoRastreador: createTableMock(),
     pedidoRastreadorHistorico: createTableMock(),
+    pedidoRastreadorItem: createTableMock(),
+    pedidoRastreadorAparelho: createTableMock(),
+    debitoRastreador: createTableMock(),
     $transaction: jest.fn(),
   };
 
-  mock.$transaction.mockImplementation(
-    (arg: unknown) => {
-      if (typeof arg === 'function') return arg(mock);
-      if (Array.isArray(arg)) return Promise.all(arg);
-      return Promise.resolve();
-    },
-  );
+  mock.$transaction.mockImplementation((arg: unknown) => {
+    if (typeof arg === 'function') return arg(mock);
+    if (Array.isArray(arg)) return Promise.all(arg);
+    return Promise.resolve();
+  });
 
   return mock;
 }

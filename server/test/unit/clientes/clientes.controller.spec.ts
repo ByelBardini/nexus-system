@@ -34,7 +34,9 @@ describe('ClientesController', () => {
 
       await controller.findAll();
 
-      expect(service.findAll).toHaveBeenCalledWith({ includeSubclientes: false });
+      expect(service.findAll).toHaveBeenCalledWith({
+        includeSubclientes: false,
+      });
     });
 
     it('inclui subclientes quando subclientes=1', async () => {
@@ -42,7 +44,9 @@ describe('ClientesController', () => {
 
       await controller.findAll('1');
 
-      expect(service.findAll).toHaveBeenCalledWith({ includeSubclientes: true });
+      expect(service.findAll).toHaveBeenCalledWith({
+        includeSubclientes: true,
+      });
     });
 
     it('inclui subclientes quando subclientes=true', async () => {
@@ -50,7 +54,9 @@ describe('ClientesController', () => {
 
       await controller.findAll('true');
 
-      expect(service.findAll).toHaveBeenCalledWith({ includeSubclientes: true });
+      expect(service.findAll).toHaveBeenCalledWith({
+        includeSubclientes: true,
+      });
     });
   });
 
@@ -82,7 +88,10 @@ describe('ClientesController', () => {
   describe('update', () => {
     it('converte id e chama service.update', async () => {
       const dto = { nome: 'Atualizado' };
-      (service.update as jest.Mock).mockResolvedValue({ id: 4, nome: 'Atualizado' });
+      (service.update as jest.Mock).mockResolvedValue({
+        id: 4,
+        nome: 'Atualizado',
+      });
 
       await controller.update('4', dto as any);
 

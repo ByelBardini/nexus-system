@@ -18,19 +18,18 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { MaterialIcon } from '@/components/MaterialIcon'
+import { SearchableSelect } from '@/components/SearchableSelect'
 import { api } from '@/lib/api'
+import { STATUS_CONFIG_APARELHO, type StatusAparelho } from '@/lib/aparelho-status'
+import {
+  parseDataLocal,
+  formatarDataHora,
+  formatarMoedaOpcional,
+} from '@/lib/format'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
 
-type StatusAparelho = 'EM_ESTOQUE' | 'CONFIGURADO' | 'DESPACHADO' | 'COM_TECNICO' | 'INSTALADO'
 type TipoAparelho = 'RASTREADOR' | 'SIM'
 type ProprietarioTipo = 'INFINITY' | 'CLIENTE'
 
@@ -41,16 +40,29 @@ interface Aparelho {
   marca?: string | null
   modelo?: string | null
   operadora?: string | null
+  marcaSimcard?: { id: number; nome: string; operadora?: { id: number; nome: string } } | null
+  planoSimcard?: { id: number; planoMb: number } | null
   status: StatusAparelho
   proprietario: ProprietarioTipo
   cliente?: { id: number; nome: string } | null
   simVinculado?: { id: number; identificador: string; operadora?: string | null } | null
+  aparelhosVinculados?: {
+    id: number
+    identificador?: string | null
+    proprietario?: ProprietarioTipo | null
+    kitId?: number | null
+    kit?: { id: number; nome: string } | null
+    tecnicoId?: number | null
+    tecnico?: { id: number; nome: string } | null
+    clienteId?: number | null
+    cliente?: { id: number; nome: string } | null
+  }[]
   kitId?: number | null
   kit?: { id: number; nome: string } | null
   tecnico?: { id: number; nome: string } | null
   lote?: { id: number; referencia: string } | null
   valorUnitario?: number | null
-  ordemServicoId?: number | null
+  ordemServicoVinculada?: { numero: number; subclienteNome: string | null; veiculoPlaca: string | null } | null
   criadoEm: string
   historico?: HistoricoItem[]
 }
@@ -59,52 +71,6 @@ interface HistoricoItem {
   data: string
   acao: string
   descricao?: string
-}
-
-interface StatusConfig {
-  label: string
-  color: string
-  bgColor: string
-  borderColor: string
-  icon: string
-}
-
-const STATUS_CONFIG: Record<StatusAparelho, StatusConfig> = {
-  EM_ESTOQUE: {
-    label: 'Em Estoque',
-    color: 'text-amber-700',
-    bgColor: 'bg-amber-50',
-    borderColor: 'border-amber-200',
-    icon: '🟡',
-  },
-  CONFIGURADO: {
-    label: 'Configurado',
-    color: 'text-blue-700',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
-    icon: '🔵',
-  },
-  DESPACHADO: {
-    label: 'Despachado',
-    color: 'text-amber-700',
-    bgColor: 'bg-amber-50',
-    borderColor: 'border-amber-200',
-    icon: '🟠',
-  },
-  COM_TECNICO: {
-    label: 'Com Técnico',
-    color: 'text-orange-700',
-    bgColor: 'bg-orange-50',
-    borderColor: 'border-orange-200',
-    icon: '🟠',
-  },
-  INSTALADO: {
-    label: 'Instalado',
-    color: 'text-emerald-700',
-    bgColor: 'bg-emerald-50',
-    borderColor: 'border-emerald-200',
-    icon: '🟢',
-  },
 }
 
 const TIPO_CONFIG: Record<TipoAparelho, { label: string; icon: typeof Router }> = {
@@ -124,32 +90,6 @@ const PROPRIETARIO_CONFIG: Record<ProprietarioTipo, { label: string; className: 
 }
 
 const PAGE_SIZE = 15
-
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
-}
-
-function formatDateTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('pt-BR', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-}
-
-function formatCurrency(value?: number | null): string {
-  if (value === null || value === undefined) return '-'
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(value)
-}
 
 export function AparelhosPage() {
   const { hasPermission } = useAuth()
@@ -332,93 +272,79 @@ export function AparelhosPage() {
       </div>
 
       {/* Barra de ferramentas */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-xs">
-          <MaterialIcon
-            name="search"
-            className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-base"
-          />
-          <Input
-            className="pl-8 text-[11px]"
-            placeholder="Buscar IMEI, ICCID, Lote, Kit, Técnico..."
-            value={busca}
-            onChange={(e) => {
-              setBusca(e.target.value)
-              setPage(0)
-            }}
-          />
+      <div className="flex items-end justify-between gap-4">
+        <div className="flex flex-col">
+          <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Busca</label>
+          <div className="relative w-64">
+            <MaterialIcon
+              name="search"
+              className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-base"
+            />
+            <Input
+              className="pl-8 text-[11px]"
+              placeholder="IMEI, ICCID, Lote, Técnico..."
+              value={busca}
+              onChange={(e) => {
+                setBusca(e.target.value)
+                setPage(0)
+              }}
+            />
+          </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <Select
-            value={statusFilter}
-            onValueChange={(v) => {
-              setStatusFilter(v as StatusAparelho | 'TODOS')
-              setPage(0)
-            }}
-          >
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Filtrar por status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="TODOS">Todos</SelectItem>
-              {(Object.keys(STATUS_CONFIG) as StatusAparelho[]).map((status) => (
-                <SelectItem key={status} value={status}>
-                  {STATUS_CONFIG[status].label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={tipoFilter}
-            onValueChange={(v) => {
-              setTipoFilter(v as TipoAparelho | 'TODOS')
-              setPage(0)
-            }}
-          >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="TODOS">Todos</SelectItem>
-              <SelectItem value="RASTREADOR">Rastreador</SelectItem>
-              <SelectItem value="SIM">SIM Card</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select
-            value={proprietarioFilter}
-            onValueChange={(v) => {
-              setProprietarioFilter(v as ProprietarioTipo | 'TODOS')
-              setPage(0)
-            }}
-          >
-            <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="Proprietário" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="TODOS">Todos</SelectItem>
-              <SelectItem value="INFINITY">Infinity</SelectItem>
-              <SelectItem value="CLIENTE">Cliente</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select
-            value={marcaFilter}
-            onValueChange={(v) => {
-              setMarcaFilter(v)
-              setPage(0)
-            }}
-          >
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Marca/Operadora" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="TODOS">Todas</SelectItem>
-              {marcas.map((marca) => (
-                <SelectItem key={marca} value={marca}>
-                  {marca}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex items-end gap-2 flex-wrap">
+          <div className="flex flex-col">
+            <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Status</label>
+            <SearchableSelect
+              className="w-[160px]"
+              value={statusFilter}
+              onChange={(v) => { setStatusFilter(v as StatusAparelho | 'TODOS'); setPage(0) }}
+              options={[
+                { value: 'TODOS', label: 'Todos' },
+                ...(Object.keys(STATUS_CONFIG_APARELHO) as StatusAparelho[]).map((s) => ({
+                  value: s,
+                  label: STATUS_CONFIG_APARELHO[s].label,
+                })),
+              ]}
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Tipo</label>
+            <SearchableSelect
+              className="w-[140px]"
+              value={tipoFilter}
+              onChange={(v) => { setTipoFilter(v as TipoAparelho | 'TODOS'); setPage(0) }}
+              options={[
+                { value: 'TODOS', label: 'Todos' },
+                { value: 'RASTREADOR', label: 'Rastreador' },
+                { value: 'SIM', label: 'SIM Card' },
+              ]}
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Proprietário</label>
+            <SearchableSelect
+              className="w-[130px]"
+              value={proprietarioFilter}
+              onChange={(v) => { setProprietarioFilter(v as ProprietarioTipo | 'TODOS'); setPage(0) }}
+              options={[
+                { value: 'TODOS', label: 'Todos' },
+                { value: 'INFINITY', label: 'Infinity' },
+                { value: 'CLIENTE', label: 'Cliente' },
+              ]}
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Marca / Operadora</label>
+            <SearchableSelect
+              className="w-[140px]"
+              value={marcaFilter}
+              onChange={(v) => { setMarcaFilter(v); setPage(0) }}
+              options={[
+                { value: 'TODOS', label: 'Todas' },
+                ...marcas.map((m) => ({ value: m, label: m })),
+              ]}
+            />
+          </div>
           {canCreate && (
             <>
               <Link to="/aparelhos/lote">
@@ -445,34 +371,37 @@ export function AparelhosPage() {
             <TableHeader>
               <TableRow className="border-slate-200 bg-slate-50 hover:bg-slate-50">
                 <TableHead className="w-10 px-4 py-2" />
-                <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                   Identificação
                 </TableHead>
-                <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                   Tipo
                 </TableHead>
-                <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                   Marca / Operadora
                 </TableHead>
-                <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                   Proprietário
                 </TableHead>
-                <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                   Status
                 </TableHead>
-                <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                   SIM/Rastreador Vinculado
                 </TableHead>
-                <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                   Kit
                 </TableHead>
-                <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                   Técnico
                 </TableHead>
-                <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                  Proprietário
+                </TableHead>
+                <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                   Lote
                 </TableHead>
-                <TableHead className="px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <TableHead className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                   Data Entrada
                 </TableHead>
               </TableRow>
@@ -480,7 +409,7 @@ export function AparelhosPage() {
             <TableBody>
               {paginated.map((aparelho) => {
                 const isExpanded = expandedId === aparelho.id
-                const statusConfig = STATUS_CONFIG[aparelho.status]
+                const statusConfig = STATUS_CONFIG_APARELHO[aparelho.status]
                 const tipoConfig = TIPO_CONFIG[aparelho.tipo]
                 const TipoIcon = tipoConfig.icon
                 const propConfig = PROPRIETARIO_CONFIG[aparelho.proprietario]
@@ -520,7 +449,9 @@ export function AparelhosPage() {
                       <TableCell className="px-4 py-3 text-sm text-slate-600">
                         {aparelho.tipo === 'RASTREADOR'
                           ? aparelho.marca || '-'
-                          : aparelho.operadora || '-'}
+                          : [aparelho.operadora, aparelho.marcaSimcard?.nome]
+                              .filter(Boolean)
+                              .join(' · ') || '-'}
                       </TableCell>
                       <TableCell className="px-4 py-3">
                         <span
@@ -551,27 +482,55 @@ export function AparelhosPage() {
                         </span>
                       </TableCell>
                       <TableCell className="px-4 py-3">
-                        {aparelho.simVinculado ? (
-                          <span className="font-mono text-xs text-blue-600">
-                            {aparelho.simVinculado.identificador}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-slate-400 italic">
-                            {aparelho.tipo === 'RASTREADOR' ? 'Não vinculado' : 'Disponível'}
-                          </span>
-                        )}
+                        {(() => {
+                          const vinculado = aparelho.tipo === 'RASTREADOR'
+                            ? aparelho.simVinculado?.identificador
+                            : aparelho.aparelhosVinculados?.[0]?.identificador
+                          return vinculado ? (
+                            <span className="font-mono text-xs text-blue-600">{vinculado}</span>
+                          ) : (
+                            <span className="text-xs text-slate-400 italic">
+                              {aparelho.tipo === 'RASTREADOR' ? 'Não vinculado' : 'Disponível'}
+                            </span>
+                          )
+                        })()}
                       </TableCell>
                       <TableCell className="px-4 py-3">
-                        {(aparelho.kit?.nome ?? (aparelho.kitId ? kitsPorId.get(aparelho.kitId) : null)) ? (
-                          <span className="rounded-sm bg-violet-50 px-2 py-0.5 text-[10px] font-bold text-violet-700 border border-violet-200">
-                            {aparelho.kit?.nome ?? kitsPorId.get(aparelho.kitId!)}
-                          </span>
-                        ) : (
-                          <span className="text-slate-400">-</span>
-                        )}
+                        {(() => {
+                          const rastreador = aparelho.tipo === 'SIM' ? aparelho.aparelhosVinculados?.[0] : null
+                          const kitNome = aparelho.kit?.nome
+                            ?? (aparelho.kitId ? kitsPorId.get(aparelho.kitId) : null)
+                            ?? rastreador?.kit?.nome
+                            ?? (rastreador?.kitId ? kitsPorId.get(rastreador.kitId) : null)
+                          return kitNome ? (
+                            <span className="rounded-sm bg-violet-50 px-2 py-0.5 text-[10px] font-bold text-violet-700 border border-violet-200">
+                              {kitNome}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">-</span>
+                          )
+                        })()}
                       </TableCell>
                       <TableCell className="px-4 py-3 text-sm text-slate-600">
-                        {aparelho.cliente?.nome ?? aparelho.tecnico?.nome ?? '-'}
+                        {(() => {
+                          const rastreador = aparelho.tipo === 'SIM' ? aparelho.aparelhosVinculados?.[0] : null
+                          const tecnicoNome = aparelho.tecnico?.nome ?? rastreador?.tecnico?.nome
+                          return tecnicoNome
+                            ? <div className="text-xs font-medium">{tecnicoNome}</div>
+                            : <span className="text-slate-400">-</span>
+                        })()}
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-sm text-slate-600">
+                        {(() => {
+                          const rastreador = aparelho.tipo === 'SIM' ? aparelho.aparelhosVinculados?.[0] : null
+                          const prop = aparelho.proprietario ?? rastreador?.proprietario
+                          const clienteNome = aparelho.cliente?.nome ?? rastreador?.cliente?.nome
+                          return (
+                            <div className="text-xs font-medium">
+                              {clienteNome ?? (prop === 'INFINITY' ? 'Infinity' : '-')}
+                            </div>
+                          )
+                        })()}
                       </TableCell>
                       <TableCell className="px-4 py-3">
                         {aparelho.lote ? (
@@ -583,7 +542,7 @@ export function AparelhosPage() {
                         )}
                       </TableCell>
                       <TableCell className="px-4 py-3 text-xs text-slate-500">
-                        {formatDate(aparelho.criadoEm)}
+                        {parseDataLocal(aparelho.criadoEm).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                       </TableCell>
                     </TableRow>
 
@@ -619,10 +578,22 @@ export function AparelhosPage() {
                                     </>
                                   )}
                                   {aparelho.tipo === 'SIM' && (
-                                    <div className="flex justify-between text-[11px] border-b border-slate-100 pb-2">
-                                      <span className="text-slate-500">Operadora</span>
-                                      <span className="font-bold text-slate-700">{aparelho.operadora || '-'}</span>
-                                    </div>
+                                    <>
+                                      <div className="flex justify-between text-[11px] border-b border-slate-100 pb-2">
+                                        <span className="text-slate-500">Operadora</span>
+                                        <span className="font-bold text-slate-700">{aparelho.operadora || '-'}</span>
+                                      </div>
+                                      <div className="flex justify-between text-[11px] border-b border-slate-100 pb-2">
+                                        <span className="text-slate-500">Marca do Simcard</span>
+                                        <span className="font-bold text-slate-700">{aparelho.marcaSimcard?.nome || '-'}</span>
+                                      </div>
+                                      <div className="flex justify-between text-[11px] border-b border-slate-100 pb-2">
+                                        <span className="text-slate-500">Plano</span>
+                                        <span className="font-bold text-slate-700">
+                                          {aparelho.planoSimcard ? `${aparelho.planoSimcard.planoMb} MB` : '-'}
+                                        </span>
+                                      </div>
+                                    </>
                                   )}
                                   <div className="flex justify-between text-[11px] border-b border-slate-100 pb-2">
                                     <span className="text-slate-500">Proprietário</span>
@@ -634,7 +605,7 @@ export function AparelhosPage() {
                                   <div className="flex justify-between text-[11px] border-b border-slate-100 pb-2">
                                     <span className="text-slate-500">Valor Unitário</span>
                                     <span className="font-bold text-slate-700">
-                                      {formatCurrency(aparelho.valorUnitario)}
+                                      {formatarMoedaOpcional(aparelho.valorUnitario)}
                                     </span>
                                   </div>
                                   <div className="flex justify-between text-[11px]">
@@ -654,31 +625,68 @@ export function AparelhosPage() {
                                     <span className="text-slate-500">
                                       {aparelho.tipo === 'RASTREADOR' ? 'SIM Vinculado' : 'Rastreador Vinculado'}
                                     </span>
-                                    <span className={cn('font-bold', aparelho.simVinculado ? 'text-blue-600 font-mono' : 'text-slate-400 italic')}>
-                                      {aparelho.simVinculado?.identificador || (aparelho.tipo === 'RASTREADOR' ? 'Não vinculado' : 'Disponível')}
-                                    </span>
+                                    {(() => {
+                                      const vinculado = aparelho.tipo === 'RASTREADOR'
+                                        ? aparelho.simVinculado?.identificador
+                                        : aparelho.aparelhosVinculados?.[0]?.identificador
+                                      return (
+                                        <span className={cn('font-bold', vinculado ? 'text-blue-600 font-mono' : 'text-slate-400 italic')}>
+                                          {vinculado ?? (aparelho.tipo === 'RASTREADOR' ? 'Não vinculado' : 'Disponível')}
+                                        </span>
+                                      )
+                                    })()}
                                   </div>
                                   <div className="flex justify-between text-[11px] border-b border-slate-100 pb-2">
                                     <span className="text-slate-500">Kit</span>
-                                    <span className={cn('font-bold', (aparelho.kit?.nome ?? (aparelho.kitId ? kitsPorId.get(aparelho.kitId) : null)) ? 'text-violet-600' : 'text-slate-400')}>
-                                      {aparelho.kit?.nome ?? (aparelho.kitId ? kitsPorId.get(aparelho.kitId) : null) ?? '-'}
-                                    </span>
+                                    {(() => {
+                                      const rastreador = aparelho.tipo === 'SIM' ? aparelho.aparelhosVinculados?.[0] : null
+                                      const kitNome = aparelho.kit?.nome
+                                        ?? (aparelho.kitId ? kitsPorId.get(aparelho.kitId) : null)
+                                        ?? rastreador?.kit?.nome
+                                        ?? (rastreador?.kitId ? kitsPorId.get(rastreador.kitId) : null)
+                                      return (
+                                        <span className={cn('font-bold', kitNome ? 'text-violet-600' : 'text-slate-400')}>
+                                          {kitNome ?? '-'}
+                                        </span>
+                                      )
+                                    })()}
                                   </div>
                                   <div className="flex justify-between text-[11px] border-b border-slate-100 pb-2">
                                     <span className="text-slate-500">Técnico</span>
-                                    <span className={cn('font-bold', (aparelho.cliente ?? aparelho.tecnico) ? 'text-slate-700' : 'text-slate-400')}>
-                                      {aparelho.cliente?.nome ?? aparelho.tecnico?.nome ?? '-'}
-                                    </span>
+                                    {(() => {
+                                      const rastreador = aparelho.tipo === 'SIM' ? aparelho.aparelhosVinculados?.[0] : null
+                                      const nome = aparelho.cliente?.nome
+                                        ?? aparelho.tecnico?.nome
+                                        ?? rastreador?.cliente?.nome
+                                        ?? rastreador?.tecnico?.nome
+                                      return (
+                                        <span className={cn('font-bold', nome ? 'text-slate-700' : 'text-slate-400')}>
+                                          {nome ?? '-'}
+                                        </span>
+                                      )
+                                    })()}
                                   </div>
-                                  <div className="flex justify-between text-[11px]">
+                                  <div className="flex justify-between text-[11px] border-b border-slate-100 pb-2">
                                     <span className="text-slate-500">Ordem de Serviço</span>
-                                    {aparelho.ordemServicoId ? (
-                                      <span className="font-bold text-blue-600 hover:underline cursor-pointer">
-                                        OS #{aparelho.ordemServicoId}
+                                    {aparelho.ordemServicoVinculada ? (
+                                      <span className="font-bold text-blue-600">
+                                        OS #{aparelho.ordemServicoVinculada.numero}
                                       </span>
                                     ) : (
                                       <span className="text-slate-400">-</span>
                                     )}
+                                  </div>
+                                  <div className="flex justify-between text-[11px] border-b border-slate-100 pb-2">
+                                    <span className="text-slate-500">Subcliente</span>
+                                    <span className={cn('font-bold', aparelho.ordemServicoVinculada?.subclienteNome ? 'text-slate-700' : 'text-slate-400')}>
+                                      {aparelho.ordemServicoVinculada?.subclienteNome ?? '-'}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between text-[11px]">
+                                    <span className="text-slate-500">Placa</span>
+                                    <span className={cn('font-bold', aparelho.ordemServicoVinculada?.veiculoPlaca ? 'text-slate-700' : 'text-slate-400')}>
+                                      {aparelho.ordemServicoVinculada?.veiculoPlaca ?? '-'}
+                                    </span>
                                   </div>
                                 </div>
                               </div>
@@ -701,7 +709,7 @@ export function AparelhosPage() {
                                             <p className="text-[10px] text-slate-500">{item.descricao}</p>
                                           )}
                                           <p className="text-[9px] text-slate-400 mt-0.5">
-                                            {formatDateTime(item.data)}
+                                            {formatarDataHora(item.data)}
                                           </p>
                                         </div>
                                       </div>

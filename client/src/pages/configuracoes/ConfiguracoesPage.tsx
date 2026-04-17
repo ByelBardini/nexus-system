@@ -12,17 +12,9 @@ const industrialCardClasses =
 
 export function ConfiguracoesPage() {
   return (
-    <div className="px-8 pt-0 pb-8 max-w-7xl mx-auto -mt-4">
-      <header className="mb-8">
-        <h1 className="text-lg font-bold text-slate-800 uppercase tracking-tight">
-          Configurações do Sistema
-        </h1>
-        <nav className="flex items-center gap-2 text-[11px] text-slate-400 uppercase tracking-wider font-semibold mt-1">
-          <span className="text-slate-600">Configurações</span>
-        </nav>
-      </header>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div className="flex min-h-[calc(100dvh-var(--header-h,4rem))] flex-col px-8 pb-8 max-w-7xl mx-auto -mt-4">
+      <div className="flex flex-1 flex-col justify-center">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Agendamento */}
         <section className={industrialCardClasses}>
           <div className={cardHeaderClasses}>
@@ -111,9 +103,10 @@ export function ConfiguracoesPage() {
             </Link>
           </div>
         </section>
+        </div>
       </div>
 
-      <div className="mt-12 pt-6 border-t border-slate-200 flex flex-wrap gap-6 items-center justify-between">
+      <div className="mt-auto shrink-0 pt-6 border-t border-slate-200 flex flex-wrap gap-6 items-center justify-between">
         <div className="flex items-center gap-6">
           <div className="flex flex-col">
             <span className="text-[10px] font-bold text-slate-400 uppercase">

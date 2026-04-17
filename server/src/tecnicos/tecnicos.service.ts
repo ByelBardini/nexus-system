@@ -3,7 +3,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateTecnicoDto } from './dto/create-tecnico.dto';
 import { UpdateTecnicoDto } from './dto/update-tecnico.dto';
 
-
 @Injectable()
 export class TecnicosService {
   constructor(private readonly prisma: PrismaService) {}
@@ -60,47 +59,53 @@ export class TecnicosService {
 
   async update(id: number, dto: UpdateTecnicoDto) {
     await this.findOne(id);
-    await this.prisma.tecnico.update({
-      where: { id },
-      data: {
-        nome: dto.nome,
-        cpfCnpj: dto.cpfCnpj,
-        telefone: dto.telefone,
-        cidade: dto.cidade,
-        estado: dto.estado,
-        cep: dto.cep,
-        logradouro: dto.logradouro,
-        numero: dto.numero,
-        complemento: dto.complemento,
-        bairro: dto.bairro,
-        cidadeEndereco: dto.cidadeEndereco,
-        estadoEndereco: dto.estadoEndereco,
-        ativo: dto.ativo,
-      },
-    });
-    if (dto.precos) {
-      const p = dto.precos;
-      const existing = await this.prisma.precoTecnico.findUnique({
-        where: { tecnicoId: id },
+    await this.prisma.$transaction(async (tx) => {
+      await tx.tecnico.update({
+        where: { id },
+        data: {
+          nome: dto.nome,
+          cpfCnpj: dto.cpfCnpj,
+          telefone: dto.telefone,
+          cidade: dto.cidade,
+          estado: dto.estado,
+          cep: dto.cep,
+          logradouro: dto.logradouro,
+          numero: dto.numero,
+          complemento: dto.complemento,
+          bairro: dto.bairro,
+          cidadeEndereco: dto.cidadeEndereco,
+          estadoEndereco: dto.estadoEndereco,
+          ativo: dto.ativo,
+        },
       });
-      const data = {
-        instalacaoComBloqueio: p.instalacaoComBloqueio ?? Number(existing?.instalacaoComBloqueio ?? 0),
-        instalacaoSemBloqueio: p.instalacaoSemBloqueio ?? Number(existing?.instalacaoSemBloqueio ?? 0),
-        revisao: p.revisao ?? Number(existing?.revisao ?? 0),
-        retirada: p.retirada ?? Number(existing?.retirada ?? 0),
-        deslocamento: p.deslocamento ?? Number(existing?.deslocamento ?? 0),
-      };
-      if (existing) {
-        await this.prisma.precoTecnico.update({
+      if (dto.precos) {
+        const p = dto.precos;
+        const existing = await tx.precoTecnico.findUnique({
           where: { tecnicoId: id },
-          data,
         });
-      } else {
-        await this.prisma.precoTecnico.create({
-          data: { tecnicoId: id, ...data },
-        });
+        const data = {
+          instalacaoComBloqueio:
+            p.instalacaoComBloqueio ??
+            Number(existing?.instalacaoComBloqueio ?? 0),
+          instalacaoSemBloqueio:
+            p.instalacaoSemBloqueio ??
+            Number(existing?.instalacaoSemBloqueio ?? 0),
+          revisao: p.revisao ?? Number(existing?.revisao ?? 0),
+          retirada: p.retirada ?? Number(existing?.retirada ?? 0),
+          deslocamento: p.deslocamento ?? Number(existing?.deslocamento ?? 0),
+        };
+        if (existing) {
+          await tx.precoTecnico.update({
+            where: { tecnicoId: id },
+            data,
+          });
+        } else {
+          await tx.precoTecnico.create({
+            data: { tecnicoId: id, ...data },
+          });
+        }
       }
-    }
+    });
     return this.findOne(id);
   }
 }

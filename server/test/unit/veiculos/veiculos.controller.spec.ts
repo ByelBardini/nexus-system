@@ -9,6 +9,7 @@ describe('VeiculosController', () => {
 
   const serviceMock = {
     findAll: jest.fn(),
+    consultaPlaca: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -42,6 +43,32 @@ describe('VeiculosController', () => {
 
       expect(service.findAll).toHaveBeenCalledWith('ABC');
       expect(result).toEqual(veiculos);
+    });
+  });
+
+  describe('consultaPlaca', () => {
+    it('chama service.consultaPlaca com a placa do parâmetro', async () => {
+      const dados = {
+        marca: 'Fiat',
+        modelo: 'Uno',
+        ano: '2020',
+        cor: 'Branco',
+        tipo: 'AUTO',
+      };
+      (service.consultaPlaca as jest.Mock).mockResolvedValue(dados);
+
+      const result = await controller.consultaPlaca('ABC1D23');
+
+      expect(service.consultaPlaca).toHaveBeenCalledWith('ABC1D23');
+      expect(result).toEqual(dados);
+    });
+
+    it('retorna null quando service retorna null', async () => {
+      (service.consultaPlaca as jest.Mock).mockResolvedValue(null);
+
+      const result = await controller.consultaPlaca('ABC12');
+
+      expect(result).toBeNull();
     });
   });
 });

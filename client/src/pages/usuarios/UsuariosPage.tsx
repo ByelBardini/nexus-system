@@ -1,4 +1,5 @@
-import { useState, useEffect, Fragment } from 'react'
+import { useState, Fragment, useMemo } from 'react'
+import { useDebounce } from '@/hooks/useDebounce'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -27,6 +28,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { MaterialIcon } from '@/components/MaterialIcon'
+import { SearchableSelect } from '@/components/SearchableSelect'
 import { api } from '@/lib/api'
 import { useAuth } from '@/contexts/AuthContext'
 import { toast } from 'sonner'
@@ -110,16 +112,34 @@ function calcularPermissoesHerdadas(
   return { setoresHabilitados, acoesAltoRisco }
 }
 
+const ITEM_LABELS: Record<string, string> = {
+  USUARIO: 'Usuários',
+  CARGO: 'Cargos',
+  APARELHO: 'Aparelhos',
+  EQUIPAMENTO: 'Equipamentos',
+  CLIENTE: 'Clientes',
+  TECNICO: 'Técnicos',
+  OS: 'Ordens de Serviço',
+  PEDIDO_RASTREADOR: 'Pedidos de Rastreadores',
+  TESTES: 'Testes de Aparelhos',
+}
+
 function getModuloLabel(modulo: string): string {
   const labels: Record<string, string> = {
     'ADMINISTRATIVO.USUARIO': 'Usuários',
     'ADMINISTRATIVO.CARGO': 'Cargos',
     'CONFIGURACAO.APARELHO': 'Aparelhos',
+    'CONFIGURACAO.EQUIPAMENTO': 'Equipamentos',
     'AGENDAMENTO.CLIENTE': 'Clientes',
     'AGENDAMENTO.TECNICO': 'Técnicos',
     'AGENDAMENTO.OS': 'Ordens de Serviço',
+    'AGENDAMENTO.PEDIDO_RASTREADOR': 'Pedidos de Rastreadores',
+    'AGENDAMENTO.TESTES': 'Testes de Aparelhos',
   }
-  return labels[modulo] ?? modulo
+  if (labels[modulo]) return labels[modulo]
+  // Fallback: extrai o item (segunda parte) para permissões com código legado
+  const item = modulo.split('.')[1]
+  return ITEM_LABELS[item] ?? modulo
 }
 
 function getAcaoLabel(acao: string): string {
@@ -128,6 +148,7 @@ function getAcaoLabel(acao: string): string {
     CRIAR: 'Criar',
     EDITAR: 'Editar',
     EXCLUIR: 'Excluir',
+    EXECUTAR: 'Executar',
   }
   return labels[acao] ?? acao
 }
@@ -237,22 +258,13 @@ export function UsuariosPage() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [search, setSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const debouncedSearch = useDebounce(search, 300)
   const [statusFilter, setStatusFilter] = useState<string>('TODOS')
   const [page, setPage] = useState(1)
   const [showCreateRoleSelector, setShowCreateRoleSelector] = useState(false)
   const [showEditRoleSelector, setShowEditRoleSelector] = useState(false)
   const canCreate = hasPermission('ADMINISTRATIVO.USUARIO.CRIAR')
   const canEdit = hasPermission('ADMINISTRATIVO.USUARIO.EDITAR')
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 300)
-    return () => clearTimeout(timer)
-  }, [search])
-
-  useEffect(() => {
-    setPage(1)
-  }, [debouncedSearch, statusFilter])
 
   const { data: response, isLoading } = useQuery<PaginatedResponse>({
     queryKey: ['users-paginated', debouncedSearch, statusFilter, page],
@@ -312,14 +324,16 @@ export function UsuariosPage() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data, roleIds }: { id: number; data: FormEdit; roleIds: number[] }) => {
-      await api(`/users/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(data),
-      })
-      await api(`/roles/users/${id}/roles`, {
-        method: 'PATCH',
-        body: JSON.stringify({ roleIds }),
-      })
+      await Promise.all([
+        api(`/users/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(data),
+        }),
+        api(`/roles/users/${id}/roles`, {
+          method: 'PATCH',
+          body: JSON.stringify({ roleIds }),
+        }),
+      ])
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users-paginated'] })
@@ -397,39 +411,52 @@ export function UsuariosPage() {
     )
   }
 
-  const cargosPorSetor = cargosComPermissoes.reduce<Record<string, CargoWithPermissions[]>>((acc, c) => {
-    const key = c.setor.nome
-    if (!acc[key]) acc[key] = []
-    acc[key].push(c)
-    return acc
-  }, {})
+  const cargosPorSetor = useMemo(
+    () =>
+      cargosComPermissoes.reduce<Record<string, CargoWithPermissions[]>>((acc, c) => {
+        const key = c.setor.nome
+        if (!acc[key]) acc[key] = []
+        acc[key].push(c)
+        return acc
+      }, {}),
+    [cargosComPermissoes]
+  )
 
-  const permissoesCreatePreview = calcularPermissoesHerdadas(selectedCreateRoleIds, cargosComPermissoes)
-  const permissoesEditPreview = calcularPermissoesHerdadas(selectedRoleIds, cargosComPermissoes)
+  const permissoesCreatePreview = useMemo(
+    () => calcularPermissoesHerdadas(selectedCreateRoleIds, cargosComPermissoes),
+    [selectedCreateRoleIds, cargosComPermissoes]
+  )
 
-  const createAccessScore = permissoes.length > 0
-    ? Math.round((selectedCreateRoleIds.length > 0
-        ? cargosComPermissoes
-            .filter((c) => selectedCreateRoleIds.includes(c.id))
-            .flatMap((c) => c.cargoPermissoes.map((cp) => cp.permissao.id))
-            .filter((v, i, a) => a.indexOf(v) === i).length
-        : 0) / permissoes.length * 100)
-    : 0
+  const permissoesEditPreview = useMemo(
+    () => calcularPermissoesHerdadas(selectedRoleIds, cargosComPermissoes),
+    [selectedRoleIds, cargosComPermissoes]
+  )
 
-  const editAccessScore = permissoes.length > 0
-    ? Math.round((selectedRoleIds.length > 0
-        ? cargosComPermissoes
-            .filter((c) => selectedRoleIds.includes(c.id))
-            .flatMap((c) => c.cargoPermissoes.map((cp) => cp.permissao.id))
-            .filter((v, i, a) => a.indexOf(v) === i).length
-        : 0) / permissoes.length * 100)
-    : 0
+  const createAccessScore = useMemo(() => {
+    if (permissoes.length === 0) return 0
+    if (selectedCreateRoleIds.length === 0) return 0
+    const uniqueCount = cargosComPermissoes
+      .filter((c) => selectedCreateRoleIds.includes(c.id))
+      .flatMap((c) => c.cargoPermissoes.map((cp) => cp.permissao.id))
+      .filter((v, i, a) => a.indexOf(v) === i).length
+    return Math.round((uniqueCount / permissoes.length) * 100)
+  }, [permissoes.length, selectedCreateRoleIds, cargosComPermissoes])
+
+  const editAccessScore = useMemo(() => {
+    if (permissoes.length === 0) return 0
+    if (selectedRoleIds.length === 0) return 0
+    const uniqueCount = cargosComPermissoes
+      .filter((c) => selectedRoleIds.includes(c.id))
+      .flatMap((c) => c.cargoPermissoes.map((cp) => cp.permissao.id))
+      .filter((v, i, a) => a.indexOf(v) === i).length
+    return Math.round((uniqueCount / permissoes.length) * 100)
+  }, [permissoes.length, selectedRoleIds, cargosComPermissoes])
 
   const users = response?.data ?? []
   const totalUsers = response?.total ?? 0
   const totalPages = response?.totalPages ?? 1
-  const activeCount = users.filter((u) => u.ativo).length
-  const inactiveCount = users.filter((u) => !u.ativo).length
+  const activeCount = useMemo(() => users.filter((u) => u.ativo).length, [users])
+  const inactiveCount = useMemo(() => users.filter((u) => !u.ativo).length, [users])
   const totalPermissions = permissoes.length
 
   if (isLoading) {
@@ -451,9 +478,12 @@ export function UsuariosPage() {
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
-          <div>
-            <h1 className="text-lg font-bold text-slate-800">Usuários & Segurança</h1>
+          <div className="flex items-center gap-3">
+            <MaterialIcon name="admin_panel_settings" className="text-erp-blue text-xl" />
+            <div>
+              <h1 className="text-lg font-bold text-slate-800">Usuários & Segurança</h1>
             <p className="text-xs text-slate-500">Controle de acesso e gestão de usuários do sistema</p>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -465,28 +495,28 @@ export function UsuariosPage() {
                 className="pl-9 w-64 h-9"
                 placeholder="Buscar por nome ou email..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => { setSearch(e.target.value); setPage(1) }}
               />
             </div>
           </div>
           <div className="flex flex-col">
             <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Status</Label>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-32 h-9">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="TODOS">Todos</SelectItem>
-                <SelectItem value="ATIVOS">Ativos</SelectItem>
-                <SelectItem value="INATIVOS">Inativos</SelectItem>
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              className="w-32 h-9"
+              value={statusFilter}
+              onChange={(v) => { setStatusFilter(v); setPage(1) }}
+              options={[
+                { value: 'TODOS', label: 'Todos' },
+                { value: 'ATIVOS', label: 'Ativos' },
+                { value: 'INATIVOS', label: 'Inativos' },
+              ]}
+            />
           </div>
           {canCreate && (
             <div className="flex flex-col">
               <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1 opacity-0">Ação</Label>
               <Button
-                className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold h-9 px-4 rounded-sm"
+                className="bg-erp-blue hover:bg-blue-700 text-white text-sm font-bold h-9 px-4 rounded-sm"
                 onClick={() => setOpenCreate(true)}
               >
                 <MaterialIcon name="person_add" className="text-lg mr-2" />
@@ -796,19 +826,19 @@ export function UsuariosPage() {
         }
       }}>
         <DialogContent className="max-w-6xl h-[90vh] p-0 gap-0 flex flex-col overflow-hidden">
-          <div className="h-16 border-b border-slate-200 px-8 flex items-center justify-between shrink-0 bg-white">
+          <header className="h-16 border-b border-slate-200 px-8 flex items-center justify-between shrink-0 bg-white">
             <div className="flex items-center gap-4">
-              <MaterialIcon name="person_add" className="text-blue-600 text-xl" />
+              <MaterialIcon name="person_add" className="text-erp-blue text-xl" />
               <span className="text-base font-bold text-slate-800 uppercase tracking-tight">
                 Configuração de Novo Usuário
               </span>
               <div className="h-5 w-px bg-slate-200 mx-3" />
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-600">
-                <span className="w-6 h-6 rounded-full border-2 border-blue-600 flex items-center justify-center text-[10px]">01</span>
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-erp-blue">
+                <span className="w-6 h-6 rounded-full border-2 border-erp-blue flex items-center justify-center text-[10px]">01</span>
                 Identidade & Acesso
               </div>
             </div>
-          </div>
+          </header>
 
           <div className="flex-1 flex overflow-hidden">
             <form onSubmit={createForm.handleSubmit(handleCreateSubmit)} className="flex-1 overflow-y-auto px-12 py-10">
@@ -816,25 +846,25 @@ export function UsuariosPage() {
                 {/* Dados Cadastrais */}
                 <section>
                   <h3 className="text-xs font-bold text-slate-400 uppercase mb-5 flex items-center gap-2">
-                    <span className="w-2 h-2 bg-blue-600 rounded-full" />
+                    <span className="w-2 h-2 bg-erp-blue rounded-full" />
                     Dados Cadastrais
                   </h3>
                   <div className="grid grid-cols-2 gap-5">
                     <div>
-                      <Label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Nome Completo</Label>
-                      <Input {...createForm.register('nome')} placeholder="Ex: Ricardo Cavalcanti" className="h-11 text-sm" />
+                      <Label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Nome Completo</Label>
+                      <Input {...createForm.register('nome')} placeholder="Ex: Ricardo Cavalcanti" className="h-9 text-sm" />
                       {createForm.formState.errors.nome && (
                         <p className="text-xs text-red-500 mt-1">{createForm.formState.errors.nome.message}</p>
                       )}
                     </div>
                     <div>
-                      <Label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Setor</Label>
+                      <Label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Setor</Label>
                       <Controller
                         name="setor"
                         control={createForm.control}
                         render={({ field }) => (
                           <Select value={field.value ?? ''} onValueChange={(v) => field.onChange(v || null)}>
-                            <SelectTrigger className="h-11 text-sm">
+                            <SelectTrigger className="h-9 text-sm">
                               <SelectValue placeholder="Selecione um setor" />
                             </SelectTrigger>
                             <SelectContent>
@@ -849,8 +879,8 @@ export function UsuariosPage() {
                       />
                     </div>
                     <div className="col-span-2">
-                      <Label className="text-xs font-bold text-slate-500 uppercase mb-2 block">E-mail Corporativo</Label>
-                      <Input type="email" {...createForm.register('email')} placeholder="usuario@empresa.com.br" className="h-11 text-sm" />
+                      <Label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">E-mail Corporativo</Label>
+                      <Input type="email" {...createForm.register('email')} placeholder="usuario@empresa.com.br" className="h-9 text-sm" />
                       {createForm.formState.errors.email && (
                         <p className="text-xs text-red-500 mt-1">{createForm.formState.errors.email.message}</p>
                       )}
@@ -861,12 +891,12 @@ export function UsuariosPage() {
                 {/* Atribuição de Cargos */}
                 <section>
                   <h3 className="text-xs font-bold text-slate-400 uppercase mb-5 flex items-center gap-2">
-                    <span className="w-2 h-2 bg-blue-600 rounded-full" />
+                    <span className="w-2 h-2 bg-erp-blue rounded-full" />
                     Atribuição de Cargos
                   </h3>
                   <div className="space-y-4">
                     <div>
-                      <Label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Cargos Selecionados</Label>
+                      <Label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Cargos Selecionados</Label>
                       <div className="border border-slate-300 p-4 min-h-[52px] flex flex-wrap gap-2 items-center bg-white rounded">
                         {selectedCreateRoleIds.length === 0 ? (
                           <span className="text-sm text-slate-400 italic">Nenhum cargo selecionado</span>
@@ -1046,7 +1076,7 @@ export function UsuariosPage() {
             </aside>
           </div>
 
-          <div className="h-20 border-t border-slate-200 px-8 flex items-center justify-between shrink-0 bg-white">
+          <footer className="h-20 border-t border-slate-200 px-8 flex items-center justify-between shrink-0 bg-white">
             <Button type="button" variant="ghost" onClick={() => setOpenCreate(false)} className="text-sm font-bold text-slate-500 uppercase hover:text-slate-700">
               Cancelar
             </Button>
@@ -1054,12 +1084,12 @@ export function UsuariosPage() {
               type="submit"
               onClick={createForm.handleSubmit(handleCreateSubmit)}
               disabled={createMutation.isPending}
-              className="px-8 py-3 bg-blue-600 text-white text-sm font-bold uppercase hover:bg-blue-700 transition-colors flex items-center gap-2"
+              className="px-8 py-3 bg-erp-blue text-white text-sm font-bold uppercase hover:bg-blue-700 transition-colors flex items-center gap-2"
             >
               <MaterialIcon name="verified_user" className="text-base" />
               {createMutation.isPending ? 'Criando...' : 'Criar Usuário'}
             </Button>
-          </div>
+          </footer>
         </DialogContent>
       </Dialog>
 
@@ -1071,19 +1101,19 @@ export function UsuariosPage() {
         }
       }}>
         <DialogContent className="max-w-6xl h-[90vh] p-0 gap-0 flex flex-col overflow-hidden">
-          <div className="h-16 border-b border-slate-200 px-8 flex items-center justify-between shrink-0 bg-white">
+          <header className="h-16 border-b border-slate-200 px-8 flex items-center justify-between shrink-0 bg-white">
             <div className="flex items-center gap-4">
-              <MaterialIcon name="edit" className="text-blue-600 text-xl" />
+              <MaterialIcon name="edit" className="text-erp-blue text-xl" />
               <span className="text-base font-bold text-slate-800 uppercase tracking-tight">
                 Editar Usuário
               </span>
               <div className="h-5 w-px bg-slate-200 mx-3" />
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-600">
-                <span className="w-6 h-6 rounded-full border-2 border-blue-600 flex items-center justify-center text-[10px]">01</span>
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-erp-blue">
+                <span className="w-6 h-6 rounded-full border-2 border-erp-blue flex items-center justify-center text-[10px]">01</span>
                 Identidade & Acesso
               </div>
             </div>
-          </div>
+          </header>
 
           <div className="flex-1 flex overflow-hidden">
             <form onSubmit={editForm.handleSubmit(handleEditSubmit)} className="flex-1 overflow-y-auto px-12 py-10">
@@ -1091,25 +1121,25 @@ export function UsuariosPage() {
                 {/* Dados Cadastrais */}
                 <section>
                   <h3 className="text-xs font-bold text-slate-400 uppercase mb-5 flex items-center gap-2">
-                    <span className="w-2 h-2 bg-blue-600 rounded-full" />
+                    <span className="w-2 h-2 bg-erp-blue rounded-full" />
                     Dados Cadastrais
                   </h3>
                   <div className="grid grid-cols-2 gap-5">
                     <div>
-                      <Label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Nome Completo</Label>
-                      <Input {...editForm.register('nome')} placeholder="Ex: Ricardo Cavalcanti" className="h-11 text-sm" />
+                      <Label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Nome Completo</Label>
+                      <Input {...editForm.register('nome')} placeholder="Ex: Ricardo Cavalcanti" className="h-9 text-sm" />
                       {editForm.formState.errors.nome && (
                         <p className="text-xs text-red-500 mt-1">{editForm.formState.errors.nome.message}</p>
                       )}
                     </div>
                     <div>
-                      <Label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Setor</Label>
+                      <Label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Setor</Label>
                       <Controller
                         name="setor"
                         control={editForm.control}
                         render={({ field }) => (
                           <Select value={field.value ?? ''} onValueChange={(v) => field.onChange(v || null)}>
-                            <SelectTrigger className="h-11 text-sm">
+                            <SelectTrigger className="h-9 text-sm">
                               <SelectValue placeholder="Selecione um setor" />
                             </SelectTrigger>
                             <SelectContent>
@@ -1124,8 +1154,8 @@ export function UsuariosPage() {
                       />
                     </div>
                     <div className="col-span-2">
-                      <Label className="text-xs font-bold text-slate-500 uppercase mb-2 block">E-mail Corporativo</Label>
-                      <Input type="email" {...editForm.register('email')} placeholder="usuario@empresa.com.br" className="h-11 text-sm" />
+                      <Label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">E-mail Corporativo</Label>
+                      <Input type="email" {...editForm.register('email')} placeholder="usuario@empresa.com.br" className="h-9 text-sm" />
                       {editForm.formState.errors.email && (
                         <p className="text-xs text-red-500 mt-1">{editForm.formState.errors.email.message}</p>
                       )}
@@ -1136,12 +1166,12 @@ export function UsuariosPage() {
                 {/* Atribuição de Cargos */}
                 <section>
                   <h3 className="text-xs font-bold text-slate-400 uppercase mb-5 flex items-center gap-2">
-                    <span className="w-2 h-2 bg-blue-600 rounded-full" />
+                    <span className="w-2 h-2 bg-erp-blue rounded-full" />
                     Atribuição de Cargos
                   </h3>
                   <div className="space-y-4">
                     <div>
-                      <Label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Cargos Vinculados</Label>
+                      <Label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Cargos Vinculados</Label>
                       <div className="border border-slate-300 p-4 min-h-[52px] flex flex-wrap gap-2 items-center bg-white rounded">
                         {selectedRoleIds.length === 0 ? (
                           <span className="text-sm text-slate-400 italic">Nenhum cargo selecionado</span>
@@ -1302,7 +1332,7 @@ export function UsuariosPage() {
             </aside>
           </div>
 
-          <div className="h-20 border-t border-slate-200 px-8 flex items-center justify-between shrink-0 bg-white">
+          <footer className="h-20 border-t border-slate-200 px-8 flex items-center justify-between shrink-0 bg-white">
             <Button type="button" variant="ghost" onClick={() => setEditingId(null)} className="text-sm font-bold text-slate-500 uppercase hover:text-slate-700">
               Cancelar
             </Button>
@@ -1310,12 +1340,12 @@ export function UsuariosPage() {
               type="submit"
               onClick={editForm.handleSubmit(handleEditSubmit)}
               disabled={updateMutation.isPending}
-              className="px-8 py-3 bg-blue-600 text-white text-sm font-bold uppercase hover:bg-blue-700 transition-colors flex items-center gap-2"
+              className="px-8 py-3 bg-erp-blue text-white text-sm font-bold uppercase hover:bg-blue-700 transition-colors flex items-center gap-2"
             >
               <MaterialIcon name="verified_user" className="text-base" />
               {updateMutation.isPending ? 'Salvando...' : 'Confirmar Edição'}
             </Button>
-          </div>
+          </footer>
         </DialogContent>
       </Dialog>
     </div>

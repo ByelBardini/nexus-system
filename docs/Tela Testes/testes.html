@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Industrial ERP - Equipment Testing Workbench</title>
+    <!-- Tailwind CSS V3 CDN -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <style data-purpose="typography">
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+    <style data-purpose="custom-layout">
+        /* High density styling for industrial interface */
+        .sidebar-item-active {
+            background-color: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid #3b82f6;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 h-screen flex overflow-hidden">
+    <!-- BEGIN: Left Sidebar (Fila de Testes) -->
+    <aside class="w-80 bg-white border-r border-gray-200 flex flex-col h-full" data-purpose="testing-queue-sidebar">
+        <!-- Sidebar Header -->
+        <div class="p-4 border-b border-gray-200 bg-gray-50">
+            <h2 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Fila de Testes</h2>
+            <div class="relative">
+                <input
+                    class="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Buscar OS, placa..." type="text" />
+                <svg class="w-4 h-4 absolute left-2.5 top-2.2 text-gray-400" fill="none" stroke="currentColor"
+                    stroke-width="2" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+                        stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>
+            </div>
+        </div>
+        <!-- Quick Filters -->
+        <div class="flex flex-wrap gap-1 p-2 border-b border-gray-200 bg-white">
+            <button class="px-2 py-1 text-[10px] font-semibold bg-blue-100 text-blue-700 rounded">TODOS</button>
+            <button
+                class="px-2 py-1 text-[10px] font-semibold text-gray-500 hover:bg-gray-100 rounded">AGUARDANDO</button>
+            <button
+                class="px-2 py-1 text-[10px] font-semibold text-gray-500 hover:bg-gray-100 rounded">TESTANDO</button>
+            <button class="px-2 py-1 text-[10px] font-semibold text-gray-500 hover:bg-gray-100 rounded">FALHA</button>
+        </div>
+        <!-- Scrollable Queue List -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar" data-purpose="queue-list">
+            <!-- Card: Active -->
+            <div class="p-3 border-b border-gray-100 sidebar-item-active cursor-pointer">
+                <div class="flex justify-between items-start mb-1">
+                    <span class="text-xs font-bold text-blue-600">OS #29480</span>
+                    <span
+                        class="px-1.5 py-0.5 text-[9px] font-bold bg-blue-100 text-blue-700 rounded uppercase">Testando</span>
+                </div>
+                <p class="text-xs font-semibold text-gray-800 truncate">GLOBAL TRANS-ASSOCIATION</p>
+                <p class="text-[10px] text-gray-500">Fleet North • <span
+                        class="text-gray-900 font-medium">XYZ-9876</span></p>
+                <div class="mt-2 flex justify-between items-end">
+                    <span class="text-[10px] text-gray-400">MARCOS SILVA</span>
+                    <span class="text-[10px] font-medium text-gray-600">IMEI: 86234...</span>
+                </div>
+            </div>
+            <!-- Card: Warning Time -->
+            <div class="p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
+                <div class="flex justify-between items-start mb-1">
+                    <span class="text-xs font-bold text-gray-700">OS #29481</span>
+                    <span
+                        class="px-1.5 py-0.5 text-[9px] font-bold bg-yellow-100 text-yellow-700 rounded uppercase">Aguardando</span>
+                </div>
+                <p class="text-xs font-semibold text-gray-800 truncate">TRANS-LOGISTICS S.A.</p>
+                <p class="text-[10px] text-gray-500">Regional Hub Alpha • <span
+                        class="text-gray-900 font-medium">ABC-1234</span></p>
+                <div class="mt-2 flex justify-between items-center">
+                    <span class="px-1.5 py-0.5 text-[9px] font-bold bg-red-100 text-red-600 rounded flex items-center">
+                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewbox="0 0 20 20">
+                            <path clip-rule="evenodd"
+                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                fill-rule="evenodd"></path>
+                        </svg>
+                        TEMPO ELEVADO
+                    </span>
+                    <span class="text-[10px] text-gray-400">42 min</span>
+                </div>
+            </div>
+            <!-- Card: General -->
+            <div class="p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
+                <div class="flex justify-between items-start mb-1">
+                    <span class="text-xs font-bold text-gray-700">OS #29479</span>
+                    <span
+                        class="px-1.5 py-0.5 text-[9px] font-bold bg-gray-100 text-gray-600 rounded uppercase">Comunicando</span>
+                </div>
+                <p class="text-xs font-semibold text-gray-800 truncate">STEEL LOGISTICS GROUP</p>
+                <p class="text-[10px] text-gray-500">South Terminal • <span
+                        class="text-gray-900 font-medium">DEF-5678</span></p>
+                <div class="mt-2 flex justify-between items-end">
+                    <span class="text-[10px] text-gray-400">ANA PAULA</span>
+                    <span class="text-[10px] font-medium text-gray-600">IMEI: --</span>
+                </div>
+            </div>
+        </div>
+    </aside>
+    <!-- END: Left Sidebar -->
+    <!-- BEGIN: Main Workbench Area -->
+    <main class="flex-1 flex flex-col overflow-hidden bg-gray-50" data-purpose="test-workbench">
+        <!-- Main Header -->
+        <header class="bg-white px-8 py-4 border-b border-gray-200 flex justify-between items-center"
+            data-purpose="workbench-header">
+            <div>
+                <h1 class="text-xl font-bold text-slate-800 uppercase tracking-tight">Bancada de Testes de Equipamentos
+                </h1>
+                <p class="text-sm text-gray-500">Validação de comunicação e sinais vitais antes do cadastro final.</p>
+            </div>
+            <div class="flex items-center space-x-3">
+                <span class="text-xs font-medium text-gray-400 px-3 py-1 bg-gray-100 rounded-full">Terminal:
+                    T01-BANCADA</span>
+            </div>
+        </header>
+        <!-- Content Scroller -->
+        <div class="flex-1 overflow-y-auto p-8 space-y-6 custom-scrollbar">
+            <!-- Section 1: Dados da OS -->
+            <section class="bg-white rounded-lg border border-gray-200 shadow-sm" data-purpose="os-data-section">
+                <div class="px-4 py-2 border-b border-gray-100 bg-gray-50 flex items-center">
+                    <svg class="w-4 h-4 text-blue-500 mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                        <path
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                    </svg>
+                    <h3 class="text-xs font-bold text-gray-600 uppercase">01. Dados da Ordem de Serviço</h3>
+                </div>
+                <div class="p-4 grid grid-cols-5 gap-6">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Número OS</label>
+                        <p class="text-sm font-bold text-gray-800">#29480</p>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Cliente /
+                            Associação</label>
+                        <p class="text-sm font-semibold text-gray-800 truncate">Global Trans-Association</p>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Subcliente /
+                            Base</label>
+                        <p class="text-sm font-medium text-gray-700">Fleet North (Manaus)</p>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Veículo
+                            (Placa/Modelo)</label>
+                        <p class="text-sm font-bold text-gray-800">XYZ-9876 <span
+                                class="text-xs font-normal text-gray-500">VW Constellation</span></p>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Tipo de Serviço</label>
+                        <p class="text-sm font-bold text-indigo-600">INSTALAÇÃO</p>
+                    </div>
+                </div>
+            </section>
+            <!-- Section 2: Equipamento -->
+            <section class="bg-white rounded-lg border border-gray-200 shadow-sm" data-purpose="equipment-section">
+                <div class="px-4 py-2 border-b border-gray-100 bg-gray-50 flex items-center">
+                    <svg class="w-4 h-4 text-blue-500 mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                        <path
+                            d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
+                            stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                    </svg>
+                    <h3 class="text-xs font-bold text-gray-600 uppercase">02. Identificação do Equipamento</h3>
+                </div>
+                <div class="p-6">
+                    <div class="flex gap-4 items-end mb-6">
+                        <div class="flex-1">
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Selecionar
+                                Equipamento (IMEI, ICCID, Serial)</label>
+                            <div class="relative">
+                                <input
+                                    class="w-full text-sm font-mono border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                                    type="text" value="862345678901234" />
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor"
+                                        viewbox="0 0 24 24">
+                                        <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round"
+                                            stroke-linejoin="round" stroke-width="2"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        <button
+                            class="px-4 py-2 text-sm font-semibold text-gray-600 border border-gray-300 rounded hover:bg-gray-50 transition uppercase">Trocar
+                            Aparelho</button>
+                    </div>
+                    <div class="grid grid-cols-3 gap-6 bg-blue-50/50 p-4 rounded border border-blue-100">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] font-bold text-blue-400 uppercase">Modelo</span>
+                            <span class="text-sm font-bold text-slate-700">ST310U (Suntech)</span>
+                        </div>
+                        <div class="flex flex-col border-l border-blue-100 pl-6">
+                            <span class="text-[10px] font-bold text-blue-400 uppercase">Operadora / ICCID</span>
+                            <span class="text-sm font-medium text-slate-700 truncate">VIVO M2M (89551010...)</span>
+                        </div>
+                        <div class="flex flex-col border-l border-blue-100 pl-6">
+                            <span class="text-[10px] font-bold text-blue-400 uppercase">Status no Estoque</span>
+                            <span class="text-sm font-bold text-green-600">DISPONÍVEL / EM USO</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- Section 3: Teste de Comunicação -->
+            <section class="bg-white rounded-lg border border-gray-200 shadow-sm" data-purpose="communication-test">
+                <div class="px-4 py-2 border-b border-gray-100 bg-gray-50 flex items-center">
+                    <svg class="w-4 h-4 text-blue-500 mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                        <path
+                            d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.345 8.99a10.746 10.746 0 0115.132 0l-1.414 1.414a8.746 8.746 0 00-12.304 0L1.344 8.99z"
+                            stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                    </svg>
+                    <h3 class="text-xs font-bold text-gray-600 uppercase">03. Validação de Comunicação GPRS/GPS</h3>
+                </div>
+                <div class="p-6">
+                    <p class="text-xs text-gray-500 mb-6 text-center italic">Aguardando sinais vitais do equipamento na
+                        base de dados em tempo real...</p>
+                    <div class="grid grid-cols-3 gap-4">
+                        <!-- Communicating Button -->
+                        <button
+                            class="flex flex-col items-center justify-center p-6 border-2 border-green-500 bg-green-50 rounded-lg hover:bg-green-100 transition-all group">
+                            <div
+                                class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mb-3 shadow-lg shadow-green-200">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                                    <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"
+                                        stroke-width="3"></path>
+                                </svg>
+                            </div>
+                            <span class="text-sm font-bold text-green-700 uppercase">Comunicando</span>
+                            <span class="text-[10px] text-green-600/70 mt-1">Sinal GPS/GPRS Estável</span>
+                        </button>
+                        <!-- No Comm Button -->
+                        <button
+                            class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 bg-white rounded-lg hover:border-red-500 hover:bg-red-50 transition-all group">
+                            <div
+                                class="w-12 h-12 bg-gray-200 group-hover:bg-red-500 rounded-full flex items-center justify-center mb-3 transition-colors">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                                    <path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"
+                                        stroke-width="3"></path>
+                                </svg>
+                            </div>
+                            <span
+                                class="text-sm font-bold text-gray-400 group-hover:text-red-700 uppercase transition-colors">Sem
+                                Comunicação</span>
+                            <span class="text-[10px] text-gray-400 group-hover:text-red-600/70 mt-1">Nenhum pacote
+                                recebido</span>
+                        </button>
+                        <!-- Weak Signal Button -->
+                        <button
+                            class="flex flex-col items-center justify-center p-6 border-2 border-gray-200 bg-white rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-all group">
+                            <div
+                                class="w-12 h-12 bg-gray-200 group-hover:bg-orange-500 rounded-full flex items-center justify-center mb-3 transition-colors">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                                    <path
+                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                        stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+                                </svg>
+                            </div>
+                            <span
+                                class="text-sm font-bold text-gray-400 group-hover:text-orange-700 uppercase transition-colors">Sinal
+                                Fraco / Instável</span>
+                            <span class="text-[10px] text-gray-400 group-hover:text-orange-600/70 mt-1">Baixa precisão
+                                GPS</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+            <!-- Section 4: Observação Técnica -->
+            <section class="bg-white rounded-lg border border-gray-200 shadow-sm" data-purpose="technical-notes">
+                <div class="px-4 py-2 border-b border-gray-100 bg-gray-50 flex items-center">
+                    <svg class="w-4 h-4 text-blue-500 mr-2" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                        <path
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                            stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+                    </svg>
+                    <h3 class="text-xs font-bold text-gray-600 uppercase">04. Observações Adicionais</h3>
+                </div>
+                <div class="p-6">
+                    <textarea class="w-full text-sm border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Insira detalhes sobre o comportamento do teste ou anomalias percebidas..."
+                        rows="3"></textarea>
+                </div>
+            </section>
+        </div>
+        <!-- Section 5: Finalização (Footer Action Bar) -->
+        <footer class="bg-white border-t border-gray-200 p-6 flex justify-end items-center space-x-4 shadow-inner"
+            data-purpose="action-footer">
+            <button
+                class="px-6 py-2.5 text-sm font-bold text-gray-500 hover:text-gray-700 transition uppercase">Cancelar
+                Operação</button>
+            <button
+                class="px-10 py-3 bg-slate-800 text-white rounded font-bold text-sm hover:bg-slate-900 transition-all shadow-lg flex items-center uppercase tracking-wide">
+                Finalizar Teste &amp; Liberar OS
+                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                    <path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                    </path>
+                </svg>
+            </button>
+        </footer>
+    </main>
+    <!-- END: Main Workbench Area -->
+</body>
+
+</html>

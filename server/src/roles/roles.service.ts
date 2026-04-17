@@ -1,22 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { paginateParams } from '../common/pagination.helper';
 import { CategoriaCargo } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-
-interface CreateCargoDto {
-  nome: string;
-  code: string;
-  setorId: number;
-  descricao?: string;
-  categoria?: CategoriaCargo;
-  ativo?: boolean;
-}
-
-interface UpdateCargoDto {
-  nome?: string;
-  descricao?: string;
-  categoria?: CategoriaCargo;
-  ativo?: boolean;
-}
+import { CreateRoleDto } from './dto/create-role.dto';
+import { UpdateRoleDto } from './dto/update-role.dto';
 
 interface FindAllParams {
   search?: string;
@@ -40,13 +31,19 @@ export class RolesService {
   }
 
   async findAllPaginated(params: FindAllParams) {
-    const { search, categoria, page = 1, limit = 15 } = params;
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = paginateParams(params, {
+      maxLimit: 100,
+      defaultLimit: 15,
+    });
+    const { search, categoria } = params;
 
-    const where: any = {};
+    const where: {
+      nome?: { contains: string; mode: 'insensitive' };
+      categoria?: CategoriaCargo;
+    } = {};
 
     if (search) {
-      where.nome = { contains: search };
+      where.nome = { contains: search, mode: 'insensitive' };
     }
 
     if (categoria) {
@@ -77,6 +74,7 @@ export class RolesService {
       })),
       total,
       page,
+      limit,
       totalPages: Math.ceil(total / limit),
     };
   }
@@ -101,7 +99,13 @@ export class RolesService {
     };
   }
 
-  async create(data: CreateCargoDto) {
+  async create(data: CreateRoleDto) {
+    const existing = await this.prisma.cargo.findFirst({
+      where: { setorId: data.setorId, code: data.code },
+    });
+    if (existing) {
+      throw new ConflictException('Cargo com este código já existe no setor');
+    }
     return this.prisma.cargo.create({
       data: {
         nome: data.nome,
@@ -118,7 +122,7 @@ export class RolesService {
     });
   }
 
-  async update(id: number, data: UpdateCargoDto) {
+  async update(id: number, data: UpdateRoleDto) {
     const cargo = await this.prisma.cargo.findUnique({ where: { id } });
     if (!cargo) throw new NotFoundException('Cargo não encontrado');
 
@@ -169,7 +173,9 @@ export class RolesService {
   }
 
   async updateUserRoles(usuarioId: number, cargoIds: number[]) {
-    const usuario = await this.prisma.usuario.findUnique({ where: { id: usuarioId } });
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: usuarioId },
+    });
     if (!usuario) throw new NotFoundException('Usuário não encontrado');
     await this.prisma.$transaction(async (tx) => {
       await tx.usuarioCargo.deleteMany({ where: { usuarioId } });

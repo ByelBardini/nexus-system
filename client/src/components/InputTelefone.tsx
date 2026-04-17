@@ -24,6 +24,7 @@ export function InputTelefone({ value, onChange, placeholder = '(00) 00000-0000'
       className={className}
       disabled={disabled}
       maxLength={15}
+      autoComplete="off"
     />
   )
 }

@@ -39,11 +39,13 @@ describe('AuthController', () => {
     });
 
     it('propaga UnauthorizedException do service', async () => {
-      authServiceMock.login.mockRejectedValue(new UnauthorizedException('Credenciais inválidas'));
-
-      await expect(controller.login({ email: 'x@x.com', password: 'errada' })).rejects.toThrow(
-        'Credenciais inválidas',
+      authServiceMock.login.mockRejectedValue(
+        new UnauthorizedException('Credenciais inválidas'),
       );
+
+      await expect(
+        controller.login({ email: 'x@x.com', password: 'errada' }),
+      ).rejects.toThrow('Credenciais inválidas');
     });
   });
 });

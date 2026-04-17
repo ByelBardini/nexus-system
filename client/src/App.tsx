@@ -6,6 +6,11 @@ import { Login } from '@/pages/Login'
 import { Loader2 } from 'lucide-react'
 
 const OrdensServicoPage = lazy(() => import('@/pages/OrdensServicoPage').then((m) => ({ default: m.OrdensServicoPage })))
+const OrdensServicoCriacaoPage = lazy(() =>
+  import('@/pages/ordens-servico/OrdensServicoCriacaoPage').then((m) => ({
+    default: m.OrdensServicoCriacaoPage,
+  }))
+)
 const ConfiguracoesPage = lazy(() => import('@/pages/configuracoes/ConfiguracoesPage').then((m) => ({ default: m.ConfiguracoesPage })))
 const UsuariosPage = lazy(() => import('@/pages/usuarios/UsuariosPage').then((m) => ({ default: m.UsuariosPage })))
 const CargosPage = lazy(() => import('@/pages/cargos/CargosPage').then((m) => ({ default: m.CargosPage })))
@@ -32,6 +37,17 @@ const PedidosRastreadoresPage = lazy(() =>
 )
 const PedidosConfigPage = lazy(() =>
   import('@/pages/pedidos/PedidosConfigPage').then((m) => ({ default: m.PedidosConfigPage }))
+)
+const TestesPage = lazy(() =>
+  import('@/pages/testes/TestesPage').then((m) => ({ default: m.TestesPage }))
+)
+const DebitosEquipamentosPage = lazy(() =>
+  import('@/pages/debitos-equipamentos/DebitosEquipamentosPage').then((m) => ({ default: m.DebitosEquipamentosPage }))
+)
+const CadastroRastreamentoPage = lazy(() =>
+  import('@/pages/cadastro-rastreamento/CadastroRastreamentoPage').then((m) => ({
+    default: m.CadastroRastreamentoPage,
+  }))
 )
 
 function PageLoader() {
@@ -63,6 +79,14 @@ function App() {
           }
         />
         <Route
+          path="ordens-servico/nova"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <OrdensServicoCriacaoPage />
+            </Suspense>
+          }
+        />
+        <Route
           path="pedidos-rastreadores"
           element={
             <Suspense fallback={<PageLoader />}>
@@ -79,10 +103,34 @@ function App() {
           }
         />
         <Route
+          path="testes"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <TestesPage />
+            </Suspense>
+          }
+        />
+        <Route
           path="configuracoes"
           element={
             <Suspense fallback={<PageLoader />}>
               <ConfiguracoesPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="debitos-equipamentos"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <DebitosEquipamentosPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="cadastro-rastreamento"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <CadastroRastreamentoPage />
             </Suspense>
           }
         />
@@ -176,6 +224,10 @@ function App() {
         />
         <Route
           path="equipamentos/operadoras"
+          element={<Navigate to="/equipamentos/config" replace />}
+        />
+        <Route
+          path="equipamentos/marcas-simcard"
           element={<Navigate to="/equipamentos/config" replace />}
         />
       </Route>

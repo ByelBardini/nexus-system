@@ -40,12 +40,9 @@ describe('AuthService', () => {
     it('lança UnauthorizedException quando usuário não existe', async () => {
       usersServiceMock.findByEmail.mockResolvedValue(null);
 
-      await expect(service.login('inexistente@test.com', '123')).rejects.toThrow(
-        UnauthorizedException,
-      );
-      await expect(service.login('inexistente@test.com', '123')).rejects.toThrow(
-        'Credenciais inválidas',
-      );
+      const promise = service.login('inexistente@test.com', '123');
+      await expect(promise).rejects.toThrow(UnauthorizedException);
+      await expect(promise).rejects.toThrow('Credenciais inválidas');
     });
 
     it('lança UnauthorizedException quando usuário está inativo', async () => {
@@ -57,7 +54,9 @@ describe('AuthService', () => {
         usuarioCargos: [],
       });
 
-      await expect(service.login('user@test.com', '123')).rejects.toThrow(UnauthorizedException);
+      await expect(service.login('user@test.com', '123')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('lança UnauthorizedException quando senha é inválida', async () => {
@@ -69,7 +68,9 @@ describe('AuthService', () => {
         usuarioCargos: [],
       });
 
-      await expect(service.login('user@test.com', 'errada')).rejects.toThrow(UnauthorizedException);
+      await expect(service.login('user@test.com', 'errada')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('retorna accessToken, user e permissions com credenciais válidas', async () => {
@@ -84,16 +85,26 @@ describe('AuthService', () => {
       };
       usersServiceMock.findByEmail.mockResolvedValue(user);
       usersServiceMock.updateLastLogin.mockResolvedValue(undefined);
-      usersServiceMock.getPermissions.mockReturnValue(['AGENDAMENTO.OS.LISTAR']);
+      usersServiceMock.getPermissions.mockReturnValue([
+        'AGENDAMENTO.OS.LISTAR',
+      ]);
       jwtServiceMock.sign.mockReturnValue('jwt-token');
 
       const result = await service.login('user@test.com', 'senha123');
 
       expect(result.accessToken).toBe('jwt-token');
-      expect(result.user).toEqual({ id: 1, nome: 'Usuário Teste', email: 'user@test.com' });
+      expect(result.user).toEqual({
+        id: 1,
+        nome: 'Usuário Teste',
+        email: 'user@test.com',
+      });
       expect(result.permissions).toEqual(['AGENDAMENTO.OS.LISTAR']);
       expect(usersService.updateLastLogin).toHaveBeenCalledWith(1);
-      expect(jwtService.sign).toHaveBeenCalledWith({ sub: 1, email: 'user@test.com' });
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(jwtService.sign).toHaveBeenCalledWith({
+        sub: 1,
+        email: 'user@test.com',
+      });
     });
   });
 

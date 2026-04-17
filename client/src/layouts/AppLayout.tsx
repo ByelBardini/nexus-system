@@ -1,4 +1,5 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { MaterialIcon } from '@/components/MaterialIcon'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
 
@@ -7,7 +8,8 @@ const navSections = [
     title: 'Agendamento',
     items: [
       { to: '/', label: 'Ordens de Serviço', icon: 'list_alt' },
-      { to: '/pedidos-rastreadores', label: 'Pedidos de Rastreadores', icon: 'package_2' },
+      { to: '/testes', label: 'Bancada de Testes', icon: 'biotech' },
+      { to: '/pedidos-rastreadores', label: 'Pedidos', icon: 'package_2' },
     ],
   },
   {
@@ -16,16 +18,14 @@ const navSections = [
       { to: '/pedidos-config', label: 'Config. Pedidos', icon: 'settings_suggest' },
       { to: '/equipamentos', label: 'Equipamentos', icon: 'settings_input_component' },
       { to: '/aparelhos', label: 'Rastreadores/Simcards', icon: 'router' },
+      { to: '/debitos-equipamentos', label: 'Débitos', icon: 'account_balance' },
+      { to: '/cadastro-rastreamento', label: 'Cadastro', icon: 'add_location_alt' },
     ],
   },
 ]
 const navBottom = [
   { to: '/configuracoes', label: 'Configurações', icon: 'settings' },
 ]
-
-function MaterialIcon({ name, className }: { name: string; className?: string }) {
-  return <span className={cn('material-symbols-outlined', className)}>{name}</span>
-}
 
 function NavLink({
   to,
@@ -66,15 +66,13 @@ export function AppLayout() {
     <div className="flex h-screen overflow-hidden">
       <aside className="w-60 min-w-[240px] bg-slate-950 text-slate-300 flex flex-col border-r border-slate-800 shrink-0 overflow-hidden">
         <div className="p-4 flex items-center gap-3 border-b border-slate-800">
-          <div className="size-7 bg-white flex items-center justify-center text-slate-950">
-            <MaterialIcon name="precision_manufacturing" className="text-xl" />
-          </div>
+          <img src="/logo.png" alt="Nexus" className="size-7 rounded" />
           <div>
             <h1 className="text-white text-base font-bold leading-none font-condensed">NEXUS</h1>
             <p className="text-[9px] uppercase tracking-widest text-slate-500 font-bold">Agend. e Conf.</p>
           </div>
         </div>
-        <nav className="flex-1 px-2 py-4 flex flex-col gap-4 overflow-y-auto">
+        <nav className="flex-1 min-h-0 px-2 py-4 flex flex-col gap-4 overflow-y-auto">
           {navSections.map((section) => (
             <div key={section.title}>
               <p className="px-3 mb-2 text-[9px] font-bold uppercase tracking-widest text-slate-500">
@@ -89,7 +87,8 @@ export function AppLayout() {
                     icon={icon}
                     isActive={
                       location.pathname === to ||
-                      (to !== '/' && location.pathname.startsWith(to + '/'))
+                      (to !== '/' && location.pathname.startsWith(to + '/')) ||
+                      (to === '/' && location.pathname.startsWith('/ordens-servico'))
                     }
                   />
                 ))}
@@ -127,8 +126,8 @@ export function AppLayout() {
           </div>
         </div>
       </aside>
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto pt-4 px-4 pb-4">
+      <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pt-4 px-4 pb-4">
           <Outlet />
         </div>
       </main>

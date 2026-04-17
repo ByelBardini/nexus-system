@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+
+<html class="light" lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Orchestrated Ledger - Débitos de Equipamentos</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-surface": "#191c1e",
+              "outline": "#75777d",
+              "secondary": "#515f74",
+              "tertiary-container": "#002c42",
+              "inverse-surface": "#2d3133",
+              "error": "#ba1a1a",
+              "outline-variant": "#c5c6cd",
+              "on-primary-fixed": "#111c2d",
+              "on-primary": "#ffffff",
+              "primary-fixed": "#d8e3fb",
+              "surface-dim": "#d8dadc",
+              "surface-container-highest": "#e0e3e5",
+              "on-secondary-fixed-variant": "#3a485c",
+              "primary": "#091426",
+              "on-tertiary-container": "#0099d9",
+              "on-primary-fixed-variant": "#3c475a",
+              "surface-tint": "#545f73",
+              "surface-container-low": "#f2f4f6",
+              "tertiary": "#001624",
+              "on-background": "#191c1e",
+              "surface": "#f7f9fb",
+              "on-surface-variant": "#45474c",
+              "on-secondary-fixed": "#0d1c2f",
+              "primary-container": "#1e293b",
+              "on-tertiary-fixed": "#001e2f",
+              "on-secondary-container": "#57657b",
+              "inverse-primary": "#bcc7de",
+              "inverse-on-surface": "#eff1f3",
+              "on-tertiary": "#ffffff",
+              "secondary-container": "#d5e3fd",
+              "tertiary-fixed": "#c9e6ff",
+              "surface-bright": "#f7f9fb",
+              "background": "#f7f9fb",
+              "primary-fixed-dim": "#bcc7de",
+              "surface-variant": "#e0e3e5",
+              "on-tertiary-fixed-variant": "#004c6e",
+              "error-container": "#ffdad6",
+              "surface-container-high": "#e6e8ea",
+              "on-primary-container": "#8590a6",
+              "on-error": "#ffffff",
+              "on-secondary": "#ffffff",
+              "surface-container": "#eceef0",
+              "secondary-fixed-dim": "#b9c7e0",
+              "on-error-container": "#93000a",
+              "tertiary-fixed-dim": "#89ceff",
+              "secondary-fixed": "#d5e3fd",
+              "surface-container-lowest": "#ffffff"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .tabular-nums { font-variant-numeric: tabular-nums; }
+      body { font-family: 'Inter', sans-serif; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased">
+<!-- SideNavBar - Predicted Component -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-[#1E293B] dark:bg-[#091426] text-white font-['Inter'] antialiased tracking-tight shadow-2xl flex flex-col py-6 z-50">
+<div class="px-6 mb-10">
+<h1 class="text-lg font-bold tracking-tighter text-white">The Orchestrated Ledger</h1>
+<p class="text-[10px] uppercase tracking-[0.2em] text-on-primary-container/60">Industrial Precision</p>
+</div>
+<nav class="flex-1 space-y-1 px-3">
+<a class="flex items-center px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200 ease-in-out group" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="precision_manufacturing">precision_manufacturing</span>
+<span class="text-sm font-medium">Operação</span>
+</a>
+<a class="flex items-center px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200 ease-in-out group" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="analytics">analytics</span>
+<span class="text-sm font-medium">Gestão</span>
+</a>
+<a class="flex items-center px-3 py-2 bg-[#091426] text-white border-l-4 border-[#0099D9] transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined mr-3" data-icon="settings">settings</span>
+<span class="text-sm font-medium">Configuração</span>
+</a>
+</nav>
+<div class="mt-auto px-3 space-y-1 pt-6 border-t border-slate-700/30">
+<div class="flex items-center px-4 py-4 mb-4">
+<img alt="User profile" class="w-8 h-8 rounded-lg bg-slate-700" data-alt="professional male profile picture in corporate attire, soft studio lighting, neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSA55uCGTiGN8Cj8Q_tOlE_b_GIfyWVJG_OmGoXrWTz1MTDv3IFlVNwG-o2LwxNaXtbZf8HWqjDLKlUHwVJvzpICL2SMhqlFRY_zOcWpC5AMJ7hrHQByOnMFm3XX2M6Z2mX4vtSpWTq0bg9L3kAfp-dWwJOO4KXOta2xvkGL4DyRnL5AHp1YiW8Mw25pne0kZrpDtaUVtqijRNGByhrqSdMGATK9-tn1YuZ83rLKAk_5mayfoEOjW5FuOm5Pwuch2Alp16zdQ37Qw"/>
+<div class="ml-3">
+<p class="text-xs font-semibold text-white">Administrator</p>
+<p class="text-[10px] text-slate-400">Ledger Master</p>
+</div>
+</div>
+<a class="flex items-center px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined mr-3 text-sm" data-icon="help">help</span>
+<span class="text-sm font-medium">Suporte</span>
+</a>
+<a class="flex items-center px-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined mr-3 text-sm" data-icon="logout">logout</span>
+<span class="text-sm font-medium">Sair</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Wrapper -->
+<div class="ml-64 min-h-screen flex flex-col">
+<!-- TopAppBar - Predicted Component -->
+<header class="w-full sticky top-0 z-40 bg-[#F7F9FB] dark:bg-[#091426] text-[#1E293B] dark:text-slate-100 font-['Inter'] tabular-nums font-semibold flex justify-between items-center h-16 px-8 no-border bg-surface-shift">
+<div class="flex items-center gap-4">
+<span class="text-sm font-bold uppercase tracking-widest text-slate-500">CONFIGURAÇÃO &gt; Débitos de Equipamentos</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm" data-icon="search">search</span>
+<input class="bg-surface-container-low border-none rounded-lg py-1.5 pl-9 pr-4 text-xs w-64 focus:ring-1 focus:ring-primary/20" placeholder="Pesquisar registros..." type="text"/>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 rounded-lg hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors duration-150 relative">
+<span class="material-symbols-outlined text-[20px]" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-1.5 h-1.5 bg-on-tertiary-container rounded-full"></span>
+</button>
+<button class="p-2 rounded-lg hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors duration-150">
+<span class="material-symbols-outlined text-[20px]" data-icon="sync">sync</span>
+</button>
+<button class="p-2 rounded-lg hover:bg-slate-200/50 dark:hover:bg-slate-800 transition-colors duration-150">
+<span class="material-symbols-outlined text-[20px]" data-icon="history">history</span>
+</button>
+</div>
+</div>
+</header>
+<main class="p-8 max-w-7xl w-full mx-auto space-y-8">
+<!-- Summary Bento Grid -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/15 flex items-start justify-between">
+<div>
+<p class="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold mb-1">Débitos Ativos</p>
+<h3 class="text-3xl font-black tabular-nums text-primary tracking-tight">07</h3>
+<p class="text-xs text-on-tertiary-container mt-2 flex items-center font-medium">
+<span class="material-symbols-outlined text-sm mr-1" data-icon="trending_up">trending_up</span>
+                            +2 este mês
+                        </p>
+</div>
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/15 flex items-start justify-between">
+<div>
+<p class="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold mb-1">Clientes Devedores</p>
+<h3 class="text-3xl font-black tabular-nums text-primary tracking-tight">03</h3>
+<div class="mt-2 w-full bg-surface-container-low h-1 rounded-full overflow-hidden">
+<div class="bg-on-tertiary-container h-full w-[85%]"></div>
+</div>
+<p class="text-[10px] text-on-surface-variant mt-2 font-medium">Concentração: 85%</p>
+</div>
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/15 flex items-start justify-between">
+<div>
+<p class="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold mb-1">Modelos Ativos</p>
+<h3 class="text-3xl font-black tabular-nums text-primary tracking-tight">05</h3>
+<p class="text-xs text-on-surface-variant mt-2 font-medium italic opacity-70">Predomínio: ST310U</p>
+</div>
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined" data-icon="category">category</span>
+</div>
+</div>
+</section>
+<!-- Filters Section -->
+<section class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/15">
+<div class="flex flex-wrap items-end gap-6">
+<div class="flex-1 min-w-[240px]">
+<label class="block text-[10px] uppercase font-bold text-on-surface-variant mb-2">Busca Rápida</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm" data-icon="search">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-lg py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/10" placeholder="Filtrar por cliente ou modelo..." type="text"/>
+</div>
+</div>
+<div class="w-48">
+<label class="block text-[10px] uppercase font-bold text-on-surface-variant mb-2">Devedor</label>
+<select class="w-full bg-surface-container-low border-none rounded-lg py-2.5 text-sm focus:ring-2 focus:ring-primary/10">
+<option>Todos</option>
+<option>Infinity</option>
+<option>LogiTech</option>
+</select>
+</div>
+<div class="w-48">
+<label class="block text-[10px] uppercase font-bold text-on-surface-variant mb-2">Modelo</label>
+<select class="w-full bg-surface-container-low border-none rounded-lg py-2.5 text-sm focus:ring-2 focus:ring-primary/10">
+<option>Todos</option>
+<option>ST310U</option>
+<option>GV55</option>
+</select>
+</div>
+<div class="flex items-center gap-2 pb-1">
+<button class="px-4 py-2 bg-primary text-white text-[11px] font-bold rounded-lg uppercase tracking-wider flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="filter_list">filter_list</span>
+                            Filtrar
+                        </button>
+<button class="px-4 py-2 bg-surface-container-low text-primary text-[11px] font-bold rounded-lg uppercase tracking-wider">Limpar</button>
+</div>
+</div>
+<div class="mt-4 flex items-center gap-3">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">Status:</span>
+<button class="px-3 py-1 bg-primary-container text-white text-[10px] font-bold rounded-full">Todos</button>
+<button class="px-3 py-1 bg-surface-container-low text-on-surface-variant text-[10px] font-bold rounded-full hover:bg-surface-container-high transition-colors">Aberto</button>
+<button class="px-3 py-1 bg-surface-container-low text-on-surface-variant text-[10px] font-bold rounded-full hover:bg-surface-container-high transition-colors">Parcial</button>
+</div>
+</section>
+<!-- Main Ledger Table -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant/15 overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low/50">
+<th class="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Devedor</th>
+<th class="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Credor</th>
+<th class="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Modelo</th>
+<th class="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Qtd</th>
+<th class="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Origem</th>
+<th class="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Úl. Mov</th>
+<th class="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-wider text-center">Status</th>
+<th class="px-6 py-4 text-[10px] font-bold text-on-surface-variant uppercase tracking-wider text-right">Ações</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<!-- Row 1: Active/Expandable -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group cursor-pointer border-l-4 border-on-tertiary-container/30">
+<td class="px-6 py-4">
+<span class="text-sm font-bold text-primary">Infinity</span>
+<p class="text-[10px] text-on-surface-variant/70">ID: 4429</p>
+</td>
+<td class="px-6 py-4 text-sm text-secondary font-medium">AASC</td>
+<td class="px-6 py-4 text-sm font-mono text-primary/80">ST310U</td>
+<td class="px-6 py-4">
+<span class="tabular-nums text-sm font-bold px-2 py-0.5 bg-surface-container-low rounded">05</span>
+</td>
+<td class="px-6 py-4 text-xs font-medium text-on-surface-variant">Pedido #42</td>
+<td class="px-6 py-4 text-xs tabular-nums text-on-surface-variant">12/10/2023</td>
+<td class="px-6 py-4 text-center">
+<span class="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-tight bg-orange-100 text-orange-700">Aberto</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="p-2 text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-xl" data-icon="keyboard_arrow_down">keyboard_arrow_down</span>
+</button>
+</td>
+</tr>
+<!-- Expanded Details for Row 1 -->
+<tr class="bg-surface-container-low/40">
+<td class="px-10 py-8 border-t border-outline-variant/15" colspan="8">
+<div class="grid grid-cols-12 gap-8">
+<div class="col-span-12 mb-4">
+<h4 class="text-base font-bold text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-on-tertiary-container" data-icon="account_balance">account_balance</span>
+                                            Infinity deve para AASC
+                                        </h4>
+</div>
+<!-- List by Model -->
+<div class="col-span-4 space-y-4">
+<h5 class="text-[10px] font-black uppercase text-on-surface-variant tracking-widest border-b border-outline-variant/20 pb-2">Distribuição de Modelos</h5>
+<div class="space-y-2">
+<div class="flex items-center justify-between p-3 bg-surface-container-lowest rounded-lg">
+<span class="text-sm font-mono text-primary font-semibold">ST310U</span>
+<span class="text-sm font-black tabular-nums">05 un.</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-lowest rounded-lg">
+<span class="text-sm font-mono text-primary font-semibold">ST310</span>
+<span class="text-sm font-black tabular-nums">02 un.</span>
+</div>
+</div>
+<div class="pt-2">
+<p class="text-[10px] text-on-surface-variant uppercase font-bold">Saldo Consolidado</p>
+<p class="text-2xl font-black text-primary tabular-nums">07 unidades</p>
+</div>
+</div>
+<!-- History Timeline -->
+<div class="col-span-5 space-y-4">
+<h5 class="text-[10px] font-black uppercase text-on-surface-variant tracking-widest border-b border-outline-variant/20 pb-2">Histórico de Movimentação</h5>
+<div class="space-y-4 relative before:content-[''] before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-outline-variant/20">
+<div class="relative pl-8">
+<div class="absolute left-0 top-1.5 w-[24px] h-[24px] bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center border-2 border-white">
+<span class="material-symbols-outlined text-[14px]" data-icon="add">add</span>
+</div>
+<p class="text-xs font-bold text-primary">+10 enviados (Pedido #42)</p>
+<p class="text-[10px] text-on-surface-variant/70 tabular-nums">08/10/2023 14:22</p>
+</div>
+<div class="relative pl-8">
+<div class="absolute left-0 top-1.5 w-[24px] h-[24px] bg-red-50 text-red-600 rounded-full flex items-center justify-center border-2 border-white">
+<span class="material-symbols-outlined text-[14px]" data-icon="remove">remove</span>
+</div>
+<p class="text-xs font-bold text-primary">-5 usados por AASC</p>
+<p class="text-[10px] text-on-surface-variant/70 tabular-nums">12/10/2023 09:15</p>
+</div>
+</div>
+</div>
+<!-- Actions Panel -->
+<div class="col-span-3 flex flex-col justify-between">
+<h5 class="text-[10px] font-black uppercase text-on-surface-variant tracking-widest border-b border-outline-variant/20 pb-2">Ações Corretivas</h5>
+<div class="space-y-2 mt-4">
+<button class="w-full bg-primary text-white py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:opacity-90 transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-base" data-icon="task_alt">task_alt</span>
+                                                Resolver Pendência
+                                            </button>
+<button class="w-full bg-surface-container-lowest border border-outline-variant/50 text-primary py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-surface transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-base" data-icon="swap_horiz">swap_horiz</span>
+                                                Transferência Direta
+                                            </button>
+<button class="w-full bg-white border border-outline-variant/30 text-on-tertiary-container py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-surface-container-low transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-base" data-icon="account_balance_wallet">account_balance_wallet</span>
+                                                Abater Dívida
+                                            </button>
+</div>
+<div class="mt-auto pt-6 text-center">
+<button class="text-[10px] font-bold text-on-surface-variant hover:text-primary underline">Ver Histórico Completo</button>
+</div>
+</div>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group cursor-pointer">
+<td class="px-6 py-4">
+<span class="text-sm font-bold text-primary">LogiTech Solutions</span>
+<p class="text-[10px] text-on-surface-variant/70">ID: 5102</p>
+</td>
+<td class="px-6 py-4 text-sm text-secondary font-medium">AASC</td>
+<td class="px-6 py-4 text-sm font-mono text-primary/80">GV55</td>
+<td class="px-6 py-4">
+<span class="tabular-nums text-sm font-bold px-2 py-0.5 bg-surface-container-low rounded">12</span>
+</td>
+<td class="px-6 py-4 text-xs font-medium text-on-surface-variant">Remessa #109</td>
+<td class="px-6 py-4 text-xs tabular-nums text-on-surface-variant">05/10/2023</td>
+<td class="px-6 py-4 text-center">
+<span class="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-tight bg-blue-100 text-on-tertiary-container">Parcial</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="p-2 text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-xl" data-icon="keyboard_arrow_right">keyboard_arrow_right</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-low/30 transition-colors group cursor-pointer opacity-70">
+<td class="px-6 py-4">
+<span class="text-sm font-bold text-primary">Swift Transport</span>
+<p class="text-[10px] text-on-surface-variant/70">ID: 3220</p>
+</td>
+<td class="px-6 py-4 text-sm text-secondary font-medium">Infinity</td>
+<td class="px-6 py-4 text-sm font-mono text-primary/80">ST310U</td>
+<td class="px-6 py-4">
+<span class="tabular-nums text-sm font-bold px-2 py-0.5 bg-surface-container-low rounded">00</span>
+</td>
+<td class="px-6 py-4 text-xs font-medium text-on-surface-variant">Finalizado</td>
+<td class="px-6 py-4 text-xs tabular-nums text-on-surface-variant">01/10/2023</td>
+<td class="px-6 py-4 text-center">
+<span class="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-tight bg-emerald-100 text-emerald-700">Quitado</span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="p-2 text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-xl" data-icon="keyboard_arrow_right">keyboard_arrow_right</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="px-6 py-4 bg-surface-container-low/20 flex items-center justify-between border-t border-outline-variant/10">
+<p class="text-xs text-on-surface-variant">Exibindo 3 de 7 registros de débitos ativos</p>
+<div class="flex items-center gap-2">
+<button class="w-8 h-8 rounded border border-outline-variant/30 flex items-center justify-center text-outline hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded bg-primary text-white flex items-center justify-center text-xs font-bold">1</button>
+<button class="w-8 h-8 rounded border border-outline-variant/30 flex items-center justify-center text-outline hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</section>
+</main>
+</div>
+</body></html>
