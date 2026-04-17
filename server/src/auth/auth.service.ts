@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PRAZO_EXPIRACAO_SENHA_MESES } from '../common/constants';
@@ -54,7 +58,9 @@ export class AuthService {
 
     const senhaHash = await bcrypt.hash(novaSenha, 10);
     const dataExpiracao = new Date();
-    dataExpiracao.setMonth(dataExpiracao.getMonth() + PRAZO_EXPIRACAO_SENHA_MESES);
+    dataExpiracao.setMonth(
+      dataExpiracao.getMonth() + PRAZO_EXPIRACAO_SENHA_MESES,
+    );
 
     await this.usersService.updatePassword(user.id, senhaHash, dataExpiracao);
     return { message: 'Senha alterada com sucesso' };

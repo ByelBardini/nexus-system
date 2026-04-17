@@ -1,4 +1,11 @@
-import { IsString, IsOptional, IsBoolean, IsInt, MaxLength, Min } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsBoolean,
+  IsInt,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -14,7 +21,10 @@ export class UpdateModeloDto {
   @IsOptional()
   ativo?: boolean;
 
-  @ApiPropertyOptional({ example: 15, description: 'Quantidade mínima de caracteres do IMEI para este modelo' })
+  @ApiPropertyOptional({
+    example: 15,
+    description: 'Quantidade mínima de caracteres do IMEI para este modelo',
+  })
   @IsOptional()
   @IsInt()
   @Min(1)

@@ -34,10 +34,7 @@ export async function paginate<T>(
   options: PaginateOptions = {},
 ): Promise<PaginatedResult<T>> {
   const { page, limit, skip } = paginateParams(params, options);
-  const [data, total] = await Promise.all([
-    findManyFn(skip, limit),
-    countFn(),
-  ]);
+  const [data, total] = await Promise.all([findManyFn(skip, limit), countFn()]);
   return {
     data,
     total,

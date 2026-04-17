@@ -28,10 +28,22 @@ export class DebitosRastreadoresService {
     tx: Prisma.TransactionClient,
     params: ConsolidarDebitoParams,
   ): Promise<void> {
-    const { devedorTipo, devedorClienteId, credorTipo, credorClienteId, marcaId, modeloId, delta, pedidoId, loteId, aparelhoId } = params;
+    const {
+      devedorTipo,
+      devedorClienteId,
+      credorTipo,
+      credorClienteId,
+      marcaId,
+      modeloId,
+      delta,
+      pedidoId,
+      loteId,
+      aparelhoId,
+    } = params;
 
     // Não criar dívida de entidade consigo mesma
-    if (devedorTipo === credorTipo && devedorClienteId === credorClienteId) return;
+    if (devedorTipo === credorTipo && devedorClienteId === credorClienteId)
+      return;
 
     let debitoId: number;
     let actualDelta = delta;
@@ -59,7 +71,14 @@ export class DebitosRastreadoresService {
     } else {
       // Upsert manual porque campos nullable em unique key não suportam upsert direto no Prisma/MySQL
       const existing = await tx.debitoRastreador.findFirst({
-        where: { devedorTipo, devedorClienteId, credorTipo, credorClienteId, marcaId, modeloId },
+        where: {
+          devedorTipo,
+          devedorClienteId,
+          credorTipo,
+          credorClienteId,
+          marcaId,
+          modeloId,
+        },
       });
 
       if (existing) {
@@ -70,14 +89,28 @@ export class DebitosRastreadoresService {
         debitoId = existing.id;
       } else {
         const created = await tx.debitoRastreador.create({
-          data: { devedorTipo, devedorClienteId, credorTipo, credorClienteId, marcaId, modeloId, quantidade: delta },
+          data: {
+            devedorTipo,
+            devedorClienteId,
+            credorTipo,
+            credorClienteId,
+            marcaId,
+            modeloId,
+            quantidade: delta,
+          },
         });
         debitoId = created.id;
       }
     }
 
     await tx.historicoDebitoRastreador.create({
-      data: { debitoId, pedidoId: pedidoId ?? null, loteId: loteId ?? null, aparelhoId: aparelhoId ?? null, delta: actualDelta },
+      data: {
+        debitoId,
+        pedidoId: pedidoId ?? null,
+        loteId: loteId ?? null,
+        aparelhoId: aparelhoId ?? null,
+        delta: actualDelta,
+      },
     });
   }
 
@@ -87,8 +120,10 @@ export class DebitosRastreadoresService {
     const skip = (page - 1) * limit;
 
     const where: Prisma.DebitoRastreadorWhereInput = {};
-    if (params.devedorClienteId !== undefined) where.devedorClienteId = params.devedorClienteId;
-    if (params.credorClienteId !== undefined) where.credorClienteId = params.credorClienteId;
+    if (params.devedorClienteId !== undefined)
+      where.devedorClienteId = params.devedorClienteId;
+    if (params.credorClienteId !== undefined)
+      where.credorClienteId = params.credorClienteId;
     if (params.marcaId !== undefined) where.marcaId = params.marcaId;
     if (params.modeloId !== undefined) where.modeloId = params.modeloId;
     if (params.status === 'aberto') where.quantidade = { gt: 0 };

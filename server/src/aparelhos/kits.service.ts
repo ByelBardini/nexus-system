@@ -1,92 +1,14 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, TipoDestinoPedido } from '@prisma/client';
 
 @Injectable()
 export class KitsService {
   constructor(private readonly prisma: PrismaService) {}
-
-  async getKits(params?: { modelo?: string; marca?: string; operadora?: string }) {
-    // Fonte 1: requisitos via PedidoRastreador.kitIds (disponível quando pedido está em CONFIGURADO+)
-    const pedidos = await this.prisma.pedidoRastreador.findMany({
-      where: { kitIds: { not: Prisma.DbNull } },
-      select: {
-        kitIds: true,
-        modeloEquipamento: { select: { nome: true } },
-        marcaEquipamento: { select: { nome: true } },
-        operadora: { select: { nome: true } },
-      },
-    });
-
-    const kitReqMap = new Map<
-      number,
-      { modeloNome: string | null; marcaNome: string | null; operadoraNome: string | null }
-    >();
-    for (const p of pedidos) {
-      for (const kitId of this.extrairKitIds(p.kitIds)) {
-        if (!kitReqMap.has(kitId)) {
-          kitReqMap.set(kitId, {
-            modeloNome: p.modeloEquipamento?.nome ?? null,
-            marcaNome: p.marcaEquipamento?.nome ?? null,
-            operadoraNome: p.operadora?.nome ?? null,
-          });
-        }
-      }
-    }
-
-    // Fonte 2: aparelhos já presentes no kit (rastreadores já vinculados)
-    const kits = await this.prisma.kit.findMany({
-      where: { kitConcluido: false },
-      orderBy: { nome: 'asc' },
-      select: {
-        id: true,
-        nome: true,
-        aparelhos: {
-          where: { tipo: 'RASTREADOR' },
-          select: {
-            modelo: true,
-            marca: true,
-            simVinculado: { select: { operadora: true } },
-          },
-          take: 1,
-        },
-      },
-    });
-
-    if (!params?.modelo && !params?.marca && !params?.operadora) {
-      return kits.map((k) => ({ id: k.id, nome: k.nome }));
-    }
-
-    return kits
-      .filter((kit) => {
-        // Prioridade 1: filtrar pelos aparelhos já existentes no kit
-        if (kit.aparelhos.length > 0) {
-          const a = kit.aparelhos[0];
-          if (params.modelo && a.modelo && a.modelo !== params.modelo) return false;
-          if (params.marca && a.marca && a.marca !== params.marca) return false;
-          const opAparelho = a.simVinculado?.operadora ?? null;
-          if (params.operadora && opAparelho && opAparelho !== params.operadora) return false;
-          return true;
-        }
-
-        // Prioridade 2: filtrar pelos requisitos do pedido vinculado (via kitIds)
-        const req = kitReqMap.get(kit.id);
-        if (!req) return true; // kit vazio sem pedido vinculado → sempre visível
-
-        if (req.modeloNome) {
-          if (params.modelo && req.modeloNome !== params.modelo) return false;
-          if (req.marcaNome && params.marca && req.marcaNome !== params.marca) return false;
-        } else if (req.marcaNome) {
-          if (params.marca && req.marcaNome !== params.marca) return false;
-        }
-
-        if (req.operadoraNome && params.operadora && req.operadoraNome !== params.operadora)
-          return false;
-
-        return true;
-      })
-      .map((k) => ({ id: k.id, nome: k.nome }));
-  }
 
   async getKitsComDetalhes() {
     const kits = await this.prisma.kit.findMany({
@@ -110,7 +32,8 @@ export class KitsService {
       const modeloSet = new Set<string>();
       const operadoraSet = new Set<string>();
       k.aparelhos.forEach((a) => {
-        if (a.marca || a.modelo) marcaModeloSet.add([a.marca, a.modelo].filter(Boolean).join(' / '));
+        if (a.marca || a.modelo)
+          marcaModeloSet.add([a.marca, a.modelo].filter(Boolean).join(' / '));
         if (a.marca) marcaSet.add(a.marca);
         if (a.modelo) modeloSet.add(a.modelo);
         const op = a.simVinculado?.operadora ?? a.operadora;
@@ -126,7 +49,9 @@ export class KitsService {
         kitConcluido: k.kitConcluido,
         quantidade: k._count.aparelhos,
         modelosOperadoras:
-          [...marcaModeloSet, ...operadoraDisplaySet].filter(Boolean).join(', ') || '-',
+          [...marcaModeloSet, ...operadoraDisplaySet]
+            .filter(Boolean)
+            .join(', ') || '-',
         marcas: Array.from(marcaSet),
         modelos: Array.from(modeloSet),
         operadoras: Array.from(operadoraSet),
@@ -159,7 +84,9 @@ export class KitsService {
     });
     if (!aparelho) throw new NotFoundException('Aparelho não encontrado');
     if (aparelho.tipo !== 'RASTREADOR') {
-      throw new BadRequestException('Apenas rastreadores podem ser adicionados ao kit');
+      throw new BadRequestException(
+        'Apenas rastreadores podem ser adicionados ao kit',
+      );
     }
     if (kitId !== null) {
       await this.validarAparelhoParaKit(aparelhoId, kitId);
@@ -178,7 +105,14 @@ export class KitsService {
     marcaEquipamentoId?: number;
     operadoraId?: number;
   }) {
-    const { clienteId, clienteIds, includeInfinity, modeloEquipamentoId, marcaEquipamentoId, operadoraId } = params;
+    const {
+      clienteId,
+      clienteIds,
+      includeInfinity,
+      modeloEquipamentoId,
+      marcaEquipamentoId,
+      operadoraId,
+    } = params;
 
     let modeloNome: string | undefined;
     let marcaNome: string | undefined;
@@ -207,14 +141,18 @@ export class KitsService {
       if (operadora) operadoraNome = operadora.nome;
     }
 
-    const nenhumFiltroCliente = !clienteId && !(clienteIds && clienteIds.length > 0) && !includeInfinity;
-    const usarFiltroMultiCliente = (clienteIds && clienteIds.length > 0) || includeInfinity;
+    const nenhumFiltroCliente =
+      !clienteId && !(clienteIds && clienteIds.length > 0) && !includeInfinity;
+    const usarFiltroMultiCliente =
+      (clienteIds && clienteIds.length > 0) || includeInfinity;
     const clienteWhere: Prisma.AparelhoWhereInput = nenhumFiltroCliente
       ? {}
       : usarFiltroMultiCliente
         ? {
             OR: [
-              ...(clienteIds && clienteIds.length > 0 ? [{ clienteId: { in: clienteIds } }] : []),
+              ...(clienteIds && clienteIds.length > 0
+                ? [{ clienteId: { in: clienteIds } }]
+                : []),
               ...(includeInfinity ? [{ clienteId: null }] : []),
             ],
           }
@@ -277,16 +215,9 @@ export class KitsService {
         operadora: { select: { nome: true } },
       },
     });
-    return pedidos.find((p) => this.extrairKitIds(p.kitIds).includes(kitId)) ?? null;
-  }
-
-  async validarDadosParaKit(
-    kitId: number,
-    dados: { marca?: string | null; modelo?: string | null; operadora?: string | null },
-  ): Promise<void> {
-    const pedido = await this.getPedidoParaKit(kitId);
-    if (!pedido) return;
-    this.aplicarValidacaoPedido(pedido, dados);
+    return (
+      pedidos.find((p) => this.extrairKitIds(p.kitIds).includes(kitId)) ?? null
+    );
   }
 
   private aplicarValidacaoPedido(
@@ -295,7 +226,11 @@ export class KitsService {
       marcaEquipamento: { nome: string } | null;
       operadora: { nome: string } | null;
     },
-    dados: { marca?: string | null; modelo?: string | null; operadora?: string | null },
+    dados: {
+      marca?: string | null;
+      modelo?: string | null;
+      operadora?: string | null;
+    },
   ): void {
     if (pedido.modeloEquipamento) {
       if (dados.modelo !== pedido.modeloEquipamento.nome) {
@@ -303,7 +238,10 @@ export class KitsService {
           `Aparelho não atende ao pedido: modelo deve ser "${pedido.modeloEquipamento.nome}"`,
         );
       }
-      if (pedido.marcaEquipamento && dados.marca !== pedido.marcaEquipamento.nome) {
+      if (
+        pedido.marcaEquipamento &&
+        dados.marca !== pedido.marcaEquipamento.nome
+      ) {
         throw new BadRequestException(
           `Aparelho não atende ao pedido: marca deve ser "${pedido.marcaEquipamento.nome}"`,
         );
@@ -325,7 +263,10 @@ export class KitsService {
     }
   }
 
-  private async validarAparelhoParaKit(aparelhoId: number, kitId: number): Promise<void> {
+  private async validarAparelhoParaKit(
+    aparelhoId: number,
+    kitId: number,
+  ): Promise<void> {
     const pedido = await this.getPedidoParaKit(kitId);
     if (!pedido) return;
 

@@ -1,7 +1,10 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   OrdemServico,
-  Plataforma,
   Prisma,
   StatusAparelho,
   StatusCadastro,
@@ -46,7 +49,9 @@ export class CadastroRastreamentoService {
       where.OR = [
         { statusCadastro: StatusCadastro.AGUARDANDO },
         {
-          statusCadastro: { in: [StatusCadastro.EM_CADASTRO, StatusCadastro.CONCLUIDO] },
+          statusCadastro: {
+            in: [StatusCadastro.EM_CADASTRO, StatusCadastro.CONCLUIDO],
+          },
           ...(dateRange ? { criadoEm: dateRange } : {}),
         },
       ];
@@ -72,9 +77,10 @@ export class CadastroRastreamentoService {
 
     const identificadores = [
       ...new Set(
-        [...data.map((o) => o.idAparelho), ...data.map((o) => o.idEntrada)].filter(
-          Boolean,
-        ) as string[],
+        [
+          ...data.map((o) => o.idAparelho),
+          ...data.map((o) => o.idEntrada),
+        ].filter(Boolean) as string[],
       ),
     ];
 
@@ -84,7 +90,11 @@ export class CadastroRastreamentoService {
         marca: string | null;
         modelo: string | null;
         iccid: string | null;
-        sim: { operadora: string | null; marcaNome: string | null; planoMb: number | null } | null;
+        sim: {
+          operadora: string | null;
+          marcaNome: string | null;
+          planoMb: number | null;
+        } | null;
       }
     > = {};
     if (identificadores.length > 0) {
@@ -116,7 +126,8 @@ export class CadastroRastreamentoService {
             iccid: a.simVinculado?.identificador ?? null,
             sim: a.simVinculado
               ? {
-                  operadora: a.simVinculado.marcaSimcard?.operadora?.nome ?? null,
+                  operadora:
+                    a.simVinculado.marcaSimcard?.operadora?.nome ?? null,
                   marcaNome: a.simVinculado.marcaSimcard?.nome ?? null,
                   planoMb: a.simVinculado.planoSimcard?.planoMb ?? null,
                 }
@@ -127,7 +138,9 @@ export class CadastroRastreamentoService {
 
     const enrichedData = data.map((os) => ({
       ...os,
-      aparelhoEntrada: os.idAparelho ? (aparelhoMap[os.idAparelho] ?? null) : null,
+      aparelhoEntrada: os.idAparelho
+        ? (aparelhoMap[os.idAparelho] ?? null)
+        : null,
       aparelhoSaida: os.idEntrada ? (aparelhoMap[os.idEntrada] ?? null) : null,
     }));
 
@@ -183,7 +196,9 @@ export class CadastroRastreamentoService {
       return this._concluirRetirada(os, dto, userId);
     }
 
-    throw new BadRequestException(`Tipo de OS '${os.tipo}' não suporta cadastro de rastreamento`);
+    throw new BadRequestException(
+      `Tipo de OS '${os.tipo}' não suporta cadastro de rastreamento`,
+    );
   }
 
   // ─── Privados ───────────────────────────────────────────────────────────────
@@ -198,7 +213,9 @@ export class CadastroRastreamentoService {
     });
 
     if (!aparelho) {
-      throw new NotFoundException(`Aparelho com IMEI '${os.idAparelho}' não encontrado`);
+      throw new NotFoundException(
+        `Aparelho com IMEI '${os.idAparelho}' não encontrado`,
+      );
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -234,7 +251,9 @@ export class CadastroRastreamentoService {
     userId: number,
   ) {
     const aparelhoAntigo = os.idEntrada
-      ? await this.prisma.aparelho.findFirst({ where: { identificador: os.idEntrada } })
+      ? await this.prisma.aparelho.findFirst({
+          where: { identificador: os.idEntrada },
+        })
       : null;
 
     const aparelhoNovo = await this.prisma.aparelho.findFirst({
@@ -242,7 +261,9 @@ export class CadastroRastreamentoService {
     });
 
     if (!aparelhoNovo) {
-      throw new NotFoundException(`Aparelho com IMEI '${os.idAparelho}' não encontrado`);
+      throw new NotFoundException(
+        `Aparelho com IMEI '${os.idAparelho}' não encontrado`,
+      );
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -299,7 +320,9 @@ export class CadastroRastreamentoService {
     userId: number,
   ) {
     const aparelho = os.idEntrada
-      ? await this.prisma.aparelho.findFirst({ where: { identificador: os.idEntrada } })
+      ? await this.prisma.aparelho.findFirst({
+          where: { identificador: os.idEntrada },
+        })
       : null;
 
     await this.prisma.$transaction(async (tx) => {

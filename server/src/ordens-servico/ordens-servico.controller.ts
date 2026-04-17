@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Header, Param, Patch, Post, Query, StreamableFile, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Header,
+  Param,
+  Patch,
+  Post,
+  Query,
+  StreamableFile,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
@@ -26,7 +37,10 @@ export class OrdensServicoController {
 
   @Get('cliente-infinity')
   @RequirePermissions('AGENDAMENTO.OS.LISTAR')
-  @ApiOperation({ summary: 'Retorna o ID do cliente Infinity (empresa dona do sistema, hardcoded)' })
+  @ApiOperation({
+    summary:
+      'Retorna o ID do cliente Infinity (empresa dona do sistema, hardcoded)',
+  })
   async getClienteInfinity() {
     const clienteId = await this.service.getClienteInfinityOuCriar();
     return { clienteId };
@@ -34,7 +48,9 @@ export class OrdensServicoController {
 
   @Get('testando')
   @RequirePermissions('AGENDAMENTO.TESTES.LISTAR', 'AGENDAMENTO.OS.LISTAR')
-  @ApiOperation({ summary: 'Listar OS em testes (status EM_TESTES) com tempo em testes' })
+  @ApiOperation({
+    summary: 'Listar OS em testes (status EM_TESTES) com tempo em testes',
+  })
   findTestando(@Query('search') search?: string) {
     return this.service.findTestando(search);
   }
@@ -58,7 +74,9 @@ export class OrdensServicoController {
 
   @Get(':id/impressao')
   @RequirePermissions('AGENDAMENTO.OS.LISTAR')
-  @ApiOperation({ summary: 'Retorna HTML da ordem de serviço para impressão/salvar PDF' })
+  @ApiOperation({
+    summary: 'Retorna HTML da ordem de serviço para impressão/salvar PDF',
+  })
   @Header('Content-Type', 'text/html; charset=utf-8')
   async getHtmlImpressao(@Param('id') id: string) {
     return this.service.gerarHtmlImpressao(+id);
@@ -85,13 +103,18 @@ export class OrdensServicoController {
   @Post()
   @RequirePermissions('AGENDAMENTO.OS.CRIAR')
   @ApiOperation({ summary: 'Criar ordem de serviço' })
-  create(@Body() dto: CreateOrdemServicoDto, @CurrentUser('id') criadoPorId?: number) {
+  create(
+    @Body() dto: CreateOrdemServicoDto,
+    @CurrentUser('id') criadoPorId?: number,
+  ) {
     return this.service.create(dto, criadoPorId);
   }
 
   @Patch(':id')
   @RequirePermissions('AGENDAMENTO.OS.EDITAR')
-  @ApiOperation({ summary: 'Atualizar ordem de serviço (idEntrada, aparelhoEncontrado)' })
+  @ApiOperation({
+    summary: 'Atualizar ordem de serviço (idEntrada, aparelhoEncontrado)',
+  })
   update(@Param('id') id: string, @Body() dto: UpdateOrdemServicoDto) {
     return this.service.update(+id, dto);
   }

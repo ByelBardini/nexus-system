@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { TipoAparelho, ProprietarioTipo, Prisma } from '@prisma/client';
+import { TipoAparelho, Prisma } from '@prisma/client';
 import { CreateLoteDto } from './dto/create-lote.dto';
 import { DebitosRastreadoresService } from '../debitos-rastreadores/debitos-rastreadores.service';
 
@@ -42,7 +42,8 @@ export class LotesService {
         where: { id: marcaSimcardId },
         include: { operadora: true },
       });
-      if (!marcaSim) throw new BadRequestException('Marca de simcard não encontrada');
+      if (!marcaSim)
+        throw new BadRequestException('Marca de simcard não encontrada');
       operadoraSim = marcaSim.operadora.nome;
     }
 
@@ -62,8 +63,8 @@ export class LotesService {
           marca: tipo === 'RASTREADOR' ? marca : null,
           modelo: tipo === 'RASTREADOR' ? modelo : null,
           operadora: tipo === 'SIM' ? operadoraSim : null,
-          marcaSimcardId: tipo === 'SIM' ? marcaSimcardId ?? null : null,
-          planoSimcardId: tipo === 'SIM' ? planoSimcardId ?? null : null,
+          marcaSimcardId: tipo === 'SIM' ? (marcaSimcardId ?? null) : null,
+          planoSimcardId: tipo === 'SIM' ? (planoSimcardId ?? null) : null,
           quantidade: qtdFinal,
           valorUnitario,
           valorTotal,
@@ -131,7 +132,7 @@ export class LotesService {
         // First abaterQuantidade units go to the creditor's stock (payment)
         const abatidos = aparelhosData.slice(0, abaterQuantidade).map((a) => ({
           ...a,
-          proprietario: debito.credorTipo as ProprietarioTipo,
+          proprietario: debito.credorTipo,
           clienteId: debito.credorClienteId,
         }));
         const restantes = aparelhosData.slice(abaterQuantidade);

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, ProprietarioTipo } from '@prisma/client';
 import { StatusAparelho, StatusOS } from '@prisma/client';
@@ -22,14 +26,22 @@ export class AparelhosService {
     criadoEm: true,
     cliente: { select: { id: true, nome: true } },
     tecnico: { select: { id: true, nome: true } },
-    marcaSimcard: { select: { id: true, nome: true, operadora: { select: { id: true, nome: true } } } },
+    marcaSimcard: {
+      select: {
+        id: true,
+        nome: true,
+        operadora: { select: { id: true, nome: true } },
+      },
+    },
     planoSimcard: { select: { id: true, planoMb: true } },
     simVinculado: {
       select: {
         id: true,
         identificador: true,
         operadora: true,
-        marcaSimcard: { select: { nome: true, operadora: { select: { nome: true } } } },
+        marcaSimcard: {
+          select: { nome: true, operadora: { select: { nome: true } } },
+        },
         planoSimcard: { select: { planoMb: true } },
       },
     },
@@ -43,25 +55,25 @@ export class AparelhosService {
     const whereEmUso: Prisma.OrdemServicoWhereInput = {
       status: StatusOS.EM_TESTES,
       idAparelho: { not: null },
-    }
+    };
     if (ordemServicoId != null) {
-      whereEmUso.id = { not: ordemServicoId }
+      whereEmUso.id = { not: ordemServicoId };
     }
     const idsEmUso = await this.prisma.ordemServico.findMany({
       where: whereEmUso,
       select: { idAparelho: true },
-    })
+    });
     const identificadoresEmUso = idsEmUso
       .map((o) => o.idAparelho)
-      .filter((x): x is string => !!x)
+      .filter((x): x is string => !!x);
 
-    let idAparelhoVinculado: string | null = null
+    let idAparelhoVinculado: string | null = null;
     if (ordemServicoId != null) {
       const os = await this.prisma.ordemServico.findUnique({
         where: { id: ordemServicoId },
         select: { idAparelho: true },
-      })
-      idAparelhoVinculado = os?.idAparelho?.trim() || null
+      });
+      idAparelhoVinculado = os?.idAparelho?.trim() || null;
     }
 
     const where = {
@@ -80,13 +92,15 @@ export class AparelhosService {
       where,
       orderBy: { criadoEm: 'desc' },
       select: this.selectParaTestes,
-    })
+    });
 
-    if (!idAparelhoVinculado) return lista
+    if (!idAparelhoVinculado) return lista;
     const jaIncluido = lista.some(
-      (a) => (a.identificador ?? '').trim().toLowerCase() === idAparelhoVinculado!.trim().toLowerCase(),
-    )
-    if (jaIncluido) return lista
+      (a) =>
+        (a.identificador ?? '').trim().toLowerCase() ===
+        idAparelhoVinculado.trim().toLowerCase(),
+    );
+    if (jaIncluido) return lista;
 
     const vinculado = await this.prisma.aparelho.findFirst({
       where: {
@@ -94,9 +108,9 @@ export class AparelhosService {
         identificador: idAparelhoVinculado,
       },
       select: this.selectParaTestes,
-    })
-    if (!vinculado) return lista
-    return [vinculado, ...lista]
+    });
+    if (!vinculado) return lista;
+    return [vinculado, ...lista];
   }
 
   async findAll() {
@@ -107,7 +121,13 @@ export class AparelhosService {
         lote: { select: { id: true, referencia: true } },
         tecnico: { select: { id: true, nome: true } },
         kit: { select: { id: true, nome: true } },
-        marcaSimcard: { select: { id: true, nome: true, operadora: { select: { id: true, nome: true } } } },
+        marcaSimcard: {
+          select: {
+            id: true,
+            nome: true,
+            operadora: { select: { id: true, nome: true } },
+          },
+        },
         planoSimcard: { select: { id: true, planoMb: true } },
         simVinculado: {
           select: {
@@ -138,16 +158,17 @@ export class AparelhosService {
       },
     });
 
-    const identificadoresSet = new Set<string>()
+    const identificadoresSet = new Set<string>();
     aparelhos.forEach((a) => {
       if (a.tipo === 'RASTREADOR' && a.identificador?.trim()) {
-        identificadoresSet.add(a.identificador!.trim())
+        identificadoresSet.add(a.identificador.trim());
       }
       a.aparelhosVinculados?.forEach((r) => {
-        if (r.identificador?.trim()) identificadoresSet.add(r.identificador!.trim())
-      })
-    })
-    const identificadores = Array.from(identificadoresSet)
+        if (r.identificador?.trim())
+          identificadoresSet.add(r.identificador.trim());
+      });
+    });
+    const identificadores = Array.from(identificadoresSet);
 
     const osVinculadas = await this.prisma.ordemServico.findMany({
       where: { idAparelho: { in: identificadores } },
@@ -170,9 +191,10 @@ export class AparelhosService {
     }
 
     return aparelhos.map((a) => {
-      const chave = a.tipo === 'RASTREADOR'
-        ? (a.identificador ?? '').trim()
-        : (a.aparelhosVinculados?.[0]?.identificador ?? '').trim()
+      const chave =
+        a.tipo === 'RASTREADOR'
+          ? (a.identificador ?? '').trim()
+          : (a.aparelhosVinculados?.[0]?.identificador ?? '').trim();
       const os = chave ? osPorIdentificador.get(chave) : undefined;
       const ordemServicoVinculada = os
         ? {
@@ -240,7 +262,9 @@ export class AparelhosService {
         cliente: { select: { id: true, nome: true } },
         lote: { select: { id: true, referencia: true } },
         tecnico: { select: { id: true, nome: true } },
-        simVinculado: { select: { id: true, identificador: true, operadora: true } },
+        simVinculado: {
+          select: { id: true, identificador: true, operadora: true },
+        },
       },
     });
   }
@@ -309,21 +333,31 @@ export class AparelhosService {
         where: { id: marcaSimcardId },
         include: { operadora: true },
       });
-      if (!marcaSim) throw new BadRequestException('Marca de simcard não encontrada');
+      if (!marcaSim)
+        throw new BadRequestException('Marca de simcard não encontrada');
       operadoraSim = marcaSim.operadora.nome;
     }
 
     // If abating a debt, override the owner to the creditor
     let finalProprietario: ProprietarioTipo = proprietario ?? 'INFINITY';
-    let finalClienteId: number | null = proprietario === 'CLIENTE' ? (clienteId ?? null) : null;
-    let debitoAbater: { devedorTipo: ProprietarioTipo; devedorClienteId: number | null; credorTipo: ProprietarioTipo; credorClienteId: number | null; marcaId: number; modeloId: number } | null = null;
+    let finalClienteId: number | null =
+      proprietario === 'CLIENTE' ? (clienteId ?? null) : null;
+    let debitoAbater: {
+      devedorTipo: ProprietarioTipo;
+      devedorClienteId: number | null;
+      credorTipo: ProprietarioTipo;
+      credorClienteId: number | null;
+      marcaId: number;
+      modeloId: number;
+    } | null = null;
 
     if (abaterDebitoId) {
       const debito = await this.prisma.debitoRastreador.findUnique({
         where: { id: abaterDebitoId },
       });
       if (!debito) throw new BadRequestException('Débito não encontrado');
-      if (debito.quantidade < 1) throw new BadRequestException('Débito já quitado');
+      if (debito.quantidade < 1)
+        throw new BadRequestException('Débito já quitado');
 
       finalProprietario = debito.credorTipo;
       finalClienteId = debito.credorClienteId;
@@ -350,8 +384,8 @@ export class AparelhosService {
           marca: tipo === 'RASTREADOR' ? marca : null,
           modelo: tipo === 'RASTREADOR' ? modelo : null,
           operadora: tipo === 'SIM' ? operadoraSim : null,
-          marcaSimcardId: tipo === 'SIM' ? marcaSimcardId ?? null : null,
-          planoSimcardId: tipo === 'SIM' ? planoSimcardId ?? null : null,
+          marcaSimcardId: tipo === 'SIM' ? (marcaSimcardId ?? null) : null,
+          planoSimcardId: tipo === 'SIM' ? (planoSimcardId ?? null) : null,
           tecnicoId: tecnicoId || null,
         },
         include: {

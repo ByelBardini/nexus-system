@@ -1,5 +1,19 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { CategoriaCargo } from '@prisma/client';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
@@ -82,7 +96,10 @@ export class RolesController {
   @Patch(':id/permissions')
   @RequirePermissions('ADMINISTRATIVO.CARGO.EDITAR')
   @ApiOperation({ summary: 'Atualizar permissões do role' })
-  updatePermissions(@Param('id') id: string, @Body() dto: AssignPermissionsDto) {
+  updatePermissions(
+    @Param('id') id: string,
+    @Body() dto: AssignPermissionsDto,
+  ) {
     return this.rolesService.updateRolePermissions(+id, dto.permissionIds);
   }
 
@@ -96,7 +113,10 @@ export class RolesController {
   @Patch('users/:userId/roles')
   @RequirePermissions('ADMINISTRATIVO.USUARIO.EDITAR')
   @ApiOperation({ summary: 'Atualizar roles do usuário' })
-  updateUserRoles(@Param('userId') userId: string, @Body() dto: AssignRolesDto) {
+  updateUserRoles(
+    @Param('userId') userId: string,
+    @Body() dto: AssignRolesDto,
+  ) {
     return this.rolesService.updateUserRoles(+userId, dto.roleIds);
   }
 }

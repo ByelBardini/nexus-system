@@ -13,14 +13,20 @@ export class UpdateStatusPedidoDto {
   @IsString()
   observacao?: string;
 
-  @ApiPropertyOptional({ description: 'IDs dos kits vinculados ao pedido (para atualizar rastreadores)' })
+  @ApiPropertyOptional({
+    description:
+      'IDs dos kits vinculados ao pedido (para atualizar rastreadores)',
+  })
   @IsOptional()
   @IsArray()
   @Type(() => Number)
   @IsInt({ each: true })
   kitIds?: number[];
 
-  @ApiPropertyOptional({ description: 'ID do cliente/empresa para vincular aos rastreadores (quando destino é técnico)' })
+  @ApiPropertyOptional({
+    description:
+      'ID do cliente/empresa para vincular aos rastreadores (quando destino é técnico)',
+  })
   @IsOptional()
   @IsInt()
   @Type(() => Number)

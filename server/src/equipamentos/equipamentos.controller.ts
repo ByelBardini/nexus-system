@@ -1,5 +1,20 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { EquipamentosService } from './equipamentos.service';
@@ -65,7 +80,9 @@ export class EquipamentosController {
   @ApiOperation({ summary: 'Listar modelos' })
   @ApiQuery({ name: 'marcaId', required: false, type: Number })
   findAllModelos(@Query('marcaId') marcaId?: string) {
-    return this.equipamentosService.findAllModelos(marcaId ? +marcaId : undefined);
+    return this.equipamentosService.findAllModelos(
+      marcaId ? +marcaId : undefined,
+    );
   }
 
   @Get('modelos/:id')
@@ -140,7 +157,9 @@ export class EquipamentosController {
   @ApiOperation({ summary: 'Listar marcas de simcard' })
   @ApiQuery({ name: 'operadoraId', required: false, type: Number })
   findAllMarcasSimcard(@Query('operadoraId') operadoraId?: string) {
-    return this.equipamentosService.findAllMarcasSimcard(operadoraId ? +operadoraId : undefined);
+    return this.equipamentosService.findAllMarcasSimcard(
+      operadoraId ? +operadoraId : undefined,
+    );
   }
 
   @Get('marcas-simcard/:id')
@@ -160,7 +179,10 @@ export class EquipamentosController {
   @Patch('marcas-simcard/:id')
   @RequirePermissions('CONFIGURACAO.EQUIPAMENTO.EDITAR')
   @ApiOperation({ summary: 'Atualizar marca de simcard' })
-  updateMarcaSimcard(@Param('id') id: string, @Body() dto: UpdateMarcaSimcardDto) {
+  updateMarcaSimcard(
+    @Param('id') id: string,
+    @Body() dto: UpdateMarcaSimcardDto,
+  ) {
     return this.equipamentosService.updateMarcaSimcard(+id, dto);
   }
 
@@ -178,7 +200,9 @@ export class EquipamentosController {
   @ApiOperation({ summary: 'Listar planos de simcard' })
   @ApiQuery({ name: 'marcaSimcardId', required: false, type: Number })
   findAllPlanosSimcard(@Query('marcaSimcardId') marcaSimcardId?: string) {
-    return this.equipamentosService.findAllPlanosSimcard(marcaSimcardId ? +marcaSimcardId : undefined);
+    return this.equipamentosService.findAllPlanosSimcard(
+      marcaSimcardId ? +marcaSimcardId : undefined,
+    );
   }
 
   @Get('planos-simcard/:id')
@@ -198,7 +222,10 @@ export class EquipamentosController {
   @Patch('planos-simcard/:id')
   @RequirePermissions('CONFIGURACAO.EQUIPAMENTO.EDITAR')
   @ApiOperation({ summary: 'Atualizar plano de simcard' })
-  updatePlanoSimcard(@Param('id') id: string, @Body() dto: UpdatePlanoSimcardDto) {
+  updatePlanoSimcard(
+    @Param('id') id: string,
+    @Body() dto: UpdatePlanoSimcardDto,
+  ) {
     return this.equipamentosService.updatePlanoSimcard(+id, dto);
   }
 

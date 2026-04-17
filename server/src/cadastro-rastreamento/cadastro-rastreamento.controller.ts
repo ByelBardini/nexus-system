@@ -30,21 +30,27 @@ export class CadastroRastreamentoController {
       ...query,
       page: query.page ? +query.page : undefined,
       limit: query.limit ? +query.limit : undefined,
-      dataInicio: query.dataInicio ? new Date(query.dataInicio as any) : undefined,
+      dataInicio: query.dataInicio
+        ? new Date(query.dataInicio as any)
+        : undefined,
       dataFim: query.dataFim ? new Date(query.dataFim as any) : undefined,
     });
   }
 
   @Patch(':id/iniciar')
   @RequirePermissions('CADASTRO_RASTREAMENTO.EDITAR')
-  @ApiOperation({ summary: 'Inicia o cadastro de uma OS (AGUARDANDO → EM_CADASTRO)' })
+  @ApiOperation({
+    summary: 'Inicia o cadastro de uma OS (AGUARDANDO → EM_CADASTRO)',
+  })
   iniciarCadastro(@Param('id') id: string) {
     return this.service.iniciarCadastro(+id);
   }
 
   @Patch(':id/concluir')
   @RequirePermissions('CADASTRO_RASTREAMENTO.EDITAR')
-  @ApiOperation({ summary: 'Conclui o cadastro de uma OS (EM_CADASTRO → CONCLUIDO)' })
+  @ApiOperation({
+    summary: 'Conclui o cadastro de uma OS (EM_CADASTRO → CONCLUIDO)',
+  })
   concluirCadastro(
     @Param('id') id: string,
     @Body() dto: ConcluirCadastroDto,

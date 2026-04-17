@@ -3,7 +3,10 @@ import { PrismaService } from '../prisma/prisma.service';
 import { consultarPlaca } from 'api-placa-fipe';
 
 function normalizarPlaca(placa: string): string {
-  return placa.replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 7);
+  return placa
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .toUpperCase()
+    .slice(0, 7);
 }
 
 @Injectable()
@@ -19,7 +22,8 @@ export class VeiculosService {
   }) {
     const raw = normalizarPlaca(dados.placa);
     if (raw.length < 7) return null;
-    const anoNum = typeof dados.ano === 'string' ? parseInt(dados.ano, 10) : dados.ano;
+    const anoNum =
+      typeof dados.ano === 'string' ? parseInt(dados.ano, 10) : dados.ano;
     const ano = Number.isNaN(anoNum) ? 0 : anoNum;
     return this.prisma.veiculo.upsert({
       where: { placa: raw },
@@ -41,7 +45,9 @@ export class VeiculosService {
     try {
       resultado = await consultarPlaca(raw);
     } catch {
-      throw new BadGatewayException('Erro ao consultar API de placas. Tente novamente.');
+      throw new BadGatewayException(
+        'Erro ao consultar API de placas. Tente novamente.',
+      );
     }
     if (!resultado) return null;
     return {
@@ -50,13 +56,11 @@ export class VeiculosService {
       ano: resultado.anoModelo ?? resultado.anoFabricacao ?? '',
       cor: resultado.cor ?? '',
       tipo: resultado.tipoVeiculo ?? '',
-    }
+    };
   }
 
   async findAll(search?: string) {
-    const where = search?.trim()
-      ? { placa: { contains: search.trim() } }
-      : {};
+    const where = search?.trim() ? { placa: { contains: search.trim() } } : {};
     return this.prisma.veiculo.findMany({
       where,
       orderBy: { placa: 'asc' },

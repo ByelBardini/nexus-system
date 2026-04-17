@@ -7,7 +7,9 @@ export class CreatePedidoRastreadorItemDto {
   @IsEnum(ProprietarioTipo)
   proprietario: ProprietarioTipo;
 
-  @ApiPropertyOptional({ description: 'ID do cliente destino quando proprietario = CLIENTE' })
+  @ApiPropertyOptional({
+    description: 'ID do cliente destino quando proprietario = CLIENTE',
+  })
   @ValidateIf((o) => o.proprietario === ProprietarioTipo.CLIENTE)
   @IsInt()
   @Min(1)
@@ -18,19 +20,25 @@ export class CreatePedidoRastreadorItemDto {
   @Min(1)
   quantidade: number;
 
-  @ApiPropertyOptional({ description: 'ID da marca do equipamento desejado para este item' })
+  @ApiPropertyOptional({
+    description: 'ID da marca do equipamento desejado para este item',
+  })
   @IsOptional()
   @IsInt()
   @Min(1)
   marcaEquipamentoId?: number;
 
-  @ApiPropertyOptional({ description: 'ID do modelo do equipamento desejado para este item' })
+  @ApiPropertyOptional({
+    description: 'ID do modelo do equipamento desejado para este item',
+  })
   @IsOptional()
   @IsInt()
   @Min(1)
   modeloEquipamentoId?: number;
 
-  @ApiPropertyOptional({ description: 'ID da operadora desejada para este item' })
+  @ApiPropertyOptional({
+    description: 'ID da operadora desejada para este item',
+  })
   @IsOptional()
   @IsInt()
   @Min(1)

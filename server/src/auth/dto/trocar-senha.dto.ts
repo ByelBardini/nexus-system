@@ -2,7 +2,8 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsString, MinLength, Matches } from 'class-validator';
 
 /** Regex: mínimo 8 caracteres, pelo menos 1 número e 1 caractere especial */
-const SENHA_FORTE_REGEX = /^(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+const SENHA_FORTE_REGEX =
+  /^(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
 
 export class TrocarSenhaDto {
   @ApiProperty({ description: 'Senha atual do usuário' })
@@ -11,7 +12,8 @@ export class TrocarSenhaDto {
   senhaAtual: string;
 
   @ApiProperty({
-    description: 'Nova senha (mínimo 8 caracteres, 1 número e 1 caractere especial)',
+    description:
+      'Nova senha (mínimo 8 caracteres, 1 número e 1 caractere especial)',
     minLength: 8,
     example: 'MinhaSenh@123',
   })

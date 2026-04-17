@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
@@ -19,7 +31,9 @@ export class PedidosRastreadoresController {
 
   @Get()
   @RequirePermissions('AGENDAMENTO.PEDIDO_RASTREADOR.LISTAR')
-  @ApiOperation({ summary: 'Listar pedidos de rastreadores com paginação e filtros' })
+  @ApiOperation({
+    summary: 'Listar pedidos de rastreadores com paginação e filtros',
+  })
   findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -67,15 +81,22 @@ export class PedidosRastreadoresController {
 
   @Post(':id/aparelhos-destinatarios')
   @RequirePermissions('AGENDAMENTO.PEDIDO_RASTREADOR.EDITAR')
-  @ApiOperation({ summary: 'Atribuir destinatário em lote para aparelhos do pedido MISTO' })
+  @ApiOperation({
+    summary: 'Atribuir destinatário em lote para aparelhos do pedido MISTO',
+  })
   @HttpCode(HttpStatus.NO_CONTENT)
-  bulkSetDestinatarios(@Param('id') id: string, @Body() dto: BulkAparelhoDestinatarioDto) {
+  bulkSetDestinatarios(
+    @Param('id') id: string,
+    @Body() dto: BulkAparelhoDestinatarioDto,
+  ) {
     return this.service.bulkSetDestinatarios(+id, dto);
   }
 
   @Get(':id/aparelhos-destinatarios')
   @RequirePermissions('AGENDAMENTO.PEDIDO_RASTREADOR.LISTAR')
-  @ApiOperation({ summary: 'Obter destinatários e cotas dos aparelhos do pedido MISTO' })
+  @ApiOperation({
+    summary: 'Obter destinatários e cotas dos aparelhos do pedido MISTO',
+  })
   getAparelhosDestinatarios(@Param('id') id: string) {
     return this.service.getAparelhosDestinatarios(+id);
   }
@@ -84,7 +105,10 @@ export class PedidosRastreadoresController {
   @RequirePermissions('AGENDAMENTO.PEDIDO_RASTREADOR.EDITAR')
   @ApiOperation({ summary: 'Remover destinatário de aparelho do pedido MISTO' })
   @HttpCode(HttpStatus.NO_CONTENT)
-  removeAparelhoDestinatario(@Param('id') id: string, @Param('aparelhoId') aparelhoId: string) {
+  removeAparelhoDestinatario(
+    @Param('id') id: string,
+    @Param('aparelhoId') aparelhoId: string,
+  ) {
     return this.service.removeAparelhoDestinatario(+id, +aparelhoId);
   }
 

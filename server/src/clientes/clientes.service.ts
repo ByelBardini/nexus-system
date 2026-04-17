@@ -55,7 +55,9 @@ export class ClientesService {
     const { contatos, ...clienteData } = dto;
 
     if (contatos !== undefined) {
-      const existingIds = contatos.filter((c) => c.id).map((c) => c.id as number);
+      const existingIds = contatos
+        .filter((c) => c.id)
+        .map((c) => c.id as number);
 
       await this.prisma.$transaction(async (tx) => {
         await tx.contatoCliente.deleteMany({

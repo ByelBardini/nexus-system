@@ -70,16 +70,6 @@ export class PareamentoDto {
   @Type(() => SimManualDto)
   simManual?: SimManualDto;
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsNumber()
-  kitId?: number;
-
-  @ApiPropertyOptional({ example: 'Kit X' })
-  @IsOptional()
-  @IsString()
-  kitNome?: string;
-
   @ApiPropertyOptional({ enum: ProprietarioTipo, default: 'INFINITY' })
   @IsOptional()
   @IsEnum(ProprietarioTipo)
