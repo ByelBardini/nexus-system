@@ -64,10 +64,7 @@ async function main() {
 
   const cargosAdmin = await prisma.cargo.findMany({
     where: {
-      OR: [
-        { code: 'ADMIN' },
-        { nome: { contains: 'Administrador' } },
-      ],
+      OR: [{ code: 'ADMIN' }, { nome: { contains: 'Administrador' } }],
     },
   });
 
@@ -83,7 +80,9 @@ async function main() {
     }
   }
 
-  console.log(`Permissões sincronizadas: ${PERMISSION_CODES.length} códigos, ${cargosAdmin.length} cargos admin atualizados.`);
+  console.log(
+    `Permissões sincronizadas: ${PERMISSION_CODES.length} códigos, ${cargosAdmin.length} cargos admin atualizados.`,
+  );
 }
 
 main()

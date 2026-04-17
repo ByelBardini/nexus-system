@@ -44,4 +44,4 @@ export const PERMISSION_CODES = [
   // Cadastro de Rastreamento
   'CADASTRO_RASTREAMENTO.LISTAR',
   'CADASTRO_RASTREAMENTO.EDITAR',
-] as const
+] as const;

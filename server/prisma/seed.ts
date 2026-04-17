@@ -39,7 +39,7 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   // Setores
-  const setorAgendamento = await prisma.setor.upsert({
+  await prisma.setor.upsert({
     where: { code: 'AGENDAMENTO' },
     update: {},
     create: { code: 'AGENDAMENTO', nome: 'Agendamento & Ordens' },
@@ -49,7 +49,7 @@ async function main() {
     update: {},
     create: { code: 'ADMINISTRATIVO', nome: 'Administrativo' },
   });
-  const setorConfig = await prisma.setor.upsert({
+  await prisma.setor.upsert({
     where: { code: 'CONFIGURACAO' },
     update: {},
     create: { code: 'CONFIGURACAO', nome: 'Configuração' },
@@ -95,10 +95,7 @@ async function main() {
   // Vincular todas as permissões a TODOS os cargos admin existentes (qualquer setor)
   const todosCargosAdmin = await prisma.cargo.findMany({
     where: {
-      OR: [
-        { code: 'ADMIN' },
-        { nome: { contains: 'Administrador' } },
-      ],
+      OR: [{ code: 'ADMIN' }, { nome: { contains: 'Administrador' } }],
     },
   });
 
@@ -128,7 +125,9 @@ async function main() {
   });
 
   await prisma.usuarioCargo.upsert({
-    where: { usuarioId_cargoId: { usuarioId: usuarioAdmin.id, cargoId: cargoAdmin.id } },
+    where: {
+      usuarioId_cargoId: { usuarioId: usuarioAdmin.id, cargoId: cargoAdmin.id },
+    },
     update: {},
     create: { usuarioId: usuarioAdmin.id, cargoId: cargoAdmin.id },
   });
