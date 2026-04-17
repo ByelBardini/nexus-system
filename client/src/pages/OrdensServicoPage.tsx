@@ -14,13 +14,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { api, apiDownloadBlob } from '@/lib/api'
 import {
   formatarCEP,
@@ -28,11 +21,13 @@ import {
   formatarDataHoraCurta,
   formatarTelefone,
   formatarTempoMinutos,
+  formatId,
   TIPO_OS_LABELS,
 } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/contexts/AuthContext'
 import { MaterialIcon } from '@/components/MaterialIcon'
+import { SearchableSelect } from '@/components/SearchableSelect'
 import { toast } from 'sonner'
 
 const statusLabels: Record<string, string> = {
@@ -135,6 +130,10 @@ interface OrdemServicoDetalhe {
   criadoPor?: { id: number; nome: string } | null
   atualizadoEm?: string
   historico?: { statusAnterior: string; statusNovo: string; criadoEm: string; observacao?: string | null }[]
+  plataforma?: string | null
+  statusCadastro?: string | null
+  concluidoEm?: string | null
+  concluidoPor?: { id: number; nome: string } | null
 }
 
 /** Usa snapshot do subcliente quando disponível (preserva dados no momento da criação). */
@@ -281,6 +280,10 @@ export function OrdensServicoPage() {
     updateStatusMutation.mutate({ id, status: 'AGUARDANDO_CADASTRO', observacao: obs })
   }
 
+  const handleEnviarParaCadastro = (id: number) => {
+    updateStatusMutation.mutate({ id, status: 'AGUARDANDO_CADASTRO' })
+  }
+
   const handleAbrirImpressao = async (id: number) => {
     setDownloadingPdf(true)
     try {
@@ -414,33 +417,35 @@ export function OrdensServicoPage() {
         </button>
       </div>
 
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-xs">
-          <MaterialIcon
-            name="search"
-            className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-base"
-          />
-          <Input
-            className="pl-8 text-[11px]"
-            placeholder="Buscar OS, placa ou cliente"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+      <div className="flex items-end justify-between gap-4">
+        <div className="flex flex-col">
+          <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Busca</label>
+          <div className="relative w-64">
+            <MaterialIcon
+              name="search"
+              className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-base"
+            />
+            <Input
+              className="pl-8 text-[11px]"
+              placeholder="OS, placa ou cliente"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filtrar por status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="TODOS">Todos</SelectItem>
-              {Object.entries(statusLabels).map(([k, v]) => (
-                <SelectItem key={k} value={k}>
-                  {v}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex items-end gap-2">
+          <div className="flex flex-col">
+            <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Status</label>
+            <SearchableSelect
+              className="w-[180px]"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { value: 'TODOS', label: 'Todos' },
+                ...Object.entries(statusLabels).map(([k, v]) => ({ value: k, label: v })),
+              ]}
+            />
+          </div>
           {canCreate && (
             <Button
               onClick={() => navigate('/ordens-servico/nova')}
@@ -511,7 +516,7 @@ export function OrdensServicoPage() {
                             isExpanded ? 'text-erp-blue' : 'text-slate-950'
                           )}
                         >
-                          #{os.numero}
+                          #{formatId(os.numero)}
                         </td>
                         <td>{os.cliente?.nome ?? '-'}</td>
                         <td>{os.subclienteSnapshotNome ?? os.subcliente?.nome ?? '-'}</td>
@@ -540,6 +545,12 @@ export function OrdensServicoPage() {
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              {os.status === 'EM_TESTES' && (
+                                <DropdownMenuItem onClick={() => navigate(`/testes?osId=${os.id}`)}>
+                                  <MaterialIcon name="biotech" className="text-sm mr-2" />
+                                  Ir para Testes
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem
                                 onClick={() => handleAbrirImpressao(os.id)}
                                 disabled={downloadingPdf}
@@ -715,7 +726,7 @@ export function OrdensServicoPage() {
                                             Iniciar Testes
                                           </Button>
                                         </div>
-                                      ) : ['EM_TESTES', 'TESTES_REALIZADOS', 'AGUARDANDO_CADASTRO'].includes(osDetalhe.status) &&
+                                      ) : ['EM_TESTES', 'TESTES_REALIZADOS', 'AGUARDANDO_CADASTRO', 'FINALIZADO'].includes(osDetalhe.status) &&
                                         !(osDetalhe.tipo === 'RETIRADA' && osDetalhe.status === 'AGUARDANDO_CADASTRO') ? (
                                         (() => {
                                           const { entradaEmTestes, saidaEmTestes, tempoMin } = getDadosTeste(osDetalhe)
@@ -783,7 +794,67 @@ export function OrdensServicoPage() {
                                       </h2>
                                     </div>
                                     <div className="p-3">
-                                      <span className="text-slate-500 text-xs italic">Em Breve</span>
+                                      {osDetalhe.status === 'TESTES_REALIZADOS' ? (
+                                        <div className="flex flex-col items-center justify-center gap-2 min-h-[120px]">
+                                          <p className="text-slate-500 text-xs">
+                                            Envie esta ordem de serviço para cadastro.
+                                          </p>
+                                          <Button
+                                            size="sm"
+                                            className="bg-erp-blue hover:bg-blue-700 text-white text-xs font-bold uppercase h-9"
+                                            onClick={() => handleEnviarParaCadastro(osDetalhe.id)}
+                                            disabled={updateStatusMutation.isPending}
+                                          >
+                                            {updateStatusMutation.isPending ? (
+                                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                            ) : (
+                                              <MaterialIcon name="send" className="text-lg mr-2" />
+                                            )}
+                                            Enviar para Cadastro
+                                          </Button>
+                                        </div>
+                                      ) : ['AGUARDANDO_CADASTRO', 'FINALIZADO'].includes(osDetalhe.status) ? (
+                                        <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                                          <div>
+                                            <p className="text-[10px] font-bold uppercase text-slate-500 mb-0.5">Data de Envio</p>
+                                            <p className="text-sm text-slate-800">
+                                              {(() => {
+                                                const entry = osDetalhe.historico?.find(h => h.statusNovo === 'AGUARDANDO_CADASTRO')
+                                                return entry ? new Date(entry.criadoEm).toLocaleDateString('pt-BR') : '—'
+                                              })()}
+                                            </p>
+                                          </div>
+                                          <div>
+                                            <p className="text-[10px] font-bold uppercase text-slate-500 mb-0.5">Plataforma</p>
+                                            <p className="text-sm text-slate-800">{osDetalhe.plataforma ?? '—'}</p>
+                                          </div>
+                                          <div>
+                                            <p className="text-[10px] font-bold uppercase text-slate-500 mb-0.5">Login Enviado</p>
+                                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase border bg-slate-100 text-slate-600 border-slate-300">
+                                              Não
+                                            </span>
+                                          </div>
+                                          <div>
+                                            <p className="text-[10px] font-bold uppercase text-slate-500 mb-0.5">Status do Cadastro</p>
+                                            {osDetalhe.statusCadastro ? (
+                                              <span className={cn(
+                                                'px-2 py-0.5 rounded text-[10px] font-bold uppercase border',
+                                                osDetalhe.statusCadastro === 'CONCLUIDO'
+                                                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                                  : osDetalhe.statusCadastro === 'EM_CADASTRO'
+                                                  ? 'bg-blue-50 text-blue-800 border-blue-200'
+                                                  : 'bg-amber-50 text-amber-800 border-amber-200'
+                                              )}>
+                                                {osDetalhe.statusCadastro === 'CONCLUIDO' ? 'Concluído'
+                                                  : osDetalhe.statusCadastro === 'EM_CADASTRO' ? 'Em Cadastro'
+                                                  : 'Aguardando'}
+                                              </span>
+                                            ) : '—'}
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <span className="text-slate-500 text-xs italic">Não disponível</span>
+                                      )}
                                     </div>
                                   </section>
                                 </div>

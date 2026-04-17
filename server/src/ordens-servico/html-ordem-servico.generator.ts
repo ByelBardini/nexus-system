@@ -57,12 +57,18 @@ type OsParaHtml = {
     ano?: number | null;
     cor?: string | null;
   } | null;
-  tecnico?: { nome: string; cidade?: string | null; estado?: string | null; telefone?: string | null } | null;
+  tecnico?: {
+    nome: string;
+    cidade?: string | null;
+    estado?: string | null;
+    telefone?: string | null;
+  } | null;
   criadoPor?: { nome: string } | null;
 };
 
 function esc(s: unknown): string {
   if (s == null || s === undefined) return '-';
+  // eslint-disable-next-line @typescript-eslint/no-base-to-string
   const t = String(s);
   return t
     .replace(/&/g, '&amp;')
@@ -101,7 +107,8 @@ function formatarCPFCNPJ(val: string | null | undefined): string {
     return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9, 11)}`;
   }
   // CNPJ: 00.000.000/0001-00
-  if (d.length <= 12) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8)}`;
+  if (d.length <= 12)
+    return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8)}`;
   return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12, 14)}`;
 }
 
@@ -122,8 +129,10 @@ export class HtmlOrdemServicoGenerator {
   }
 
   /** Usa snapshot do subcliente (preserva dados no momento da criação) quando disponível. */
-  private static subclienteParaExibicao(os: OsParaHtml): SubclienteParaExibicao | null {
-    const d = os as OsParaHtml;
+  private static subclienteParaExibicao(
+    os: OsParaHtml,
+  ): SubclienteParaExibicao | null {
+    const d = os;
     if (d.subclienteSnapshotNome != null && d.subclienteSnapshotNome !== '') {
       return {
         nome: d.subclienteSnapshotNome,
@@ -146,7 +155,11 @@ export class HtmlOrdemServicoGenerator {
   gerar(os: unknown): string {
     const d = os as OsParaHtml;
     const formatDate = (date: Date) =>
-      new Date(date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      new Date(date).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
     const logoB64 = this.getLogoBase64();
     const logoImg = logoB64
       ? `<img src="data:image/png;base64,${logoB64}" alt="Infinity System" class="h-10 object-contain" />`
@@ -162,12 +175,20 @@ export class HtmlOrdemServicoGenerator {
         partesEndereco.push(rua);
       }
       if (sub.bairro) partesEndereco.push(sub.bairro);
-      if (sub.cidade || sub.estado) partesEndereco.push([sub.cidade, sub.estado].filter(Boolean).join(' - '));
+      if (sub.cidade || sub.estado)
+        partesEndereco.push(
+          [sub.cidade, sub.estado].filter(Boolean).join(' - '),
+        );
       if (sub.cep) partesEndereco.push(`CEP ${formatarCEP(sub.cep)}`);
     }
-    const endereco = sub && partesEndereco.length > 0 ? partesEndereco.join(', ') : '-';
-    const cidadeSub = sub ? [sub.cidade, sub.estado].filter(Boolean).join(' / ') || '-' : '-';
-    const tecCidade = d.tecnico ? [d.tecnico.cidade, d.tecnico.estado].filter(Boolean).join(' / ') || '-' : '-';
+    const endereco =
+      sub && partesEndereco.length > 0 ? partesEndereco.join(', ') : '-';
+    const cidadeSub = sub
+      ? [sub.cidade, sub.estado].filter(Boolean).join(' / ') || '-'
+      : '-';
+    const tecCidade = d.tecnico
+      ? [d.tecnico.cidade, d.tecnico.estado].filter(Boolean).join(' / ') || '-'
+      : '-';
     const v = d.veiculo;
     const marcaModelo = v ? `${v.marca} ${v.modelo}`.trim() : '-';
     const tipoLabel = TIPO_LABELS[d.tipo] || d.tipo;
@@ -177,14 +198,24 @@ export class HtmlOrdemServicoGenerator {
     const isRevisaoOuRetirada = isRetirada || isRevisao;
     const isFinalizado = d.status === 'FINALIZADO';
     const statusAntesTestes = ['AGENDADO', 'EM_TESTES'].includes(d.status);
-    const statusDepoisTestes = ['TESTES_REALIZADOS', 'AGUARDANDO_CADASTRO', 'FINALIZADO', 'CANCELADO'].includes(d.status);
-    const posChaveLabel = d.posChave === 'SIM' ? 'Sim' : d.posChave === 'NAO' ? 'Não' : '-';
+    const statusDepoisTestes = [
+      'TESTES_REALIZADOS',
+      'AGUARDANDO_CADASTRO',
+      'FINALIZADO',
+      'CANCELADO',
+    ].includes(d.status);
+    const posChaveLabel =
+      d.posChave === 'SIM' ? 'Sim' : d.posChave === 'NAO' ? 'Não' : '-';
     let aparelhoEncontradoLabel = '-';
     if (d.aparelhoEncontrado === true) aparelhoEncontradoLabel = 'Sim';
     else if (d.aparelhoEncontrado === false) aparelhoEncontradoLabel = 'Não';
     else {
-      const match = (d.observacoes ?? '').match(/Aparelho encontrado:\s*(Sim|Não)/i);
-      if (match) aparelhoEncontradoLabel = match[1].toLowerCase() === 'sim' ? 'Sim' : 'Não';
+      const match = (d.observacoes ?? '').match(
+        /Aparelho encontrado:\s*(Sim|Não)/i,
+      );
+      if (match)
+        aparelhoEncontradoLabel =
+          match[1].toLowerCase() === 'sim' ? 'Sim' : 'Não';
     }
     const idEntradaVal = d.idEntrada ?? d.idAparelho;
 
@@ -285,8 +316,12 @@ export class HtmlOrdemServicoGenerator {
         Tipo de Serviço${isRevisaoOuRetirada || isInstalacao ? ' e Detalhes' : ''}
       </h3>
       <div class="p-3 border border-gray-100 rounded">
-        ${statusAntesTestes ? `
-          ${isRetirada ? `
+        ${
+          statusAntesTestes
+            ? `
+          ${
+            isRetirada
+              ? `
         <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1 justify-center text-center">
           <span class="field-value font-semibold">${esc(tipoLabel)}</span>
           <span class="text-gray-400">|</span>
@@ -296,7 +331,9 @@ export class HtmlOrdemServicoGenerator {
           <span class="text-gray-400">|</span>
           <span><span class="label-title">Pós-Chave:</span> <span class="field-value">${posChaveLabel}</span></span>
         </div>
-          ` : isRevisao ? `
+          `
+              : isRevisao
+                ? `
         <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1 justify-center text-center">
           <span class="field-value font-semibold">${esc(tipoLabel)}</span>
           <span class="text-gray-400">|</span>
@@ -306,15 +343,23 @@ export class HtmlOrdemServicoGenerator {
           <span class="text-gray-400">|</span>
           <span><span class="label-title">Pós-Chave:</span> <span class="field-value">${posChaveLabel}</span></span>
         </div>
-          ` : isInstalacao ? `
+          `
+                : isInstalacao
+                  ? `
         <div class="text-center">
           <span class="field-value font-semibold">${esc(tipoLabel)}</span>
         </div>
-          ` : `
+          `
+                  : `
         <div class="text-center"><label class="label-title block">Tipo</label><span class="field-value font-semibold">${esc(tipoLabel)}</span></div>
-          `}
-        ` : statusDepoisTestes ? `
-          ${isRetirada ? `
+          `
+          }
+        `
+            : statusDepoisTestes
+              ? `
+          ${
+            isRetirada
+              ? `
         <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1 justify-center text-center">
           <span class="field-value font-semibold">${esc(tipoLabel)}</span>
           <span class="text-gray-400">|</span>
@@ -327,7 +372,9 @@ export class HtmlOrdemServicoGenerator {
         <div class="text-center mt-3">
           <span class="label-title">Aparelho encontrado?</span> <span class="field-value font-semibold">${aparelhoEncontradoLabel}</span>
         </div>
-          ` : isRevisao ? `
+          `
+              : isRevisao
+                ? `
         <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1 justify-center text-center">
           <span class="field-value font-semibold">${esc(tipoLabel)}</span>
           <span class="text-gray-400">|</span>
@@ -346,7 +393,9 @@ export class HtmlOrdemServicoGenerator {
             <span><span class="label-title">Pós-Chave:</span> <span class="field-value">${posChaveLabel}</span></span>
           </div>
         </div>
-          ` : isInstalacao ? `
+          `
+                : isInstalacao
+                  ? `
         <div class="text-center mb-3">
           <span class="field-value font-semibold">${esc(tipoLabel)}</span>
         </div>
@@ -357,12 +406,16 @@ export class HtmlOrdemServicoGenerator {
           <span class="text-gray-400">|</span>
           <span><span class="label-title">Pós-Chave:</span> <span class="field-value">${posChaveLabel}</span></span>
         </div>
-          ` : `
+          `
+                  : `
         <div class="text-center"><label class="label-title block">Tipo</label><span class="field-value font-semibold">${esc(tipoLabel)}</span></div>
-          `}
-        ` : `
+          `
+          }
+        `
+              : `
         <div class="text-center"><label class="label-title block">Tipo</label><span class="field-value font-semibold">${esc(tipoLabel)}</span></div>
-        `}
+        `
+        }
       </div>
     </section>
 
@@ -376,7 +429,9 @@ export class HtmlOrdemServicoGenerator {
       </div>
     </section>
 
-    ${isFinalizado ? `
+    ${
+      isFinalizado
+        ? `
     <section class="mt-auto">
       <h3 class="label-title mb-4 flex items-center gap-2">
         <svg class="section-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -384,7 +439,9 @@ export class HtmlOrdemServicoGenerator {
       </h3>
       <p class="field-value">Data da execução do serviço: ____ / ____ / ______</p>
     </section>
-    ` : ''}
+    `
+        : ''
+    }
 
     <footer class="mt-4 pt-2 border-t border-gray-100 text-[9px] text-gray-400 uppercase tracking-widest">
       Documento gerado automaticamente pelo sistema Infinity

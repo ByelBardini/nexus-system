@@ -113,10 +113,12 @@ const NOMES_ITEM: Record<string, string> = {
   CARGO: 'Cargos',
   USUARIO: 'Usuários',
   APARELHO: 'Aparelhos',
+  EQUIPAMENTO: 'Equipamentos',
   CLIENTE: 'Clientes',
   OS: 'Ordens de Serviço',
   PEDIDO_RASTREADOR: 'Pedidos de Rastreadores',
   TECNICO: 'Técnicos',
+  TESTES: 'Testes de Aparelhos',
 }
 
 const NOMES_ACAO: Record<string, string> = {
@@ -124,15 +126,16 @@ const NOMES_ACAO: Record<string, string> = {
   CRIAR: 'Criar',
   EDITAR: 'Editar',
   EXCLUIR: 'Deletar',
+  EXECUTAR: 'Executar',
 }
 
 const ORDEM_SETORES = ['ADMINISTRATIVO', 'CONFIGURACAO', 'AGENDAMENTO']
 const ORDEM_ITENS: Record<string, string[]> = {
   ADMINISTRATIVO: ['CARGO', 'USUARIO'],
-  CONFIGURACAO: ['APARELHO'],
-  AGENDAMENTO: ['CLIENTE', 'OS', 'PEDIDO_RASTREADOR', 'TECNICO'],
+  CONFIGURACAO: ['APARELHO', 'EQUIPAMENTO'],
+  AGENDAMENTO: ['CLIENTE', 'OS', 'TESTES', 'PEDIDO_RASTREADOR', 'TECNICO'],
 }
-const ORDEM_ACOES = ['LISTAR', 'CRIAR', 'EDITAR', 'EXCLUIR']
+const ORDEM_ACOES = ['LISTAR', 'CRIAR', 'EDITAR', 'EXCLUIR', 'EXECUTAR']
 
 function agruparPermissoes(permissoes: Permission[]) {
   const estrutura: Record<string, Record<string, { acao: string; permissao: Permission }[]>> = {}
@@ -427,6 +430,7 @@ export function CargoModal({ open, cargo, isNew, onClose, permissoes, setores }:
                           <th className="px-3 py-2 bg-slate-100 border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider text-slate-600 text-center w-24">Criar</th>
                           <th className="px-3 py-2 bg-slate-100 border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider text-slate-600 text-center w-24">Editar</th>
                           <th className="px-3 py-2 bg-slate-100 border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider text-slate-600 text-center w-24">Deletar</th>
+                          <th className="px-3 py-2 bg-slate-100 border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider text-slate-600 text-center w-24">Executar</th>
                         </tr>
                       </thead>
                       <tbody>

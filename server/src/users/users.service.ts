@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { paginateParams } from '../common/pagination.helper';
 import * as bcrypt from 'bcrypt';
 import { SetorUsuario } from '@prisma/client';
@@ -10,9 +14,11 @@ import { UpdateUserDto } from './dto/update-user.dto';
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private sanitizeUser<T extends { senhaHash: string }>(user: T): Omit<T, 'senhaHash'> {
-    const { senhaHash: _, ...rest } = user;
-    return rest as Omit<T, 'senhaHash'>;
+  private sanitizeUser<T extends { senhaHash: string }>(
+    user: T,
+  ): Omit<T, 'senhaHash'> {
+    const { senhaHash: _senhaHash, ...rest } = user;
+    return rest;
   }
 
   async findAll() {
@@ -50,7 +56,10 @@ export class UsersService {
       nome?: { contains: string; mode: 'insensitive' };
       email?: { contains: string; mode: 'insensitive' };
       ativo?: boolean;
-      OR?: { nome?: { contains: string; mode: 'insensitive' }; email?: { contains: string; mode: 'insensitive' } }[];
+      OR?: {
+        nome?: { contains: string; mode: 'insensitive' };
+        email?: { contains: string; mode: 'insensitive' };
+      }[];
     } = {};
 
     if (search) {
@@ -105,7 +114,9 @@ export class UsersService {
   }
 
   async create(dto: CreateUserDto) {
-    const exists = await this.prisma.usuario.findUnique({ where: { email: dto.email } });
+    const exists = await this.prisma.usuario.findUnique({
+      where: { email: dto.email },
+    });
     if (exists) throw new ConflictException('Email já cadastrado');
     const senhaHash = await bcrypt.hash(dto.password, 10);
     const user = await this.prisma.usuario.create({
@@ -129,7 +140,12 @@ export class UsersService {
       });
       if (exists) throw new ConflictException('Email já cadastrado');
     }
-    const data: { nome?: string; email?: string; ativo?: boolean; setor?: SetorUsuario } = {};
+    const data: {
+      nome?: string;
+      email?: string;
+      ativo?: boolean;
+      setor?: SetorUsuario;
+    } = {};
     if (dto.nome !== undefined) data.nome = dto.nome;
     if (dto.email !== undefined) data.email = dto.email;
     if (dto.ativo !== undefined) data.ativo = dto.ativo;
@@ -207,7 +223,9 @@ export class UsersService {
     return user ? this.sanitizeUser(user) : null;
   }
 
-  getPermissions(user: NonNullable<Awaited<ReturnType<typeof this.findByEmail>>>) {
+  getPermissions(
+    user: NonNullable<Awaited<ReturnType<typeof this.findByEmail>>>,
+  ) {
     const codes = new Set<string>();
     for (const uc of user.usuarioCargos) {
       for (const cp of uc.cargo.cargoPermissoes) {

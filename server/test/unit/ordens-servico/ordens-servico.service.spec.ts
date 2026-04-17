@@ -4,7 +4,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { OrdensServicoService } from 'src/ordens-servico/ordens-servico.service';
 import { HtmlOrdemServicoGenerator } from 'src/ordens-servico/html-ordem-servico.generator';
 import { PdfOrdemServicoGenerator } from 'src/ordens-servico/pdf-ordem-servico.generator';
-import { StatusOS } from '@prisma/client';
+import { StatusOS, StatusCadastro } from '@prisma/client';
 import { createPrismaMock } from '../helpers/prisma-mock';
 
 describe('OrdensServicoService', () => {
@@ -15,8 +15,12 @@ describe('OrdensServicoService', () => {
 
   beforeEach(async () => {
     prisma = createPrismaMock();
-    htmlGenerator = { gerar: jest.fn() } as unknown as jest.Mocked<HtmlOrdemServicoGenerator>;
-    pdfGenerator = { gerar: jest.fn() } as unknown as jest.Mocked<PdfOrdemServicoGenerator>;
+    htmlGenerator = {
+      gerar: jest.fn(),
+    } as unknown as jest.Mocked<HtmlOrdemServicoGenerator>;
+    pdfGenerator = {
+      gerar: jest.fn(),
+    } as unknown as jest.Mocked<PdfOrdemServicoGenerator>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -196,7 +200,13 @@ describe('OrdensServicoService', () => {
 
       const result = await service.findAll({});
 
-      expect(result).toEqual({ data: items, total: 1, page: 1, limit: 15, totalPages: 1 });
+      expect(result).toEqual({
+        data: items,
+        total: 1,
+        page: 1,
+        limit: 15,
+        totalPages: 1,
+      });
       expect(prisma.ordemServico.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ skip: 0, take: 15 }),
       );
@@ -301,7 +311,9 @@ describe('OrdensServicoService', () => {
     });
 
     it('usa número 1 quando não há OS anteriores', async () => {
-      prisma.ordemServico.aggregate.mockResolvedValue({ _max: { numero: null } });
+      prisma.ordemServico.aggregate.mockResolvedValue({
+        _max: { numero: null },
+      });
       prisma.ordemServico.create.mockResolvedValue({ id: 1, numero: 1 });
 
       await service.create({ tipo: 'INSTALACAO' } as any);
@@ -380,20 +392,18 @@ describe('OrdensServicoService', () => {
       prisma.ordemServico.aggregate.mockResolvedValue({ _max: { numero: 5 } });
       prisma.ordemServico.create.mockResolvedValue(createdOS);
 
-      const result = await service.create(
-        {
-          tipo: 'INSTALACAO',
-          clienteId: 1,
-          subclienteCreate: {
-            nome: 'Sub Novo',
-            cep: '12345-678',
-            cidade: 'São Paulo',
-            estado: 'SP',
-            telefone: '11999999999',
-            cobrancaTipo: 'INFINITY',
-          },
-        } as any,
-      );
+      const result = await service.create({
+        tipo: 'INSTALACAO',
+        clienteId: 1,
+        subclienteCreate: {
+          nome: 'Sub Novo',
+          cep: '12345-678',
+          cidade: 'São Paulo',
+          estado: 'SP',
+          telefone: '11999999999',
+          cobrancaTipo: 'INFINITY',
+        },
+      } as any);
 
       expect(prisma.$transaction).toHaveBeenCalled();
       expect(prisma.subcliente.create).toHaveBeenCalledWith({
@@ -430,7 +440,10 @@ describe('OrdensServicoService', () => {
       };
       prisma.ordemServico.create.mockResolvedValue(created);
 
-      const result = await service.create({ tipo: 'RETIRADA', clienteId: 1 } as any);
+      const result = await service.create({
+        tipo: 'RETIRADA',
+        clienteId: 1,
+      } as any);
 
       expect(result).toMatchObject({
         cliente: { nome: 'Cliente A' },
@@ -455,16 +468,18 @@ describe('OrdensServicoService', () => {
     it('lança NotFoundException quando OS não existe', async () => {
       prisma.ordemServico.findUnique.mockResolvedValue(null);
 
-      await expect(service.updateStatus(999, { status: StatusOS.EM_TESTES })).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.updateStatus(999, { status: StatusOS.EM_TESTES }),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('retorna OS sem alterar quando status já é o mesmo', async () => {
       const os = { id: 1, numero: 1, status: StatusOS.AGENDADO, historico: [] };
       prisma.ordemServico.findUnique.mockResolvedValue(os);
 
-      const result = await service.updateStatus(1, { status: StatusOS.AGENDADO });
+      const result = await service.updateStatus(1, {
+        status: StatusOS.AGENDADO,
+      });
 
       expect(prisma.$transaction).not.toHaveBeenCalled();
       expect(result).toEqual(os);
@@ -478,14 +493,21 @@ describe('OrdensServicoService', () => {
       prisma.oSHistorico.create.mockResolvedValue({});
       prisma.ordemServico.update.mockResolvedValue({});
 
-      const result = await service.updateStatus(1, { status: StatusOS.EM_TESTES });
+      const result = await service.updateStatus(1, {
+        status: StatusOS.EM_TESTES,
+      });
 
       expect(prisma.$transaction).toHaveBeenCalled();
       expect(result).toMatchObject({ status: StatusOS.EM_TESTES });
     });
 
     it('lança BadRequestException para transição inválida (EM_TESTES → FINALIZADO)', async () => {
-      const os = { id: 1, numero: 1, status: StatusOS.EM_TESTES, historico: [] };
+      const os = {
+        id: 1,
+        numero: 1,
+        status: StatusOS.EM_TESTES,
+        historico: [],
+      };
       prisma.ordemServico.findUnique.mockResolvedValue(os);
 
       const promise = service.updateStatus(1, { status: StatusOS.FINALIZADO });
@@ -494,42 +516,106 @@ describe('OrdensServicoService', () => {
     });
 
     it('aceita transição válida (EM_TESTES → TESTES_REALIZADOS)', async () => {
-      const os = { id: 1, numero: 1, status: StatusOS.EM_TESTES, historico: [] };
+      const os = {
+        id: 1,
+        numero: 1,
+        status: StatusOS.EM_TESTES,
+        historico: [],
+      };
       prisma.ordemServico.findUnique
         .mockResolvedValueOnce(os)
         .mockResolvedValueOnce({ ...os, status: StatusOS.TESTES_REALIZADOS });
       prisma.oSHistorico.create.mockResolvedValue({});
       prisma.ordemServico.update.mockResolvedValue({});
 
-      const result = await service.updateStatus(1, { status: StatusOS.TESTES_REALIZADOS });
+      const result = await service.updateStatus(1, {
+        status: StatusOS.TESTES_REALIZADOS,
+      });
 
       expect(result).toMatchObject({ status: StatusOS.TESTES_REALIZADOS });
     });
 
     it('aceita transição válida (EM_TESTES → AGENDADO)', async () => {
-      const os = { id: 1, numero: 1, status: StatusOS.EM_TESTES, historico: [] };
+      const os = {
+        id: 1,
+        numero: 1,
+        status: StatusOS.EM_TESTES,
+        historico: [],
+      };
       prisma.ordemServico.findUnique
         .mockResolvedValueOnce(os)
         .mockResolvedValueOnce({ ...os, status: StatusOS.AGENDADO });
       prisma.oSHistorico.create.mockResolvedValue({});
       prisma.ordemServico.update.mockResolvedValue({});
 
-      const result = await service.updateStatus(1, { status: StatusOS.AGENDADO });
+      const result = await service.updateStatus(1, {
+        status: StatusOS.AGENDADO,
+      });
 
       expect(result).toMatchObject({ status: StatusOS.AGENDADO });
     });
 
     it('aceita transição válida (EM_TESTES → CANCELADO)', async () => {
-      const os = { id: 1, numero: 1, status: StatusOS.EM_TESTES, historico: [] };
+      const os = {
+        id: 1,
+        numero: 1,
+        status: StatusOS.EM_TESTES,
+        historico: [],
+      };
       prisma.ordemServico.findUnique
         .mockResolvedValueOnce(os)
         .mockResolvedValueOnce({ ...os, status: StatusOS.CANCELADO });
       prisma.oSHistorico.create.mockResolvedValue({});
       prisma.ordemServico.update.mockResolvedValue({});
 
-      const result = await service.updateStatus(1, { status: StatusOS.CANCELADO });
+      const result = await service.updateStatus(1, {
+        status: StatusOS.CANCELADO,
+      });
 
       expect(result).toMatchObject({ status: StatusOS.CANCELADO });
+    });
+
+    it('define statusCadastro=AGUARDANDO quando OS transita para AGUARDANDO_CADASTRO', async () => {
+      const os = {
+        id: 1,
+        numero: 1,
+        status: StatusOS.TESTES_REALIZADOS,
+        historico: [],
+      };
+      prisma.ordemServico.findUnique
+        .mockResolvedValueOnce(os)
+        .mockResolvedValueOnce({
+          ...os,
+          status: StatusOS.AGUARDANDO_CADASTRO,
+          statusCadastro: StatusCadastro.AGUARDANDO,
+        });
+      prisma.oSHistorico.create.mockResolvedValue({});
+      prisma.ordemServico.update.mockResolvedValue({});
+
+      await service.updateStatus(1, { status: StatusOS.AGUARDANDO_CADASTRO });
+
+      expect(prisma.ordemServico.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            status: StatusOS.AGUARDANDO_CADASTRO,
+            statusCadastro: StatusCadastro.AGUARDANDO,
+          }),
+        }),
+      );
+    });
+
+    it('não define statusCadastro quando OS transita para outros status', async () => {
+      const os = { id: 1, numero: 1, status: StatusOS.AGENDADO, historico: [] };
+      prisma.ordemServico.findUnique
+        .mockResolvedValueOnce(os)
+        .mockResolvedValueOnce({ ...os, status: StatusOS.EM_TESTES });
+      prisma.oSHistorico.create.mockResolvedValue({});
+      prisma.ordemServico.update.mockResolvedValue({});
+
+      await service.updateStatus(1, { status: StatusOS.EM_TESTES });
+
+      const updateCall = prisma.ordemServico.update.mock.calls[0]?.[0];
+      expect(updateCall?.data).not.toHaveProperty('statusCadastro');
     });
   });
 
@@ -545,7 +631,10 @@ describe('OrdensServicoService', () => {
       prisma.ordemServico.findUnique
         .mockResolvedValueOnce(os)
         .mockResolvedValueOnce({ ...os, idEntrada: '862345678901234' });
-      prisma.ordemServico.update.mockResolvedValue({ ...os, idEntrada: '862345678901234' });
+      prisma.ordemServico.update.mockResolvedValue({
+        ...os,
+        idEntrada: '862345678901234',
+      });
 
       const result = await service.update(1, { idEntrada: '862345678901234' });
 
@@ -567,7 +656,10 @@ describe('OrdensServicoService', () => {
       prisma.ordemServico.findUnique
         .mockResolvedValueOnce(os)
         .mockResolvedValueOnce({ ...os, aparelhoEncontrado: true });
-      prisma.ordemServico.update.mockResolvedValue({ ...os, aparelhoEncontrado: true });
+      prisma.ordemServico.update.mockResolvedValue({
+        ...os,
+        aparelhoEncontrado: true,
+      });
 
       const result = await service.update(1, { aparelhoEncontrado: true });
 
@@ -588,14 +680,21 @@ describe('OrdensServicoService', () => {
       };
       prisma.ordemServico.findUnique
         .mockResolvedValueOnce(os)
-        .mockResolvedValueOnce({ ...os, idEntrada: 'IMEI123', aparelhoEncontrado: false });
+        .mockResolvedValueOnce({
+          ...os,
+          idEntrada: 'IMEI123',
+          aparelhoEncontrado: false,
+        });
       prisma.ordemServico.update.mockResolvedValue({
         ...os,
         idEntrada: 'IMEI123',
         aparelhoEncontrado: false,
       });
 
-      await service.update(1, { idEntrada: 'IMEI123', aparelhoEncontrado: false });
+      await service.update(1, {
+        idEntrada: 'IMEI123',
+        aparelhoEncontrado: false,
+      });
 
       expect(prisma.ordemServico.update).toHaveBeenCalledWith({
         where: { id: 1 },
@@ -630,7 +729,12 @@ describe('OrdensServicoService', () => {
 
   describe('updateIdAparelho', () => {
     it('atualiza idAparelho com valor válido', async () => {
-      const os = { id: 1, numero: 1, idAparelho: '862345678901234', historico: [] };
+      const os = {
+        id: 1,
+        numero: 1,
+        idAparelho: '862345678901234',
+        historico: [],
+      };
       prisma.ordemServico.findUnique
         .mockResolvedValueOnce(os)
         .mockResolvedValueOnce({ ...os, idAparelho: '862345678901234' });

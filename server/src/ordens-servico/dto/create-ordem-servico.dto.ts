@@ -78,7 +78,9 @@ export class CreateSubclienteDto {
   @MaxLength(20)
   telefone?: string;
 
-  @ApiPropertyOptional({ description: 'Tipo de cobrança (ex: INFINITY, CLIENTE)' })
+  @ApiPropertyOptional({
+    description: 'Tipo de cobrança (ex: INFINITY, CLIENTE)',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(20)
@@ -107,7 +109,8 @@ export class CreateOrdemServicoDto {
   subclienteId?: number;
 
   @ApiPropertyOptional({
-    description: 'Dados para criar novo subcliente (mutuamente exclusivo com subclienteId)',
+    description:
+      'Dados para criar novo subcliente (mutuamente exclusivo com subclienteId)',
   })
   @IsOptional()
   @ValidateNested()
@@ -140,7 +143,9 @@ export class CreateOrdemServicoDto {
   @IsString()
   observacoes?: string;
 
-  @ApiPropertyOptional({ description: 'ID do aparelho a retirar (RETIRADA) ou substituir (REVISAO)' })
+  @ApiPropertyOptional({
+    description: 'ID do aparelho a retirar (RETIRADA) ou substituir (REVISAO)',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(50)

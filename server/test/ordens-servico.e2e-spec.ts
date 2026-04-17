@@ -66,7 +66,9 @@ describe('OrdensServico (e2e) - Tela de Criação', () => {
 
   describe('GET /ordens-servico/resumo', () => {
     it('retorna 401 sem token de autenticação', () => {
-      return request(app.getHttpServer()).get('/ordens-servico/resumo').expect(401);
+      return request(app.getHttpServer())
+        .get('/ordens-servico/resumo')
+        .expect(401);
     });
   });
 
@@ -120,7 +122,9 @@ describe('Endpoints auxiliares da tela de criação (e2e)', () => {
 
   describe('GET /clientes?subclientes=1', () => {
     it('retorna 401 sem token de autenticação', () => {
-      return request(app.getHttpServer()).get('/clientes?subclientes=1').expect(401);
+      return request(app.getHttpServer())
+        .get('/clientes?subclientes=1')
+        .expect(401);
     });
   });
 

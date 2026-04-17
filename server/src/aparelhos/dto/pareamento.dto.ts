@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsEnum,
   IsNumber,
   IsObject,
   IsOptional,
@@ -8,6 +9,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ProprietarioTipo } from '@prisma/client';
 import { ParDto } from './pareamento-preview.dto';
 
 export class RastreadorManualDto {
@@ -68,13 +70,18 @@ export class PareamentoDto {
   @Type(() => SimManualDto)
   simManual?: SimManualDto;
 
+  @ApiPropertyOptional({ enum: ProprietarioTipo, default: 'INFINITY' })
+  @IsOptional()
+  @IsEnum(ProprietarioTipo)
+  proprietario?: ProprietarioTipo;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsNumber()
-  kitId?: number;
+  clienteId?: number;
 
-  @ApiPropertyOptional({ example: 'Kit X' })
+  @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
-  kitNome?: string;
+  @IsNumber()
+  tecnicoId?: number;
 }

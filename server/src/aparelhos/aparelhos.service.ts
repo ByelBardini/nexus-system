@@ -1,12 +1,20 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, ProprietarioTipo } from '@prisma/client';
 import { StatusAparelho, StatusOS } from '@prisma/client';
 import { CreateIndividualDto } from './dto/create-individual.dto';
+import { DebitosRastreadoresService } from '../debitos-rastreadores/debitos-rastreadores.service';
 
 @Injectable()
 export class AparelhosService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly debitosService: DebitosRastreadoresService,
+  ) {}
 
   private readonly selectParaTestes = {
     id: true,
@@ -18,14 +26,22 @@ export class AparelhosService {
     criadoEm: true,
     cliente: { select: { id: true, nome: true } },
     tecnico: { select: { id: true, nome: true } },
-    marcaSimcard: { select: { id: true, nome: true, operadora: { select: { id: true, nome: true } } } },
+    marcaSimcard: {
+      select: {
+        id: true,
+        nome: true,
+        operadora: { select: { id: true, nome: true } },
+      },
+    },
     planoSimcard: { select: { id: true, planoMb: true } },
     simVinculado: {
       select: {
         id: true,
         identificador: true,
         operadora: true,
-        marcaSimcard: { select: { nome: true, operadora: { select: { nome: true } } } },
+        marcaSimcard: {
+          select: { nome: true, operadora: { select: { nome: true } } },
+        },
         planoSimcard: { select: { planoMb: true } },
       },
     },
@@ -39,25 +55,25 @@ export class AparelhosService {
     const whereEmUso: Prisma.OrdemServicoWhereInput = {
       status: StatusOS.EM_TESTES,
       idAparelho: { not: null },
-    }
+    };
     if (ordemServicoId != null) {
-      whereEmUso.id = { not: ordemServicoId }
+      whereEmUso.id = { not: ordemServicoId };
     }
     const idsEmUso = await this.prisma.ordemServico.findMany({
       where: whereEmUso,
       select: { idAparelho: true },
-    })
+    });
     const identificadoresEmUso = idsEmUso
       .map((o) => o.idAparelho)
-      .filter((x): x is string => !!x)
+      .filter((x): x is string => !!x);
 
-    let idAparelhoVinculado: string | null = null
+    let idAparelhoVinculado: string | null = null;
     if (ordemServicoId != null) {
       const os = await this.prisma.ordemServico.findUnique({
         where: { id: ordemServicoId },
         select: { idAparelho: true },
-      })
-      idAparelhoVinculado = os?.idAparelho?.trim() || null
+      });
+      idAparelhoVinculado = os?.idAparelho?.trim() || null;
     }
 
     const where = {
@@ -76,13 +92,15 @@ export class AparelhosService {
       where,
       orderBy: { criadoEm: 'desc' },
       select: this.selectParaTestes,
-    })
+    });
 
-    if (!idAparelhoVinculado) return lista
+    if (!idAparelhoVinculado) return lista;
     const jaIncluido = lista.some(
-      (a) => (a.identificador ?? '').trim().toLowerCase() === idAparelhoVinculado!.trim().toLowerCase(),
-    )
-    if (jaIncluido) return lista
+      (a) =>
+        (a.identificador ?? '').trim().toLowerCase() ===
+        idAparelhoVinculado.trim().toLowerCase(),
+    );
+    if (jaIncluido) return lista;
 
     const vinculado = await this.prisma.aparelho.findFirst({
       where: {
@@ -90,9 +108,9 @@ export class AparelhosService {
         identificador: idAparelhoVinculado,
       },
       select: this.selectParaTestes,
-    })
-    if (!vinculado) return lista
-    return [vinculado, ...lista]
+    });
+    if (!vinculado) return lista;
+    return [vinculado, ...lista];
   }
 
   async findAll() {
@@ -103,7 +121,13 @@ export class AparelhosService {
         lote: { select: { id: true, referencia: true } },
         tecnico: { select: { id: true, nome: true } },
         kit: { select: { id: true, nome: true } },
-        marcaSimcard: { select: { id: true, nome: true, operadora: { select: { id: true, nome: true } } } },
+        marcaSimcard: {
+          select: {
+            id: true,
+            nome: true,
+            operadora: { select: { id: true, nome: true } },
+          },
+        },
         planoSimcard: { select: { id: true, planoMb: true } },
         simVinculado: {
           select: {
@@ -112,6 +136,19 @@ export class AparelhosService {
             operadora: true,
             marcaSimcard: { select: { id: true, nome: true } },
             planoSimcard: { select: { id: true, planoMb: true } },
+            lote: { select: { id: true, referencia: true } },
+          },
+        },
+        aparelhosVinculados: {
+          select: {
+            id: true,
+            identificador: true,
+            kitId: true,
+            kit: { select: { id: true, nome: true } },
+            tecnicoId: true,
+            tecnico: { select: { id: true, nome: true } },
+            clienteId: true,
+            cliente: { select: { id: true, nome: true } },
           },
         },
         historico: {
@@ -121,9 +158,17 @@ export class AparelhosService {
       },
     });
 
-    const identificadores = aparelhos
-      .filter((a) => a.tipo === 'RASTREADOR' && a.identificador?.trim())
-      .map((a) => a.identificador!.trim());
+    const identificadoresSet = new Set<string>();
+    aparelhos.forEach((a) => {
+      if (a.tipo === 'RASTREADOR' && a.identificador?.trim()) {
+        identificadoresSet.add(a.identificador.trim());
+      }
+      a.aparelhosVinculados?.forEach((r) => {
+        if (r.identificador?.trim())
+          identificadoresSet.add(r.identificador.trim());
+      });
+    });
+    const identificadores = Array.from(identificadoresSet);
 
     const osVinculadas = await this.prisma.ordemServico.findMany({
       where: { idAparelho: { in: identificadores } },
@@ -146,8 +191,11 @@ export class AparelhosService {
     }
 
     return aparelhos.map((a) => {
-      const key = (a.identificador ?? '').trim();
-      const os = key ? osPorIdentificador.get(key) : undefined;
+      const chave =
+        a.tipo === 'RASTREADOR'
+          ? (a.identificador ?? '').trim()
+          : (a.aparelhosVinculados?.[0]?.identificador ?? '').trim();
+      const os = chave ? osPorIdentificador.get(chave) : undefined;
       const ordemServicoVinculada = os
         ? {
             numero: os.numero,
@@ -181,23 +229,42 @@ export class AparelhosService {
   async updateStatus(id: number, status: StatusAparelho, observacao?: string) {
     const aparelho = await this.findOne(id);
 
-    await this.prisma.aparelhoHistorico.create({
-      data: {
-        aparelhoId: id,
-        statusAnterior: aparelho.status,
-        statusNovo: status,
-        observacao,
-      },
+    await this.prisma.$transaction(async (tx) => {
+      await tx.aparelhoHistorico.create({
+        data: {
+          aparelhoId: id,
+          statusAnterior: aparelho.status,
+          statusNovo: status,
+          observacao,
+        },
+      });
+      await tx.aparelho.update({ where: { id }, data: { status } });
+
+      if (aparelho.tipo === 'RASTREADOR' && aparelho.simVinculadoId) {
+        await tx.aparelhoHistorico.create({
+          data: {
+            aparelhoId: aparelho.simVinculadoId,
+            statusAnterior: aparelho.simVinculado!.status,
+            statusNovo: status,
+            observacao: observacao ?? `Status atualizado junto ao rastreador`,
+          },
+        });
+        await tx.aparelho.update({
+          where: { id: aparelho.simVinculadoId },
+          data: { status },
+        });
+      }
     });
 
-    return this.prisma.aparelho.update({
+    return this.prisma.aparelho.findUnique({
       where: { id },
-      data: { status },
       include: {
         cliente: { select: { id: true, nome: true } },
         lote: { select: { id: true, referencia: true } },
         tecnico: { select: { id: true, nome: true } },
-        simVinculado: { select: { id: true, identificador: true, operadora: true } },
+        simVinculado: {
+          select: { id: true, identificador: true, operadora: true },
+        },
       },
     });
   }
@@ -244,6 +311,10 @@ export class AparelhosService {
       statusEntrada,
       categoriaFalha,
       destinoDefeito,
+      proprietario,
+      clienteId,
+      notaFiscal,
+      abaterDebitoId,
     } = dto;
 
     const existente = await this.prisma.aparelho.findFirst({
@@ -262,50 +333,101 @@ export class AparelhosService {
         where: { id: marcaSimcardId },
         include: { operadora: true },
       });
-      if (!marcaSim) throw new BadRequestException('Marca de simcard não encontrada');
+      if (!marcaSim)
+        throw new BadRequestException('Marca de simcard não encontrada');
       operadoraSim = marcaSim.operadora.nome;
+    }
+
+    // If abating a debt, override the owner to the creditor
+    let finalProprietario: ProprietarioTipo = proprietario ?? 'INFINITY';
+    let finalClienteId: number | null =
+      proprietario === 'CLIENTE' ? (clienteId ?? null) : null;
+    let debitoAbater: {
+      devedorTipo: ProprietarioTipo;
+      devedorClienteId: number | null;
+      credorTipo: ProprietarioTipo;
+      credorClienteId: number | null;
+      marcaId: number;
+      modeloId: number;
+    } | null = null;
+
+    if (abaterDebitoId) {
+      const debito = await this.prisma.debitoRastreador.findUnique({
+        where: { id: abaterDebitoId },
+      });
+      if (!debito) throw new BadRequestException('Débito não encontrado');
+      if (debito.quantidade < 1)
+        throw new BadRequestException('Débito já quitado');
+
+      finalProprietario = debito.credorTipo;
+      finalClienteId = debito.credorClienteId;
+      debitoAbater = {
+        devedorTipo: debito.devedorTipo,
+        devedorClienteId: debito.devedorClienteId,
+        credorTipo: debito.credorTipo,
+        credorClienteId: debito.credorClienteId,
+        marcaId: debito.marcaId,
+        modeloId: debito.modeloId,
+      };
     }
 
     const statusAparelho: StatusAparelho = 'EM_ESTOQUE';
 
-    const aparelho = await this.prisma.aparelho.create({
-      data: {
-        tipo,
-        identificador,
-        status: statusAparelho,
-        proprietario: 'INFINITY',
-        marca: tipo === 'RASTREADOR' ? marca : null,
-        modelo: tipo === 'RASTREADOR' ? modelo : null,
-        operadora: tipo === 'SIM' ? operadoraSim : null,
-        marcaSimcardId: tipo === 'SIM' ? marcaSimcardId ?? null : null,
-        planoSimcardId: tipo === 'SIM' ? planoSimcardId ?? null : null,
-        tecnicoId: tecnicoId || null,
-      },
-      include: {
-        tecnico: { select: { id: true, nome: true } },
-      },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      const aparelho = await tx.aparelho.create({
+        data: {
+          tipo,
+          identificador,
+          status: statusAparelho,
+          proprietario: finalProprietario,
+          clienteId: finalClienteId,
+          marca: tipo === 'RASTREADOR' ? marca : null,
+          modelo: tipo === 'RASTREADOR' ? modelo : null,
+          operadora: tipo === 'SIM' ? operadoraSim : null,
+          marcaSimcardId: tipo === 'SIM' ? (marcaSimcardId ?? null) : null,
+          planoSimcardId: tipo === 'SIM' ? (planoSimcardId ?? null) : null,
+          tecnicoId: tecnicoId || null,
+        },
+        include: {
+          tecnico: { select: { id: true, nome: true } },
+        },
+      });
 
-    await this.prisma.aparelhoHistorico.create({
-      data: {
-        aparelhoId: aparelho.id,
-        statusAnterior: statusAparelho,
-        statusNovo: statusAparelho,
-        observacao: [
-          `Entrada individual - Origem: ${origem}`,
-          responsavelEntrega ? `Responsável: ${responsavelEntrega}` : null,
-          statusEntrada === 'CANCELADO_DEFEITO'
-            ? `Status: Defeito - ${categoriaFalha} - Destino: ${destinoDefeito}`
-            : statusEntrada === 'EM_MANUTENCAO'
-              ? 'Status: Em manutenção'
-              : 'Status: Novo/OK',
-          observacoes ? `Obs: ${observacoes}` : null,
-        ]
-          .filter(Boolean)
-          .join(' | '),
-      },
-    });
+      await tx.aparelhoHistorico.create({
+        data: {
+          aparelhoId: aparelho.id,
+          statusAnterior: statusAparelho,
+          statusNovo: statusAparelho,
+          observacao: [
+            `Entrada individual - Origem: ${origem}`,
+            responsavelEntrega ? `Responsável: ${responsavelEntrega}` : null,
+            notaFiscal ? `Nota Fiscal: ${notaFiscal}` : null,
+            debitoAbater
+              ? `Abate de dívida (débito ID ${abaterDebitoId})`
+              : finalProprietario === 'CLIENTE'
+                ? `Vinculado ao cliente ID ${finalClienteId}`
+                : 'Vinculado à Infinity',
+            statusEntrada === 'CANCELADO_DEFEITO'
+              ? `Status: Defeito - ${categoriaFalha} - Destino: ${destinoDefeito}`
+              : statusEntrada === 'EM_MANUTENCAO'
+                ? 'Status: Em manutenção'
+                : 'Status: Novo/OK',
+            observacoes ? `Obs: ${observacoes}` : null,
+          ]
+            .filter(Boolean)
+            .join(' | '),
+        },
+      });
 
-    return aparelho;
+      if (debitoAbater) {
+        await this.debitosService.consolidarDebitoTx(tx, {
+          ...debitoAbater,
+          delta: -1,
+          aparelhoId: aparelho.id,
+        });
+      }
+
+      return aparelho;
+    });
   }
 }

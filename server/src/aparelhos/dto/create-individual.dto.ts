@@ -9,8 +9,18 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TipoAparelho } from '@prisma/client';
 
-const ORIGEM_VALORES = ['RETIRADA_CLIENTE', 'DEVOLUCAO_TECNICO', 'COMPRA_AVULSA'] as const;
-const STATUS_ENTRADA_VALORES = ['NOVO_OK', 'EM_MANUTENCAO', 'CANCELADO_DEFEITO'] as const;
+const PROPRIETARIO_VALORES = ['INFINITY', 'CLIENTE'] as const;
+
+const ORIGEM_VALORES = [
+  'RETIRADA_CLIENTE',
+  'DEVOLUCAO_TECNICO',
+  'COMPRA_AVULSA',
+] as const;
+const STATUS_ENTRADA_VALORES = [
+  'NOVO_OK',
+  'EM_MANUTENCAO',
+  'CANCELADO_DEFEITO',
+] as const;
 
 export class CreateIndividualDto {
   @ApiProperty({ example: 'IMEI123456789012' })
@@ -66,6 +76,21 @@ export class CreateIndividualDto {
   @IsString()
   observacoes?: string | null;
 
+  @ApiPropertyOptional({ enum: PROPRIETARIO_VALORES })
+  @IsOptional()
+  @IsIn(PROPRIETARIO_VALORES)
+  proprietario?: (typeof PROPRIETARIO_VALORES)[number] | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  clienteId?: number | null;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notaFiscal?: string | null;
+
   @ApiProperty({ enum: STATUS_ENTRADA_VALORES })
   @IsIn(STATUS_ENTRADA_VALORES)
   statusEntrada: (typeof STATUS_ENTRADA_VALORES)[number];
@@ -79,4 +104,11 @@ export class CreateIndividualDto {
   @IsOptional()
   @IsString()
   destinoDefeito?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'ID do débito a ser abatido (unidade vai para o credor)',
+  })
+  @IsOptional()
+  @IsNumber()
+  abaterDebitoId?: number | null;
 }

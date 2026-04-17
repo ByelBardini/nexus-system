@@ -1,4 +1,11 @@
-import { IsString, IsOptional, IsInt, IsBoolean, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsInt,
+  IsBoolean,
+  MaxLength,
+  Min,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -15,7 +22,10 @@ export class UpdateMarcaSimcardDto {
   @Type(() => Number)
   operadoraId?: number;
 
-  @ApiPropertyOptional({ example: true, description: 'Se a marca possui planos' })
+  @ApiPropertyOptional({
+    example: true,
+    description: 'Se a marca possui planos',
+  })
   @IsBoolean()
   @IsOptional()
   temPlanos?: boolean;
@@ -24,4 +34,14 @@ export class UpdateMarcaSimcardDto {
   @IsBoolean()
   @IsOptional()
   ativo?: boolean;
+
+  @ApiPropertyOptional({
+    example: 19,
+    description: 'Quantidade mínima de caracteres do ICCID para esta marca',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  minCaracteresIccid?: number;
 }

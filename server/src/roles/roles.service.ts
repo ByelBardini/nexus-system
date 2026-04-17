@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { paginateParams } from '../common/pagination.helper';
 import { CategoriaCargo } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -33,7 +37,10 @@ export class RolesService {
     });
     const { search, categoria } = params;
 
-    const where: { nome?: { contains: string; mode: 'insensitive' }; categoria?: CategoriaCargo } = {};
+    const where: {
+      nome?: { contains: string; mode: 'insensitive' };
+      categoria?: CategoriaCargo;
+    } = {};
 
     if (search) {
       where.nome = { contains: search, mode: 'insensitive' };
@@ -166,7 +173,9 @@ export class RolesService {
   }
 
   async updateUserRoles(usuarioId: number, cargoIds: number[]) {
-    const usuario = await this.prisma.usuario.findUnique({ where: { id: usuarioId } });
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: usuarioId },
+    });
     if (!usuario) throw new NotFoundException('Usuário não encontrado');
     await this.prisma.$transaction(async (tx) => {
       await tx.usuarioCargo.deleteMany({ where: { usuarioId } });

@@ -1,6 +1,15 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Loader2 } from 'lucide-react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import {
   Sheet,
   SheetContent,
@@ -28,6 +37,7 @@ export function DrawerDetalhes({
 }) {
   const queryClient = useQueryClient()
   const { hasPermission } = useAuth()
+  const [confirmOpen, setConfirmOpen] = useState(false)
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => api(`/pedidos-rastreadores/${id}`, { method: 'DELETE' }),
@@ -45,18 +55,38 @@ export function DrawerDetalhes({
 
   function handleExcluir() {
     if (!pedido) return
-    if (
-      !window.confirm(
-        `Tem certeza que deseja excluir o pedido ${pedido.codigo}? Esta ação não pode ser desfeita.`
-      )
-    )
-      return
     deleteMutation.mutate(pedido.id)
+    setConfirmOpen(false)
   }
 
   if (!pedido) return null
 
   return (
+    <>
+    <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Excluir Pedido</DialogTitle>
+          <DialogDescription>
+            Tem certeza que deseja excluir o pedido <strong>{pedido.codigo}</strong>? Esta ação não
+            pode ser desfeita.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={() => setConfirmOpen(false)}>
+            Cancelar
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleExcluir}
+            disabled={deleteMutation.isPending}
+          >
+            {deleteMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+            Excluir
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
@@ -85,7 +115,7 @@ export function DrawerDetalhes({
                   Tipo de Destino
                 </p>
                 <p className="text-xs font-bold text-slate-800">
-                  {pedido.tipo === 'tecnico' ? 'Técnico' : 'Cliente'}
+                  {pedido.tipo === 'tecnico' ? 'Técnico' : pedido.tipo === 'misto' ? 'Misto' : 'Cliente'}
                 </p>
               </div>
               <div className="bg-slate-50 p-3 rounded border border-slate-100">
@@ -153,6 +183,38 @@ export function DrawerDetalhes({
               )}
             </div>
           </div>
+
+          {pedido.tipo === 'misto' && pedido.itensMisto && pedido.itensMisto.length > 0 && (
+            <div className="mb-8">
+              <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-4">
+                Distribuição dos Itens
+              </h3>
+              <div className="bg-white border border-slate-200 rounded overflow-hidden shadow-sm">
+                <table className="w-full text-xs">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                      <th className="px-4 py-2 text-left font-bold text-slate-500 text-[10px] uppercase">Destino</th>
+                      <th className="px-4 py-2 text-right font-bold text-slate-500 text-[10px] uppercase">Qtd</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {pedido.itensMisto.map((item, i) => (
+                      <tr key={i}>
+                        <td className="px-4 py-2 text-slate-700">{item.label}</td>
+                        <td className="px-4 py-2 text-right font-bold text-slate-800">{item.quantidade}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-slate-50 border-t border-slate-200">
+                    <tr>
+                      <td className="px-4 py-2 font-bold text-slate-500 text-[10px] uppercase">Total</td>
+                      <td className="px-4 py-2 text-right font-bold text-slate-800">{pedido.quantidade}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          )}
 
           {(pedido.endereco || pedido.contato) && (
             <div className="mb-8">
@@ -273,7 +335,7 @@ export function DrawerDetalhes({
             <Button
               variant="destructive"
               className="flex-1 sm:flex-initial font-bold text-xs uppercase tracking-wide"
-              onClick={handleExcluir}
+              onClick={() => setConfirmOpen(true)}
               disabled={deleteMutation.isPending}
             >
               {deleteMutation.isPending ? (
@@ -296,5 +358,6 @@ export function DrawerDetalhes({
         </SheetFooter>
       </SheetContent>
     </Sheet>
+    </>
   )
 }

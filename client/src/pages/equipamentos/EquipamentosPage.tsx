@@ -12,17 +12,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { MaterialIcon } from '@/components/MaterialIcon'
+import { SearchableSelect } from '@/components/SearchableSelect'
 import { api } from '@/lib/api'
 import { STATUS_CONFIG_APARELHO, type StatusAparelho } from '@/lib/aparelho-status'
-import { formatarDataHora } from '@/lib/format'
+import { formatarDataHora, formatId } from '@/lib/format'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/lib/utils'
 
@@ -47,6 +41,7 @@ interface Aparelho {
     operadora?: string | null
     marcaSimcard?: { id: number; nome: string } | null
     planoSimcard?: { id: number; planoMb: number } | null
+    lote?: { id: number; referencia: string } | null
   } | null
   kitId?: number | null
   kit?: { id: number; nome: string } | null
@@ -68,6 +63,9 @@ export function EquipamentosPage() {
   const [busca, setBusca] = useState('')
   const [pipelineFilter, setPipelineFilter] = useState<PipelineFilter>('TODOS')
   const [statusFilter, setStatusFilter] = useState<string>('TODOS')
+  const [proprietarioFilter, setProprietarioFilter] = useState<'TODOS' | 'INFINITY' | 'CLIENTE'>('TODOS')
+  const [marcaFilter, setMarcaFilter] = useState<string>('TODOS')
+  const [operadoraFilter, setOperadoraFilter] = useState<string>('TODOS')
   const [page, setPage] = useState(0)
 
   const { data: aparelhos = [], isLoading } = useQuery<Aparelho[]>({
@@ -88,6 +86,18 @@ export function EquipamentosPage() {
       (a) => a.tipo === 'RASTREADOR' && a.simVinculado != null
     )
   }, [aparelhos])
+
+  const marcas = useMemo(() => {
+    const set = new Set<string>()
+    equipamentos.forEach((e) => { if (e.marca) set.add(e.marca) })
+    return Array.from(set).sort()
+  }, [equipamentos])
+
+  const operadoras = useMemo(() => {
+    const set = new Set<string>()
+    equipamentos.forEach((e) => { if (e.simVinculado?.operadora) set.add(e.simVinculado.operadora) })
+    return Array.from(set).sort()
+  }, [equipamentos])
 
   const pipelineCounts = useMemo(() => {
     const total = equipamentos.length
@@ -125,9 +135,13 @@ export function EquipamentosPage() {
         (statusFilter === 'COM_TECNICO' && e.status === 'COM_TECNICO') ||
         (statusFilter === 'INSTALADO' && e.status === 'INSTALADO')
 
-      return matchBusca && matchPipeline && matchStatus
+      const matchProprietario = proprietarioFilter === 'TODOS' || e.proprietario === proprietarioFilter
+      const matchMarca = marcaFilter === 'TODOS' || e.marca === marcaFilter
+      const matchOperadora = operadoraFilter === 'TODOS' || e.simVinculado?.operadora === operadoraFilter
+
+      return matchBusca && matchPipeline && matchStatus && matchProprietario && matchMarca && matchOperadora
     })
-  }, [equipamentos, busca, pipelineFilter, statusFilter])
+  }, [equipamentos, busca, pipelineFilter, statusFilter, proprietarioFilter, marcaFilter, operadoraFilter])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paginated = useMemo(() => {
@@ -252,43 +266,79 @@ export function EquipamentosPage() {
       </div>
 
       {/* Barra de ferramentas */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-xs">
-          <MaterialIcon
-            name="search"
-            className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-base"
-          />
-          <Input
-            className="pl-8 text-[11px]"
-            placeholder="Buscar IMEI, ICCID, Técnico, Kit..."
-            value={busca}
-            onChange={(e) => {
-              setBusca(e.target.value)
-              setPage(0)
-            }}
-          />
+      <div className="flex items-end justify-between gap-4">
+        <div className="flex flex-col">
+          <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Busca</label>
+          <div className="relative w-64">
+            <MaterialIcon
+              name="search"
+              className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-base"
+            />
+            <Input
+              className="pl-8 text-[11px]"
+              placeholder="IMEI, ICCID, Técnico, Kit..."
+              value={busca}
+              onChange={(e) => {
+                setBusca(e.target.value)
+                setPage(0)
+              }}
+            />
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Select
-            value={statusFilter}
-            onValueChange={(v) => {
-              setStatusFilter(v)
-              setPipelineFilter(v as PipelineFilter)
-              setPage(0)
-            }}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filtrar por status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="TODOS">Todos</SelectItem>
-              <SelectItem value="CONFIGURADO">Configurado</SelectItem>
-              <SelectItem value="EM_KIT">Em Kit</SelectItem>
-              <SelectItem value="DESPACHADO">Despachado</SelectItem>
-              <SelectItem value="COM_TECNICO">Com Técnico</SelectItem>
-              <SelectItem value="INSTALADO">Instalado</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex items-end gap-2 flex-wrap">
+          <div className="flex flex-col">
+            <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Status</label>
+            <SearchableSelect
+              className="w-[150px]"
+              value={statusFilter}
+              onChange={(v) => { setStatusFilter(v); setPipelineFilter(v as PipelineFilter); setPage(0) }}
+              options={[
+                { value: 'TODOS', label: 'Todos' },
+                { value: 'CONFIGURADO', label: 'Configurado' },
+                { value: 'EM_KIT', label: 'Em Kit' },
+                { value: 'DESPACHADO', label: 'Despachado' },
+                { value: 'COM_TECNICO', label: 'Com Técnico' },
+                { value: 'INSTALADO', label: 'Instalado' },
+              ]}
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Proprietário</label>
+            <SearchableSelect
+              className="w-[130px]"
+              value={proprietarioFilter}
+              onChange={(v) => { setProprietarioFilter(v as 'TODOS' | 'INFINITY' | 'CLIENTE'); setPage(0) }}
+              options={[
+                { value: 'TODOS', label: 'Todos' },
+                { value: 'INFINITY', label: 'Infinity' },
+                { value: 'CLIENTE', label: 'Cliente' },
+              ]}
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Marca</label>
+            <SearchableSelect
+              className="w-[130px]"
+              value={marcaFilter}
+              onChange={(v) => { setMarcaFilter(v); setPage(0) }}
+              options={[
+                { value: 'TODOS', label: 'Todas' },
+                ...marcas.map((m) => ({ value: m, label: m })),
+              ]}
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="text-[10px] font-bold text-slate-500 uppercase mb-1">Operadora</label>
+            <SearchableSelect
+              className="w-[130px]"
+              value={operadoraFilter}
+              onChange={(v) => { setOperadoraFilter(v); setPage(0) }}
+              options={[
+                { value: 'TODOS', label: 'Todas' },
+                ...operadoras.map((o) => ({ value: o, label: o })),
+              ]}
+            />
+          </div>
           {canCreate && (
             <>
               <Link to="/equipamentos/pareamento">
@@ -298,11 +348,11 @@ export function EquipamentosPage() {
                 </Button>
               </Link>
               <Link to="/equipamentos/pareamento?modo=massa">
-            <Button className="bg-erp-blue hover:bg-blue-700 text-[11px] font-bold uppercase">
-              <MaterialIcon name="inventory_2" className="text-sm mr-1" />
-              Cadastro em Lote
-            </Button>
-          </Link>
+                <Button className="bg-erp-blue hover:bg-blue-700 text-[11px] font-bold uppercase">
+                  <MaterialIcon name="inventory_2" className="text-sm mr-1" />
+                  Cadastro em Lote
+                </Button>
+              </Link>
             </>
           )}
         </div>
@@ -330,6 +380,9 @@ export function EquipamentosPage() {
               </TableHead>
               <TableHead className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                 Técnico
+              </TableHead>
+              <TableHead className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                Proprietário
               </TableHead>
               <TableHead className="px-3 py-2.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
                 Última Mov.
@@ -423,9 +476,16 @@ export function EquipamentosPage() {
                       )}
                     </TableCell>
                     <TableCell className="px-3 py-3">
-                      <span className="text-[11px] text-slate-400">
-                        {equip.cliente?.nome ?? equip.tecnico?.nome ?? '-'}
-                      </span>
+                      {equip.tecnico?.nome ? (
+                        <div className="text-[11px] font-medium text-slate-600">{equip.tecnico.nome}</div>
+                      ) : (
+                        <span className="text-slate-400">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="px-3 py-3">
+                      <div className="text-[11px] font-medium text-slate-600">
+                        {equip.cliente?.nome ?? (equip.proprietario === 'INFINITY' ? 'Infinity' : '-')}
+                      </div>
                     </TableCell>
                     <TableCell className="px-3 py-3">
                       <span className="text-[10px] font-mono text-slate-500">
@@ -450,154 +510,179 @@ export function EquipamentosPage() {
 
                   {isExpanded && (
                     <TableRow className="bg-white border-b border-slate-200">
-                      <TableCell colSpan={9} className="p-6">
-                        <div className="grid grid-cols-12 gap-8">
-                          <div className="col-span-3">
-                            <h4 className="text-[10px] font-bold text-slate-400 uppercase mb-4 border-b border-slate-100 pb-1">
-                              Dados Técnicos
+                      <TableCell colSpan={9} className="p-0">
+                        {/* Cabeçalho — resumo rápido */}
+                        <div className="px-6 py-4 bg-slate-50 border-b border-slate-100 flex items-center gap-5">
+                          <div
+                            className={cn(
+                              'flex items-center gap-2 px-3 py-2 rounded-lg border font-bold text-sm shrink-0',
+                              equip.status === 'CONFIGURADO' && equip.kitId
+                                ? 'bg-purple-50 text-purple-700 border-purple-200'
+                                : cn(statusConfig.bgColor, statusConfig.color, statusConfig.borderColor)
+                            )}
+                          >
+                            <span>{equip.status === 'CONFIGURADO' && equip.kitId ? '🟣' : statusConfig.icon}</span>
+                            <span className="uppercase tracking-wide text-xs">
+                              {equip.status === 'CONFIGURADO' && equip.kitId ? 'Em Kit' : statusConfig.label}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="font-mono font-bold text-slate-800 text-sm leading-tight">
+                              {equip.identificador || '-'}
+                            </div>
+                            <div className="text-xs text-slate-500 mt-0.5">
+                              {equip.marca ? `${equip.marca} ${equip.modelo || ''}`.trim() : '-'}
+                            </div>
+                          </div>
+                          <div className="ml-auto text-right space-y-0.5">
+                            <div className="text-[10px] text-slate-400">
+                              Kit:{' '}
+                              <span className="font-bold text-violet-600">
+                                {equip.kit?.nome ?? (equip.kitId ? kitsPorId.get(equip.kitId) : null) ?? '-'}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-slate-400">
+                              Técnico:{' '}
+                              <span className="font-bold text-slate-700">{equip.tecnico?.nome ?? '-'}</span>
+                            </div>
+                            <div className="text-[10px] text-slate-400">
+                              Proprietário:{' '}
+                              <span className="font-bold text-slate-700">
+                                {equip.cliente?.nome ?? (equip.proprietario === 'INFINITY' ? 'Infinity' : '-')}
+                              </span>
+                            </div>
+                            <div className="text-[10px] font-mono text-slate-400">
+                              {formatarDataHora(equip.atualizadoEm)}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 2 colunas: Equipamento | Operação */}
+                        <div className="grid grid-cols-2 divide-x divide-slate-100">
+                          {/* Coluna esquerda — Equipamento */}
+                          <div className="px-6 py-4 space-y-3">
+                            <h4 className="text-[10px] font-bold text-slate-400 uppercase pb-1 border-b border-slate-100">
+                              Equipamento
                             </h4>
-                            <div className="space-y-3">
-                              <div>
-                                <label className="block text-[10px] text-slate-500 uppercase font-medium">
-                                  IMEI / Identificação
-                                </label>
-                                <span className="text-xs font-bold text-slate-700">
-                                  {equip.identificador || '-'}
-                                </span>
+                            <div>
+                              <div className="text-[10px] text-slate-400 uppercase font-medium">IMEI</div>
+                              <div className="text-xs font-bold text-slate-700 font-mono">
+                                {equip.identificador || '-'}
                               </div>
-                              <div>
-                                <label className="block text-[10px] text-slate-500 uppercase font-medium">
-                                  Marca / Modelo
-                                </label>
-                                <span className="text-xs font-bold text-slate-700">
-                                  {equip.marca ? `${equip.marca} / ${equip.modelo || '-'}` : '-'}
-                                </span>
+                            </div>
+                            <div>
+                              <div className="text-[10px] text-slate-400 uppercase font-medium">Modelo</div>
+                              <div className="text-xs font-bold text-slate-700">
+                                {equip.marca ? `${equip.marca} ${equip.modelo || ''}`.trim() : '-'}
                               </div>
-                              <div>
-                                <label className="block text-[10px] text-slate-500 uppercase font-medium">
-                                  ICCID / Operadora
-                                </label>
-                                <span className="text-xs font-bold text-slate-700 block">
-                                  {equip.simVinculado
-                                    ? `${equip.simVinculado.identificador} (${equip.simVinculado.operadora || '-'})`
-                                    : '-'}
-                                </span>
-                                {(equip.simVinculado?.marcaSimcard?.nome || equip.simVinculado?.planoSimcard) && (
-                                  <span className="text-[10px] text-slate-500 mt-1 block">
-                                    Marca: {equip.simVinculado.marcaSimcard?.nome || '-'}
-                                    {equip.simVinculado.planoSimcard &&
-                                      ` · Plano: ${equip.simVinculado.planoSimcard.planoMb} MB`}
-                                  </span>
-                                )}
+                            </div>
+                            <div>
+                              <div className="text-[10px] text-slate-400 uppercase font-medium">ICCID</div>
+                              <div className="text-xs font-bold text-slate-700 font-mono">
+                                {equip.simVinculado?.identificador || '-'}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-[10px] text-slate-400 uppercase font-medium">Operadora</div>
+                              <div className="text-xs font-bold text-slate-700">
+                                {[
+                                  equip.simVinculado?.operadora,
+                                  equip.simVinculado?.marcaSimcard?.nome,
+                                  equip.simVinculado?.planoSimcard
+                                    ? `${equip.simVinculado.planoSimcard.planoMb} MB`
+                                    : null,
+                                ]
+                                  .filter(Boolean)
+                                  .join(' · ') || '-'}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-[10px] text-slate-400 uppercase font-medium">Lote</div>
+                              <div className="text-xs font-bold text-slate-700">
+                                {[equip.lote?.referencia, equip.simVinculado?.lote?.referencia]
+                                  .filter(Boolean)
+                                  .join(' · ') || '-'}
                               </div>
                             </div>
                           </div>
-                          <div className="col-span-3">
-                            <h4 className="text-[10px] font-bold text-slate-400 uppercase mb-4 border-b border-slate-100 pb-1">
-                              Logística
+
+                          {/* Coluna direita — Operação */}
+                          <div className="px-6 py-4 space-y-3">
+                            <h4 className="text-[10px] font-bold text-slate-400 uppercase pb-1 border-b border-slate-100">
+                              Operação
                             </h4>
-                            <div className="space-y-3">
-                              <div>
-                                <label className="block text-[10px] text-slate-500 uppercase font-medium">
-                                  Lotes Vinculados
-                                </label>
-                                <span className="text-xs font-bold text-slate-700">
-                                  {equip.lote?.referencia || '-'}
-                                </span>
-                              </div>
-                              <div>
-                                <label className="block text-[10px] text-slate-500 uppercase font-medium">
-                                  Kit / Nota Fiscal
-                                </label>
-                                <span className="text-xs font-bold text-slate-700">
-                                  {equip.kit?.nome ?? (equip.kitId ? kitsPorId.get(equip.kitId) : null) ?? '-'}
-                                </span>
-                              </div>
-                              <div>
-                                <label className="block text-[10px] text-slate-500 uppercase font-medium">
-                                  Transporte / Rastreio
-                                </label>
-                                <span className="text-xs font-bold text-slate-700">-</span>
+                            <div>
+                              <div className="text-[10px] text-slate-400 uppercase font-medium">Técnico</div>
+                              <div className="text-xs font-bold text-slate-700">
+                                {equip.tecnico?.nome ?? '-'}
                               </div>
                             </div>
-                          </div>
-                          <div className="col-span-3">
-                            <h4 className="text-[10px] font-bold text-slate-400 uppercase mb-4 border-b border-slate-100 pb-1">
-                              Destino
-                            </h4>
-                            <div className="space-y-3">
-                              <div>
-                                <label className="block text-[10px] text-slate-500 uppercase font-medium">
-                                  Técnico / Empresa
-                                </label>
-                                <span className="text-xs font-bold text-slate-700">
-                                  {equip.cliente?.nome
-                                    ? equip.cliente.nome
-                                    : equip.tecnico
-                                      ? `${equip.tecnico.nome} (ID: ${equip.tecnico.id})`
-                                      : '-'}
-                                </span>
-                              </div>
-                              <div>
-                                <label className="block text-[10px] text-slate-500 uppercase font-medium">
-                                  Subcliente / Placa
-                                </label>
-                                <span className="text-xs font-bold text-slate-700">
-                                  {equip.ordemServicoVinculada?.subclienteNome ||
-                                  equip.ordemServicoVinculada?.veiculoPlaca
-                                    ? [
-                                        equip.ordemServicoVinculada.subclienteNome,
-                                        equip.ordemServicoVinculada.veiculoPlaca,
-                                      ]
-                                        .filter(Boolean)
-                                        .join(' · ')
-                                    : '-'}
-                                </span>
-                              </div>
-                              <div>
-                                <label className="block text-[10px] text-slate-500 uppercase font-medium">
-                                  Ordem Instalação
-                                </label>
-                                <span className="text-xs font-bold text-slate-700">
-                                  {equip.ordemServicoVinculada?.numero ?? '-'}
-                                </span>
+                            <div>
+                              <div className="text-[10px] text-slate-400 uppercase font-medium">Proprietário</div>
+                              <div className="text-xs font-bold text-slate-700">
+                                {equip.cliente?.nome ?? (equip.proprietario === 'INFINITY' ? 'Infinity' : '-')}
                               </div>
                             </div>
+                            <div>
+                              <div className="text-[10px] text-slate-400 uppercase font-medium">Kit</div>
+                              <div className="text-xs font-bold text-violet-600">
+                                {equip.kit?.nome ?? (equip.kitId ? kitsPorId.get(equip.kitId) : null) ?? '-'}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-[10px] text-slate-400 uppercase font-medium">Transporte</div>
+                              <div className="text-xs font-bold text-slate-700">-</div>
+                            </div>
+                            <div>
+                              <div className="text-[10px] text-slate-400 uppercase font-medium">Ordem de Instalação</div>
+                              <div className="text-xs font-bold text-slate-700">
+                                {equip.ordemServicoVinculada?.numero != null ? `#${formatId(equip.ordemServicoVinculada.numero)}` : '-'}
+                              </div>
+                            </div>
+                            {(equip.ordemServicoVinculada?.subclienteNome ||
+                              equip.ordemServicoVinculada?.veiculoPlaca) && (
+                              <div>
+                                <div className="text-[10px] text-slate-400 uppercase font-medium">Subcliente / Placa</div>
+                                <div className="text-xs font-bold text-slate-700">
+                                  {[
+                                    equip.ordemServicoVinculada.subclienteNome,
+                                    equip.ordemServicoVinculada.veiculoPlaca,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(' · ')}
+                                </div>
+                              </div>
+                            )}
                           </div>
-                          <div className="col-span-3">
-                            <h4 className="text-[10px] font-bold text-slate-400 uppercase mb-4 border-b border-slate-100 pb-1">
-                              Histórico
-                            </h4>
-                            <div className="space-y-3">
-                              {equip.historico && equip.historico.length > 0 ? (
-                                equip.historico.map((item, idx) => (
+                        </div>
+
+                        {/* Histórico — largura total */}
+                        <div className="mx-4 mb-4 rounded-b-lg border border-t-0 border-slate-200 bg-slate-50 px-5 py-3">
+                          <div className="text-[10px] font-bold text-slate-400 uppercase mb-3">Histórico</div>
+                          {equip.historico && equip.historico.length > 0 ? (
+                            <div className="flex flex-wrap gap-6">
+                              {equip.historico.map((item, idx) => (
+                                <div key={idx} className="flex items-start gap-2">
                                   <div
-                                    key={idx}
-                                    className="relative pl-6 pb-4 border-l border-slate-200 last:pb-0 last:border-l-0"
-                                  >
-                                    <div
-                                      className={cn(
-                                        'absolute left-[-4.5px] top-1 w-2 h-2 rounded-full',
-                                        idx === 0 ? 'bg-blue-500 ring-4 ring-blue-100' : 'bg-slate-300'
-                                      )}
-                                    />
-                                    <div className="flex flex-col">
-                                      <span className="text-[10px] font-bold text-slate-800">
-                                        {STATUS_CONFIG_APARELHO[item.statusNovo as StatusAparelho]?.label ?? item.statusNovo}
-                                      </span>
-                                      <span className="text-[9px] text-slate-500">
-                                        {formatarDataHora(item.criadoEm)}
-                                      </span>
-                                    </div>
+                                    className={cn(
+                                      'mt-1 w-2 h-2 rounded-full shrink-0',
+                                      idx === 0 ? 'bg-blue-500 ring-4 ring-blue-100' : 'bg-slate-300'
+                                    )}
+                                  />
+                                  <div className="flex flex-col">
+                                    <span className="text-[10px] font-bold text-slate-800">
+                                      {STATUS_CONFIG_APARELHO[item.statusNovo as StatusAparelho]?.label ?? item.statusNovo}
+                                    </span>
+                                    <span className="text-[9px] text-slate-500">
+                                      {formatarDataHora(item.criadoEm)}
+                                    </span>
                                   </div>
-                                ))
-                              ) : (
-                                <p className="text-[11px] text-slate-400 italic">
-                                  Sem histórico registrado
-                                </p>
-                              )}
+                                </div>
+                              ))}
                             </div>
-                          </div>
+                          ) : (
+                            <p className="text-[11px] text-slate-400 italic">Sem histórico registrado</p>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

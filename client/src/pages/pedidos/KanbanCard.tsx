@@ -11,8 +11,8 @@ export function KanbanCard({
   pedido: PedidoRastreadorView
   onClick: () => void
 }) {
-  const tipoLabel = pedido.tipo === 'tecnico' ? 'Técnico' : 'Cliente'
-  const tipoIcon = pedido.tipo === 'tecnico' ? 'person' : 'business'
+  const tipoLabel = pedido.tipo === 'cliente' ? 'Cliente' : 'Técnico'
+  const tipoIcon = pedido.tipo === 'cliente' ? 'business' : 'engineering'
   const isEntregue = pedido.status === 'entregue'
   const urgencia = pedido.urgencia ?? 'Média'
   const urgenciaStyle = URGENCIA_STYLE[urgencia] ?? URGENCIA_STYLE['Média']
@@ -81,13 +81,37 @@ export function KanbanCard({
       </h3>
       <div
         className={cn(
-          'text-[11px] mb-2 flex items-center gap-1',
+          'text-[11px] mb-2 flex items-center gap-1.5 flex-wrap',
           isEntregue ? 'text-slate-400' : 'text-slate-500'
         )}
       >
-        <MaterialIcon name={tipoIcon} className="text-sm" />
-        {tipoLabel}
+        <span className="flex items-center gap-1">
+          <MaterialIcon name={tipoIcon} className="text-sm" />
+          {tipoLabel}
+        </span>
+        {pedido.tipo === 'misto' && (
+          <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border bg-purple-50 text-purple-700 border-purple-200">
+            Misto
+          </span>
+        )}
       </div>
+      {pedido.tipo === 'misto' && pedido.itensMisto && pedido.itensMisto.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-2">
+          {pedido.itensMisto.map((item, i) => (
+            <span
+              key={i}
+              className={cn(
+                'text-[9px] font-bold px-1.5 py-0.5 rounded border',
+                item.label === 'Infinity'
+                  ? 'bg-blue-50 text-blue-700 border-blue-200'
+                  : 'bg-slate-50 text-slate-600 border-slate-200'
+              )}
+            >
+              {item.label} · {item.quantidade}
+            </span>
+          ))}
+        </div>
+      )}
       {pedido.endereco && (
         <p
           className={cn(

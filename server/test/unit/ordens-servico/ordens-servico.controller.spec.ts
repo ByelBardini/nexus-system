@@ -50,7 +50,13 @@ describe('OrdensServicoController', () => {
 
   describe('getResumo', () => {
     it('delega para service.getResumo', async () => {
-      const resumo = { agendado: 5, emTestes: 3, testesRealizados: 2, aguardandoCadastro: 1, finalizado: 10 };
+      const resumo = {
+        agendado: 5,
+        emTestes: 3,
+        testesRealizados: 2,
+        aguardandoCadastro: 1,
+        finalizado: 10,
+      };
       (service.getResumo as jest.Mock).mockResolvedValue(resumo);
 
       const result = await controller.getResumo();
@@ -132,7 +138,11 @@ describe('OrdensServicoController', () => {
   describe('update', () => {
     it('converte id e chama service.update com dto', async () => {
       const dto = { idEntrada: 'IMEI123', aparelhoEncontrado: true };
-      (service.update as jest.Mock).mockResolvedValue({ id: 1, idEntrada: 'IMEI123', aparelhoEncontrado: true });
+      (service.update as jest.Mock).mockResolvedValue({
+        id: 1,
+        idEntrada: 'IMEI123',
+        aparelhoEncontrado: true,
+      });
 
       await controller.update('1', dto);
 
@@ -143,7 +153,10 @@ describe('OrdensServicoController', () => {
   describe('updateStatus', () => {
     it('converte id e chama service.updateStatus', async () => {
       const dto = { status: StatusOS.EM_TESTES };
-      (service.updateStatus as jest.Mock).mockResolvedValue({ id: 3, status: StatusOS.EM_TESTES });
+      (service.updateStatus as jest.Mock).mockResolvedValue({
+        id: 3,
+        status: StatusOS.EM_TESTES,
+      });
 
       await controller.updateStatus('3', dto);
 
@@ -154,11 +167,17 @@ describe('OrdensServicoController', () => {
   describe('updateIdAparelho', () => {
     it('converte id para número e chama service.updateIdAparelho com idAparelho', async () => {
       const dto = { idAparelho: '862345678901234' };
-      (service.updateIdAparelho as jest.Mock).mockResolvedValue({ id: 1, idAparelho: '862345678901234' });
+      (service.updateIdAparelho as jest.Mock).mockResolvedValue({
+        id: 1,
+        idAparelho: '862345678901234',
+      });
 
       await controller.updateIdAparelho('1', dto);
 
-      expect(service.updateIdAparelho).toHaveBeenCalledWith(1, '862345678901234');
+      expect(service.updateIdAparelho).toHaveBeenCalledWith(
+        1,
+        '862345678901234',
+      );
     });
   });
 

@@ -44,16 +44,17 @@ export function createPrismaMock() {
     oSHistorico: createTableMock(),
     pedidoRastreador: createTableMock(),
     pedidoRastreadorHistorico: createTableMock(),
+    pedidoRastreadorItem: createTableMock(),
+    pedidoRastreadorAparelho: createTableMock(),
+    debitoRastreador: createTableMock(),
     $transaction: jest.fn(),
   };
 
-  mock.$transaction.mockImplementation(
-    (arg: unknown) => {
-      if (typeof arg === 'function') return arg(mock);
-      if (Array.isArray(arg)) return Promise.all(arg);
-      return Promise.resolve();
-    },
-  );
+  mock.$transaction.mockImplementation((arg: unknown) => {
+    if (typeof arg === 'function') return arg(mock);
+    if (Array.isArray(arg)) return Promise.all(arg);
+    return Promise.resolve();
+  });
 
   return mock;
 }

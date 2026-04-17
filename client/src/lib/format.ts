@@ -142,6 +142,7 @@ export function cpfCnpjApenasDigitos(val: string): string {
  * causando dia errado em fusos como Brasil. Esta função garante parse correto.
  */
 export function parseDataLocal(str: string): Date {
+  if (!str) return new Date(0)
   if (str.includes('T')) {
     return new Date(str)
   }
@@ -179,6 +180,7 @@ export function formatarDataHoraCurta(iso: string): string {
  * Formata data/hora completa: "12/04/2026 14:30"
  */
 export function formatarDataHora(iso: string): string {
+  if (!iso) return '-'
   const d = parseDataLocal(iso)
   return d.toLocaleString('pt-BR', {
     day: '2-digit',
@@ -259,4 +261,8 @@ export function formatarDuracao(dataInicio: string, dataFim: string): string {
   if (diffD === 0) return `${diffH}h`
   if (diffH === 0) return `${diffD} ${diffD === 1 ? 'dia' : 'dias'}`
   return `${diffD} ${diffD === 1 ? 'dia' : 'dias'} e ${diffH}h`
+}
+
+export function formatId(id: number): string {
+  return String(id).padStart(9, '0')
 }

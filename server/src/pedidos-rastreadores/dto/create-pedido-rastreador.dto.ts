@@ -1,5 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  ArrayMinSize,
+  IsArray,
   IsDateString,
   IsEnum,
   IsInt,
@@ -8,11 +10,14 @@ import {
   Min,
   Validate,
   ValidateIf,
+  ValidateNested,
   ValidationArguments,
   ValidatorConstraint,
   ValidatorConstraintInterface,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { TipoDestinoPedido, UrgenciaPedido } from '@prisma/client';
+import { CreatePedidoRastreadorItemDto } from './create-pedido-rastreador-item.dto';
 
 @ValidatorConstraint({ name: 'DestinatarioCliente', async: false })
 class DestinatarioClienteConstraint implements ValidatorConstraintInterface {
@@ -31,20 +36,27 @@ export class CreatePedidoRastreadorDto {
   @IsEnum(TipoDestinoPedido)
   tipoDestino: TipoDestinoPedido;
 
-  @ApiPropertyOptional({ description: 'ID do técnico quando tipoDestino = TECNICO' })
+  @ApiPropertyOptional({
+    description: 'ID do técnico quando tipoDestino = TECNICO',
+  })
   @ValidateIf((o) => o.tipoDestino === 'TECNICO')
   @IsInt()
   @Min(1)
   tecnicoId?: number;
 
-  @ApiPropertyOptional({ description: 'ID do cliente (associação) quando tipoDestino = CLIENTE e sem subcliente' })
+  @ApiPropertyOptional({
+    description:
+      'ID do cliente (associação) quando tipoDestino = CLIENTE e sem subcliente',
+  })
   @ValidateIf((o) => o.tipoDestino === 'CLIENTE')
   @IsOptional()
   @IsInt()
   @Min(1)
   clienteId?: number;
 
-  @ApiPropertyOptional({ description: 'ID do subcliente (beneficiário) quando tipoDestino = CLIENTE' })
+  @ApiPropertyOptional({
+    description: 'ID do subcliente (beneficiário) quando tipoDestino = CLIENTE',
+  })
   @ValidateIf((o) => o.tipoDestino === 'CLIENTE')
   @IsOptional()
   @IsInt()
@@ -54,7 +66,10 @@ export class CreatePedidoRastreadorDto {
   @Validate(DestinatarioClienteConstraint)
   _destinatarioCliente?: void;
 
-  @ApiProperty({ example: '2025-03-03', description: 'Data do pedido (ISO 8601), default: hoje' })
+  @ApiProperty({
+    example: '2025-03-03',
+    description: 'Data do pedido (ISO 8601), default: hoje',
+  })
   @IsOptional()
   @IsDateString()
   dataSolicitacao?: string;
@@ -71,22 +86,44 @@ export class CreatePedidoRastreadorDto {
   @Min(1)
   modeloEquipamentoId?: number;
 
-  @ApiPropertyOptional({ description: 'ID da operadora desejada (quando destino é técnico ou cliente)' })
+  @ApiPropertyOptional({
+    description:
+      'ID da operadora desejada (quando destino é técnico ou cliente)',
+  })
   @IsOptional()
   @IsInt()
   @Min(1)
   operadoraId?: number;
 
-  @ApiPropertyOptional({ description: 'ID do cliente remetente (quando destino é TECNICO - cliente enviando para o técnico)' })
+  @ApiPropertyOptional({
+    description:
+      'ID do cliente remetente (quando destino é TECNICO - cliente enviando para o técnico)',
+  })
   @IsOptional()
   @IsInt()
   @Min(1)
   deClienteId?: number;
 
-  @ApiProperty({ example: 10 })
+  @ApiProperty({
+    example: 10,
+    description:
+      'Obrigatório para TECNICO/CLIENTE; omitido para MISTO (calculado como soma dos itens)',
+  })
+  @ValidateIf((o) => o.tipoDestino !== 'MISTO')
   @IsInt()
   @Min(1)
-  quantidade: number;
+  quantidade?: number;
+
+  @ApiPropertyOptional({
+    type: [CreatePedidoRastreadorItemDto],
+    description: 'Itens obrigatórios quando tipoDestino = MISTO',
+  })
+  @ValidateIf((o) => o.tipoDestino === 'MISTO')
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreatePedidoRastreadorItemDto)
+  @ArrayMinSize(1)
+  itens?: CreatePedidoRastreadorItemDto[];
 
   @ApiPropertyOptional({ enum: UrgenciaPedido, default: UrgenciaPedido.MEDIA })
   @IsOptional()

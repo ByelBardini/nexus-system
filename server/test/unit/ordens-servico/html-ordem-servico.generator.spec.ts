@@ -47,7 +47,9 @@ describe('HtmlOrdemServicoGenerator', () => {
       providers: [HtmlOrdemServicoGenerator],
     }).compile();
 
-    generator = module.get<HtmlOrdemServicoGenerator>(HtmlOrdemServicoGenerator);
+    generator = module.get<HtmlOrdemServicoGenerator>(
+      HtmlOrdemServicoGenerator,
+    );
   });
 
   describe('gerar', () => {
@@ -95,26 +97,38 @@ describe('HtmlOrdemServicoGenerator', () => {
     });
 
     it('exibe seção de execução quando status é FINALIZADO', () => {
-      const result = generator.gerar({ ...osBase, status: StatusOS.FINALIZADO });
+      const result = generator.gerar({
+        ...osBase,
+        status: StatusOS.FINALIZADO,
+      });
 
       expect(result).toContain('Data da execução do serviço');
       expect(result).toContain('Execução do Serviço');
     });
 
     it('formata telefone do subcliente no formato (XX) XXXXX-XXXX', () => {
-      const result = generator.gerar({ ...osBase, subcliente: { ...osBase.subcliente, telefone: '11999998888' } });
+      const result = generator.gerar({
+        ...osBase,
+        subcliente: { ...osBase.subcliente, telefone: '11999998888' },
+      });
 
       expect(result).toContain('(11) 99999-8888');
     });
 
     it('formata CPF do subcliente no formato 000.000.000-00', () => {
-      const result = generator.gerar({ ...osBase, subcliente: { ...osBase.subcliente, cpf: '12345678900' } });
+      const result = generator.gerar({
+        ...osBase,
+        subcliente: { ...osBase.subcliente, cpf: '12345678900' },
+      });
 
       expect(result).toContain('123.456.789-00');
     });
 
     it('formata telefone do técnico no formato (XX) XXXXX-XXXX', () => {
-      const result = generator.gerar({ ...osBase, tecnico: { ...osBase.tecnico, telefone: '11988887777' } });
+      const result = generator.gerar({
+        ...osBase,
+        tecnico: { ...osBase.tecnico, telefone: '11988887777' },
+      });
 
       expect(result).toContain('(11) 98888-7777');
     });
@@ -122,7 +136,12 @@ describe('HtmlOrdemServicoGenerator', () => {
     it('formata CEP do subcliente no formato 00000-000', () => {
       const result = generator.gerar({
         ...osBase,
-        subcliente: { ...osBase.subcliente, cidade: 'São Paulo', estado: 'SP', cep: '01310100' },
+        subcliente: {
+          ...osBase.subcliente,
+          cidade: 'São Paulo',
+          estado: 'SP',
+          cep: '01310100',
+        },
       });
 
       expect(result).toContain('01310-100');

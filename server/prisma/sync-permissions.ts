@@ -52,14 +52,19 @@ async function main() {
     });
   }
 
+  // Remove permissões obsoletas (não presentes em PERMISSION_CODES)
+  const { count: deletedCount } = await prisma.permissao.deleteMany({
+    where: { code: { notIn: [...PERMISSION_CODES] } },
+  });
+  if (deletedCount > 0) {
+    console.log(`Permissões obsoletas removidas: ${deletedCount}`);
+  }
+
   const permissoes = await prisma.permissao.findMany();
 
   const cargosAdmin = await prisma.cargo.findMany({
     where: {
-      OR: [
-        { code: 'ADMIN' },
-        { nome: { contains: 'Administrador' } },
-      ],
+      OR: [{ code: 'ADMIN' }, { nome: { contains: 'Administrador' } }],
     },
   });
 
@@ -75,7 +80,9 @@ async function main() {
     }
   }
 
-  console.log(`Permissões sincronizadas: ${PERMISSION_CODES.length} códigos, ${cargosAdmin.length} cargos admin atualizados.`);
+  console.log(
+    `Permissões sincronizadas: ${PERMISSION_CODES.length} códigos, ${cargosAdmin.length} cargos admin atualizados.`,
+  );
 }
 
 main()

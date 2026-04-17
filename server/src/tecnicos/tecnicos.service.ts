@@ -3,7 +3,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateTecnicoDto } from './dto/create-tecnico.dto';
 import { UpdateTecnicoDto } from './dto/update-tecnico.dto';
 
-
 @Injectable()
 export class TecnicosService {
   constructor(private readonly prisma: PrismaService) {}
@@ -85,8 +84,12 @@ export class TecnicosService {
           where: { tecnicoId: id },
         });
         const data = {
-          instalacaoComBloqueio: p.instalacaoComBloqueio ?? Number(existing?.instalacaoComBloqueio ?? 0),
-          instalacaoSemBloqueio: p.instalacaoSemBloqueio ?? Number(existing?.instalacaoSemBloqueio ?? 0),
+          instalacaoComBloqueio:
+            p.instalacaoComBloqueio ??
+            Number(existing?.instalacaoComBloqueio ?? 0),
+          instalacaoSemBloqueio:
+            p.instalacaoSemBloqueio ??
+            Number(existing?.instalacaoSemBloqueio ?? 0),
           revisao: p.revisao ?? Number(existing?.revisao ?? 0),
           retirada: p.retirada ?? Number(existing?.retirada ?? 0),
           deslocamento: p.deslocamento ?? Number(existing?.deslocamento ?? 0),

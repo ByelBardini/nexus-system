@@ -9,6 +9,10 @@ import { UsersModule } from '../users/users.module';
 @Module({
   imports: [PrismaModule, UsersModule],
   controllers: [OrdensServicoController],
-  providers: [OrdensServicoService, HtmlOrdemServicoGenerator, PdfOrdemServicoGenerator],
+  providers: [
+    OrdensServicoService,
+    HtmlOrdemServicoGenerator,
+    PdfOrdemServicoGenerator,
+  ],
 })
 export class OrdensServicoModule {}

@@ -14,7 +14,9 @@ function parseDatabaseUrl(url: string): {
     ? url.replace(/^mysql:\/\//, 'mariadb://')
     : url;
   const parsed = new URL(normalized);
-  const database = parsed.pathname ? parsed.pathname.replace(/^\//, '').replace(/\/$/, '') : undefined;
+  const database = parsed.pathname
+    ? parsed.pathname.replace(/^\//, '').replace(/\/$/, '')
+    : undefined;
   return {
     host: parsed.hostname || 'localhost',
     port: parsed.port ? parseInt(parsed.port, 10) : 3306,

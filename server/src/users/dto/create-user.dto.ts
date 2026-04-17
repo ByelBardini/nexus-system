@@ -1,5 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsEmail, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 
 export class CreateUserDto {
   @ApiProperty()
@@ -21,7 +28,9 @@ export class CreateUserDto {
   @IsBoolean()
   ativo?: boolean;
 
-  @ApiPropertyOptional({ enum: ['AGENDAMENTO', 'CONFIGURACAO', 'ADMINISTRATIVO'] })
+  @ApiPropertyOptional({
+    enum: ['AGENDAMENTO', 'CONFIGURACAO', 'ADMINISTRATIVO'],
+  })
   @IsOptional()
   @IsEnum(['AGENDAMENTO', 'CONFIGURACAO', 'ADMINISTRATIVO'])
   setor?: string | null;

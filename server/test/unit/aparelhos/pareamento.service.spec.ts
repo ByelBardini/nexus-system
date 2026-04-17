@@ -1,18 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { KitsService } from 'src/aparelhos/kits.service';
 import { PareamentoService } from 'src/aparelhos/pareamento.service';
 import { createPrismaMock } from '../helpers/prisma-mock';
 
 describe('PareamentoService', () => {
   let service: PareamentoService;
   let prisma: ReturnType<typeof createPrismaMock>;
-  let kitsService: KitsService;
-
-  const kitsMock = {
-    criarOuBuscarKitPorNome: jest.fn(),
-  };
 
   beforeEach(async () => {
     prisma = createPrismaMock();
@@ -21,12 +15,10 @@ describe('PareamentoService', () => {
       providers: [
         PareamentoService,
         { provide: PrismaService, useValue: prisma },
-        { provide: KitsService, useValue: kitsMock },
       ],
     }).compile();
 
     service = module.get<PareamentoService>(PareamentoService);
-    kitsService = module.get<KitsService>(KitsService);
     jest.clearAllMocks();
   });
 
@@ -50,7 +42,12 @@ describe('PareamentoService', () => {
     });
 
     it('identifica FOUND_AVAILABLE quando rastreador e SIM existem e estão livres', async () => {
-      const rastreador = { id: 1, simVinculadoId: null, marca: 'Suntech', modelo: 'ST-901' };
+      const rastreador = {
+        id: 1,
+        simVinculadoId: null,
+        marca: 'Suntech',
+        modelo: 'ST-901',
+      };
       const sim = { id: 2, aparelhosVinculados: [] };
       prisma.aparelho.findFirst
         .mockResolvedValueOnce(rastreador)
@@ -68,8 +65,12 @@ describe('PareamentoService', () => {
 
   describe('pareamento', () => {
     it('lança BadRequestException quando nenhum par informado', async () => {
-      await expect(service.pareamento({ pares: [] })).rejects.toThrow(BadRequestException);
-      await expect(service.pareamento({ pares: [] })).rejects.toThrow('Nenhum par informado');
+      await expect(service.pareamento({ pares: [] })).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.pareamento({ pares: [] })).rejects.toThrow(
+        'Nenhum par informado',
+      );
     });
 
     it('lança BadRequestException quando rastreador precisa de lote e não informado', async () => {

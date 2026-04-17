@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { LotesService } from 'src/aparelhos/lotes.service';
+import { DebitosRastreadoresService } from 'src/debitos-rastreadores/debitos-rastreadores.service';
 import { createPrismaMock } from '../helpers/prisma-mock';
 
 describe('LotesService', () => {
@@ -15,6 +16,10 @@ describe('LotesService', () => {
       providers: [
         LotesService,
         { provide: PrismaService, useValue: prisma },
+        {
+          provide: DebitosRastreadoresService,
+          useValue: { consolidarDebitoTx: jest.fn() },
+        },
       ],
     }).compile();
 
@@ -47,7 +52,12 @@ describe('LotesService', () => {
     });
 
     it('cria lote com aparelhos sem identificadores', async () => {
-      const lote = { id: 1, referencia: 'LOT-001', aparelhos: [{ id: 1 }, { id: 2 }], cliente: null };
+      const lote = {
+        id: 1,
+        referencia: 'LOT-001',
+        aparelhos: [{ id: 1 }, { id: 2 }],
+        cliente: null,
+      };
       prisma.loteAparelho.create.mockResolvedValue({ id: 1 });
       prisma.aparelho.createMany.mockResolvedValue({ count: 2 });
       prisma.loteAparelho.findUnique.mockResolvedValue(lote);
@@ -66,7 +76,12 @@ describe('LotesService', () => {
     });
 
     it('usa quantidade de identificadores quando fornecidos', async () => {
-      const lote = { id: 1, referencia: 'LOT-002', aparelhos: [{ id: 1 }], cliente: null };
+      const lote = {
+        id: 1,
+        referencia: 'LOT-002',
+        aparelhos: [{ id: 1 }],
+        cliente: null,
+      };
       prisma.loteAparelho.create.mockResolvedValue({ id: 1 });
       prisma.aparelho.createMany.mockResolvedValue({ count: 1 });
       prisma.loteAparelho.findUnique.mockResolvedValue(lote);
@@ -100,7 +115,11 @@ describe('LotesService', () => {
       const result = await service.getLotesParaPareamento('RASTREADOR');
 
       expect(result).toHaveLength(1);
-      expect(result[0]).toMatchObject({ id: 1, referencia: 'LOT-001', quantidadeDisponivelSemId: 2 });
+      expect(result[0]).toMatchObject({
+        id: 1,
+        referencia: 'LOT-001',
+        quantidadeDisponivelSemId: 2,
+      });
     });
   });
 });

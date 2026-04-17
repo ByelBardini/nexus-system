@@ -39,7 +39,7 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
   // Setores
-  const setorAgendamento = await prisma.setor.upsert({
+  await prisma.setor.upsert({
     where: { code: 'AGENDAMENTO' },
     update: {},
     create: { code: 'AGENDAMENTO', nome: 'Agendamento & Ordens' },
@@ -49,7 +49,7 @@ async function main() {
     update: {},
     create: { code: 'ADMINISTRATIVO', nome: 'Administrativo' },
   });
-  const setorConfig = await prisma.setor.upsert({
+  await prisma.setor.upsert({
     where: { code: 'CONFIGURACAO' },
     update: {},
     create: { code: 'CONFIGURACAO', nome: 'Configuração' },
@@ -95,10 +95,7 @@ async function main() {
   // Vincular todas as permissões a TODOS os cargos admin existentes (qualquer setor)
   const todosCargosAdmin = await prisma.cargo.findMany({
     where: {
-      OR: [
-        { code: 'ADMIN' },
-        { nome: { contains: 'Administrador' } },
-      ],
+      OR: [{ code: 'ADMIN' }, { nome: { contains: 'Administrador' } }],
     },
   });
 
@@ -128,7 +125,9 @@ async function main() {
   });
 
   await prisma.usuarioCargo.upsert({
-    where: { usuarioId_cargoId: { usuarioId: usuarioAdmin.id, cargoId: cargoAdmin.id } },
+    where: {
+      usuarioId_cargoId: { usuarioId: usuarioAdmin.id, cargoId: cargoAdmin.id },
+    },
     update: {},
     create: { usuarioId: usuarioAdmin.id, cargoId: cargoAdmin.id },
   });
@@ -144,7 +143,8 @@ async function main() {
       VALUES (${CLIENTE_INFINITY_ID}, 'Infinity', 'Infinity', 'COMODATO', 0, 'ATIVO')
       ON DUPLICATE KEY UPDATE nome = 'Infinity', nome_fantasia = 'Infinity'
     `;
-    console.log('Cliente Infinity (id 999999) criado');
+    await prisma.$executeRaw`ALTER TABLE clientes AUTO_INCREMENT = 1`;
+    console.log('Cliente Infinity (id 1) criado');
   }
 
   console.log('Seed concluído: admin@admin.com / 12345');

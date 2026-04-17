@@ -1,11 +1,15 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { TipoAparelho, ProprietarioTipo, Prisma } from '@prisma/client';
+import { TipoAparelho, Prisma } from '@prisma/client';
 import { CreateLoteDto } from './dto/create-lote.dto';
+import { DebitosRastreadoresService } from '../debitos-rastreadores/debitos-rastreadores.service';
 
 @Injectable()
 export class LotesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly debitosService: DebitosRastreadoresService,
+  ) {}
 
   async createLote(dto: CreateLoteDto) {
     const {
@@ -23,6 +27,9 @@ export class LotesService {
       quantidade,
       valorUnitario,
       identificadores,
+      tecnicoId,
+      abaterDebitoId,
+      abaterQuantidade,
     } = dto;
 
     if (quantidade <= 0) {
@@ -35,7 +42,8 @@ export class LotesService {
         where: { id: marcaSimcardId },
         include: { operadora: true },
       });
-      if (!marcaSim) throw new BadRequestException('Marca de simcard não encontrada');
+      if (!marcaSim)
+        throw new BadRequestException('Marca de simcard não encontrada');
       operadoraSim = marcaSim.operadora.nome;
     }
 
@@ -51,12 +59,12 @@ export class LotesService {
           dataChegada: new Date(dataChegada),
           tipo,
           proprietario: proprietarioTipo,
-          clienteId: proprietarioTipo === 'CLIENTE' ? clienteId : null,
+          clienteId: clienteId ?? null,
           marca: tipo === 'RASTREADOR' ? marca : null,
           modelo: tipo === 'RASTREADOR' ? modelo : null,
           operadora: tipo === 'SIM' ? operadoraSim : null,
-          marcaSimcardId: tipo === 'SIM' ? marcaSimcardId ?? null : null,
-          planoSimcardId: tipo === 'SIM' ? planoSimcardId ?? null : null,
+          marcaSimcardId: tipo === 'SIM' ? (marcaSimcardId ?? null) : null,
+          planoSimcardId: tipo === 'SIM' ? (planoSimcardId ?? null) : null,
           quantidade: qtdFinal,
           valorUnitario,
           valorTotal,
@@ -78,7 +86,8 @@ export class LotesService {
             identificador,
             status: 'EM_ESTOQUE',
             proprietario: proprietarioTipo,
-            clienteId: proprietarioTipo === 'CLIENTE' ? clienteId : null,
+            clienteId: clienteId ?? null,
+            tecnicoId: tecnicoId ?? null,
             marca: tipo === 'RASTREADOR' ? marca : null,
             modelo: tipo === 'RASTREADOR' ? modelo : null,
             ...(tipo === 'SIM' ? baseSimData : { operadora: null }),
@@ -93,7 +102,8 @@ export class LotesService {
             identificador: null,
             status: 'EM_ESTOQUE',
             proprietario: proprietarioTipo,
-            clienteId: proprietarioTipo === 'CLIENTE' ? clienteId : null,
+            clienteId: clienteId ?? null,
+            tecnicoId: tecnicoId ?? null,
             marca: tipo === 'RASTREADOR' ? marca : null,
             modelo: tipo === 'RASTREADOR' ? modelo : null,
             ...(tipo === 'SIM' ? baseSimData : { operadora: null }),
@@ -103,7 +113,45 @@ export class LotesService {
         }
       }
 
-      await tx.aparelho.createMany({ data: aparelhosData });
+      if (abaterDebitoId && abaterQuantidade && abaterQuantidade > 0) {
+        const debito = await tx.debitoRastreador.findUnique({
+          where: { id: abaterDebitoId },
+        });
+        if (!debito) throw new BadRequestException('Débito não encontrado');
+        if (abaterQuantidade > debito.quantidade) {
+          throw new BadRequestException(
+            `Quantidade a abater (${abaterQuantidade}) excede o débito atual (${debito.quantidade})`,
+          );
+        }
+        if (abaterQuantidade > qtdFinal) {
+          throw new BadRequestException(
+            `Quantidade a abater (${abaterQuantidade}) excede a quantidade do lote (${qtdFinal})`,
+          );
+        }
+
+        // First abaterQuantidade units go to the creditor's stock (payment)
+        const abatidos = aparelhosData.slice(0, abaterQuantidade).map((a) => ({
+          ...a,
+          proprietario: debito.credorTipo,
+          clienteId: debito.credorClienteId,
+        }));
+        const restantes = aparelhosData.slice(abaterQuantidade);
+
+        await tx.aparelho.createMany({ data: [...abatidos, ...restantes] });
+
+        await this.debitosService.consolidarDebitoTx(tx, {
+          devedorTipo: debito.devedorTipo,
+          devedorClienteId: debito.devedorClienteId,
+          credorTipo: debito.credorTipo,
+          credorClienteId: debito.credorClienteId,
+          marcaId: debito.marcaId,
+          modeloId: debito.modeloId,
+          delta: -abaterQuantidade,
+          loteId: lote.id,
+        });
+      } else {
+        await tx.aparelho.createMany({ data: aparelhosData });
+      }
 
       return tx.loteAparelho.findUnique({
         where: { id: lote.id },
@@ -131,6 +179,10 @@ export class LotesService {
         id: l.id,
         referencia: l.referencia,
         quantidadeDisponivelSemId: l.aparelhos.length,
+        modelo: l.modelo ?? null,
+        marca: l.marca ?? null,
+        operadora: l.operadora ?? null,
+        marcaSimcardId: l.marcaSimcardId ?? null,
       }));
   }
 }

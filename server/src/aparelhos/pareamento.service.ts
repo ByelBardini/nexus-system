@@ -1,23 +1,23 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { KitsService } from './kits.service';
 
 @Injectable()
 export class PareamentoService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly kitsService: KitsService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /** Resolve rastreador por IMEI: FOUND_AVAILABLE | FOUND_ALREADY_LINKED | NEEDS_CREATE | INVALID_FORMAT */
   private async resolveRastreador(imei: string): Promise<{
-    status: 'FOUND_AVAILABLE' | 'FOUND_ALREADY_LINKED' | 'NEEDS_CREATE' | 'INVALID_FORMAT';
+    status:
+      | 'FOUND_AVAILABLE'
+      | 'FOUND_ALREADY_LINKED'
+      | 'NEEDS_CREATE'
+      | 'INVALID_FORMAT';
     trackerId?: number;
     marca?: string;
     modelo?: string;
   }> {
     const clean = imei.replace(/\D/g, '');
-    if (clean.length < 14 || clean.length > 16) {
+    if (clean.length < 1 || clean.length > 50) {
       return { status: 'INVALID_FORMAT' };
     }
     const rastreador = await this.prisma.aparelho.findFirst({
@@ -38,14 +38,18 @@ export class PareamentoService {
 
   /** Resolve SIM por ICCID: FOUND_AVAILABLE | FOUND_ALREADY_LINKED | NEEDS_CREATE | INVALID_FORMAT */
   private async resolveSim(iccid: string): Promise<{
-    status: 'FOUND_AVAILABLE' | 'FOUND_ALREADY_LINKED' | 'NEEDS_CREATE' | 'INVALID_FORMAT';
+    status:
+      | 'FOUND_AVAILABLE'
+      | 'FOUND_ALREADY_LINKED'
+      | 'NEEDS_CREATE'
+      | 'INVALID_FORMAT';
     simId?: number;
     operadora?: string;
     marcaSimcardId?: number;
     planoSimcardId?: number;
   }> {
     const clean = iccid.replace(/\D/g, '');
-    if (clean.length < 18 || clean.length > 21) {
+    if (clean.length < 1 || clean.length > 50) {
       return { status: 'INVALID_FORMAT' };
     }
     const sim = await this.prisma.aparelho.findFirst({
@@ -71,9 +75,21 @@ export class PareamentoService {
     const resultados: Array<{
       imei: string;
       iccid: string;
-      tracker_status: 'FOUND_AVAILABLE' | 'FOUND_ALREADY_LINKED' | 'NEEDS_CREATE' | 'INVALID_FORMAT';
-      sim_status: 'FOUND_AVAILABLE' | 'FOUND_ALREADY_LINKED' | 'NEEDS_CREATE' | 'INVALID_FORMAT';
-      action_needed: 'OK' | 'SELECT_TRACKER_LOT' | 'SELECT_SIM_LOT' | 'FIX_ERROR';
+      tracker_status:
+        | 'FOUND_AVAILABLE'
+        | 'FOUND_ALREADY_LINKED'
+        | 'NEEDS_CREATE'
+        | 'INVALID_FORMAT';
+      sim_status:
+        | 'FOUND_AVAILABLE'
+        | 'FOUND_ALREADY_LINKED'
+        | 'NEEDS_CREATE'
+        | 'INVALID_FORMAT';
+      action_needed:
+        | 'OK'
+        | 'SELECT_TRACKER_LOT'
+        | 'SELECT_SIM_LOT'
+        | 'FIX_ERROR';
       trackerId?: number;
       simId?: number;
       marca?: string;
@@ -87,7 +103,11 @@ export class PareamentoService {
         this.resolveSim(iccid),
       ]);
 
-      let action_needed: 'OK' | 'SELECT_TRACKER_LOT' | 'SELECT_SIM_LOT' | 'FIX_ERROR' = 'OK';
+      let action_needed:
+        | 'OK'
+        | 'SELECT_TRACKER_LOT'
+        | 'SELECT_SIM_LOT'
+        | 'FIX_ERROR' = 'OK';
       if (
         trackerRes.status === 'INVALID_FORMAT' ||
         simRes.status === 'INVALID_FORMAT' ||
@@ -95,7 +115,10 @@ export class PareamentoService {
         simRes.status === 'FOUND_ALREADY_LINKED'
       ) {
         action_needed = 'FIX_ERROR';
-      } else if (trackerRes.status === 'NEEDS_CREATE' && simRes.status === 'NEEDS_CREATE') {
+      } else if (
+        trackerRes.status === 'NEEDS_CREATE' &&
+        simRes.status === 'NEEDS_CREATE'
+      ) {
         action_needed = 'SELECT_TRACKER_LOT';
       } else if (trackerRes.status === 'NEEDS_CREATE') {
         action_needed = 'SELECT_TRACKER_LOT';
@@ -120,9 +143,12 @@ export class PareamentoService {
     const validos = resultados.filter((r) => r.action_needed === 'OK').length;
     const exigemLote = resultados.filter(
       (r) =>
-        r.action_needed === 'SELECT_TRACKER_LOT' || r.action_needed === 'SELECT_SIM_LOT',
+        r.action_needed === 'SELECT_TRACKER_LOT' ||
+        r.action_needed === 'SELECT_SIM_LOT',
     ).length;
-    const erros = resultados.filter((r) => r.action_needed === 'FIX_ERROR').length;
+    const erros = resultados.filter(
+      (r) => r.action_needed === 'FIX_ERROR',
+    ).length;
 
     return {
       linhas: resultados,
@@ -136,21 +162,42 @@ export class PareamentoService {
     loteRastreadorId?: number;
     loteSimId?: number;
     rastreadorManual?: { marca: string; modelo: string };
-    simManual?: { operadora?: string; marcaSimcardId?: number; planoSimcardId?: number };
-    kitId?: number;
-    kitNome?: string;
+    simManual?: {
+      operadora?: string;
+      marcaSimcardId?: number;
+      planoSimcardId?: number;
+    };
+    proprietario?: 'INFINITY' | 'CLIENTE';
+    clienteId?: number;
+    tecnicoId?: number;
   }) {
-    const { pares, loteRastreadorId, loteSimId, rastreadorManual, simManual, kitId, kitNome } = dto;
+    const {
+      pares,
+      loteRastreadorId,
+      loteSimId,
+      rastreadorManual,
+      simManual,
+      proprietario,
+      clienteId,
+      tecnicoId,
+    } = dto;
+    const proprietarioFinal = proprietario ?? 'INFINITY';
     if (!pares?.length) {
       throw new BadRequestException('Nenhum par informado');
     }
 
     const preview = await this.pareamentoPreview(pares);
-    const linhasNeedTracker = preview.linhas.filter((l) => l.tracker_status === 'NEEDS_CREATE');
-    const linhasNeedSim = preview.linhas.filter((l) => l.sim_status === 'NEEDS_CREATE');
+    const linhasNeedTracker = preview.linhas.filter(
+      (l) => l.tracker_status === 'NEEDS_CREATE',
+    );
+    const linhasNeedSim = preview.linhas.filter(
+      (l) => l.sim_status === 'NEEDS_CREATE',
+    );
 
     const temLoteTracker = !!loteRastreadorId;
-    const temManualTracker = !!(rastreadorManual?.marca && rastreadorManual?.modelo);
+    const temManualTracker = !!(
+      rastreadorManual?.marca && rastreadorManual?.modelo
+    );
     const temLoteSim = !!loteSimId;
     const temManualSim = !!simManual?.operadora || !!simManual?.marcaSimcardId;
 
@@ -165,14 +212,12 @@ export class PareamentoService {
       );
     }
 
-    let kitIdFinal = kitId;
-    if (kitNome?.trim()) {
-      const kit = await this.kitsService.criarOuBuscarKitPorNome(kitNome.trim());
-      kitIdFinal = kit?.id ?? undefined;
-    }
-
     return this.prisma.$transaction(async (tx) => {
-      const criados: { rastreadorId: number; simId: number; equipamentoId: number }[] = [];
+      const criados: {
+        rastreadorId: number;
+        simId: number;
+        equipamentoId: number;
+      }[] = [];
 
       for (const linha of preview.linhas) {
         let rastreadorId: number;
@@ -181,7 +226,10 @@ export class PareamentoService {
         // Resolver rastreador
         if (linha.tracker_status === 'FOUND_AVAILABLE' && linha.trackerId) {
           rastreadorId = linha.trackerId;
-        } else if (linha.tracker_status === 'NEEDS_CREATE' && loteRastreadorId) {
+        } else if (
+          linha.tracker_status === 'NEEDS_CREATE' &&
+          loteRastreadorId
+        ) {
           const aparelhoSemId = await tx.aparelho.findFirst({
             where: {
               loteId: loteRastreadorId,
@@ -198,17 +246,28 @@ export class PareamentoService {
           const cleanImei = linha.imei.replace(/\D/g, '');
           await tx.aparelho.update({
             where: { id: aparelhoSemId.id },
-            data: { identificador: cleanImei },
+            data: {
+              identificador: cleanImei,
+              proprietario: proprietarioFinal,
+              clienteId: clienteId ?? null,
+              tecnicoId: tecnicoId ?? null,
+            },
           });
           rastreadorId = aparelhoSemId.id;
-        } else if (linha.tracker_status === 'NEEDS_CREATE' && rastreadorManual?.marca && rastreadorManual?.modelo) {
+        } else if (
+          linha.tracker_status === 'NEEDS_CREATE' &&
+          rastreadorManual?.marca &&
+          rastreadorManual?.modelo
+        ) {
           const cleanImei = linha.imei.replace(/\D/g, '');
           const novo = await tx.aparelho.create({
             data: {
               tipo: 'RASTREADOR',
               identificador: cleanImei,
               status: 'EM_ESTOQUE',
-              proprietario: 'INFINITY',
+              proprietario: proprietarioFinal,
+              clienteId: clienteId ?? null,
+              tecnicoId: tecnicoId ?? null,
               marca: rastreadorManual.marca,
               modelo: rastreadorManual.modelo,
             },
@@ -238,10 +297,17 @@ export class PareamentoService {
           const cleanIccid = linha.iccid.replace(/\D/g, '');
           await tx.aparelho.update({
             where: { id: aparelhoSemId.id },
-            data: { identificador: cleanIccid },
+            data: {
+              identificador: cleanIccid,
+              proprietario: 'INFINITY',
+              clienteId: null,
+            },
           });
           simId = aparelhoSemId.id;
-        } else if (linha.sim_status === 'NEEDS_CREATE' && (simManual?.operadora || simManual?.marcaSimcardId)) {
+        } else if (
+          linha.sim_status === 'NEEDS_CREATE' &&
+          (simManual?.operadora || simManual?.marcaSimcardId)
+        ) {
           const cleanIccid = linha.iccid.replace(/\D/g, '');
           let operadoraNome = simManual.operadora;
           if (simManual.marcaSimcardId) {
@@ -249,7 +315,8 @@ export class PareamentoService {
               where: { id: simManual.marcaSimcardId },
               include: { operadora: true },
             });
-            if (!marcaSim) throw new BadRequestException('Marca de simcard não encontrada');
+            if (!marcaSim)
+              throw new BadRequestException('Marca de simcard não encontrada');
             operadoraNome = marcaSim.operadora.nome;
           }
           const novo = await tx.aparelho.create({
@@ -258,6 +325,7 @@ export class PareamentoService {
               identificador: cleanIccid,
               status: 'EM_ESTOQUE',
               proprietario: 'INFINITY',
+              clienteId: null,
               operadora: operadoraNome ?? null,
               marcaSimcardId: simManual.marcaSimcardId ?? null,
               planoSimcardId: simManual.planoSimcardId ?? null,
@@ -274,7 +342,8 @@ export class PareamentoService {
           data: {
             simVinculadoId: simId,
             status: 'CONFIGURADO',
-            kitId: kitIdFinal ?? null,
+            clienteId: clienteId ?? null,
+            ...(tecnicoId !== undefined ? { tecnicoId } : {}),
           },
         });
         await tx.aparelho.update({

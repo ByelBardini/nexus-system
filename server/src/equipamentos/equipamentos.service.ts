@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMarcaDto } from './dto/create-marca.dto';
 import { UpdateMarcaDto } from './dto/update-marca.dto';
@@ -45,7 +49,8 @@ export class EquipamentosService {
 
   async createMarca(dto: CreateMarcaDto) {
     await this.assertUnique(
-      () => this.prisma.marcaEquipamento.findUnique({ where: { nome: dto.nome } }),
+      () =>
+        this.prisma.marcaEquipamento.findUnique({ where: { nome: dto.nome } }),
       'Marca já existe',
     );
     return this.prisma.marcaEquipamento.create({
@@ -107,7 +112,11 @@ export class EquipamentosService {
       'Modelo já existe para esta marca',
     );
     return this.prisma.modeloEquipamento.create({
-      data: { nome: dto.nome, marcaId: dto.marcaId },
+      data: {
+        nome: dto.nome,
+        marcaId: dto.marcaId,
+        minCaracteresImei: dto.minCaracteresImei ?? null,
+      },
       include: { marca: true },
     });
   }
@@ -118,7 +127,11 @@ export class EquipamentosService {
       await this.assertUnique(
         () =>
           this.prisma.modeloEquipamento.findFirst({
-            where: { marcaId: modelo.marcaId, nome: dto.nome!, id: { not: id } },
+            where: {
+              marcaId: modelo.marcaId,
+              nome: dto.nome!,
+              id: { not: id },
+            },
           }),
         'Modelo já existe para esta marca',
       );
@@ -189,7 +202,10 @@ export class EquipamentosService {
     return this.prisma.marcaSimcard.findMany({
       where: operadoraId ? { operadoraId } : undefined,
       orderBy: [{ operadora: { nome: 'asc' } }, { nome: 'asc' }],
-      include: { operadora: true, planos: { where: { ativo: true }, orderBy: { planoMb: 'asc' } } },
+      include: {
+        operadora: true,
+        planos: { where: { ativo: true }, orderBy: { planoMb: 'asc' } },
+      },
     });
   }
 
@@ -219,6 +235,7 @@ export class EquipamentosService {
         nome: dto.nome,
         operadoraId: dto.operadoraId,
         temPlanos: dto.temPlanos ?? false,
+        minCaracteresIccid: dto.minCaracteresIccid ?? null,
       },
       include: { operadora: true },
     });
@@ -266,7 +283,11 @@ export class EquipamentosService {
   async findAllPlanosSimcard(marcaSimcardId?: number) {
     return this.prisma.planoSimcard.findMany({
       where: marcaSimcardId ? { marcaSimcardId } : undefined,
-      orderBy: [{ marcaSimcard: { operadora: { nome: 'asc' } } }, { marcaSimcard: { nome: 'asc' } }, { planoMb: 'asc' }],
+      orderBy: [
+        { marcaSimcard: { operadora: { nome: 'asc' } } },
+        { marcaSimcard: { nome: 'asc' } },
+        { planoMb: 'asc' },
+      ],
       include: { marcaSimcard: { include: { operadora: true } } },
     });
   }

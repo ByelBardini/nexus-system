@@ -1,4 +1,16 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
@@ -6,6 +18,8 @@ import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { PedidosRastreadoresService } from './pedidos-rastreadores.service';
 import { CreatePedidoRastreadorDto } from './dto/create-pedido-rastreador.dto';
 import { UpdateStatusPedidoDto } from './dto/update-status-pedido.dto';
+import { UpdateKitIdsDto } from './dto/update-kit-ids.dto';
+import { BulkAparelhoDestinatarioDto } from './dto/bulk-aparelho-destinatario.dto';
 import { StatusPedidoRastreador } from '@prisma/client';
 
 @ApiTags('pedidos-rastreadores')
@@ -17,7 +31,9 @@ export class PedidosRastreadoresController {
 
   @Get()
   @RequirePermissions('AGENDAMENTO.PEDIDO_RASTREADOR.LISTAR')
-  @ApiOperation({ summary: 'Listar pedidos de rastreadores com paginação e filtros' })
+  @ApiOperation({
+    summary: 'Listar pedidos de rastreadores com paginação e filtros',
+  })
   findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -54,6 +70,46 @@ export class PedidosRastreadoresController {
   @ApiOperation({ summary: 'Atualizar status do pedido de rastreador' })
   updateStatus(@Param('id') id: string, @Body() dto: UpdateStatusPedidoDto) {
     return this.service.updateStatus(+id, dto);
+  }
+
+  @Patch(':id/kits')
+  @RequirePermissions('AGENDAMENTO.PEDIDO_RASTREADOR.EDITAR')
+  @ApiOperation({ summary: 'Atualizar kits vinculados ao pedido' })
+  updateKitIds(@Param('id') id: string, @Body() dto: UpdateKitIdsDto) {
+    return this.service.updateKitIds(+id, dto.kitIds);
+  }
+
+  @Post(':id/aparelhos-destinatarios')
+  @RequirePermissions('AGENDAMENTO.PEDIDO_RASTREADOR.EDITAR')
+  @ApiOperation({
+    summary: 'Atribuir destinatário em lote para aparelhos do pedido MISTO',
+  })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  bulkSetDestinatarios(
+    @Param('id') id: string,
+    @Body() dto: BulkAparelhoDestinatarioDto,
+  ) {
+    return this.service.bulkSetDestinatarios(+id, dto);
+  }
+
+  @Get(':id/aparelhos-destinatarios')
+  @RequirePermissions('AGENDAMENTO.PEDIDO_RASTREADOR.LISTAR')
+  @ApiOperation({
+    summary: 'Obter destinatários e cotas dos aparelhos do pedido MISTO',
+  })
+  getAparelhosDestinatarios(@Param('id') id: string) {
+    return this.service.getAparelhosDestinatarios(+id);
+  }
+
+  @Delete(':id/aparelhos-destinatarios/:aparelhoId')
+  @RequirePermissions('AGENDAMENTO.PEDIDO_RASTREADOR.EDITAR')
+  @ApiOperation({ summary: 'Remover destinatário de aparelho do pedido MISTO' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  removeAparelhoDestinatario(
+    @Param('id') id: string,
+    @Param('aparelhoId') aparelhoId: string,
+  ) {
+    return this.service.removeAparelhoDestinatario(+id, +aparelhoId);
   }
 
   @Delete(':id')

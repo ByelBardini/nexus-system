@@ -31,7 +31,9 @@ export class PdfOrdemServicoGenerator implements OnModuleDestroy {
     return this.browserPromise;
   }
 
-  async gerar(os: { numero: number } & Record<string, unknown>): Promise<Buffer> {
+  async gerar(
+    os: { numero: number } & Record<string, unknown>,
+  ): Promise<Buffer> {
     const html = this.htmlOrdemServicoGenerator.gerar(os);
     const browser = await this.getBrowser();
     const page = await browser.newPage();

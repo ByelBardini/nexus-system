@@ -1,0 +1,781 @@
+<!doctype html>
+
+<html class="light" lang="pt-br">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Cadastro no Rastreamento | Industrial Ledger Pro</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-tint": "#545f73",
+              "surface-container-highest": "#e0e3e5",
+              "on-tertiary-fixed-variant": "#004c6e",
+              "surface-container-high": "#e6e8ea",
+              "outline-variant": "#c5c6cd",
+              outline: "#75777d",
+              "tertiary-container": "#002c42",
+              "on-surface": "#191c1e",
+              "primary-container": "#1e293b",
+              "inverse-primary": "#bcc7de",
+              "tertiary-fixed-dim": "#89ceff",
+              error: "#ba1a1a",
+              "on-secondary-container": "#57657b",
+              "surface-bright": "#f7f9fb",
+              "on-primary-container": "#8590a6",
+              "inverse-surface": "#2d3133",
+              "secondary-fixed": "#d5e3fd",
+              "on-error-container": "#93000a",
+              "on-tertiary": "#ffffff",
+              "surface-container-low": "#f2f4f6",
+              "on-primary": "#ffffff",
+              "surface-container-lowest": "#ffffff",
+              "on-secondary": "#ffffff",
+              "primary-fixed": "#d8e3fb",
+              primary: "#091426",
+              "secondary-container": "#d5e3fd",
+              "error-container": "#ffdad6",
+              "on-background": "#191c1e",
+              "on-primary-fixed-variant": "#3c475a",
+              "surface-dim": "#d8dadc",
+              "secondary-fixed-dim": "#b9c7e0",
+              secondary: "#515f74",
+              background: "#f7f9fb",
+              "on-error": "#ffffff",
+              surface: "#f7f9fb",
+              "on-tertiary-fixed": "#001e2f",
+              "on-primary-fixed": "#111c2d",
+              "surface-container": "#eceef0",
+              "surface-variant": "#e0e3e5",
+              "on-surface-variant": "#45474c",
+              "on-secondary-fixed": "#0d1c2f",
+              tertiary: "#001624",
+              "tertiary-fixed": "#c9e6ff",
+              "primary-fixed-dim": "#bcc7de",
+              "inverse-on-surface": "#eff1f3",
+              "on-tertiary-container": "#0099d9",
+              "on-secondary-fixed-variant": "#3a485c",
+            },
+            borderRadius: {
+              DEFAULT: "0.125rem",
+              lg: "0.25rem",
+              xl: "0.5rem",
+              full: "0.75rem",
+            },
+            fontFamily: {
+              headline: ["Inter"],
+              body: ["Inter"],
+              label: ["Inter"],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
+        vertical-align: middle;
+      }
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+      .tab-lining {
+        font-variant-numeric: tabular-nums;
+      }
+    </style>
+  </head>
+  <body
+    class="bg-background text-on-background antialiased flex h-screen overflow-hidden"
+  >
+    <!-- SideNavBar Component -->
+    <aside
+      class="fixed left-0 top-0 bottom-0 w-64 z-50 bg-slate-900 dark:bg-slate-950 flex flex-col h-full py-6 px-4"
+    >
+      <div class="mb-10 px-2">
+        <h1 class="text-slate-100 font-black uppercase tracking-widest text-sm">
+          Industrial Ledger Pro
+        </h1>
+      </div>
+      <nav class="flex-1 space-y-1">
+        <a
+          class="flex items-center gap-3 px-3 py-2 text-slate-400 hover:bg-white/5 hover:text-white transition-all font-inter tracking-tight leading-none text-xs font-medium"
+          href="#"
+        >
+          <span class="material-symbols-outlined text-lg">dashboard</span>
+          Dashboard
+        </a>
+        <a
+          class="flex items-center gap-3 px-3 py-2 bg-white/10 text-white rounded-md font-inter tracking-tight leading-none text-xs font-medium"
+          href="#"
+        >
+          <span class="material-symbols-outlined text-lg">account_balance</span>
+          Ledger
+        </a>
+        <a
+          class="flex items-center gap-3 px-3 py-2 text-slate-400 hover:bg-white/5 hover:text-white transition-all font-inter tracking-tight leading-none text-xs font-medium"
+          href="#"
+        >
+          <span class="material-symbols-outlined text-lg">analytics</span>
+          Analytics
+        </a>
+        <a
+          class="flex items-center gap-3 px-3 py-2 text-slate-400 hover:bg-white/5 hover:text-white transition-all font-inter tracking-tight leading-none text-xs font-medium"
+          href="#"
+        >
+          <span class="material-symbols-outlined text-lg"
+            >settings_input_component</span
+          >
+          Equipment
+        </a>
+        <a
+          class="flex items-center gap-3 px-3 py-2 text-slate-400 hover:bg-white/5 hover:text-white transition-all font-inter tracking-tight leading-none text-xs font-medium"
+          href="#"
+        >
+          <span class="material-symbols-outlined text-lg">history</span>
+          History
+        </a>
+      </nav>
+      <div class="mt-auto pt-6 border-t border-slate-800">
+        <div class="flex items-center gap-3 px-2 mb-6">
+          <div
+            class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center"
+          >
+            <img
+              class="w-full h-full object-cover rounded-full"
+              data-alt="Portrait of a professional system administrator in a modern office environment with soft lighting"
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCiG1rPaRyfZhooRS-HrVwnfJjGBtyrsl-ZqYVCf0EjQ9bdMlgdxL2I1dFHZJkaRtejeZYqEcPTA2T__teanvWrCknRX8bepHTbj8b0ZushGLqv49U-r5GPx4l0aaERSO7SGYFisXAVt3_bgtmTFBHMfpJyTK3y_pIl_2QTRh5GY0QtaKzEMlfnc7S-WAwODfxJnfWby8egv8DLaxHSaxbYXev6U4ErxdGd7QmvA3vgoVyCaY-sz7JOHL7yR6dvz_5p4zP89N6YkKU"
+            />
+          </div>
+          <div class="overflow-hidden">
+            <p class="text-white text-xs font-bold truncate">System Operator</p>
+            <p class="text-slate-500 text-[10px] truncate">Command Center</p>
+          </div>
+        </div>
+        <a
+          class="flex items-center gap-3 px-3 py-2 text-slate-400 hover:bg-white/5 hover:text-white transition-all font-inter tracking-tight leading-none text-xs font-medium"
+          href="#"
+        >
+          <span class="material-symbols-outlined text-lg">logout</span>
+          Log Out
+        </a>
+      </div>
+    </aside>
+    <!-- Main Content Area -->
+    <main class="ml-64 flex flex-col w-full h-full">
+      <!-- TopNavBar Component -->
+      <header
+        class="fixed top-0 right-0 left-0 ml-64 z-40 bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-md flex items-center justify-between w-full h-14 px-6 border-b border-slate-200/50 dark:border-slate-800/50"
+      >
+        <div class="flex items-center gap-4">
+          <div class="relative w-64">
+            <span
+              class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"
+              >search</span
+            >
+            <input
+              class="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-100 dark:bg-slate-900 border-none rounded-md focus:ring-1 focus:ring-slate-400 text-slate-900 dark:text-slate-100"
+              placeholder="Search orders, plates..."
+              type="text"
+            />
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            class="p-2 text-slate-500 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors rounded-md"
+          >
+            <span class="material-symbols-outlined text-xl">notifications</span>
+          </button>
+          <button
+            class="p-2 text-slate-500 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors rounded-md"
+          >
+            <span class="material-symbols-outlined text-xl">settings</span>
+          </button>
+          <button
+            class="p-2 text-slate-500 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors rounded-md"
+          >
+            <span class="material-symbols-outlined text-xl">help</span>
+          </button>
+          <div
+            class="w-8 h-8 rounded-md bg-slate-200 dark:bg-slate-800 overflow-hidden ml-2"
+          >
+            <img
+              class="w-full h-full object-cover"
+              data-alt="Close-up profile of a male manager with a professional look"
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAH1FhrzwQ1ISP0EeRb_aEGp1dMMPGwqRyzMIszxgIL2Z5EZgdF11SnJFj3EoOtLOWN1wMj9KCSeHgUsi6qN68T_FrQt7X87SQtp1LlhRO66cbYOA9BPSr0rhH6vw37KKxmtw2kxeC852raUik6fihH7KoeFHlT28k_frFmUNeWVSwB_0jfJ0C3k90oUMuQZbjLwGRcFDTzd7bedLWH47kSdOIfNnu2dQXdL-0R_M2muk0a_MKiEIsjhUaQ4G9M_tX5BtoncZh6nDc"
+            />
+          </div>
+        </div>
+      </header>
+      <!-- Page Header & Summary -->
+      <section
+        class="mt-14 px-8 py-6 bg-white flex justify-between items-start"
+      >
+        <div>
+          <h2 class="text-2xl font-extrabold text-primary tracking-tight">
+            Cadastro no Rastreamento
+          </h2>
+          <p class="text-on-surface-variant text-sm mt-0.5">
+            Ordens aguardando registro no sistema externo
+          </p>
+        </div>
+        <div class="flex gap-4">
+          <div
+            class="px-4 py-3 bg-surface-container-low rounded-lg border border-outline-variant/10 min-w-[120px]"
+          >
+            <p
+              class="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold"
+            >
+              Aguardando
+            </p>
+            <p class="text-xl font-black text-on-tertiary-container tab-lining">
+              12
+            </p>
+          </div>
+          <div
+            class="px-4 py-3 bg-surface-container-low rounded-lg border border-outline-variant/10 min-w-[120px]"
+          >
+            <p
+              class="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold"
+            >
+              Em cadastro
+            </p>
+            <p
+              class="text-xl font-black text-on-secondary-fixed-variant tab-lining"
+            >
+              03
+            </p>
+          </div>
+          <div
+            class="px-4 py-3 bg-surface-container-low rounded-lg border border-outline-variant/10 min-w-[120px]"
+          >
+            <p
+              class="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold"
+            >
+              Concluídas Hoje
+            </p>
+            <p class="text-xl font-black text-secondary tab-lining">18</p>
+          </div>
+        </div>
+      </section>
+      <!-- Filter Bar -->
+      <section
+        class="px-8 pb-4 bg-white flex flex-wrap gap-3 border-b border-surface-container"
+      >
+        <div class="flex-1 flex gap-2">
+          <select
+            class="text-xs bg-surface-container-low border-none rounded focus:ring-1 focus:ring-primary h-9 min-w-[140px]"
+          >
+            <option>Status: Todos</option>
+            <option>Aguardando</option>
+            <option>Em cadastro</option>
+            <option>Concluído</option>
+            <option>Pendente</option>
+          </select>
+          <select
+            class="text-xs bg-surface-container-low border-none rounded focus:ring-1 focus:ring-primary h-9 min-w-[140px]"
+          >
+            <option>Técnico: Todos</option>
+          </select>
+          <select
+            class="text-xs bg-surface-container-low border-none rounded focus:ring-1 focus:ring-primary h-9 min-w-[140px]"
+          >
+            <option>Tipo de Serviço</option>
+          </select>
+          <select
+            class="text-xs bg-surface-container-low border-none rounded focus:ring-1 focus:ring-primary h-9 min-w-[140px]"
+          >
+            <option>Período: Hoje</option>
+          </select>
+          <button
+            class="h-9 px-4 bg-primary-container text-white text-xs font-bold rounded flex items-center gap-2 hover:opacity-90 transition-opacity"
+          >
+            <span class="material-symbols-outlined text-sm">filter_alt</span>
+            Filtrar Resultados
+          </button>
+        </div>
+      </section>
+      <!-- Operational Canvas -->
+      <section class="flex flex-1 overflow-hidden">
+        <!-- Left: Operational Table (70%) -->
+        <div
+          class="w-[70%] h-full overflow-y-auto bg-surface-container-low p-6"
+        >
+          <div
+            class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10 overflow-hidden"
+          >
+            <table class="w-full text-left border-collapse">
+              <thead class="bg-white border-b border-surface-container">
+                <tr>
+                  <th
+                    class="px-4 py-3 text-[10px] uppercase font-bold text-on-surface-variant"
+                  >
+                    OS #
+                  </th>
+                  <th
+                    class="px-4 py-3 text-[10px] uppercase font-bold text-on-surface-variant"
+                  >
+                    Cliente / Veículo
+                  </th>
+                  <th
+                    class="px-4 py-3 text-[10px] uppercase font-bold text-on-surface-variant"
+                  >
+                    Equipamento
+                  </th>
+                  <th
+                    class="px-4 py-3 text-[10px] uppercase font-bold text-on-surface-variant"
+                  >
+                    Status
+                  </th>
+                  <th
+                    class="px-4 py-3 text-[10px] uppercase font-bold text-on-surface-variant text-right"
+                  >
+                    Ações
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-surface-container">
+                <!-- Selected Row -->
+                <tr
+                  class="bg-primary/5 border-l-4 border-primary group transition-colors"
+                >
+                  <td class="px-4 py-4 align-top">
+                    <span class="text-xs font-bold text-primary tab-lining"
+                      >#99283</span
+                    >
+                    <p class="text-[10px] text-on-surface-variant mt-1">
+                      24/05 14:20
+                    </p>
+                  </td>
+                  <td class="px-4 py-4 align-top">
+                    <div class="text-xs font-bold text-on-surface">
+                      Logística TransGlobal S.A.
+                    </div>
+                    <div class="text-[10px] text-on-surface-variant">
+                      Mercedes-Benz Actros •
+                      <span class="font-bold text-primary">BRA2E19</span>
+                    </div>
+                  </td>
+                  <td class="px-4 py-4 align-top">
+                    <div class="text-[10px] font-mono text-on-surface-variant">
+                      IMEI: 862590041223451
+                    </div>
+                    <div class="text-[10px] text-on-surface-variant">
+                      Suntech ST310U
+                    </div>
+                  </td>
+                  <td class="px-4 py-4 align-top">
+                    <span
+                      class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-on-tertiary-container/10 text-on-tertiary-container"
+                    >
+                      EM CADASTRO
+                    </span>
+                  </td>
+                  <td class="px-4 py-4 align-top text-right space-x-1">
+                    <button
+                      class="p-1.5 hover:bg-primary/10 rounded text-primary"
+                      title="Abrir"
+                    >
+                      <span class="material-symbols-outlined text-sm"
+                        >open_in_new</span
+                      >
+                    </button>
+                    <button
+                      class="p-1.5 hover:bg-green-100 rounded text-green-700"
+                      title="Concluir"
+                    >
+                      <span class="material-symbols-outlined text-sm"
+                        >check_circle</span
+                      >
+                    </button>
+                  </td>
+                </tr>
+                <!-- Regular Row -->
+                <tr
+                  class="hover:bg-surface-container-low transition-colors group"
+                >
+                  <td class="px-4 py-4 align-top">
+                    <span class="text-xs font-bold text-primary tab-lining"
+                      >#99284</span
+                    >
+                    <p class="text-[10px] text-on-surface-variant mt-1">
+                      24/05 14:45
+                    </p>
+                  </td>
+                  <td class="px-4 py-4 align-top">
+                    <div class="text-xs font-bold text-on-surface">
+                      AgroForte Distribuidora
+                    </div>
+                    <div class="text-[10px] text-on-surface-variant">
+                      Scania R450 •
+                      <span class="font-bold text-primary">KJD8832</span>
+                    </div>
+                  </td>
+                  <td class="px-4 py-4 align-top">
+                    <div class="text-[10px] font-mono text-on-surface-variant">
+                      IMEI: 862590041299902
+                    </div>
+                    <div class="text-[10px] text-on-surface-variant">
+                      CalAmp LMU-2630
+                    </div>
+                  </td>
+                  <td class="px-4 py-4 align-top">
+                    <span
+                      class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-surface-container-highest text-on-surface-variant"
+                    >
+                      AGUARDANDO
+                    </span>
+                  </td>
+                  <td class="px-4 py-4 align-top text-right space-x-1">
+                    <button
+                      class="p-1.5 hover:bg-primary/10 rounded text-primary"
+                      title="Abrir"
+                    >
+                      <span class="material-symbols-outlined text-sm"
+                        >open_in_new</span
+                      >
+                    </button>
+                    <button
+                      class="p-1.5 hover:bg-blue-100 rounded text-blue-700"
+                      title="Marcar como em andamento"
+                    >
+                      <span class="material-symbols-outlined text-sm"
+                        >play_arrow</span
+                      >
+                    </button>
+                  </td>
+                </tr>
+                <tr
+                  class="hover:bg-surface-container-low transition-colors group"
+                >
+                  <td class="px-4 py-4 align-top">
+                    <span class="text-xs font-bold text-primary tab-lining"
+                      >#99285</span
+                    >
+                    <p class="text-[10px] text-on-surface-variant mt-1">
+                      24/05 15:10
+                    </p>
+                  </td>
+                  <td class="px-4 py-4 align-top">
+                    <div class="text-xs font-bold text-on-surface">
+                      Viação Sol Nascente
+                    </div>
+                    <div class="text-[10px] text-on-surface-variant">
+                      Marcopolo Paradiso •
+                      <span class="font-bold text-primary">GBS0G21</span>
+                    </div>
+                  </td>
+                  <td class="px-4 py-4 align-top">
+                    <div class="text-[10px] font-mono text-on-surface-variant">
+                      IMEI: 862590041300011
+                    </div>
+                    <div class="text-[10px] text-on-surface-variant">
+                      Queclink GV300
+                    </div>
+                  </td>
+                  <td class="px-4 py-4 align-top">
+                    <span
+                      class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-error-container text-on-error-container"
+                    >
+                      PENDENTE
+                    </span>
+                  </td>
+                  <td class="px-4 py-4 align-top text-right space-x-1">
+                    <button
+                      class="p-1.5 hover:bg-primary/10 rounded text-primary"
+                      title="Abrir"
+                    >
+                      <span class="material-symbols-outlined text-sm"
+                        >open_in_new</span
+                      >
+                    </button>
+                    <button
+                      class="p-1.5 hover:bg-error-container/50 rounded text-error"
+                      title="Relatar pendência"
+                    >
+                      <span class="material-symbols-outlined text-sm"
+                        >report_problem</span
+                      >
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <!-- Right: Mesa de Trabalho Panel (30%) -->
+        <aside
+          class="w-[30%] h-full bg-white border-l border-surface-container flex flex-col overflow-y-auto"
+        >
+          <div
+            class="px-5 py-4 border-b border-surface-container flex items-center justify-between sticky top-0 bg-white z-10"
+          >
+            <h3
+              class="font-black text-sm uppercase tracking-tight text-primary"
+            >
+              Mesa de Trabalho
+            </h3>
+            <span
+              class="text-[10px] bg-primary text-white px-2 py-0.5 rounded-full font-bold"
+              >OS #99283</span
+            >
+          </div>
+          <div class="p-5 space-y-6">
+            <!-- Block 1: OS Main Data -->
+            <div>
+              <h4
+                class="text-[10px] uppercase font-bold text-on-surface-variant mb-2 flex items-center gap-2"
+              >
+                <span class="material-symbols-outlined text-xs">info</span>
+                Dados da Ordem
+              </h4>
+              <div class="bg-surface-container-low p-3 rounded space-y-2">
+                <div class="flex justify-between">
+                  <span class="text-[10px] text-on-surface-variant"
+                    >Cliente</span
+                  >
+                  <span class="text-[10px] font-bold text-primary"
+                    >Logística TransGlobal S.A.</span
+                  >
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-[10px] text-on-surface-variant"
+                    >Tipo de Serviço</span
+                  >
+                  <span class="text-[10px] font-bold">Instalação Nova</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-[10px] text-on-surface-variant"
+                    >Técnico</span
+                  >
+                  <span class="text-[10px] font-bold">Marcos A. Oliveira</span>
+                </div>
+              </div>
+            </div>
+            <!-- Block 2: Vehicle Data -->
+            <div>
+              <h4
+                class="text-[10px] uppercase font-bold text-on-surface-variant mb-2 flex items-center gap-2"
+              >
+                <span class="material-symbols-outlined text-xs"
+                  >directions_car</span
+                >
+                Dados do Veículo
+              </h4>
+              <div
+                class="bg-surface-container-low p-3 rounded grid grid-cols-2 gap-y-2"
+              >
+                <div>
+                  <p class="text-[9px] text-on-surface-variant uppercase">
+                    Placa
+                  </p>
+                  <p class="text-[11px] font-black text-primary">BRA2E19</p>
+                </div>
+                <div>
+                  <p class="text-[9px] text-on-surface-variant uppercase">
+                    Cor
+                  </p>
+                  <p class="text-[11px] font-medium">Branco Ártico</p>
+                </div>
+                <div class="col-span-2 pt-1 border-t border-outline-variant/10">
+                  <p class="text-[9px] text-on-surface-variant uppercase">
+                    Modelo
+                  </p>
+                  <p class="text-[11px] font-medium">
+                    Mercedes-Benz Actros 2548 (2023)
+                  </p>
+                </div>
+              </div>
+            </div>
+            <!-- Block 3: Equipment Data -->
+            <div>
+              <h4
+                class="text-[10px] uppercase font-bold text-on-surface-variant mb-2 flex items-center gap-2"
+              >
+                <span class="material-symbols-outlined text-xs">router</span>
+                Equipamento
+              </h4>
+              <div class="bg-surface-container-low p-3 rounded space-y-2">
+                <div class="flex justify-between items-center">
+                  <span class="text-[10px] text-on-surface-variant"
+                    >Estoque do cliente</span
+                  >
+                  <span
+                    class="text-[9px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded"
+                    >SIM</span
+                  >
+                </div>
+                <div>
+                  <p class="text-[9px] text-on-surface-variant uppercase">
+                    IMEI
+                  </p>
+                  <p class="text-xs font-mono font-bold">862590041223451</p>
+                </div>
+                <div>
+                  <p class="text-[9px] text-on-surface-variant uppercase">
+                    ICCID (Chip)
+                  </p>
+                  <p class="text-xs font-mono font-bold">
+                    8955010000001234567F
+                  </p>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <p class="text-[9px] text-on-surface-variant uppercase">
+                      Local
+                    </p>
+                    <p class="text-[10px]">Atrás do Painel</p>
+                  </div>
+                  <div>
+                    <p class="text-[9px] text-on-surface-variant uppercase">
+                      Pós-Chave
+                    </p>
+                    <p class="text-[10px] text-green-700 font-bold">
+                      OK (Fio Laranja)
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Block 4: External System Tools -->
+            <div>
+              <h4
+                class="text-[10px] uppercase font-bold text-on-surface-variant mb-2"
+              >
+                Auxílio de Cadastro
+              </h4>
+              <div class="grid grid-cols-2 gap-2">
+                <button
+                  class="flex items-center justify-center gap-1.5 py-1.5 bg-white border border-outline-variant rounded text-[10px] font-bold hover:bg-surface-container-low transition-colors"
+                >
+                  <span class="material-symbols-outlined text-sm"
+                    >content_copy</span
+                  >
+                  Placa
+                </button>
+                <button
+                  class="flex items-center justify-center gap-1.5 py-1.5 bg-white border border-outline-variant rounded text-[10px] font-bold hover:bg-surface-container-low transition-colors"
+                >
+                  <span class="material-symbols-outlined text-sm"
+                    >content_copy</span
+                  >
+                  IMEI
+                </button>
+                <button
+                  class="flex items-center justify-center gap-1.5 py-1.5 bg-white border border-outline-variant rounded text-[10px] font-bold hover:bg-surface-container-low transition-colors"
+                >
+                  <span class="material-symbols-outlined text-sm"
+                    >content_copy</span
+                  >
+                  ICCID
+                </button>
+                <button
+                  class="flex items-center justify-center gap-1.5 py-1.5 bg-white border border-outline-variant rounded text-[10px] font-bold hover:bg-surface-container-low transition-colors"
+                >
+                  <span class="material-symbols-outlined text-sm"
+                    >content_copy</span
+                  >
+                  Nome
+                </button>
+                <button
+                  class="col-span-2 flex items-center justify-center gap-2 py-2 bg-primary-container text-white rounded text-[10px] font-bold hover:opacity-90 transition-opacity"
+                >
+                  <span class="material-symbols-outlined text-base"
+                    >copy_all</span
+                  >
+                  Copiar Todos os Dados Principais
+                </button>
+              </div>
+            </div>
+            <!-- Block 5: Control -->
+            <div class="pt-4 border-t border-surface-container">
+              <div class="space-y-4">
+                <div>
+                  <label
+                    class="text-[10px] font-bold text-on-surface-variant uppercase block mb-1"
+                    >Status do Registro</label
+                  >
+                  <select
+                    class="w-full text-xs border-outline-variant bg-surface-container-low rounded-md focus:ring-primary h-9"
+                  >
+                    <option>Aguardando</option>
+                    <option selected="">Em andamento</option>
+                    <option>Pendente</option>
+                    <option>Concluído</option>
+                  </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label
+                      class="text-[10px] font-bold text-on-surface-variant uppercase block mb-1"
+                      >Responsável</label
+                    >
+                    <input
+                      class="w-full text-xs border-none bg-surface-container-low rounded-md h-9"
+                      readonly=""
+                      type="text"
+                      value="Operador_Alpha"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      class="text-[10px] font-bold text-on-surface-variant uppercase block mb-1"
+                      >Data/Hora</label
+                    >
+                    <input
+                      class="w-full text-xs border-none bg-surface-container-low rounded-md h-9"
+                      readonly=""
+                      type="text"
+                      value="24/05 15:45"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Block 6: Finalization -->
+            <div class="pt-2">
+              <button
+                class="w-full py-3 bg-gradient-to-br from-primary to-primary-container text-white rounded-lg font-black text-xs uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+              >
+                Concluir Cadastro no Sistema
+              </button>
+            </div>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>

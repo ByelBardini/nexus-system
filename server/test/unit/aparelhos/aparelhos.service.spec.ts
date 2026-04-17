@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AparelhosService } from 'src/aparelhos/aparelhos.service';
+import { DebitosRastreadoresService } from 'src/debitos-rastreadores/debitos-rastreadores.service';
 import { createPrismaMock } from '../helpers/prisma-mock';
 
 describe('AparelhosService', () => {
@@ -15,6 +16,10 @@ describe('AparelhosService', () => {
       providers: [
         AparelhosService,
         { provide: PrismaService, useValue: prisma },
+        {
+          provide: DebitosRastreadoresService,
+          useValue: { consolidarDebitoTx: jest.fn() },
+        },
       ],
     }).compile();
 
@@ -77,7 +82,9 @@ describe('AparelhosService', () => {
     });
 
     it('exclui aparelhos em uso em outra OS EM_TESTES da lista disponível', async () => {
-      prisma.ordemServico.findMany.mockResolvedValue([{ idAparelho: 'IMEI-EM-USO' }]);
+      prisma.ordemServico.findMany.mockResolvedValue([
+        { idAparelho: 'IMEI-EM-USO' },
+      ]);
       prisma.aparelho.findMany.mockResolvedValue([]);
 
       await service.findParaTestes(1);
@@ -121,11 +128,22 @@ describe('AparelhosService', () => {
   describe('findAll', () => {
     it('retorna lista de aparelhos com includes e ordemServicoVinculada', async () => {
       const aparelhos = [
-        { id: 1, identificador: '123456789012345', tipo: 'RASTREADOR', status: 'EM_ESTOQUE' },
+        {
+          id: 1,
+          identificador: '123456789012345',
+          tipo: 'RASTREADOR',
+          status: 'EM_ESTOQUE',
+        },
       ];
       prisma.aparelho.findMany.mockResolvedValue(aparelhos);
       prisma.ordemServico.findMany.mockResolvedValue([
-        { numero: 72, idAparelho: '123456789012345', subclienteSnapshotNome: 'Sub A', subcliente: { nome: 'Sub A' }, veiculo: { placa: 'ABC1D23' } },
+        {
+          numero: 72,
+          idAparelho: '123456789012345',
+          subclienteSnapshotNome: 'Sub A',
+          subcliente: { nome: 'Sub A' },
+          veiculo: { placa: 'ABC1D23' },
+        },
       ]);
 
       const result = await service.findAll();
@@ -134,7 +152,11 @@ describe('AparelhosService', () => {
       expect(result[0]).toMatchObject({
         id: 1,
         identificador: '123456789012345',
-        ordemServicoVinculada: { numero: 72, subclienteNome: 'Sub A', veiculoPlaca: 'ABC1D23' },
+        ordemServicoVinculada: {
+          numero: 72,
+          subclienteNome: 'Sub A',
+          veiculoPlaca: 'ABC1D23',
+        },
       });
       expect(prisma.aparelho.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ orderBy: { criadoEm: 'desc' } }),
@@ -147,7 +169,14 @@ describe('AparelhosService', () => {
     });
 
     it('retorna aparelhos sem ordemServicoVinculada quando não há OS vinculada', async () => {
-      const aparelhos = [{ id: 1, identificador: '999999999999999', tipo: 'RASTREADOR', status: 'EM_ESTOQUE' }];
+      const aparelhos = [
+        {
+          id: 1,
+          identificador: '999999999999999',
+          tipo: 'RASTREADOR',
+          status: 'EM_ESTOQUE',
+        },
+      ];
       prisma.aparelho.findMany.mockResolvedValue(aparelhos);
       prisma.ordemServico.findMany.mockResolvedValue([]);
 
@@ -167,7 +196,12 @@ describe('AparelhosService', () => {
     });
 
     it('retorna aparelho quando encontrado', async () => {
-      const aparelho = { id: 1, identificador: '123', tipo: 'RASTREADOR', historico: [] };
+      const aparelho = {
+        id: 1,
+        identificador: '123',
+        tipo: 'RASTREADOR',
+        historico: [],
+      };
       prisma.aparelho.findUnique.mockResolvedValue(aparelho);
 
       const result = await service.findOne(1);
@@ -178,7 +212,10 @@ describe('AparelhosService', () => {
 
   describe('createIndividual', () => {
     it('lança BadRequestException quando identificador já existe', async () => {
-      prisma.aparelho.findFirst.mockResolvedValue({ id: 1, identificador: 'IMEI123' });
+      prisma.aparelho.findFirst.mockResolvedValue({
+        id: 1,
+        identificador: 'IMEI123',
+      });
 
       await expect(
         service.createIndividual({
@@ -192,7 +229,12 @@ describe('AparelhosService', () => {
 
     it('cria aparelho individual novo', async () => {
       prisma.aparelho.findFirst.mockResolvedValue(null);
-      const aparelho = { id: 1, identificador: 'IMEI456', tipo: 'RASTREADOR', tecnico: null };
+      const aparelho = {
+        id: 1,
+        identificador: 'IMEI456',
+        tipo: 'RASTREADOR',
+        tecnico: null,
+      };
       prisma.aparelho.create.mockResolvedValue(aparelho);
       prisma.aparelhoHistorico.create.mockResolvedValue({});
 
@@ -212,14 +254,18 @@ describe('AparelhosService', () => {
     it('lança NotFoundException quando aparelho não existe', async () => {
       prisma.aparelho.findUnique.mockResolvedValue(null);
 
-      await expect(service.updateStatus(999, 'EM_ESTOQUE')).rejects.toThrow(NotFoundException);
+      await expect(service.updateStatus(999, 'EM_ESTOQUE')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('registra histórico e atualiza status', async () => {
       const aparelho = { id: 1, status: 'EM_ESTOQUE', historico: [] };
-      prisma.aparelho.findUnique.mockResolvedValue(aparelho);
-      prisma.aparelhoHistorico.create.mockResolvedValue({});
       const updated = { id: 1, status: 'CONFIGURADO' };
+      prisma.aparelho.findUnique
+        .mockResolvedValueOnce(aparelho)
+        .mockResolvedValueOnce(updated);
+      prisma.aparelhoHistorico.create.mockResolvedValue({});
       prisma.aparelho.update.mockResolvedValue(updated);
 
       const result = await service.updateStatus(1, 'CONFIGURADO', 'Obs');
@@ -258,5 +304,4 @@ describe('AparelhosService', () => {
       expect(result.porTipo).toMatchObject({ RASTREADOR: 6, SIM: 4 });
     });
   });
-
 });

@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
@@ -41,8 +50,11 @@ export class AparelhosController {
   }
 
   @Get('para-testes')
-  @RequirePermissions('CONFIGURACAO.APARELHO.LISTAR')
-  @ApiOperation({ summary: 'Listar rastreadores para testes (filtrados por cliente e técnico)' })
+  @RequirePermissions('AGENDAMENTO.TESTES.LISTAR', 'AGENDAMENTO.OS.LISTAR')
+  @ApiOperation({
+    summary:
+      'Listar rastreadores para testes (filtrados por cliente e técnico)',
+  })
   findParaTestes(
     @Query('clienteId') clienteId: string,
     @Query('tecnicoId') tecnicoId?: string,
@@ -118,21 +130,17 @@ export class AparelhosController {
       loteSimId: dto.loteSimId,
       rastreadorManual: dto.rastreadorManual,
       simManual: dto.simManual,
-      kitId: dto.kitId,
-      kitNome: dto.kitNome,
+      proprietario: dto.proprietario ?? 'INFINITY',
+      clienteId: dto.clienteId,
+      tecnicoId: dto.tecnicoId,
     });
-  }
-
-  @Get('pareamento/kits')
-  @RequirePermissions('CONFIGURACAO.APARELHO.LISTAR')
-  @ApiOperation({ summary: 'Listar kits cadastrados' })
-  getKits() {
-    return this.kitsService.getKits();
   }
 
   @Get('pareamento/kits/detalhes')
   @RequirePermissions('CONFIGURACAO.APARELHO.LISTAR')
-  @ApiOperation({ summary: 'Listar kits com detalhes (nome, data, quantidade, modelos)' })
+  @ApiOperation({
+    summary: 'Listar kits com detalhes (nome, data, quantidade, modelos)',
+  })
   getKitsComDetalhes() {
     return this.kitsService.getKitsComDetalhes();
   }
@@ -156,9 +164,37 @@ export class AparelhosController {
 
   @Get('pareamento/aparelhos-disponiveis')
   @RequirePermissions('CONFIGURACAO.APARELHO.LISTAR')
-  @ApiOperation({ summary: 'Listar aparelhos disponíveis para adicionar ao kit' })
-  getAparelhosDisponiveisParaKit() {
-    return this.kitsService.getAparelhosDisponiveisParaKit();
+  @ApiOperation({
+    summary: 'Listar aparelhos disponíveis para adicionar ao kit',
+  })
+  getAparelhosDisponiveisParaKit(
+    @Query('clienteId') clienteIdStr?: string,
+    @Query('clienteIds') clienteIdsRaw?: string | string[],
+    @Query('includeInfinity') includeInfinityStr?: string,
+    @Query('modeloEquipamentoId') modeloEquipamentoIdStr?: string,
+    @Query('marcaEquipamentoId') marcaEquipamentoIdStr?: string,
+    @Query('operadoraId') operadoraIdStr?: string,
+  ) {
+    const parse = (s?: string) => {
+      const n = s ? parseInt(s, 10) : NaN;
+      return !isNaN(n) ? n : undefined;
+    };
+    const rawArr = Array.isArray(clienteIdsRaw)
+      ? clienteIdsRaw
+      : clienteIdsRaw
+        ? [clienteIdsRaw]
+        : [];
+    const clienteIds = rawArr
+      .map((s) => parseInt(s, 10))
+      .filter((n) => !isNaN(n));
+    return this.kitsService.getAparelhosDisponiveisParaKit({
+      clienteId: parse(clienteIdStr),
+      clienteIds: clienteIds.length > 0 ? clienteIds : undefined,
+      includeInfinity: includeInfinityStr === 'true',
+      modeloEquipamentoId: parse(modeloEquipamentoIdStr),
+      marcaEquipamentoId: parse(marcaEquipamentoIdStr),
+      operadoraId: parse(operadoraIdStr),
+    });
   }
 
   @Post('pareamento/kits')

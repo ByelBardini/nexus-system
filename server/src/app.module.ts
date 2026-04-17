@@ -16,6 +16,8 @@ import { OrdensServicoModule } from './ordens-servico/ordens-servico.module';
 import { AparelhosModule } from './aparelhos/aparelhos.module';
 import { EquipamentosModule } from './equipamentos/equipamentos.module';
 import { PedidosRastreadoresModule } from './pedidos-rastreadores/pedidos-rastreadores.module';
+import { DebitosRastreadoresModule } from './debitos-rastreadores/debitos-rastreadores.module';
+import { CadastroRastreamentoModule } from './cadastro-rastreamento/cadastro-rastreamento.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
@@ -41,6 +43,8 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     AparelhosModule,
     EquipamentosModule,
     PedidosRastreadoresModule,
+    DebitosRastreadoresModule,
+    CadastroRastreamentoModule,
   ],
   controllers: [AppController],
   providers: [

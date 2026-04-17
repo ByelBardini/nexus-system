@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { X } from 'lucide-react'
@@ -16,7 +17,11 @@ import {
 
 export function TestesPage() {
   const queryClient = useQueryClient()
-  const [selectedOsId, setSelectedOsId] = useState<number | null>(null)
+  const [searchParams] = useSearchParams()
+  const [selectedOsId, setSelectedOsId] = useState<number | null>(() => {
+    const id = searchParams.get('osId')
+    return id ? Number(id) : null
+  })
   const [search, setSearch] = useState('')
   const [imeiSearch, setImeiSearch] = useState('')
   const [comunicacaoResult, setComunicacaoResult] = useState<ComunicacaoResult | null>('AGUARDANDO')
@@ -25,6 +30,7 @@ export function TestesPage() {
   const [observacoes, setObservacoes] = useState('')
   const [showCancelarModal, setShowCancelarModal] = useState(false)
   const [showRetiradaModal, setShowRetiradaModal] = useState(false)
+  const pendingLinkRef = useRef<{ osId: number; imei: string } | null>(null)
 
   const { data: listaTestando = [] } = useQuery<OsTeste[]>({
     queryKey: ['ordens-servico', 'testando', search],
@@ -113,6 +119,7 @@ export function TestesPage() {
       queryClient.invalidateQueries({ queryKey: ['ordens-servico'] })
       queryClient.invalidateQueries({ queryKey: ['aparelhos', 'para-testes'] })
     },
+    onError: () => toast.error('Erro ao vincular rastreador. Tente novamente.'),
   })
 
   const updateStatusAparelhoMutation = useMutation({
@@ -147,11 +154,20 @@ export function TestesPage() {
   )
 
   useEffect(() => {
-    if (!selectedOs || !imeiSearch.trim()) return
+    if (!selectedOs || !imeiSearch.trim()) {
+      pendingLinkRef.current = null
+      return
+    }
     const id = imeiSearch.trim()
-    if (selectedOs.idAparelho === id) return
+    if (selectedOs.idAparelho === id) {
+      pendingLinkRef.current = null
+      return
+    }
+    // Evita chamar a mutation repetidamente enquanto o servidor ainda não confirmou o vínculo
+    if (pendingLinkRef.current?.osId === selectedOs.id && pendingLinkRef.current?.imei === id) return
     const match = rastreadores.find((r) => (r.identificador ?? '').trim().toLowerCase() === id.toLowerCase())
     if (match) {
+      pendingLinkRef.current = { osId: selectedOs.id, imei: id }
       vincularOuLimparAparelho(id)
     }
   }, [imeiSearch, selectedOs, rastreadores, vincularOuLimparAparelho])
@@ -259,10 +275,17 @@ export function TestesPage() {
   }, [selectedOs, comunicacaoResult, observacoes, novoLocalInstalacao, posChave, updateStatusOsMutation])
 
   useEffect(() => {
-    if (!selectedOsId && listaTestando.length > 0) {
-      setSelectedOsId(listaTestando[0].id)
+    if (selectedOsId !== null && listaTestando.length > 0 && !listaTestando.find((o) => o.id === selectedOsId)) {
+      setSelectedOsId(null)
     }
   }, [listaTestando, selectedOsId])
+
+  useEffect(() => {
+    const fromUrl = searchParams.get('osId')
+    if (!selectedOsId && listaTestando.length > 0 && !fromUrl) {
+      setSelectedOsId(listaTestando[0].id)
+    }
+  }, [listaTestando, selectedOsId, searchParams])
 
   useEffect(() => {
     setImeiSearch(selectedOs?.idAparelho ?? '')

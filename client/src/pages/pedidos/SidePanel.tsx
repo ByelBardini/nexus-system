@@ -73,6 +73,19 @@ export function SidePanel({
 
   const podeEditar = hasPermission('AGENDAMENTO.PEDIDO_RASTREADOR.EDITAR')
 
+  const kitIdsMutation = useMutation({
+    mutationFn: ({ id, kitIds }: { id: number; kitIds: number[] }) =>
+      api(`/pedidos-rastreadores/${id}/kits`, {
+        method: 'PATCH',
+        body: JSON.stringify({ kitIds }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pedidos-rastreadores'] })
+    },
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : 'Erro ao salvar kit'),
+  })
+
   const statusMutation = useMutation({
     mutationFn: ({
       id,
@@ -113,7 +126,7 @@ export function SidePanel({
 
   const estaConcluido = pedido.status === 'entregue'
   const statusIdx = STATUS_ORDER.indexOf(pedido.status)
-  const podeRetroceder = statusIdx > 0 && podeEditar && !estaConcluido
+  const podeRetroceder = statusIdx > 0 && podeEditar && !estaConcluido && pedido.status !== 'despachado'
   const statusAnterior = podeRetroceder ? STATUS_ORDER[statusIdx - 1] : null
 
   const proximoStatus: StatusPedidoKey | null = (() => {
@@ -165,24 +178,26 @@ export function SidePanel({
   }
 
   function handleVincularKit(kit: KitResumo, qtd: number) {
-    onKitsChange(
-      (() => {
-        const prev = kitsVinculados
-        const idx = prev.findIndex((k) => k.id === kit.id)
-        if (idx >= 0) {
-          const next = [...prev]
-          next[idx] = { ...next[idx], nome: kit.nome, quantidade: qtd }
-          return next
-        }
-        return [...prev, { id: kit.id, nome: kit.nome, quantidade: qtd }]
-      })()
-    )
+    const prev = kitsVinculados
+    const idx = prev.findIndex((k) => k.id === kit.id)
+    const newKits =
+      idx >= 0
+        ? prev.map((k, i) => (i === idx ? { ...k, nome: kit.nome, quantidade: qtd } : k))
+        : [...prev, { id: kit.id, nome: kit.nome, quantidade: qtd }]
+    onKitsChange(newKits)
+    if (pedido) {
+      kitIdsMutation.mutate({ id: pedido.id, kitIds: newKits.map((k) => k.id) })
+    }
   }
 
   function handleRemoverKit(kitId: number) {
-    onKitsChange(kitsVinculados.filter((k) => k.id !== kitId))
+    const newKits = kitsVinculados.filter((k) => k.id !== kitId)
+    onKitsChange(newKits)
     if (kitExpandidoId === kitId) setKitExpandidoId(null)
     if (detalhesKitId === kitId) setDetalhesKitId(null)
+    if (pedido) {
+      kitIdsMutation.mutate({ id: pedido.id, kitIds: newKits.map((k) => k.id) })
+    }
   }
 
   function handleToggleExpandir(kitId: number) {
@@ -235,9 +250,14 @@ export function SidePanel({
             <div>
               <p className="text-slate-500 mb-1">Destinatário</p>
               <p className="font-semibold">{pedido.destinatario}</p>
-              <p className="text-slate-400">
-                {pedido.tipo === 'tecnico' ? 'Técnico' : 'Cliente'}
-              </p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-slate-400">{pedido.tipo === 'cliente' ? 'Cliente' : 'Técnico'}</p>
+                {pedido.tipo === 'misto' && (
+                  <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border bg-purple-50 text-purple-700 border-purple-200">
+                    Misto
+                  </span>
+                )}
+              </div>
               {pedido.cidadeEstado && (
                 <p className="text-slate-500 text-[11px] mt-0.5">{pedido.cidadeEstado}</p>
               )}
@@ -287,6 +307,24 @@ export function SidePanel({
             )}
           </div>
         </SheetHeader>
+
+        {pedido.tipo === 'misto' && pedido.itensMisto && pedido.itensMisto.length > 0 && (
+          <div className="px-6 py-4 border-b border-slate-100">
+            <p className="text-[10px] font-bold uppercase text-slate-500 mb-2">Distribuição dos Itens</p>
+            <div className="space-y-1">
+              {pedido.itensMisto.map((item, i) => (
+                <div key={i} className="flex items-center justify-between text-xs">
+                  <span className="text-slate-700">{item.label}</span>
+                  <span className="font-bold text-slate-800">{item.quantidade} un</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-2 pt-2 border-t border-slate-100 flex justify-between text-xs font-bold">
+              <span className="text-slate-500">Total</span>
+              <span className="text-slate-800">{pedido.quantidade} un</span>
+            </div>
+          </div>
+        )}
 
         <div className="p-6 border-b border-slate-100">
           {estaConcluido ? (
@@ -627,9 +665,16 @@ export function SidePanel({
             if (!o) setKitParaEditar(null)
           }}
           pedido={pedido}
+          pedidoApi={pedidoApi}
           onVincular={handleVincularKit}
           kitParaEditar={kitParaEditar}
           kitsPorPedido={kitsPorPedido}
+          filtrosPedido={pedidoApi ? {
+            clienteId: pedidoApi.deClienteId,
+            modeloEquipamentoId: pedidoApi.modeloEquipamentoId,
+            marcaEquipamentoId: pedidoApi.marcaEquipamentoId,
+            operadoraId: pedidoApi.operadoraId,
+          } : null}
         />
       </SheetContent>
     </Sheet>

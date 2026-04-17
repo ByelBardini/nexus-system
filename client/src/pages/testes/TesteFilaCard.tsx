@@ -48,11 +48,11 @@ export function TesteFilaCard({ item, isSelected, onClick }: TesteFilaCardProps)
       </div>
       <p className="text-sm font-semibold text-slate-800 truncate">{item.cliente.nome}</p>
       <p className="text-xs text-slate-500">
-        {subclienteNome} • <span className="text-slate-900 font-medium">{placa}</span>
+        {item.tecnico?.nome ?? '—'} • <span className="text-slate-900 font-medium">{placa}</span>
       </p>
       <div className="mt-2 flex justify-between items-end">
         <span className="text-xs text-slate-400 truncate mr-2">
-          {item.tecnico?.nome ?? '—'}
+          {subclienteNome}
         </span>
         <span className="text-xs font-medium text-slate-600 shrink-0">
           IMEI: {item.idAparelho ?? '--'}

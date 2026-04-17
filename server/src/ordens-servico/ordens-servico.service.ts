@@ -1,9 +1,13 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { paginateParams } from '../common/pagination.helper';
 import { CLIENTE_INFINITY_ID } from '../common/constants';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
-import { StatusOS, StatusAparelho } from '@prisma/client';
+import { StatusCadastro, StatusOS, StatusAparelho } from '@prisma/client';
 import { CreateOrdemServicoDto } from './dto/create-ordem-servico.dto';
 import { UpdateOrdemServicoDto } from './dto/update-ordem-servico.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
@@ -20,11 +24,25 @@ export class OrdensServicoService {
 
   private static readonly INFINITY_NOME = 'Infinity';
 
-  private static readonly TRANSICOES_VALIDAS: Partial<Record<StatusOS, StatusOS[]>> = {
+  private static readonly TRANSICOES_VALIDAS: Partial<
+    Record<StatusOS, StatusOS[]>
+  > = {
     AGENDADO: [StatusOS.EM_TESTES, StatusOS.CANCELADO],
-    EM_TESTES: [StatusOS.TESTES_REALIZADOS, StatusOS.AGENDADO, StatusOS.CANCELADO],
-    TESTES_REALIZADOS: [StatusOS.AGUARDANDO_CADASTRO, StatusOS.AGENDADO, StatusOS.CANCELADO],
-    AGUARDANDO_CADASTRO: [StatusOS.FINALIZADO, StatusOS.AGENDADO, StatusOS.CANCELADO],
+    EM_TESTES: [
+      StatusOS.TESTES_REALIZADOS,
+      StatusOS.AGENDADO,
+      StatusOS.CANCELADO,
+    ],
+    TESTES_REALIZADOS: [
+      StatusOS.AGUARDANDO_CADASTRO,
+      StatusOS.AGENDADO,
+      StatusOS.CANCELADO,
+    ],
+    AGUARDANDO_CADASTRO: [
+      StatusOS.FINALIZADO,
+      StatusOS.AGENDADO,
+      StatusOS.CANCELADO,
+    ],
     FINALIZADO: [],
     CANCELADO: [StatusOS.AGENDADO],
   };
@@ -93,7 +111,9 @@ export class OrdensServicoService {
       include: {
         cliente: { select: { id: true, nome: true } },
         subcliente: { select: { id: true, nome: true } },
-        veiculo: { select: { id: true, placa: true, marca: true, modelo: true } },
+        veiculo: {
+          select: { id: true, placa: true, marca: true, modelo: true },
+        },
         tecnico: { select: { id: true, nome: true } },
         historico: {
           where: { statusNovo: StatusOS.EM_TESTES },
@@ -106,8 +126,10 @@ export class OrdensServicoService {
     const now = new Date();
     return items.map((os) => {
       const entradaEmTestes = os.historico[0]?.criadoEm ?? os.atualizadoEm;
-      const tempoEmTestesMin = Math.floor((now.getTime() - new Date(entradaEmTestes).getTime()) / 60000);
-      const { historico, ...rest } = os;
+      const tempoEmTestesMin = Math.floor(
+        (now.getTime() - new Date(entradaEmTestes).getTime()) / 60000,
+      );
+      const { historico: _historico, ...rest } = os;
       const result = { ...rest, tempoEmTestesMin };
       // Retiradas: zerar dados do rastreador/veículo vinculado ao exibir em testes
       if (os.tipo === 'RETIRADA') {
@@ -120,13 +142,24 @@ export class OrdensServicoService {
   }
 
   async getResumo() {
-    const [agendado, emTestes, testesRealizados, agCadastro, finalizado] = await Promise.all([
-      this.prisma.ordemServico.count({ where: { status: StatusOS.AGENDADO } }),
-      this.prisma.ordemServico.count({ where: { status: StatusOS.EM_TESTES } }),
-      this.prisma.ordemServico.count({ where: { status: StatusOS.TESTES_REALIZADOS } }),
-      this.prisma.ordemServico.count({ where: { status: StatusOS.AGUARDANDO_CADASTRO } }),
-      this.prisma.ordemServico.count({ where: { status: StatusOS.FINALIZADO } }),
-    ]);
+    const [agendado, emTestes, testesRealizados, agCadastro, finalizado] =
+      await Promise.all([
+        this.prisma.ordemServico.count({
+          where: { status: StatusOS.AGENDADO },
+        }),
+        this.prisma.ordemServico.count({
+          where: { status: StatusOS.EM_TESTES },
+        }),
+        this.prisma.ordemServico.count({
+          where: { status: StatusOS.TESTES_REALIZADOS },
+        }),
+        this.prisma.ordemServico.count({
+          where: { status: StatusOS.AGUARDANDO_CADASTRO },
+        }),
+        this.prisma.ordemServico.count({
+          where: { status: StatusOS.FINALIZADO },
+        }),
+      ]);
     return {
       agendado,
       emTestes,
@@ -136,7 +169,12 @@ export class OrdensServicoService {
     };
   }
 
-  async findAll(params: { page?: number; limit?: number; status?: StatusOS; search?: string }) {
+  async findAll(params: {
+    page?: number;
+    limit?: number;
+    status?: StatusOS;
+    search?: string;
+  }) {
     const { page, limit, skip } = paginateParams(params, {
       maxLimit: 100,
       defaultLimit: 15,
@@ -190,6 +228,7 @@ export class OrdensServicoService {
         veiculo: true,
         tecnico: true,
         criadoPor: true,
+        concluidoPor: true,
         historico: { orderBy: { criadoEm: 'desc' }, take: 20 },
       },
     });
@@ -252,7 +291,9 @@ export class OrdensServicoService {
   }
 
   private static isUniqueConstraintError(e: unknown): boolean {
-    return e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002';
+    return (
+      e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002'
+    );
   }
 
   async create(dto: CreateOrdemServicoDto, criadoPorId?: number) {
@@ -261,7 +302,10 @@ export class OrdensServicoService {
       try {
         return await this.createOnce(dto, criadoPorId);
       } catch (e) {
-        if (attempt < maxRetries - 1 && OrdensServicoService.isUniqueConstraintError(e)) {
+        if (
+          attempt < maxRetries - 1 &&
+          OrdensServicoService.isUniqueConstraintError(e)
+        ) {
           continue;
         }
         throw e;
@@ -299,7 +343,9 @@ export class OrdensServicoService {
         });
         const max = await tx.ordemServico.aggregate({ _max: { numero: true } });
         const numero = (max._max.numero ?? 0) + 1;
-        const snapshot = OrdensServicoService.snapshotFromSubclienteData(dto.subclienteCreate!);
+        const snapshot = OrdensServicoService.snapshotFromSubclienteData(
+          dto.subclienteCreate!,
+        );
         return tx.ordemServico.create({
           data: OrdensServicoService.buildOrdemServicoData(
             dto,
@@ -313,7 +359,8 @@ export class OrdensServicoService {
       });
     }
 
-    const subclienteUpdate = dto.subclienteId && dto.subclienteUpdate ? dto.subclienteUpdate : null;
+    const subclienteUpdate =
+      dto.subclienteId && dto.subclienteUpdate ? dto.subclienteUpdate : null;
     if (dto.subclienteId && subclienteUpdate) {
       return this.prisma.$transaction(async (tx) => {
         await tx.subcliente.update({
@@ -335,12 +382,13 @@ export class OrdensServicoService {
         });
         const max = await tx.ordemServico.aggregate({ _max: { numero: true } });
         const numero = (max._max.numero ?? 0) + 1;
-        const snapshot = OrdensServicoService.snapshotFromSubclienteData(subclienteUpdate);
+        const snapshot =
+          OrdensServicoService.snapshotFromSubclienteData(subclienteUpdate);
         return tx.ordemServico.create({
           data: OrdensServicoService.buildOrdemServicoData(
             dto,
             numero,
-            dto.subclienteId!,
+            dto.subclienteId,
             criadoPorId,
             snapshot,
           ),
@@ -354,7 +402,9 @@ export class OrdensServicoService {
         const sub = await tx.subcliente.findUnique({
           where: { id: dto.subclienteId! },
         });
-        const snapshot = sub ? OrdensServicoService.snapshotFromSubclienteData(sub) : {};
+        const snapshot = sub
+          ? OrdensServicoService.snapshotFromSubclienteData(sub)
+          : {};
         const max = await tx.ordemServico.aggregate({ _max: { numero: true } });
         const numero = (max._max.numero ?? 0) + 1;
         return tx.ordemServico.create({
@@ -405,11 +455,16 @@ export class OrdensServicoService {
     }
 
     const updateData: {
-      status: StatusOS
-      localInstalacao?: string | null
-      posChave?: string | null
-      observacoes?: string | null
+      status: StatusOS;
+      statusCadastro?: StatusCadastro;
+      localInstalacao?: string | null;
+      posChave?: string | null;
+      observacoes?: string | null;
     } = { status: dto.status };
+
+    if (dto.status === StatusOS.AGUARDANDO_CADASTRO) {
+      updateData.statusCadastro = StatusCadastro.AGUARDANDO;
+    }
     if (dto.localInstalacao !== undefined) {
       updateData.localInstalacao = dto.localInstalacao?.trim() || null;
     }
@@ -417,9 +472,11 @@ export class OrdensServicoService {
       updateData.posChave = dto.posChave;
     }
     if (dto.observacao?.trim()) {
-      const prefixo = 'Observações do Teste:'
-      const novaParte = `${prefixo} ${dto.observacao.trim()}`
-      updateData.observacoes = [os.observacoes, novaParte].filter(Boolean).join('\n')
+      const prefixo = 'Observações do Teste:';
+      const novaParte = `${prefixo} ${dto.observacao.trim()}`;
+      updateData.observacoes = [os.observacoes, novaParte]
+        .filter(Boolean)
+        .join('\n');
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -435,31 +492,46 @@ export class OrdensServicoService {
         where: { id },
         data: updateData,
       });
-      if (
-        dto.status === StatusOS.TESTES_REALIZADOS &&
-        os.idAparelho?.trim()
-      ) {
+      if (dto.status === StatusOS.TESTES_REALIZADOS && os.idAparelho?.trim()) {
         const aparelho = await tx.aparelho.findFirst({
           where: { identificador: os.idAparelho.trim(), tipo: 'RASTREADOR' },
+          include: { simVinculado: { select: { id: true, status: true } } },
         });
         if (aparelho) {
+          const obsInstalacao = [
+            `Instalado via OS #${os.numero}`,
+            os.veiculo ? `Placa: ${os.veiculo.placa}` : null,
+          ]
+            .filter(Boolean)
+            .join(' | ');
+
           await tx.aparelhoHistorico.create({
             data: {
               aparelhoId: aparelho.id,
               statusAnterior: aparelho.status,
               statusNovo: StatusAparelho.INSTALADO,
-              observacao: [
-                `Instalado via OS #${os.numero}`,
-                os.veiculo ? `Placa: ${os.veiculo.placa}` : null,
-              ]
-                .filter(Boolean)
-                .join(' | '),
+              observacao: obsInstalacao,
             },
           });
           await tx.aparelho.update({
             where: { id: aparelho.id },
             data: { status: StatusAparelho.INSTALADO },
           });
+
+          if (aparelho.simVinculadoId && aparelho.simVinculado) {
+            await tx.aparelhoHistorico.create({
+              data: {
+                aparelhoId: aparelho.simVinculadoId,
+                statusAnterior: aparelho.simVinculado.status,
+                statusNovo: StatusAparelho.INSTALADO,
+                observacao: obsInstalacao,
+              },
+            });
+            await tx.aparelho.update({
+              where: { id: aparelho.simVinculadoId },
+              data: { status: StatusAparelho.INSTALADO },
+            });
+          }
         }
       }
     });
@@ -469,7 +541,10 @@ export class OrdensServicoService {
 
   async update(id: number, dto: UpdateOrdemServicoDto) {
     await this.findOne(id);
-    const data: { idEntrada?: string | null; aparelhoEncontrado?: boolean | null } = {};
+    const data: {
+      idEntrada?: string | null;
+      aparelhoEncontrado?: boolean | null;
+    } = {};
     if (dto.idEntrada !== undefined) {
       data.idEntrada = dto.idEntrada?.trim() || null;
     }

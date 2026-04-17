@@ -1,13 +1,20 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePedidoRastreadorDto } from './dto/create-pedido-rastreador.dto';
 import { UpdateStatusPedidoDto } from './dto/update-status-pedido.dto';
+import { BulkAparelhoDestinatarioDto } from './dto/bulk-aparelho-destinatario.dto';
+import { DebitosRastreadoresService } from '../debitos-rastreadores/debitos-rastreadores.service';
 import {
   Prisma,
   StatusPedidoRastreador,
   StatusAparelho,
   TipoDestinoPedido,
   UrgenciaPedido,
+  ProprietarioTipo,
 } from '@prisma/client';
 import { paginateParams } from '../common/pagination.helper';
 
@@ -20,11 +27,22 @@ const includeBase = {
   modeloEquipamento: { include: { marca: true } },
   operadora: true,
   criadoPor: true,
+  itens: {
+    include: {
+      cliente: { select: { id: true, nome: true } },
+      marcaEquipamento: true,
+      modeloEquipamento: { include: { marca: true } },
+      operadora: true,
+    },
+  },
 };
 
 @Injectable()
 export class PedidosRastreadoresService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly debitosService: DebitosRastreadoresService,
+  ) {}
 
   async findAll(params: {
     page?: number;
@@ -53,6 +71,13 @@ export class PedidosRastreadoresService {
         {
           subcliente: {
             cliente: { nome: { contains: s, mode: 'insensitive' as const } },
+          },
+        },
+        {
+          itens: {
+            some: {
+              cliente: { nome: { contains: s, mode: 'insensitive' as const } },
+            },
           },
         },
       ];
@@ -110,7 +135,9 @@ export class PedidosRastreadoresService {
   }
 
   private static isUniqueConstraintError(e: unknown): boolean {
-    return e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002';
+    return (
+      e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002'
+    );
   }
 
   async create(dto: CreatePedidoRastreadorDto, criadoPorId?: number) {
@@ -119,7 +146,10 @@ export class PedidosRastreadoresService {
       try {
         return await this.createOnce(dto, criadoPorId);
       } catch (e) {
-        if (attempt < maxRetries - 1 && PedidosRastreadoresService.isUniqueConstraintError(e)) {
+        if (
+          attempt < maxRetries - 1 &&
+          PedidosRastreadoresService.isUniqueConstraintError(e)
+        ) {
           continue;
         }
         throw e;
@@ -128,7 +158,10 @@ export class PedidosRastreadoresService {
     throw new Error('create pedido-rastreador: retries exhausted');
   }
 
-  private async createOnce(dto: CreatePedidoRastreadorDto, criadoPorId?: number) {
+  private async createOnce(
+    dto: CreatePedidoRastreadorDto,
+    criadoPorId?: number,
+  ) {
     const ultimo = await this.prisma.pedidoRastreador.findFirst({
       orderBy: { id: 'desc' },
       select: { codigo: true },
@@ -138,11 +171,27 @@ export class PedidosRastreadoresService {
       : 1;
     const codigo = `PED-${String(seq).padStart(4, '0')}`;
 
-    const tecnicoId = dto.tipoDestino === TipoDestinoPedido.TECNICO ? dto.tecnicoId : null;
-    const clienteId = dto.tipoDestino === TipoDestinoPedido.CLIENTE ? dto.clienteId ?? null : null;
-    const subclienteId = dto.tipoDestino === TipoDestinoPedido.CLIENTE ? dto.subclienteId ?? null : null;
+    const isMisto = dto.tipoDestino === TipoDestinoPedido.MISTO;
+    const tecnicoId =
+      dto.tipoDestino === TipoDestinoPedido.TECNICO ||
+      dto.tipoDestino === TipoDestinoPedido.MISTO
+        ? dto.tecnicoId
+        : null;
+    const clienteId =
+      dto.tipoDestino === TipoDestinoPedido.CLIENTE
+        ? (dto.clienteId ?? null)
+        : null;
+    const subclienteId =
+      dto.tipoDestino === TipoDestinoPedido.CLIENTE
+        ? (dto.subclienteId ?? null)
+        : null;
+    const quantidade = isMisto
+      ? dto.itens!.reduce((s, i) => s + i.quantidade, 0)
+      : dto.quantidade!;
 
-    const dataSolicitacao = dto.dataSolicitacao ? new Date(dto.dataSolicitacao) : new Date();
+    const dataSolicitacao = dto.dataSolicitacao
+      ? new Date(dto.dataSolicitacao)
+      : new Date();
     const marcaEquipamentoId = dto.marcaEquipamentoId ?? null;
     const modeloEquipamentoId = dto.modeloEquipamentoId ?? null;
     const operadoraId = dto.operadoraId ?? null;
@@ -156,7 +205,7 @@ export class PedidosRastreadoresService {
         clienteId,
         subclienteId,
         deClienteId,
-        quantidade: dto.quantidade,
+        quantidade,
         urgencia: dto.urgencia ?? UrgenciaPedido.MEDIA,
         dataSolicitacao,
         marcaEquipamentoId,
@@ -164,8 +213,130 @@ export class PedidosRastreadoresService {
         operadoraId,
         criadoPorId,
         observacao: dto.observacao,
+        ...(isMisto &&
+          dto.itens && {
+            itens: {
+              create: dto.itens.map((item) => ({
+                proprietario: item.proprietario,
+                clienteId:
+                  item.proprietario === 'CLIENTE'
+                    ? (item.clienteId ?? null)
+                    : null,
+                quantidade: item.quantidade,
+                marcaEquipamentoId: item.marcaEquipamentoId ?? null,
+                modeloEquipamentoId: item.modeloEquipamentoId ?? null,
+                operadoraId: item.operadoraId ?? null,
+              })),
+            },
+          }),
       },
       include: includeBase,
+    });
+  }
+
+  async bulkSetDestinatarios(
+    pedidoId: number,
+    dto: BulkAparelhoDestinatarioDto,
+  ) {
+    const pedido = await this.prisma.pedidoRastreador.findUnique({
+      where: { id: pedidoId },
+      include: {
+        itens: { include: { cliente: { select: { id: true, nome: true } } } },
+      },
+    });
+    if (!pedido) throw new NotFoundException('Pedido não encontrado');
+
+    const { destinatarioProprietario, destinatarioClienteId: clienteIdRaw } =
+      dto;
+    const destinatarioClienteId = clienteIdRaw ?? null;
+
+    const item = pedido.itens.find(
+      (i) =>
+        i.proprietario === destinatarioProprietario &&
+        (destinatarioProprietario === ProprietarioTipo.INFINITY
+          ? true
+          : i.clienteId === destinatarioClienteId),
+    );
+    if (!item) {
+      throw new BadRequestException(
+        'Destinatário não encontrado nos itens do pedido',
+      );
+    }
+
+    const jaAtribuidos = await this.prisma.pedidoRastreadorAparelho.count({
+      where: {
+        pedidoRastreadorId: pedidoId,
+        destinatarioProprietario,
+        destinatarioClienteId,
+        aparelhoId: { notIn: dto.aparelhoIds },
+      },
+    });
+
+    if (jaAtribuidos + dto.aparelhoIds.length > item.quantidade) {
+      throw new BadRequestException(
+        `Quota excedida: máximo ${item.quantidade} rastreadores para este destinatário, já atribuídos: ${jaAtribuidos}`,
+      );
+    }
+
+    for (const aparelhoId of dto.aparelhoIds) {
+      await this.prisma.pedidoRastreadorAparelho.upsert({
+        where: {
+          pedidoRastreadorId_aparelhoId: {
+            pedidoRastreadorId: pedidoId,
+            aparelhoId,
+          },
+        },
+        create: {
+          pedidoRastreadorId: pedidoId,
+          aparelhoId,
+          destinatarioProprietario,
+          destinatarioClienteId,
+        },
+        update: { destinatarioProprietario, destinatarioClienteId },
+      });
+    }
+  }
+
+  async getAparelhosDestinatarios(pedidoId: number) {
+    const pedido = await this.prisma.pedidoRastreador.findUnique({
+      where: { id: pedidoId },
+      include: {
+        itens: { include: { cliente: { select: { id: true, nome: true } } } },
+        aparelhosDestinatarios: true,
+      },
+    });
+    if (!pedido) throw new NotFoundException('Pedido não encontrado');
+
+    const assignments = pedido.aparelhosDestinatarios.map((a) => ({
+      aparelhoId: a.aparelhoId,
+      destinatarioProprietario: a.destinatarioProprietario,
+      destinatarioClienteId: a.destinatarioClienteId,
+    }));
+
+    const quotaUsage = pedido.itens.map((item) => {
+      const atribuido = pedido.aparelhosDestinatarios.filter(
+        (a) =>
+          a.destinatarioProprietario === item.proprietario &&
+          a.destinatarioClienteId === item.clienteId,
+      ).length;
+      return {
+        proprietario: item.proprietario,
+        clienteId: item.clienteId,
+        clienteNome:
+          item.proprietario === ProprietarioTipo.INFINITY
+            ? 'Infinity'
+            : (item.cliente?.nome ?? null),
+        atribuido,
+        total: item.quantidade,
+      };
+    });
+
+    return { assignments, quotaUsage };
+  }
+
+  async removeAparelhoDestinatario(pedidoId: number, aparelhoId: number) {
+    await this.prisma.pedidoRastreadorAparelho.deleteMany({
+      where: { pedidoRastreadorId: pedidoId, aparelhoId },
     });
   }
 
@@ -173,6 +344,12 @@ export class PedidosRastreadoresService {
     const pedido = await this.findOne(id);
     const statusAnterior = pedido.status;
     if (statusAnterior === dto.status) return this.findOne(id);
+
+    if (statusAnterior === StatusPedidoRastreador.DESPACHADO) {
+      throw new BadRequestException(
+        'Não é possível retroceder um pedido que já foi despachado.',
+      );
+    }
 
     const dataUpdate: Prisma.PedidoRastreadorUncheckedUpdateInput = {
       status: dto.status,
@@ -185,14 +362,15 @@ export class PedidosRastreadoresService {
 
     // Regra de negócio: ao retroceder para CONFIGURADO (Despachado/Entregue → Configurado),
     // equipamentos vinculados aos kits do pedido voltam para CONFIGURADO ("Em Kit" no frontend)
+    // Nota: statusAnterior === DESPACHADO já foi bloqueado acima (throw), então
+    // a única transição válida que reseta equipamentos é ENTREGUE → CONFIGURADO.
     const novoStatusAparelho: StatusAparelho | null =
       dto.status === StatusPedidoRastreador.DESPACHADO
         ? StatusAparelho.DESPACHADO
         : dto.status === StatusPedidoRastreador.ENTREGUE
           ? StatusAparelho.COM_TECNICO
-          : (statusAnterior === StatusPedidoRastreador.DESPACHADO ||
-              statusAnterior === StatusPedidoRastreador.ENTREGUE) &&
-            dto.status === StatusPedidoRastreador.CONFIGURADO
+          : statusAnterior === StatusPedidoRastreador.ENTREGUE &&
+              dto.status === StatusPedidoRastreador.CONFIGURADO
             ? StatusAparelho.CONFIGURADO
             : null;
 
@@ -205,20 +383,10 @@ export class PedidosRastreadoresService {
       kitIds = this.extrairKitIds(pedido.kitIds);
     }
 
-    // Salva kitIds para CONFIGURADO, DESPACHADO e ENTREGUE (permite filtrar kits em uso no pareamento)
-    // Preserva os existentes se dto não enviou (evita desvincular ao concluir)
-    // Limpa kitIds ao retroceder para SOLICITADO ou EM_CONFIGURACAO
-    if (
-      dto.status === StatusPedidoRastreador.CONFIGURADO ||
-      dto.status === StatusPedidoRastreador.DESPACHADO ||
-      dto.status === StatusPedidoRastreador.ENTREGUE
-    ) {
-      if (kitIds.length > 0) {
-        dataUpdate.kitIds = kitIds;
-      }
-      // Se kitIds vazio, não altera - mantém os existentes no banco
-    } else if (dto.status === StatusPedidoRastreador.SOLICITADO || dto.status === StatusPedidoRastreador.EM_CONFIGURACAO) {
-      dataUpdate.kitIds = Prisma.DbNull;
+    // Salva kitIds em qualquer status quando fornecido (permite filtrar kits no pareamento independentemente do status)
+    // Se kitIds vazio, preserva os existentes no banco (evita desvincular sem intenção explícita)
+    if (kitIds.length > 0) {
+      dataUpdate.kitIds = kitIds;
     }
 
     const statusRestritivos = [
@@ -258,7 +426,8 @@ export class PedidosRastreadoresService {
 
       // Ao retroceder para SOLICITADO/EM_CONFIGURACAO, libera kits que não estão em outros pedidos restritivos
       if (
-        (dto.status === StatusPedidoRastreador.SOLICITADO || dto.status === StatusPedidoRastreador.EM_CONFIGURACAO) &&
+        (dto.status === StatusPedidoRastreador.SOLICITADO ||
+          dto.status === StatusPedidoRastreador.EM_CONFIGURACAO) &&
         kitIdsAntigos.length > 0
       ) {
         const outrosPedidos = await tx.pedidoRastreador.findMany({
@@ -274,49 +443,227 @@ export class PedidosRastreadoresService {
         );
         for (const kitId of kitIdsAntigos) {
           if (!kitIdsAindaEmUso.has(kitId)) {
-            await tx.kit.update({ where: { id: kitId }, data: { kitConcluido: false } });
+            await tx.kit.update({
+              where: { id: kitId },
+              data: { kitConcluido: false },
+            });
           }
         }
       }
 
       if (novoStatusAparelho && kitIds.length > 0) {
         const aparelhos = await tx.aparelho.findMany({
-          where: {
-            kitId: { in: kitIds },
-            tipo: 'RASTREADOR',
+          where: { kitId: { in: kitIds }, tipo: 'RASTREADOR' },
+          select: {
+            id: true,
+            status: true,
+            simVinculadoId: true,
+            simVinculado: { select: { id: true, status: true } },
+            proprietario: true,
+            clienteId: true,
+            marca: true,
+            modelo: true,
           },
         });
 
-        const dataAparelho: {
+        // Para pedidos MISTO na entrega: validar que todos os aparelhos têm destinatário definido
+        type AssignmentMap = Map<
+          number,
+          {
+            destinatarioProprietario: ProprietarioTipo;
+            destinatarioClienteId: number | null;
+          }
+        >;
+        let mistoAssignmentsMap: AssignmentMap | null = null;
+
+        if (
+          pedido.tipoDestino === TipoDestinoPedido.MISTO &&
+          (novoStatusAparelho === StatusAparelho.COM_TECNICO ||
+            novoStatusAparelho === StatusAparelho.DESPACHADO)
+        ) {
+          const assignments = await tx.pedidoRastreadorAparelho.findMany({
+            where: { pedidoRastreadorId: id },
+          });
+          const assignedIds = new Set(assignments.map((a) => a.aparelhoId));
+          const semDestinatario = aparelhos.filter(
+            (ap) => !assignedIds.has(ap.id),
+          );
+          if (semDestinatario.length > 0) {
+            throw new BadRequestException(
+              `${semDestinatario.length} aparelho(s) sem destinatário definido. Atribua um cliente a todos os rastreadores antes de entregar.`,
+            );
+          }
+          mistoAssignmentsMap = new Map(
+            assignments.map((a) => [
+              a.aparelhoId,
+              {
+                destinatarioProprietario: a.destinatarioProprietario,
+                destinatarioClienteId: a.destinatarioClienteId,
+              },
+            ]),
+          );
+        }
+
+        // Destino não-MISTO para detecção de dívidas no DESPACHADO e COM_TECNICO
+        let nonMistoDestino: {
+          proprietario: ProprietarioTipo;
+          clienteId: number | null;
+        } | null = null;
+
+        if (
+          pedido.tipoDestino !== TipoDestinoPedido.MISTO &&
+          (novoStatusAparelho === StatusAparelho.DESPACHADO ||
+            novoStatusAparelho === StatusAparelho.COM_TECNICO)
+        ) {
+          if (pedido.tipoDestino === TipoDestinoPedido.CLIENTE) {
+            const targetClienteId =
+              pedido.clienteId ??
+              (pedido.subclienteId && pedido.subcliente
+                ? pedido.subcliente.clienteId
+                : null) ??
+              null;
+            nonMistoDestino = {
+              proprietario: targetClienteId
+                ? ProprietarioTipo.CLIENTE
+                : ProprietarioTipo.INFINITY,
+              clienteId: targetClienteId,
+            };
+          } else if (pedido.tipoDestino === TipoDestinoPedido.TECNICO) {
+            const empresaId = dto.deClienteId ?? pedido.deClienteId ?? null;
+            nonMistoDestino = {
+              proprietario: empresaId
+                ? ProprietarioTipo.CLIENTE
+                : ProprietarioTipo.INFINITY,
+              clienteId: empresaId,
+            };
+          }
+        }
+
+        // Dados compartilhados para pedidos não-MISTO
+        const sharedDataAparelho: {
           status: StatusAparelho;
           tecnicoId?: number | null;
           clienteId?: number | null;
-        } = {
-          status: novoStatusAparelho,
-        };
-        if (novoStatusAparelho === StatusAparelho.COM_TECNICO) {
+          proprietario?: ProprietarioTipo;
+        } = { status: novoStatusAparelho };
+
+        if (
+          novoStatusAparelho === StatusAparelho.COM_TECNICO &&
+          !mistoAssignmentsMap
+        ) {
           if (pedido.tipoDestino === TipoDestinoPedido.CLIENTE) {
-            // Pedido para cliente: vincular ao cliente destino (cliente principal ou pai do subcliente)
             const targetClienteId =
               pedido.clienteId ??
               (pedido.subclienteId && pedido.subcliente
                 ? pedido.subcliente.clienteId
                 : null);
-            dataAparelho.clienteId = targetClienteId ?? null;
-            dataAparelho.tecnicoId = null;
+            sharedDataAparelho.clienteId = targetClienteId ?? null;
+            sharedDataAparelho.tecnicoId = null;
+            sharedDataAparelho.proprietario = targetClienteId
+              ? ProprietarioTipo.CLIENTE
+              : ProprietarioTipo.INFINITY;
           } else {
-            // Pedido para técnico: vincular ao técnico e à empresa remetente (deCliente)
-            // dto.deClienteId permite informar no momento de concluir, para pedidos criados sem "De Cliente"
             const empresaId = dto.deClienteId ?? pedido.deClienteId ?? null;
-            dataAparelho.tecnicoId = pedido.tecnicoId ?? null;
-            dataAparelho.clienteId = empresaId;
+            sharedDataAparelho.tecnicoId = pedido.tecnicoId ?? null;
+            sharedDataAparelho.clienteId = empresaId;
+            sharedDataAparelho.proprietario = empresaId
+              ? ProprietarioTipo.CLIENTE
+              : ProprietarioTipo.INFINITY;
           }
-        } else if (novoStatusAparelho === StatusAparelho.CONFIGURADO || novoStatusAparelho === StatusAparelho.DESPACHADO) {
-          dataAparelho.tecnicoId = null;
-          dataAparelho.clienteId = null;
+        } else if (
+          novoStatusAparelho === StatusAparelho.CONFIGURADO ||
+          novoStatusAparelho === StatusAparelho.DESPACHADO
+        ) {
+          sharedDataAparelho.tecnicoId = null;
+          sharedDataAparelho.clienteId = null;
         }
 
         for (const ap of aparelhos) {
+          let dataAparelho = sharedDataAparelho;
+
+          if (mistoAssignmentsMap) {
+            const assignment = mistoAssignmentsMap.get(ap.id)!;
+            const destProprietario = assignment.destinatarioProprietario;
+            const destClienteId = assignment.destinatarioClienteId;
+
+            // Criar débito se o proprietário de origem difere do destino
+            const srcProprietario = ap.proprietario;
+            const srcClienteId = ap.clienteId;
+            const proprietarioMudou =
+              srcProprietario !== destProprietario ||
+              srcClienteId !== destClienteId;
+
+            if (proprietarioMudou && ap.marca && ap.modelo) {
+              const marcaRecord = await tx.marcaEquipamento.findFirst({
+                where: { nome: ap.marca },
+              });
+              const modeloRecord = marcaRecord
+                ? await tx.modeloEquipamento.findFirst({
+                    where: { nome: ap.modelo, marcaId: marcaRecord.id },
+                  })
+                : null;
+              if (marcaRecord && modeloRecord) {
+                await this.debitosService.consolidarDebitoTx(tx, {
+                  devedorTipo: destProprietario,
+                  devedorClienteId: destClienteId,
+                  credorTipo: srcProprietario,
+                  credorClienteId: srcClienteId,
+                  marcaId: marcaRecord.id,
+                  modeloId: modeloRecord.id,
+                  delta: 1,
+                  pedidoId: pedido.id,
+                });
+              }
+            }
+
+            dataAparelho = {
+              status: novoStatusAparelho,
+              proprietario: destProprietario,
+              clienteId: destClienteId,
+              tecnicoId: null,
+            };
+          } else if (nonMistoDestino) {
+            const { proprietario: destProprietario, clienteId: destClienteId } =
+              nonMistoDestino;
+            const srcProprietario = ap.proprietario;
+            const srcClienteId = ap.clienteId;
+            const proprietarioMudou =
+              srcProprietario !== destProprietario ||
+              srcClienteId !== destClienteId;
+
+            if (proprietarioMudou && ap.marca && ap.modelo) {
+              const marcaRecord = await tx.marcaEquipamento.findFirst({
+                where: { nome: ap.marca },
+              });
+              const modeloRecord = marcaRecord
+                ? await tx.modeloEquipamento.findFirst({
+                    where: { nome: ap.modelo, marcaId: marcaRecord.id },
+                  })
+                : null;
+              if (marcaRecord && modeloRecord) {
+                await this.debitosService.consolidarDebitoTx(tx, {
+                  devedorTipo: destProprietario,
+                  devedorClienteId: destClienteId,
+                  credorTipo: srcProprietario,
+                  credorClienteId: srcClienteId,
+                  marcaId: marcaRecord.id,
+                  modeloId: modeloRecord.id,
+                  delta: 1,
+                  pedidoId: pedido.id,
+                });
+              }
+              // DESPACHADO: transfere ownership imediatamente (para COM_TECNICO, sharedDataAparelho já inclui proprietario)
+              if (novoStatusAparelho === StatusAparelho.DESPACHADO) {
+                dataAparelho = {
+                  status: novoStatusAparelho,
+                  proprietario: destProprietario,
+                  clienteId: destClienteId,
+                  tecnicoId: null,
+                };
+              }
+            }
+          }
+
           await tx.aparelhoHistorico.create({
             data: {
               aparelhoId: ap.id,
@@ -329,11 +676,35 @@ export class PedidosRastreadoresService {
             where: { id: ap.id },
             data: dataAparelho,
           });
+
+          if (ap.simVinculadoId && ap.simVinculado) {
+            await tx.aparelhoHistorico.create({
+              data: {
+                aparelhoId: ap.simVinculadoId,
+                statusAnterior: ap.simVinculado.status,
+                statusNovo: novoStatusAparelho,
+                observacao: `Pedido ${pedido.codigo} ${dto.status}`,
+              },
+            });
+            await tx.aparelho.update({
+              where: { id: ap.simVinculadoId },
+              data: { status: novoStatusAparelho },
+            });
+          }
         }
       }
     });
 
     return this.findOne(id);
+  }
+
+  async updateKitIds(id: number, kitIds: number[]) {
+    await this.findOne(id);
+    return this.prisma.pedidoRastreador.update({
+      where: { id },
+      data: { kitIds },
+      include: includeBase,
+    });
   }
 
   async remove(id: number) {

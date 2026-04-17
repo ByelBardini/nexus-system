@@ -74,6 +74,11 @@ export function SelectRastreadorTeste({
   const displayValue = isOpen ? searchTerm : value
 
   useEffect(() => {
+    // Cancela timer de blur pendente quando o value muda externamente (ex: troca de OS)
+    if (blurTimeoutRef.current) {
+      clearTimeout(blurTimeoutRef.current)
+      blurTimeoutRef.current = null
+    }
     if (!isOpen) setSearchTerm(value)
   }, [isOpen, value])
 

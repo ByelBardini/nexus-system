@@ -34,7 +34,10 @@ describe('TecnicosService', () => {
 
       expect(result).toEqual(tecnicos);
       expect(prisma.tecnico.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ orderBy: { nome: 'asc' }, include: { precos: true } }),
+        expect.objectContaining({
+          orderBy: { nome: 'asc' },
+          include: { precos: true },
+        }),
       );
     });
   });
@@ -44,7 +47,9 @@ describe('TecnicosService', () => {
       prisma.tecnico.findUnique.mockResolvedValue(null);
 
       await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
-      await expect(service.findOne(999)).rejects.toThrow('Técnico não encontrado');
+      await expect(service.findOne(999)).rejects.toThrow(
+        'Técnico não encontrado',
+      );
     });
 
     it('retorna técnico quando encontrado', async () => {
@@ -59,7 +64,12 @@ describe('TecnicosService', () => {
 
   describe('create', () => {
     it('cria técnico sem preços', async () => {
-      const dto = { nome: 'Novo Técnico', cpfCnpj: '123', telefone: '11999', ativo: true };
+      const dto = {
+        nome: 'Novo Técnico',
+        cpfCnpj: '123',
+        telefone: '11999',
+        ativo: true,
+      };
       const created = { id: 1, ...dto };
       prisma.tecnico.create.mockResolvedValue(created);
       prisma.tecnico.findUnique.mockResolvedValue({ ...created, precos: null });
@@ -80,13 +90,19 @@ describe('TecnicosService', () => {
       const created = { id: 1, nome: 'Novo Técnico' };
       prisma.tecnico.create.mockResolvedValue(created);
       prisma.precoTecnico.create.mockResolvedValue({ id: 1, tecnicoId: 1 });
-      prisma.tecnico.findUnique.mockResolvedValue({ ...created, precos: { instalacaoComBloqueio: 150 } });
+      prisma.tecnico.findUnique.mockResolvedValue({
+        ...created,
+        precos: { instalacaoComBloqueio: 150 },
+      });
 
       await service.create(dto as any);
 
       expect(prisma.precoTecnico.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ tecnicoId: 1, instalacaoComBloqueio: 150 }),
+          data: expect.objectContaining({
+            tecnicoId: 1,
+            instalacaoComBloqueio: 150,
+          }),
         }),
       );
     });
@@ -111,12 +127,21 @@ describe('TecnicosService', () => {
     it('lança NotFoundException quando técnico não existe', async () => {
       prisma.tecnico.findUnique.mockResolvedValue(null);
 
-      await expect(service.update(999, { nome: 'Novo' })).rejects.toThrow(NotFoundException);
+      await expect(service.update(999, { nome: 'Novo' })).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('atualiza técnico sem preços', async () => {
-      prisma.tecnico.findUnique.mockResolvedValue({ id: 1, nome: 'Carlos', precos: null });
-      prisma.tecnico.update.mockResolvedValue({ id: 1, nome: 'Carlos Atualizado' });
+      prisma.tecnico.findUnique.mockResolvedValue({
+        id: 1,
+        nome: 'Carlos',
+        precos: null,
+      });
+      prisma.tecnico.update.mockResolvedValue({
+        id: 1,
+        nome: 'Carlos Atualizado',
+      });
 
       await service.update(1, { nome: 'Carlos Atualizado' });
 
@@ -128,13 +153,22 @@ describe('TecnicosService', () => {
     });
 
     it('atualiza preços existentes do técnico', async () => {
-      const tecnico = { id: 1, nome: 'Carlos', precos: { tecnicoId: 1, instalacaoComBloqueio: 100 } };
+      const tecnico = {
+        id: 1,
+        nome: 'Carlos',
+        precos: { tecnicoId: 1, instalacaoComBloqueio: 100 },
+      };
       prisma.tecnico.findUnique.mockResolvedValue(tecnico);
       prisma.tecnico.update.mockResolvedValue({ id: 1, nome: 'Carlos' });
-      prisma.precoTecnico.findUnique.mockResolvedValue({ tecnicoId: 1, instalacaoComBloqueio: 100 });
+      prisma.precoTecnico.findUnique.mockResolvedValue({
+        tecnicoId: 1,
+        instalacaoComBloqueio: 100,
+      });
       prisma.precoTecnico.update.mockResolvedValue({});
 
-      await service.update(1, { precos: { instalacaoComBloqueio: 200 } } as any);
+      await service.update(1, {
+        precos: { instalacaoComBloqueio: 200 },
+      } as any);
 
       expect(prisma.precoTecnico.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -145,16 +179,25 @@ describe('TecnicosService', () => {
     });
 
     it('cria preços quando técnico ainda não os possui', async () => {
-      prisma.tecnico.findUnique.mockResolvedValue({ id: 1, nome: 'Carlos', precos: null });
+      prisma.tecnico.findUnique.mockResolvedValue({
+        id: 1,
+        nome: 'Carlos',
+        precos: null,
+      });
       prisma.tecnico.update.mockResolvedValue({ id: 1 });
       prisma.precoTecnico.findUnique.mockResolvedValue(null);
       prisma.precoTecnico.create.mockResolvedValue({});
 
-      await service.update(1, { precos: { instalacaoComBloqueio: 150 } } as any);
+      await service.update(1, {
+        precos: { instalacaoComBloqueio: 150 },
+      } as any);
 
       expect(prisma.precoTecnico.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({ tecnicoId: 1, instalacaoComBloqueio: 150 }),
+          data: expect.objectContaining({
+            tecnicoId: 1,
+            instalacaoComBloqueio: 150,
+          }),
         }),
       );
     });

@@ -38,6 +38,7 @@ interface Modelo {
   id: number
   nome: string
   ativo: boolean
+  minCaracteresImei?: number | null
   marca: { id: number; nome: string; ativo: boolean }
 }
 
@@ -60,6 +61,7 @@ interface MarcaSimcard {
   operadoraId: number
   temPlanos: boolean
   ativo: boolean
+  minCaracteresIccid?: number | null
   operadora: { id: number; nome: string }
   planos?: PlanoSimcard[]
 }
@@ -83,6 +85,7 @@ export function EquipamentosConfigPage() {
   const [editingModelo, setEditingModelo] = useState<Modelo | null>(null)
   const [nomeModelo, setNomeModelo] = useState('')
   const [marcaIdForModelo, setMarcaIdForModelo] = useState<string>('')
+  const [minCaracteresImeiModelo, setMinCaracteresImeiModelo] = useState<string>('')
 
   const [modalOperadoraOpen, setModalOperadoraOpen] = useState(false)
   const [editingOperadora, setEditingOperadora] = useState<Operadora | null>(null)
@@ -93,6 +96,7 @@ export function EquipamentosConfigPage() {
   const [nomeMarcaSimcard, setNomeMarcaSimcard] = useState('')
   const [operadoraIdMarcaSimcard, setOperadoraIdMarcaSimcard] = useState<string>('')
   const [temPlanosMarcaSimcard, setTemPlanosMarcaSimcard] = useState(false)
+  const [minCaracteresIccidMarcaSimcard, setMinCaracteresIccidMarcaSimcard] = useState<string>('')
   const [expandedMarcasSimcardIds, setExpandedMarcasSimcardIds] = useState<Set<number>>(new Set())
   const [modalPlanoSimcardOpen, setModalPlanoSimcardOpen] = useState(false)
   const [editingPlanoSimcard, setEditingPlanoSimcard] = useState<PlanoSimcard | null>(null)
@@ -209,7 +213,7 @@ export function EquipamentosConfigPage() {
 
   // Modelo mutations
   const createModeloMutation = useMutation({
-    mutationFn: (data: { nome: string; marcaId: number }) =>
+    mutationFn: (data: { nome: string; marcaId: number; minCaracteresImei?: number }) =>
       api('/equipamentos/modelos', { method: 'POST', body: JSON.stringify(data) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['modelos'] })
@@ -221,7 +225,7 @@ export function EquipamentosConfigPage() {
   })
 
   const updateModeloMutation = useMutation({
-    mutationFn: ({ id, ...data }: { id: number; nome?: string; ativo?: boolean }) =>
+    mutationFn: ({ id, ...data }: { id: number; nome?: string; ativo?: boolean; minCaracteresImei?: number }) =>
       api(`/equipamentos/modelos/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['modelos'] })
@@ -308,6 +312,7 @@ export function EquipamentosConfigPage() {
     setEditingModelo(null)
     setNomeModelo('')
     setMarcaIdForModelo(marcaId ? String(marcaId) : '')
+    setMinCaracteresImeiModelo('')
     setModalModeloOpen(true)
   }
 
@@ -315,6 +320,7 @@ export function EquipamentosConfigPage() {
     setEditingModelo(modelo)
     setNomeModelo(modelo.nome)
     setMarcaIdForModelo(String(modelo.marca.id))
+    setMinCaracteresImeiModelo(modelo.minCaracteresImei ? String(modelo.minCaracteresImei) : '')
     setModalModeloOpen(true)
   }
 
@@ -323,6 +329,7 @@ export function EquipamentosConfigPage() {
     setEditingModelo(null)
     setNomeModelo('')
     setMarcaIdForModelo('')
+    setMinCaracteresImeiModelo('')
   }
 
   function handleSaveModelo() {
@@ -334,10 +341,11 @@ export function EquipamentosConfigPage() {
       toast.error('Selecione uma marca')
       return
     }
+    const minImei = minCaracteresImeiModelo ? Number(minCaracteresImeiModelo) : undefined
     if (editingModelo) {
-      updateModeloMutation.mutate({ id: editingModelo.id, nome: nomeModelo })
+      updateModeloMutation.mutate({ id: editingModelo.id, nome: nomeModelo, minCaracteresImei: minImei })
     } else {
-      createModeloMutation.mutate({ nome: nomeModelo, marcaId: Number(marcaIdForModelo) })
+      createModeloMutation.mutate({ nome: nomeModelo, marcaId: Number(marcaIdForModelo), minCaracteresImei: minImei })
     }
   }
 
@@ -381,7 +389,7 @@ export function EquipamentosConfigPage() {
 
   // Marca Simcard mutations
   const createMarcaSimcardMutation = useMutation({
-    mutationFn: (data: { nome: string; operadoraId: number; temPlanos?: boolean }) =>
+    mutationFn: (data: { nome: string; operadoraId: number; temPlanos?: boolean; minCaracteresIccid?: number }) =>
       api('/equipamentos/marcas-simcard', { method: 'POST', body: JSON.stringify(data) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['marcas-simcard'] })
@@ -395,7 +403,7 @@ export function EquipamentosConfigPage() {
     mutationFn: ({
       id,
       ...data
-    }: { id: number; nome?: string; operadoraId?: number; temPlanos?: boolean; ativo?: boolean }) =>
+    }: { id: number; nome?: string; operadoraId?: number; temPlanos?: boolean; ativo?: boolean; minCaracteresIccid?: number }) =>
       api(`/equipamentos/marcas-simcard/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['marcas-simcard'] })
@@ -419,6 +427,7 @@ export function EquipamentosConfigPage() {
     setNomeMarcaSimcard('')
     setOperadoraIdMarcaSimcard('')
     setTemPlanosMarcaSimcard(false)
+    setMinCaracteresIccidMarcaSimcard('')
     setModalMarcaSimcardOpen(true)
   }
 
@@ -427,6 +436,7 @@ export function EquipamentosConfigPage() {
     setNomeMarcaSimcard(m.nome)
     setOperadoraIdMarcaSimcard(String(m.operadoraId))
     setTemPlanosMarcaSimcard(m.temPlanos)
+    setMinCaracteresIccidMarcaSimcard(m.minCaracteresIccid ? String(m.minCaracteresIccid) : '')
     setModalMarcaSimcardOpen(true)
   }
 
@@ -436,6 +446,7 @@ export function EquipamentosConfigPage() {
     setNomeMarcaSimcard('')
     setOperadoraIdMarcaSimcard('')
     setTemPlanosMarcaSimcard(false)
+    setMinCaracteresIccidMarcaSimcard('')
   }
 
   function handleSaveMarcaSimcard() {
@@ -447,18 +458,21 @@ export function EquipamentosConfigPage() {
       toast.error('Selecione uma operadora')
       return
     }
+    const minIccid = minCaracteresIccidMarcaSimcard ? Number(minCaracteresIccidMarcaSimcard) : undefined
     if (editingMarcaSimcard) {
       updateMarcaSimcardMutation.mutate({
         id: editingMarcaSimcard.id,
         nome: nomeMarcaSimcard,
         operadoraId: operadoraIdMarcaSimcard ? Number(operadoraIdMarcaSimcard) : undefined,
         temPlanos: temPlanosMarcaSimcard,
+        minCaracteresIccid: minIccid,
       })
     } else {
       createMarcaSimcardMutation.mutate({
         nome: nomeMarcaSimcard,
         operadoraId: Number(operadoraIdMarcaSimcard),
         temPlanos: temPlanosMarcaSimcard,
+        minCaracteresIccid: minIccid,
       })
     }
   }
@@ -1235,6 +1249,19 @@ export function EquipamentosConfigPage() {
                 className="h-10"
               />
             </div>
+            <div>
+              <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                Mínimo de caracteres do IMEI
+              </Label>
+              <Input
+                type="number"
+                min={1}
+                value={minCaracteresImeiModelo}
+                onChange={(e) => setMinCaracteresImeiModelo(e.target.value)}
+                placeholder="Ex: 15"
+                className="h-10"
+              />
+            </div>
           </div>
           <footer className="bg-slate-50 border-t border-slate-200 p-4 flex justify-end gap-3">
             <Button variant="ghost" onClick={closeModalModelo}>
@@ -1362,6 +1389,19 @@ export function EquipamentosConfigPage() {
                 value={nomeMarcaSimcard}
                 onChange={(e) => setNomeMarcaSimcard(e.target.value)}
                 placeholder="Ex: Getrak, Virtueyes, 1nce"
+                className="h-10"
+              />
+            </div>
+            <div>
+              <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                Mínimo de caracteres do ICCID
+              </Label>
+              <Input
+                type="number"
+                min={1}
+                value={minCaracteresIccidMarcaSimcard}
+                onChange={(e) => setMinCaracteresIccidMarcaSimcard(e.target.value)}
+                placeholder="Ex: 19"
                 className="h-10"
               />
             </div>
