@@ -49,9 +49,17 @@ describe('RolesController', () => {
 
   describe('findAllPaginated', () => {
     it('converte page e limit para número e chama service', async () => {
-      (service.findAllPaginated as jest.Mock).mockResolvedValue({ data: [], total: 0 });
+      (service.findAllPaginated as jest.Mock).mockResolvedValue({
+        data: [],
+        total: 0,
+      });
 
-      await controller.findAllPaginated('busca', CategoriaCargo.OPERACIONAL, '2', '25');
+      await controller.findAllPaginated(
+        'busca',
+        CategoriaCargo.OPERACIONAL,
+        '2',
+        '25',
+      );
 
       expect(service.findAllPaginated).toHaveBeenCalledWith({
         search: 'busca',
@@ -123,7 +131,9 @@ describe('RolesController', () => {
 
   describe('getUserRoles', () => {
     it('converte userId para número e chama service', async () => {
-      (service.getUserRoles as jest.Mock).mockResolvedValue([{ id: 1, nome: 'Admin' }]);
+      (service.getUserRoles as jest.Mock).mockResolvedValue([
+        { id: 1, nome: 'Admin' },
+      ]);
 
       await controller.getUserRoles('10');
 

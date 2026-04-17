@@ -48,7 +48,13 @@ describe('VeiculosController', () => {
 
   describe('consultaPlaca', () => {
     it('chama service.consultaPlaca com a placa do parâmetro', async () => {
-      const dados = { marca: 'Fiat', modelo: 'Uno', ano: '2020', cor: 'Branco', tipo: 'AUTO' };
+      const dados = {
+        marca: 'Fiat',
+        modelo: 'Uno',
+        ano: '2020',
+        cor: 'Branco',
+        tipo: 'AUTO',
+      };
       (service.consultaPlaca as jest.Mock).mockResolvedValue(dados);
 
       const result = await controller.consultaPlaca('ABC1D23');

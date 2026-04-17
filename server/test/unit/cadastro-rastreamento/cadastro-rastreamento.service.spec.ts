@@ -26,7 +26,9 @@ describe('CadastroRastreamentoService', () => {
       ],
     }).compile();
 
-    service = module.get<CadastroRastreamentoService>(CadastroRastreamentoService);
+    service = module.get<CadastroRastreamentoService>(
+      CadastroRastreamentoService,
+    );
     jest.clearAllMocks();
   });
 
@@ -35,7 +37,13 @@ describe('CadastroRastreamentoService', () => {
   describe('findPendentes', () => {
     it('retorna resultado paginado com defaults de page=1 e limit=20', async () => {
       const items = [
-        { id: 1, statusCadastro: StatusCadastro.AGUARDANDO, status: StatusOS.AGUARDANDO_CADASTRO, aparelhoEntrada: null, aparelhoSaida: null },
+        {
+          id: 1,
+          statusCadastro: StatusCadastro.AGUARDANDO,
+          status: StatusOS.AGUARDANDO_CADASTRO,
+          aparelhoEntrada: null,
+          aparelhoSaida: null,
+        },
       ];
       prisma.ordemServico.findMany.mockResolvedValue(items);
       prisma.ordemServico.count.mockResolvedValue(1);
@@ -72,7 +80,9 @@ describe('CadastroRastreamentoService', () => {
         expect.objectContaining({
           where: expect.objectContaining({
             OR: expect.arrayContaining([
-              expect.objectContaining({ statusCadastro: StatusCadastro.AGUARDANDO }),
+              expect.objectContaining({
+                statusCadastro: StatusCadastro.AGUARDANDO,
+              }),
             ]),
           }),
         }),
@@ -92,8 +102,13 @@ describe('CadastroRastreamentoService', () => {
           where: expect.objectContaining({
             OR: expect.arrayContaining([
               expect.objectContaining({
-                statusCadastro: { in: [StatusCadastro.EM_CADASTRO, StatusCadastro.CONCLUIDO] },
-                criadoEm: expect.objectContaining({ gte: dataInicio, lte: dataFim }),
+                statusCadastro: {
+                  in: [StatusCadastro.EM_CADASTRO, StatusCadastro.CONCLUIDO],
+                },
+                criadoEm: expect.objectContaining({
+                  gte: dataInicio,
+                  lte: dataFim,
+                }),
               }),
             ]),
           }),
@@ -110,7 +125,9 @@ describe('CadastroRastreamentoService', () => {
       const call = prisma.ordemServico.findMany.mock.calls[0][0];
       const orClause = call?.where?.OR ?? [];
       const nonAguardandoClause = orClause.find(
-        (c: any) => c.statusCadastro?.in !== undefined || c.statusCadastro !== StatusCadastro.AGUARDANDO,
+        (c: any) =>
+          c.statusCadastro?.in !== undefined ||
+          c.statusCadastro !== StatusCadastro.AGUARDANDO,
       );
       if (nonAguardandoClause) {
         expect(nonAguardandoClause).not.toHaveProperty('criadoEm');
@@ -144,11 +161,15 @@ describe('CadastroRastreamentoService', () => {
       prisma.ordemServico.findMany.mockResolvedValue([]);
       prisma.ordemServico.count.mockResolvedValue(0);
 
-      await service.findPendentes({ statusCadastro: StatusCadastro.EM_CADASTRO });
+      await service.findPendentes({
+        statusCadastro: StatusCadastro.EM_CADASTRO,
+      });
 
       expect(prisma.ordemServico.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({ statusCadastro: StatusCadastro.EM_CADASTRO }),
+          where: expect.objectContaining({
+            statusCadastro: StatusCadastro.EM_CADASTRO,
+          }),
         }),
       );
     });
@@ -192,7 +213,10 @@ describe('CadastroRastreamentoService', () => {
         statusCadastro: StatusCadastro.AGUARDANDO,
       };
       prisma.ordemServico.findUnique.mockResolvedValue(os);
-      prisma.ordemServico.update.mockResolvedValue({ ...os, statusCadastro: StatusCadastro.EM_CADASTRO });
+      prisma.ordemServico.update.mockResolvedValue({
+        ...os,
+        statusCadastro: StatusCadastro.EM_CADASTRO,
+      });
 
       await service.iniciarCadastro(1);
 
@@ -221,7 +245,9 @@ describe('CadastroRastreamentoService', () => {
     it('lança NotFoundException quando OS não existe', async () => {
       prisma.ordemServico.findUnique.mockResolvedValue(null);
 
-      await expect(service.iniciarCadastro(999)).rejects.toThrow(NotFoundException);
+      await expect(service.iniciarCadastro(999)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('lança BadRequestException quando OS não está em AGUARDANDO_CADASTRO', async () => {
@@ -232,7 +258,9 @@ describe('CadastroRastreamentoService', () => {
       };
       prisma.ordemServico.findUnique.mockResolvedValue(os);
 
-      await expect(service.iniciarCadastro(1)).rejects.toThrow(BadRequestException);
+      await expect(service.iniciarCadastro(1)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('lança BadRequestException quando statusCadastro não é AGUARDANDO', async () => {
@@ -243,7 +271,9 @@ describe('CadastroRastreamentoService', () => {
       };
       prisma.ordemServico.findUnique.mockResolvedValue(os);
 
-      await expect(service.iniciarCadastro(1)).rejects.toThrow(BadRequestException);
+      await expect(service.iniciarCadastro(1)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('lança BadRequestException quando statusCadastro é null', async () => {
@@ -254,7 +284,9 @@ describe('CadastroRastreamentoService', () => {
       };
       prisma.ordemServico.findUnique.mockResolvedValue(os);
 
-      await expect(service.iniciarCadastro(1)).rejects.toThrow(BadRequestException);
+      await expect(service.iniciarCadastro(1)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -426,7 +458,11 @@ describe('CadastroRastreamentoService', () => {
         subclienteId: 7,
         veiculoId: 9,
       };
-      const aparelho = { id: 20, identificador: '111222333444555', status: StatusAparelho.COM_TECNICO };
+      const aparelho = {
+        id: 20,
+        identificador: '111222333444555',
+        status: StatusAparelho.COM_TECNICO,
+      };
       prisma.ordemServico.findUnique.mockResolvedValue(os);
       prisma.aparelho.findFirst.mockResolvedValue(aparelho);
       prisma.ordemServico.update.mockResolvedValue({});
@@ -483,7 +519,7 @@ describe('CadastroRastreamentoService', () => {
       prisma.ordemServico.findUnique.mockResolvedValue(osRevisao);
       prisma.aparelho.findFirst
         .mockResolvedValueOnce(aparelhoAntigo) // busca pelo idEntrada
-        .mockResolvedValueOnce(aparelhoNovo);  // busca pelo idAparelho
+        .mockResolvedValueOnce(aparelhoNovo); // busca pelo idAparelho
       prisma.ordemServico.update.mockResolvedValue({});
       prisma.oSHistorico.create.mockResolvedValue({});
       prisma.aparelho.update.mockResolvedValue({});
@@ -538,17 +574,21 @@ describe('CadastroRastreamentoService', () => {
       await service.concluirCadastro(3, { plataforma: Plataforma.SELSYN }, 10);
 
       expect(prisma.aparelho.findFirst).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { identificador: osRevisao.idEntrada } }),
+        expect.objectContaining({
+          where: { identificador: osRevisao.idEntrada },
+        }),
       );
       expect(prisma.aparelho.findFirst).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { identificador: osRevisao.idAparelho } }),
+        expect.objectContaining({
+          where: { identificador: osRevisao.idAparelho },
+        }),
       );
     });
 
     it('quando aparelho antigo não existe no sistema, cria novo Aparelho com IMEI, ICCID e observacao="aparelho usado"', async () => {
       prisma.ordemServico.findUnique.mockResolvedValue(osRevisao);
       prisma.aparelho.findFirst
-        .mockResolvedValueOnce(null)        // aparelho antigo não encontrado
+        .mockResolvedValueOnce(null) // aparelho antigo não encontrado
         .mockResolvedValueOnce(aparelhoNovo);
       prisma.aparelho.create.mockResolvedValue({ id: 99 });
       prisma.ordemServico.update.mockResolvedValue({});
@@ -583,7 +623,9 @@ describe('CadastroRastreamentoService', () => {
       // Apenas o aparelho novo deve ser atualizado (para INSTALADO)
       const updateCalls = prisma.aparelho.update.mock.calls;
       updateCalls.forEach((call) => {
-        expect(call[0].data).not.toMatchObject({ status: StatusAparelho.EM_ESTOQUE });
+        expect(call[0].data).not.toMatchObject({
+          status: StatusAparelho.EM_ESTOQUE,
+        });
       });
     });
 

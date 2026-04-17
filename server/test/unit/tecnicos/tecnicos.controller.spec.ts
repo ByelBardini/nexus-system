@@ -68,7 +68,10 @@ describe('TecnicosController', () => {
   describe('update', () => {
     it('converte id e chama service.update', async () => {
       const dto = { nome: 'Carlos Atualizado' };
-      (service.update as jest.Mock).mockResolvedValue({ id: 3, nome: 'Carlos Atualizado' });
+      (service.update as jest.Mock).mockResolvedValue({
+        id: 3,
+        nome: 'Carlos Atualizado',
+      });
 
       await controller.update('3', dto as any);
 

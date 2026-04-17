@@ -121,7 +121,9 @@ describe('UsersController', () => {
 
   describe('resetPassword', () => {
     it('converte id e chama service.resetPassword', async () => {
-      (service.resetPassword as jest.Mock).mockResolvedValue({ message: 'Senha resetada com sucesso' });
+      (service.resetPassword as jest.Mock).mockResolvedValue({
+        message: 'Senha resetada com sucesso',
+      });
 
       const result = await controller.resetPassword('7');
 

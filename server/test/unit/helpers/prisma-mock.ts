@@ -50,13 +50,11 @@ export function createPrismaMock() {
     $transaction: jest.fn(),
   };
 
-  mock.$transaction.mockImplementation(
-    (arg: unknown) => {
-      if (typeof arg === 'function') return arg(mock);
-      if (Array.isArray(arg)) return Promise.all(arg);
-      return Promise.resolve();
-    },
-  );
+  mock.$transaction.mockImplementation((arg: unknown) => {
+    if (typeof arg === 'function') return arg(mock);
+    if (Array.isArray(arg)) return Promise.all(arg);
+    return Promise.resolve();
+  });
 
   return mock;
 }

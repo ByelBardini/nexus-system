@@ -40,7 +40,11 @@ describe('VeiculosService', () => {
 
       expect(result).toEqual(veiculos);
       expect(prisma.veiculo.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: {}, orderBy: { placa: 'asc' }, take: 50 }),
+        expect.objectContaining({
+          where: {},
+          orderBy: { placa: 'asc' },
+          take: 50,
+        }),
       );
     });
 
@@ -140,9 +144,7 @@ describe('VeiculosService', () => {
 
       const result = await service.consultaPlaca('QHJ2500');
 
-      expect(result).toEqual(
-        expect.objectContaining({ ano: '2018' }),
-      );
+      expect(result).toEqual(expect.objectContaining({ ano: '2018' }));
     });
 
     it('usa string vazia para campos ausentes na API', async () => {
@@ -175,7 +177,14 @@ describe('VeiculosService', () => {
     });
 
     it('retorna veículo existente quando placa já cadastrada', async () => {
-      const existing = { id: 1, placa: 'ABC1D23', marca: 'Fiat', modelo: 'Uno', ano: 2020, cor: 'Branco' };
+      const existing = {
+        id: 1,
+        placa: 'ABC1D23',
+        marca: 'Fiat',
+        modelo: 'Uno',
+        ano: 2020,
+        cor: 'Branco',
+      };
       prisma.veiculo.upsert.mockResolvedValue(existing);
 
       const result = await service.criarOuBuscarPorPlaca({
@@ -201,7 +210,14 @@ describe('VeiculosService', () => {
     });
 
     it('cria novo veículo quando placa não existe', async () => {
-      const created = { id: 5, placa: 'ABC1D23', marca: 'Fiat', modelo: 'Uno', ano: 2020, cor: 'Branco' };
+      const created = {
+        id: 5,
+        placa: 'ABC1D23',
+        marca: 'Fiat',
+        modelo: 'Uno',
+        ano: 2020,
+        cor: 'Branco',
+      };
       prisma.veiculo.upsert.mockResolvedValue(created);
 
       const result = await service.criarOuBuscarPorPlaca({
@@ -227,7 +243,14 @@ describe('VeiculosService', () => {
     });
 
     it('armazena marca, modelo, ano e cor nos campos próprios do veículo', async () => {
-      prisma.veiculo.upsert.mockResolvedValue({ id: 5, placa: 'ABC1D23', marca: 'Fiat', modelo: 'Uno', ano: 2020, cor: 'Prata' });
+      prisma.veiculo.upsert.mockResolvedValue({
+        id: 5,
+        placa: 'ABC1D23',
+        marca: 'Fiat',
+        modelo: 'Uno',
+        ano: 2020,
+        cor: 'Prata',
+      });
 
       await service.criarOuBuscarPorPlaca({
         placa: 'ABC1D23',

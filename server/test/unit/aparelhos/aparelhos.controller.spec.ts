@@ -28,7 +28,6 @@ describe('AparelhosController', () => {
   };
 
   const kitsMock = {
-    getKits: jest.fn(),
     getKitsComDetalhes: jest.fn(),
     getKitById: jest.fn(),
     updateAparelhoKit: jest.fn(),
@@ -121,7 +120,9 @@ describe('AparelhosController', () => {
   describe('createIndividual', () => {
     it('chama aparelhosService.createIndividual com o DTO', async () => {
       const dto = { identificador: 'IMEI123', tipo: 'RASTREADOR' } as any;
-      (aparelhosService.createIndividual as jest.Mock).mockResolvedValue({ id: 1 });
+      (aparelhosService.createIndividual as jest.Mock).mockResolvedValue({
+        id: 1,
+      });
 
       await controller.createIndividual(dto);
 
@@ -133,16 +134,26 @@ describe('AparelhosController', () => {
     it('converte id e chama aparelhosService.updateStatus com status e observacao', async () => {
       (aparelhosService.updateStatus as jest.Mock).mockResolvedValue({});
 
-      await controller.updateStatus('3', { status: 'CONFIGURADO', observacao: 'ok' });
+      await controller.updateStatus('3', {
+        status: 'CONFIGURADO',
+        observacao: 'ok',
+      });
 
-      expect(aparelhosService.updateStatus).toHaveBeenCalledWith(3, 'CONFIGURADO', 'ok');
+      expect(aparelhosService.updateStatus).toHaveBeenCalledWith(
+        3,
+        'CONFIGURADO',
+        'ok',
+      );
     });
   });
 
   describe('pareamentoPreview', () => {
     it('chama pareamentoService.pareamentoPreview com os pares', async () => {
       const pares = [{ imei: '123456789012345', iccid: '123456789012345678' }];
-      (pareamentoService.pareamentoPreview as jest.Mock).mockResolvedValue({ linhas: [], contadores: {} });
+      (pareamentoService.pareamentoPreview as jest.Mock).mockResolvedValue({
+        linhas: [],
+        contadores: {},
+      });
 
       await controller.pareamentoPreview({ pares });
 
@@ -150,7 +161,10 @@ describe('AparelhosController', () => {
     });
 
     it('passa lista vazia quando pares não informados', async () => {
-      (pareamentoService.pareamentoPreview as jest.Mock).mockResolvedValue({ linhas: [], contadores: {} });
+      (pareamentoService.pareamentoPreview as jest.Mock).mockResolvedValue({
+        linhas: [],
+        contadores: {},
+      });
 
       await controller.pareamentoPreview({} as any);
 
@@ -161,7 +175,9 @@ describe('AparelhosController', () => {
   describe('pareamento', () => {
     it('chama pareamentoService.pareamento com o DTO', async () => {
       const dto = { pares: [{ imei: '123', iccid: '456' }] };
-      (pareamentoService.pareamento as jest.Mock).mockResolvedValue({ criados: 1 });
+      (pareamentoService.pareamento as jest.Mock).mockResolvedValue({
+        criados: 1,
+      });
 
       await controller.pareamento(dto as any);
 
@@ -180,16 +196,6 @@ describe('AparelhosController', () => {
     });
   });
 
-  describe('getKits', () => {
-    it('delega para kitsService.getKits', async () => {
-      (kitsService.getKits as jest.Mock).mockResolvedValue([{ id: 1, nome: 'Kit-A' }]);
-
-      await controller.getKits();
-
-      expect(kitsService.getKits).toHaveBeenCalled();
-    });
-  });
-
   describe('getKitsComDetalhes', () => {
     it('delega para kitsService.getKitsComDetalhes', async () => {
       (kitsService.getKitsComDetalhes as jest.Mock).mockResolvedValue([]);
@@ -202,7 +208,10 @@ describe('AparelhosController', () => {
 
   describe('getKitById', () => {
     it('converte id para número e chama kitsService', async () => {
-      (kitsService.getKitById as jest.Mock).mockResolvedValue({ id: 2, nome: 'Kit-B' });
+      (kitsService.getKitById as jest.Mock).mockResolvedValue({
+        id: 2,
+        nome: 'Kit-B',
+      });
 
       await controller.getKitById('2');
 
@@ -222,7 +231,9 @@ describe('AparelhosController', () => {
 
   describe('getAparelhosDisponiveisParaKit', () => {
     it('delega para kitsService.getAparelhosDisponiveisParaKit', async () => {
-      (kitsService.getAparelhosDisponiveisParaKit as jest.Mock).mockResolvedValue([]);
+      (
+        kitsService.getAparelhosDisponiveisParaKit as jest.Mock
+      ).mockResolvedValue([]);
 
       await controller.getAparelhosDisponiveisParaKit();
 
@@ -232,7 +243,10 @@ describe('AparelhosController', () => {
 
   describe('createKit', () => {
     it('chama kitsService.criarOuBuscarKitPorNome com nome trimado', async () => {
-      (kitsService.criarOuBuscarKitPorNome as jest.Mock).mockResolvedValue({ id: 1, nome: 'Kit-X' });
+      (kitsService.criarOuBuscarKitPorNome as jest.Mock).mockResolvedValue({
+        id: 1,
+        nome: 'Kit-X',
+      });
 
       await controller.createKit({ nome: '  Kit-X  ' });
 
@@ -246,7 +260,9 @@ describe('AparelhosController', () => {
 
       await controller.getLotesRastreadores();
 
-      expect(lotesService.getLotesParaPareamento).toHaveBeenCalledWith('RASTREADOR');
+      expect(lotesService.getLotesParaPareamento).toHaveBeenCalledWith(
+        'RASTREADOR',
+      );
     });
   });
 

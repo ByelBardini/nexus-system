@@ -48,7 +48,9 @@ describe('EquipamentosController', () => {
 
   describe('findAllMarcas', () => {
     it('delega para service.findAllMarcas', async () => {
-      (service.findAllMarcas as jest.Mock).mockResolvedValue([{ id: 1, nome: 'Queclink' }]);
+      (service.findAllMarcas as jest.Mock).mockResolvedValue([
+        { id: 1, nome: 'Queclink' },
+      ]);
 
       await controller.findAllMarcas();
 
@@ -58,7 +60,10 @@ describe('EquipamentosController', () => {
 
   describe('findOneMarca', () => {
     it('converte id para número e chama service', async () => {
-      (service.findOneMarca as jest.Mock).mockResolvedValue({ id: 3, nome: 'Teltonika' });
+      (service.findOneMarca as jest.Mock).mockResolvedValue({
+        id: 3,
+        nome: 'Teltonika',
+      });
 
       await controller.findOneMarca('3');
 
@@ -120,7 +125,10 @@ describe('EquipamentosController', () => {
 
   describe('findOneModelo', () => {
     it('converte id para número e chama service', async () => {
-      (service.findOneModelo as jest.Mock).mockResolvedValue({ id: 7, nome: 'GV300' });
+      (service.findOneModelo as jest.Mock).mockResolvedValue({
+        id: 7,
+        nome: 'GV300',
+      });
 
       await controller.findOneModelo('7');
 
@@ -153,7 +161,9 @@ describe('EquipamentosController', () => {
 
   describe('findAllOperadoras', () => {
     it('delega para service.findAllOperadoras', async () => {
-      (service.findAllOperadoras as jest.Mock).mockResolvedValue([{ id: 1, nome: 'Vivo' }]);
+      (service.findAllOperadoras as jest.Mock).mockResolvedValue([
+        { id: 1, nome: 'Vivo' },
+      ]);
 
       await controller.findAllOperadoras();
 
@@ -163,7 +173,10 @@ describe('EquipamentosController', () => {
 
   describe('findOneOperadora', () => {
     it('converte id para número e chama service', async () => {
-      (service.findOneOperadora as jest.Mock).mockResolvedValue({ id: 2, nome: 'Claro' });
+      (service.findOneOperadora as jest.Mock).mockResolvedValue({
+        id: 2,
+        nome: 'Claro',
+      });
 
       await controller.findOneOperadora('2');
 
@@ -174,7 +187,10 @@ describe('EquipamentosController', () => {
   describe('createOperadora', () => {
     it('chama service.createOperadora com o DTO', async () => {
       const dto = { nome: 'Tim' };
-      (service.createOperadora as jest.Mock).mockResolvedValue({ id: 1, ...dto });
+      (service.createOperadora as jest.Mock).mockResolvedValue({
+        id: 1,
+        ...dto,
+      });
 
       await controller.createOperadora(dto);
 
@@ -185,7 +201,10 @@ describe('EquipamentosController', () => {
   describe('updateOperadora', () => {
     it('converte id e chama service.updateOperadora', async () => {
       const dto = { nome: 'Oi' };
-      (service.updateOperadora as jest.Mock).mockResolvedValue({ id: 6, ...dto });
+      (service.updateOperadora as jest.Mock).mockResolvedValue({
+        id: 6,
+        ...dto,
+      });
 
       await controller.updateOperadora('6', dto);
 
@@ -242,7 +261,10 @@ describe('EquipamentosController', () => {
   describe('createMarcaSimcard', () => {
     it('chama service.createMarcaSimcard com o DTO', async () => {
       const dto = { nome: 'Getrak', operadoraId: 1 };
-      (service.createMarcaSimcard as jest.Mock).mockResolvedValue({ id: 1, ...dto });
+      (service.createMarcaSimcard as jest.Mock).mockResolvedValue({
+        id: 1,
+        ...dto,
+      });
 
       await controller.createMarcaSimcard(dto);
 
@@ -253,7 +275,10 @@ describe('EquipamentosController', () => {
   describe('updateMarcaSimcard', () => {
     it('converte id e chama service.updateMarcaSimcard', async () => {
       const dto = { nome: 'Getrak Novo' };
-      (service.updateMarcaSimcard as jest.Mock).mockResolvedValue({ id: 1, ...dto });
+      (service.updateMarcaSimcard as jest.Mock).mockResolvedValue({
+        id: 1,
+        ...dto,
+      });
 
       await controller.updateMarcaSimcard('1', dto);
 

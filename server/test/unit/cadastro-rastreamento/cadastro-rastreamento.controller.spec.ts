@@ -18,14 +18,20 @@ describe('CadastroRastreamentoController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CadastroRastreamentoController],
-      providers: [{ provide: CadastroRastreamentoService, useValue: serviceMock }],
+      providers: [
+        { provide: CadastroRastreamentoService, useValue: serviceMock },
+      ],
     })
       .overrideGuard(PermissionsGuard)
       .useValue({ canActivate: () => true })
       .compile();
 
-    controller = module.get<CadastroRastreamentoController>(CadastroRastreamentoController);
-    service = module.get<CadastroRastreamentoService>(CadastroRastreamentoService);
+    controller = module.get<CadastroRastreamentoController>(
+      CadastroRastreamentoController,
+    );
+    service = module.get<CadastroRastreamentoService>(
+      CadastroRastreamentoService,
+    );
     jest.clearAllMocks();
   });
 
@@ -43,7 +49,10 @@ describe('CadastroRastreamentoController', () => {
     });
 
     it('converte page e limit de string para número', async () => {
-      (service.findPendentes as jest.Mock).mockResolvedValue({ data: [], total: 0 });
+      (service.findPendentes as jest.Mock).mockResolvedValue({
+        data: [],
+        total: 0,
+      });
 
       await controller.findPendentes({ page: '2' as any, limit: '10' as any });
 
@@ -53,9 +62,14 @@ describe('CadastroRastreamentoController', () => {
     });
 
     it('repassa statusCadastro sem transformação', async () => {
-      (service.findPendentes as jest.Mock).mockResolvedValue({ data: [], total: 0 });
+      (service.findPendentes as jest.Mock).mockResolvedValue({
+        data: [],
+        total: 0,
+      });
 
-      await controller.findPendentes({ statusCadastro: StatusCadastro.EM_CADASTRO });
+      await controller.findPendentes({
+        statusCadastro: StatusCadastro.EM_CADASTRO,
+      });
 
       expect(service.findPendentes).toHaveBeenCalledWith(
         expect.objectContaining({ statusCadastro: StatusCadastro.EM_CADASTRO }),
@@ -63,7 +77,10 @@ describe('CadastroRastreamentoController', () => {
     });
 
     it('repassa plataforma sem transformação', async () => {
-      (service.findPendentes as jest.Mock).mockResolvedValue({ data: [], total: 0 });
+      (service.findPendentes as jest.Mock).mockResolvedValue({
+        data: [],
+        total: 0,
+      });
 
       await controller.findPendentes({ plataforma: Plataforma.GETRAK });
 
@@ -73,7 +90,10 @@ describe('CadastroRastreamentoController', () => {
     });
 
     it('converte dataInicio e dataFim de string para Date quando informadas', async () => {
-      (service.findPendentes as jest.Mock).mockResolvedValue({ data: [], total: 0 });
+      (service.findPendentes as jest.Mock).mockResolvedValue({
+        data: [],
+        total: 0,
+      });
 
       await controller.findPendentes({
         dataInicio: '2025-01-01' as any,
@@ -86,7 +106,10 @@ describe('CadastroRastreamentoController', () => {
     });
 
     it('não inclui dataInicio/dataFim na chamada quando não informados', async () => {
-      (service.findPendentes as jest.Mock).mockResolvedValue({ data: [], total: 0 });
+      (service.findPendentes as jest.Mock).mockResolvedValue({
+        data: [],
+        total: 0,
+      });
 
       await controller.findPendentes({});
 
@@ -114,7 +137,9 @@ describe('CadastroRastreamentoController', () => {
         new NotFoundException('Ordem de serviço não encontrada'),
       );
 
-      await expect(controller.iniciarCadastro('999')).rejects.toThrow(NotFoundException);
+      await expect(controller.iniciarCadastro('999')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('propaga BadRequestException do service', async () => {
@@ -122,7 +147,9 @@ describe('CadastroRastreamentoController', () => {
         new BadRequestException('Cadastro já iniciado'),
       );
 
-      await expect(controller.iniciarCadastro('1')).rejects.toThrow(BadRequestException);
+      await expect(controller.iniciarCadastro('1')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -149,7 +176,11 @@ describe('CadastroRastreamentoController', () => {
       );
 
       await expect(
-        controller.concluirCadastro('999', { plataforma: Plataforma.GETRAK }, 10),
+        controller.concluirCadastro(
+          '999',
+          { plataforma: Plataforma.GETRAK },
+          10,
+        ),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -166,7 +197,11 @@ describe('CadastroRastreamentoController', () => {
     it('passa userId do token ao service', async () => {
       (service.concluirCadastro as jest.Mock).mockResolvedValue({});
 
-      await controller.concluirCadastro('5', { plataforma: Plataforma.GEOMAPS }, 42);
+      await controller.concluirCadastro(
+        '5',
+        { plataforma: Plataforma.GEOMAPS },
+        42,
+      );
 
       expect(service.concluirCadastro).toHaveBeenCalledWith(
         5,

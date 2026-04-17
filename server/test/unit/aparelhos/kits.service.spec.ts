@@ -12,29 +12,11 @@ describe('KitsService', () => {
     prisma = createPrismaMock();
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        KitsService,
-        { provide: PrismaService, useValue: prisma },
-      ],
+      providers: [KitsService, { provide: PrismaService, useValue: prisma }],
     }).compile();
 
     service = module.get<KitsService>(KitsService);
     jest.clearAllMocks();
-  });
-
-  describe('getKits', () => {
-    it('retorna kits não concluídos', async () => {
-      const kits = [{ id: 1, nome: 'Kit-A', aparelhos: [] }, { id: 2, nome: 'Kit-B', aparelhos: [] }];
-      prisma.pedidoRastreador.findMany.mockResolvedValue([]);
-      prisma.kit.findMany.mockResolvedValue(kits);
-
-      const result = await service.getKits();
-
-      expect(result).toEqual([{ id: 1, nome: 'Kit-A' }, { id: 2, nome: 'Kit-B' }]);
-      expect(prisma.kit.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { kitConcluido: false } }),
-      );
-    });
   });
 
   describe('getKitById', () => {
@@ -42,7 +24,9 @@ describe('KitsService', () => {
       prisma.kit.findUnique.mockResolvedValue(null);
 
       await expect(service.getKitById(999)).rejects.toThrow(NotFoundException);
-      await expect(service.getKitById(999)).rejects.toThrow('Kit não encontrado');
+      await expect(service.getKitById(999)).rejects.toThrow(
+        'Kit não encontrado',
+      );
     });
 
     it('retorna kit quando encontrado', async () => {
@@ -59,20 +43,27 @@ describe('KitsService', () => {
     it('lança NotFoundException quando aparelho não existe', async () => {
       prisma.aparelho.findUnique.mockResolvedValue(null);
 
-      await expect(service.updateAparelhoKit(999, 1)).rejects.toThrow(NotFoundException);
+      await expect(service.updateAparelhoKit(999, 1)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('lança BadRequestException quando aparelho não é RASTREADOR', async () => {
       prisma.aparelho.findUnique.mockResolvedValue({ id: 1, tipo: 'SIM' });
 
-      await expect(service.updateAparelhoKit(1, 2)).rejects.toThrow(BadRequestException);
+      await expect(service.updateAparelhoKit(1, 2)).rejects.toThrow(
+        BadRequestException,
+      );
       await expect(service.updateAparelhoKit(1, 2)).rejects.toThrow(
         'Apenas rastreadores podem ser adicionados ao kit',
       );
     });
 
     it('atualiza kitId do aparelho rastreador sem pedido vinculado ao kit', async () => {
-      prisma.aparelho.findUnique.mockResolvedValue({ id: 1, tipo: 'RASTREADOR' });
+      prisma.aparelho.findUnique.mockResolvedValue({
+        id: 1,
+        tipo: 'RASTREADOR',
+      });
       prisma.pedidoRastreador.findMany.mockResolvedValue([]);
       const updated = { id: 1, kitId: 5 };
       prisma.aparelho.update.mockResolvedValue(updated);
@@ -80,13 +71,23 @@ describe('KitsService', () => {
       const result = await service.updateAparelhoKit(1, 5);
 
       expect(result).toEqual(updated);
-      expect(prisma.aparelho.update).toHaveBeenCalledWith({ where: { id: 1 }, data: { kitId: 5 } });
+      expect(prisma.aparelho.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { kitId: 5 },
+      });
     });
 
     it('atualiza kitId quando aparelho atende aos requisitos do pedido', async () => {
       prisma.aparelho.findUnique
         .mockResolvedValueOnce({ id: 1, tipo: 'RASTREADOR' })
-        .mockResolvedValueOnce({ id: 1, tipo: 'RASTREADOR', marca: 'Teltonika', modelo: 'FMB920', clienteId: null, simVinculado: null });
+        .mockResolvedValueOnce({
+          id: 1,
+          tipo: 'RASTREADOR',
+          marca: 'Teltonika',
+          modelo: 'FMB920',
+          clienteId: null,
+          simVinculado: null,
+        });
       prisma.pedidoRastreador.findMany.mockResolvedValue([
         {
           id: 10,
@@ -108,9 +109,23 @@ describe('KitsService', () => {
     it('lança BadRequestException quando modelo do aparelho não atende ao pedido', async () => {
       prisma.aparelho.findUnique
         .mockResolvedValueOnce({ id: 1, tipo: 'RASTREADOR' })
-        .mockResolvedValueOnce({ id: 1, tipo: 'RASTREADOR', marca: 'Teltonika', modelo: 'FMB110', clienteId: null, simVinculado: null })
+        .mockResolvedValueOnce({
+          id: 1,
+          tipo: 'RASTREADOR',
+          marca: 'Teltonika',
+          modelo: 'FMB110',
+          clienteId: null,
+          simVinculado: null,
+        })
         .mockResolvedValueOnce({ id: 1, tipo: 'RASTREADOR' })
-        .mockResolvedValueOnce({ id: 1, tipo: 'RASTREADOR', marca: 'Teltonika', modelo: 'FMB110', clienteId: null, simVinculado: null });
+        .mockResolvedValueOnce({
+          id: 1,
+          tipo: 'RASTREADOR',
+          marca: 'Teltonika',
+          modelo: 'FMB110',
+          clienteId: null,
+          simVinculado: null,
+        });
       prisma.pedidoRastreador.findMany.mockResolvedValue([
         {
           id: 10,
@@ -122,16 +137,34 @@ describe('KitsService', () => {
         },
       ]);
 
-      await expect(service.updateAparelhoKit(1, 5)).rejects.toThrow(BadRequestException);
-      await expect(service.updateAparelhoKit(1, 5)).rejects.toThrow('modelo deve ser "FMB920"');
+      await expect(service.updateAparelhoKit(1, 5)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.updateAparelhoKit(1, 5)).rejects.toThrow(
+        'modelo deve ser "FMB920"',
+      );
     });
 
     it('lança BadRequestException quando operadora do SIM não atende ao pedido', async () => {
       prisma.aparelho.findUnique
         .mockResolvedValueOnce({ id: 1, tipo: 'RASTREADOR' })
-        .mockResolvedValueOnce({ id: 1, tipo: 'RASTREADOR', marca: null, modelo: null, clienteId: null, simVinculado: { operadora: 'TIM' } })
+        .mockResolvedValueOnce({
+          id: 1,
+          tipo: 'RASTREADOR',
+          marca: null,
+          modelo: null,
+          clienteId: null,
+          simVinculado: { operadora: 'TIM' },
+        })
         .mockResolvedValueOnce({ id: 1, tipo: 'RASTREADOR' })
-        .mockResolvedValueOnce({ id: 1, tipo: 'RASTREADOR', marca: null, modelo: null, clienteId: null, simVinculado: { operadora: 'TIM' } });
+        .mockResolvedValueOnce({
+          id: 1,
+          tipo: 'RASTREADOR',
+          marca: null,
+          modelo: null,
+          clienteId: null,
+          simVinculado: { operadora: 'TIM' },
+        });
       prisma.pedidoRastreador.findMany.mockResolvedValue([
         {
           id: 10,
@@ -143,12 +176,19 @@ describe('KitsService', () => {
         },
       ]);
 
-      await expect(service.updateAparelhoKit(1, 5)).rejects.toThrow(BadRequestException);
-      await expect(service.updateAparelhoKit(1, 5)).rejects.toThrow('operadora do SIM deve ser "Vivo"');
+      await expect(service.updateAparelhoKit(1, 5)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.updateAparelhoKit(1, 5)).rejects.toThrow(
+        'operadora do SIM deve ser "Vivo"',
+      );
     });
 
     it('não valida quando kitId é null (remoção do kit)', async () => {
-      prisma.aparelho.findUnique.mockResolvedValue({ id: 1, tipo: 'RASTREADOR' });
+      prisma.aparelho.findUnique.mockResolvedValue({
+        id: 1,
+        tipo: 'RASTREADOR',
+      });
       const updated = { id: 1, kitId: null };
       prisma.aparelho.update.mockResolvedValue(updated);
 
@@ -156,84 +196,6 @@ describe('KitsService', () => {
 
       expect(result).toEqual(updated);
       expect(prisma.pedidoRastreador.findMany).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('validarDadosParaKit', () => {
-    it('não faz nada quando não há pedido vinculado ao kit', async () => {
-      prisma.pedidoRastreador.findMany.mockResolvedValue([]);
-
-      await expect(
-        service.validarDadosParaKit(5, { marca: 'Qualquer', modelo: 'Qualquer', operadora: 'Qualquer' }),
-      ).resolves.toBeUndefined();
-    });
-
-    it('lança BadRequestException quando pedido exige modelo X e dados.modelo é Y', async () => {
-      prisma.pedidoRastreador.findMany.mockResolvedValue([
-        {
-          id: 10,
-          kitIds: [5],
-          deClienteId: null,
-          marcaEquipamento: { nome: 'Teltonika' },
-          modeloEquipamento: { nome: 'FMB003' },
-          operadora: null,
-        },
-      ]);
-
-      await expect(
-        service.validarDadosParaKit(5, { marca: 'Teltonika', modelo: 'FMB920', operadora: null }),
-      ).rejects.toThrow(new BadRequestException('Aparelho não atende ao pedido: modelo deve ser "FMB003"'));
-    });
-
-    it('lança BadRequestException quando pedido exige marca X e dados.marca é Y', async () => {
-      prisma.pedidoRastreador.findMany.mockResolvedValue([
-        {
-          id: 10,
-          kitIds: [5],
-          deClienteId: null,
-          marcaEquipamento: { nome: 'Teltonika' },
-          modeloEquipamento: null,
-          operadora: null,
-        },
-      ]);
-
-      await expect(
-        service.validarDadosParaKit(5, { marca: 'Queclink', modelo: null, operadora: null }),
-      ).rejects.toThrow(new BadRequestException('Aparelho não atende ao pedido: marca deve ser "Teltonika"'));
-    });
-
-    it('lança BadRequestException quando pedido exige operadora X e dados.operadora é Y', async () => {
-      prisma.pedidoRastreador.findMany.mockResolvedValue([
-        {
-          id: 10,
-          kitIds: [5],
-          deClienteId: null,
-          marcaEquipamento: null,
-          modeloEquipamento: null,
-          operadora: { nome: 'Claro' },
-        },
-      ]);
-
-      await expect(
-        service.validarDadosParaKit(5, { marca: null, modelo: null, operadora: 'Vivo' }),
-      ).rejects.toThrow(new BadRequestException('Aparelho não atende ao pedido: operadora do SIM deve ser "Claro"'));
-    });
-
-    it('não lança quando dados atendem todos os requisitos do pedido', async () => {
-      prisma.pedidoRastreador.findMany.mockResolvedValue([
-        {
-          id: 10,
-          kitIds: [5],
-          deClienteId: null,
-          marcaEquipamento: { nome: 'Teltonika' },
-          modeloEquipamento: { nome: 'FMB003' },
-          operadora: { nome: 'Claro' },
-        },
-      ]);
-
-      await expect(
-        service.validarDadosParaKit(5, { marca: 'Teltonika', modelo: 'FMB003', operadora: 'Claro' }),
-      ).resolves.toBeUndefined();
     });
   });
 
