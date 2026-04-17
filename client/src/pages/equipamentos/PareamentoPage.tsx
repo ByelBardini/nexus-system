@@ -22,8 +22,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Switch } from '@/components/ui/switch'
 import { MaterialIcon } from '@/components/MaterialIcon'
 import { api } from '@/lib/api'
 import {
@@ -70,17 +68,11 @@ export function PareamentoPage() {
   const [operadoraSim, setOperadoraSim] = useState('')
   const [marcaSimcardIdSim, setMarcaSimcardIdSim] = useState('')
   const [planoSimcardIdSim, setPlanoSimcardIdSim] = useState('')
-  const [adicionarKit, setAdicionarKit] = useState(false)
-  const [kitModo, setKitModo] = useState<'existente' | 'novo'>('existente')
-  const [kitIdExistente, setKitIdExistente] = useState<string>('')
-  const [kitNomeNovo, setKitNomeNovo] = useState<string>('')
-  const [kitBuscaIndividual, setKitBuscaIndividual] = useState('')
   const [proprietarioIndividual, setProprietarioIndividual] = useState<ProprietarioTipo>('INFINITY')
   const [clienteIdIndividual, setClienteIdIndividual] = useState<number | null>(null)
   const [quantidadeCriada, setQuantidadeCriada] = useState(0)
 
   // Massa
-  const [kitNomeMassa, setKitNomeMassa] = useState<string>('')
   const [textImeis, setTextImeis] = useState('')
   const [textIccids, setTextIccids] = useState('')
   const [preview, setPreview] = useState<PreviewResult | null>(null)
@@ -93,10 +85,6 @@ export function PareamentoPage() {
   const [operadoraSimMassa, setOperadoraSimMassa] = useState('')
   const [marcaSimcardIdSimMassa, setMarcaSimcardIdSimMassa] = useState('')
   const [planoSimcardIdSimMassa, setPlanoSimcardIdSimMassa] = useState('')
-  const [adicionarKitMassa, setAdicionarKitMassa] = useState(false)
-  const [kitModoMassa, setKitModoMassa] = useState<'existente' | 'novo'>('existente')
-  const [kitIdExistenteMassa, setKitIdExistenteMassa] = useState<string>('')
-  const [kitBuscaMassa, setKitBuscaMassa] = useState('')
   const [loteBuscaRastreador, setLoteBuscaRastreador] = useState('')
   const [loteBuscaSim, setLoteBuscaSim] = useState('')
   const [proprietarioMassa, setProprietarioMassa] = useState<ProprietarioTipo>('INFINITY')
@@ -151,82 +139,6 @@ export function PareamentoPage() {
     queryFn: () => api('/clientes'),
     enabled: proprietarioIndividual === 'CLIENTE' || proprietarioMassa === 'CLIENTE',
   })
-
-  const kitFiltroIndividual = useMemo(() => {
-    let modelo: string | undefined
-    let marca: string | undefined
-    let operadora: string | undefined
-
-    if (pertenceLoteRastreador && loteRastreadorId) {
-      const lote = lotesRastreadores.find((l) => String(l.id) === loteRastreadorId)
-      modelo = lote?.modelo ?? undefined
-      marca = lote?.marca ?? undefined
-    } else if (!pertenceLoteRastreador && modeloRastreador) {
-      modelo = modeloRastreador
-      marca = marcaRastreador || undefined
-    }
-
-    if (pertenceLoteSim && loteSimId) {
-      const lote = lotesSims.find((l) => String(l.id) === loteSimId)
-      operadora = lote?.operadora ?? undefined
-    } else if (!pertenceLoteSim && operadoraSim) {
-      operadora = operadoraSim
-    }
-
-    return { modelo, marca, operadora }
-  }, [pertenceLoteRastreador, loteRastreadorId, lotesRastreadores, modeloRastreador, marcaRastreador,
-      pertenceLoteSim, loteSimId, lotesSims, operadoraSim])
-
-  const kitFiltroMassa = useMemo(() => {
-    let modelo: string | undefined
-    let marca: string | undefined
-    let operadora: string | undefined
-
-    if (pertenceLoteRastreadorMassa && loteRastreadorId) {
-      const lote = lotesRastreadores.find((l) => String(l.id) === loteRastreadorId)
-      modelo = lote?.modelo ?? undefined
-      marca = lote?.marca ?? undefined
-    } else if (!pertenceLoteRastreadorMassa && modeloRastreadorMassa) {
-      modelo = modeloRastreadorMassa
-      marca = marcaRastreadorMassa || undefined
-    }
-
-    if (pertenceLoteSimMassa && loteSimId) {
-      const lote = lotesSims.find((l) => String(l.id) === loteSimId)
-      operadora = lote?.operadora ?? undefined
-    } else if (!pertenceLoteSimMassa && operadoraSimMassa) {
-      operadora = operadoraSimMassa
-    }
-
-    return { modelo, marca, operadora }
-  }, [pertenceLoteRastreadorMassa, loteRastreadorId, lotesRastreadores, modeloRastreadorMassa, marcaRastreadorMassa,
-      pertenceLoteSimMassa, loteSimId, lotesSims, operadoraSimMassa])
-
-  const kitFiltroAtivo = modo === 'individual' ? kitFiltroIndividual : kitFiltroMassa
-  const { data: kits = [] } = useQuery<{ id: number; nome: string }[]>({
-    queryKey: ['kits', kitFiltroAtivo],
-    queryFn: () => {
-      const params = new URLSearchParams()
-      if (kitFiltroAtivo.modelo) params.set('modelo', kitFiltroAtivo.modelo)
-      if (kitFiltroAtivo.marca) params.set('marca', kitFiltroAtivo.marca)
-      if (kitFiltroAtivo.operadora) params.set('operadora', kitFiltroAtivo.operadora)
-      const qs = params.toString()
-      return api(`/aparelhos/pareamento/kits${qs ? `?${qs}` : ''}`)
-    },
-    enabled: (modo === 'individual' && adicionarKit) || (modo === 'massa' && adicionarKitMassa),
-  })
-
-  const kitsFilteradosIndividual = useMemo(() => {
-    const s = kitBuscaIndividual.trim().toLowerCase()
-    if (!s) return kits
-    return kits.filter((k) => k.nome.toLowerCase().includes(s))
-  }, [kits, kitBuscaIndividual])
-
-  const kitsFilteradosMassa = useMemo(() => {
-    const s = kitBuscaMassa.trim().toLowerCase()
-    if (!s) return kits
-    return kits.filter((k) => k.nome.toLowerCase().includes(s))
-  }, [kits, kitBuscaMassa])
 
   const lotesRastreadoresFiltrados = useMemo(() => {
     const s = loteBuscaRastreador.trim().toLowerCase()
@@ -338,21 +250,6 @@ export function PareamentoPage() {
               )
               .map((l) => ({ imei: l.imei, iccid: l.iccid })) ?? [])
 
-      const kitPayload =
-        modo === 'individual' && adicionarKit
-          ? kitModo === 'existente' && kitIdExistente
-            ? { kitId: +kitIdExistente }
-            : kitModo === 'novo' && kitNomeNovo.trim()
-              ? { kitNome: kitNomeNovo.trim() }
-              : {}
-          : modo === 'massa' && adicionarKitMassa
-            ? kitModoMassa === 'existente' && kitIdExistenteMassa
-              ? { kitId: +kitIdExistenteMassa }
-              : kitModoMassa === 'novo' && kitNomeMassa.trim()
-                ? { kitNome: kitNomeMassa.trim() }
-                : {}
-            : {}
-
       const proprietario = modo === 'individual' ? proprietarioIndividual : proprietarioMassa
       const clienteId = modo === 'individual' ? clienteIdIndividual : clienteIdMassa
 
@@ -390,13 +287,11 @@ export function PareamentoPage() {
                 : undefined,
           proprietario,
           clienteId: clienteId ?? undefined,
-          ...kitPayload,
         }),
       })
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['aparelhos'] })
-      queryClient.invalidateQueries({ queryKey: ['kits'] })
       setQuantidadeCriada((prev) => prev + (data?.criados ?? 0))
       toast.success(`${data?.criados ?? 0} equipamento(s) criado(s) com sucesso!`)
       if (modo === 'individual') {
@@ -411,8 +306,6 @@ export function PareamentoPage() {
         setPlanoSimcardIdSim('')
         setLoteRastreadorId('')
         setLoteSimId('')
-        setKitIdExistente('')
-        setKitNomeNovo('')
         setProprietarioIndividual('INFINITY')
         setClienteIdIndividual(null)
       } else {
@@ -428,10 +321,6 @@ export function PareamentoPage() {
         setOperadoraSimMassa('')
         setMarcaSimcardIdSimMassa('')
         setPlanoSimcardIdSimMassa('')
-        setAdicionarKitMassa(false)
-        setKitModoMassa('existente')
-        setKitIdExistenteMassa('')
-        setKitNomeMassa('')
         setProprietarioMassa('INFINITY')
         setClienteIdMassa(null)
       }
@@ -629,13 +518,8 @@ export function PareamentoPage() {
     setMarcaRastreadorMassa('')
     setModeloRastreadorMassa('')
     setOperadoraSimMassa('')
-    setAdicionarKitMassa(false)
-    setKitModoMassa('existente')
-    setKitIdExistenteMassa('')
-    setKitNomeMassa('')
     setProprietarioMassa('INFINITY')
     setClienteIdMassa(null)
-    setTecnicoIdMassa(null)
   }
 
   const subtituloPorModo: Record<ModoPareamento, string> = {
@@ -1047,92 +931,6 @@ export function PareamentoPage() {
                   )}
                 </div>
 
-                <div className="rounded-sm border border-slate-200 bg-white p-5">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100">
-                        <MaterialIcon name="inventory" className="text-slate-600" />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-slate-800">Vinculação a Kit</h3>
-                        <p className="text-[10px] font-medium uppercase text-slate-500">
-                          Opcional: Associar este par a um kit de instalação
-                        </p>
-                      </div>
-                    </div>
-                    <label className="relative inline-flex shrink-0 cursor-pointer items-center">
-                      <Switch
-                        checked={adicionarKit}
-                        onCheckedChange={setAdicionarKit}
-                        className="data-[state=checked]:bg-erp-blue"
-                      />
-                      <span className="ml-3 shrink-0 whitespace-nowrap text-[10px] font-bold uppercase text-slate-600">
-                        Ativar Vínculo
-                      </span>
-                    </label>
-                  </div>
-                  {adicionarKit && (
-                    <div className="mt-4 space-y-4 bg-slate-50/30 p-5">
-                      <RadioGroup value={kitModo} onValueChange={(v) => setKitModo(v as 'existente' | 'novo')} className="flex gap-4">
-                        <label htmlFor="kitModo-existente" className="flex cursor-pointer items-center gap-2">
-                          <RadioGroupItem value="existente" id="kitModo-existente" className="border-slate-300 text-erp-blue" />
-                          <span className="text-[11px] font-bold uppercase text-slate-600">
-                            Selecionar kit existente
-                          </span>
-                        </label>
-                        <label htmlFor="kitModo-novo" className="flex cursor-pointer items-center gap-2">
-                          <RadioGroupItem value="novo" id="kitModo-novo" className="border-slate-300 text-erp-blue" />
-                          <span className="text-[11px] font-bold uppercase text-slate-600">
-                            Criar novo kit
-                          </span>
-                        </label>
-                      </RadioGroup>
-                      {kitModo === 'existente' ? (
-                        <div>
-                          <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-600">
-                            Kit
-                          </Label>
-                          <Select value={kitIdExistente} onValueChange={setKitIdExistente} onOpenChange={(o) => { if (!o) setKitBuscaIndividual('') }}>
-                            <SelectTrigger className="h-9">
-                              <SelectValue placeholder="Selecione um kit..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <div className="px-2 pb-1 pt-1">
-                                <Input
-                                  placeholder="Buscar kit..."
-                                  value={kitBuscaIndividual}
-                                  onChange={(e) => setKitBuscaIndividual(e.target.value)}
-                                  onKeyDown={(e) => e.stopPropagation()}
-                                  className="h-7 text-xs"
-                                />
-                              </div>
-                              {kitsFilteradosIndividual.map((k) => (
-                                <SelectItem key={k.id} value={String(k.id)}>
-                                  {k.nome}
-                                </SelectItem>
-                              ))}
-                              {kitsFilteradosIndividual.length === 0 && (
-                                <SelectItem value="_" disabled>Nenhum kit encontrado</SelectItem>
-                              )}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      ) : (
-                        <div>
-                          <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-600">
-                            Nome do novo kit
-                          </Label>
-                          <Input
-                            value={kitNomeNovo}
-                            onChange={(e) => setKitNomeNovo(e.target.value)}
-                            placeholder="Ex: Kit Padrão Caminhão"
-                            className="h-9"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
               </div>
 
               <div className="col-span-4">
@@ -1616,89 +1414,6 @@ export function PareamentoPage() {
                           onChange={(id) => setClienteIdMassa(id ?? null)}
                           placeholder="Digite para pesquisar cliente..."
                         />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mt-6 rounded-sm border border-slate-200 bg-white p-5">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100">
-                          <MaterialIcon name="inventory" className="text-slate-600" />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-bold text-slate-800">Vinculação a Kit</h3>
-                          <p className="text-[10px] font-medium uppercase text-slate-500">
-                            Opcional: Associar os equipamentos a um kit de instalação
-                          </p>
-                        </div>
-                      </div>
-                      <label className="relative inline-flex shrink-0 cursor-pointer items-center">
-                        <Switch
-                          checked={adicionarKitMassa}
-                          onCheckedChange={setAdicionarKitMassa}
-                          className="data-[state=checked]:bg-erp-blue"
-                        />
-                        <span className="ml-3 shrink-0 whitespace-nowrap text-[10px] font-bold uppercase text-slate-600">
-                          Ativar Vínculo
-                        </span>
-                      </label>
-                    </div>
-                    {adicionarKitMassa && (
-                      <div className="mt-4 space-y-4 bg-slate-50/30 p-5">
-                        <RadioGroup value={kitModoMassa} onValueChange={(v) => setKitModoMassa(v as 'existente' | 'novo')} className="flex gap-4">
-                          <label htmlFor="kitModoMassa-existente" className="flex cursor-pointer items-center gap-2">
-                            <RadioGroupItem value="existente" id="kitModoMassa-existente" className="border-slate-300 text-erp-blue" />
-                            <span className="text-[11px] font-bold uppercase text-slate-600">
-                              Selecionar kit existente
-                            </span>
-                          </label>
-                          <label htmlFor="kitModoMassa-novo" className="flex cursor-pointer items-center gap-2">
-                            <RadioGroupItem value="novo" id="kitModoMassa-novo" className="border-slate-300 text-erp-blue" />
-                            <span className="text-[11px] font-bold uppercase text-slate-600">
-                              Criar novo kit
-                            </span>
-                          </label>
-                        </RadioGroup>
-                        {kitModoMassa === 'existente' ? (
-                          <div>
-                            <Label className="mb-1 block text-[10px] font-bold text-slate-500">Kit</Label>
-                            <Select value={kitIdExistenteMassa} onValueChange={setKitIdExistenteMassa} onOpenChange={(o) => { if (!o) setKitBuscaMassa('') }}>
-                              <SelectTrigger className="h-9">
-                                <SelectValue placeholder="Selecione um kit..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <div className="px-2 pb-1 pt-1">
-                                  <Input
-                                    placeholder="Buscar kit..."
-                                    value={kitBuscaMassa}
-                                    onChange={(e) => setKitBuscaMassa(e.target.value)}
-                                    onKeyDown={(e) => e.stopPropagation()}
-                                    className="h-7 text-xs"
-                                  />
-                                </div>
-                                {kitsFilteradosMassa.map((k) => (
-                                  <SelectItem key={k.id} value={String(k.id)}>
-                                    {k.nome}
-                                  </SelectItem>
-                                ))}
-                                {kitsFilteradosMassa.length === 0 && (
-                                  <SelectItem value="_" disabled>Nenhum kit encontrado</SelectItem>
-                                )}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        ) : (
-                          <div>
-                            <Label className="mb-1 block text-[10px] font-bold text-slate-500">Nome do novo kit</Label>
-                            <Input
-                              value={kitNomeMassa}
-                              onChange={(e) => setKitNomeMassa(e.target.value)}
-                              placeholder="Ex: Kit Padrão Caminhão"
-                              className="h-9"
-                            />
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>

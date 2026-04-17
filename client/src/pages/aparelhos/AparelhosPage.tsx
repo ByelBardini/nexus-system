@@ -49,6 +49,7 @@ interface Aparelho {
   aparelhosVinculados?: {
     id: number
     identificador?: string | null
+    proprietario?: ProprietarioTipo | null
     kitId?: number | null
     kit?: { id: number; nome: string } | null
     tecnicoId?: number | null

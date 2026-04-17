@@ -1007,6 +1007,7 @@ export function ModalNovoPedido({
                 <p className="text-xs font-bold text-blue-800">Distribuição do pedido:</p>
                 {itensMistoFields.map((f, i) => {
                   const item = form.watch(`itensMisto.${i}`)
+                  if (!item) return null
                   const label =
                     item.proprietario === 'INFINITY'
                       ? 'Infinity'
