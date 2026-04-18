@@ -1,6 +1,12 @@
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const FETCH_TIMEOUT_MS = 15_000; // 15s - evita ficar travado quando API está inacessível
 
+let onUnauthorized: (() => void) | null = null;
+
+export function setOnUnauthorized(callback: () => void) {
+  onUnauthorized = callback;
+}
+
 export function getAuthHeaders(): HeadersInit {
   const token = localStorage.getItem('accessToken');
   return {
@@ -46,6 +52,10 @@ export async function api<T>(
       throw new Error('Tempo limite excedido. Verifique se o servidor está rodando.');
     }
     throw err;
+  }
+  if (res.status === 401) {
+    onUnauthorized?.();
+    throw new Error('Sessão expirada. Faça login novamente.');
   }
   if (!res.ok) {
     const err = await res.json().catch(() => ({})) as { message?: string };
