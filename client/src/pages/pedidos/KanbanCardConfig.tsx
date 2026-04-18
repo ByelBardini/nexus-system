@@ -1,6 +1,6 @@
-import { cn } from '@/lib/utils'
-import { formatarFromNow } from '@/lib/format'
-import type { PedidoRastreadorView } from './types'
+import { cn } from "@/lib/utils";
+import { formatarFromNow } from "@/lib/format";
+import type { PedidoRastreadorView } from "./types";
 
 export function KanbanCardConfig({
   pedido,
@@ -8,23 +8,25 @@ export function KanbanCardConfig({
   isActive,
   onClick,
 }: {
-  pedido: PedidoRastreadorView
-  progress: number
-  isActive: boolean
-  onClick: () => void
+  pedido: PedidoRastreadorView;
+  progress: number;
+  isActive: boolean;
+  onClick: () => void;
 }) {
-  const total = pedido.quantidade
+  const total = pedido.quantidade;
 
   return (
     <div
       role="button"
       tabIndex={0}
       onClick={onClick}
-      onKeyDown={(e) => e.key === 'Enter' && onClick()}
+      onKeyDown={(e) => e.key === "Enter" && onClick()}
       className={cn(
-        'bg-white border p-4 mb-3 rounded shadow-sm transition-all cursor-pointer',
-        'hover:ring-2 hover:ring-erp-blue/30',
-        isActive ? 'ring-2 ring-erp-blue border-blue-200 bg-blue-50/30' : 'border-slate-200'
+        "bg-white border p-4 mb-3 rounded shadow-sm transition-all cursor-pointer",
+        "hover:ring-2 hover:ring-erp-blue/30",
+        isActive
+          ? "ring-2 ring-erp-blue border-blue-200 bg-blue-50/30"
+          : "border-slate-200",
       )}
     >
       <div className="flex justify-between items-start gap-2 mb-2">
@@ -34,14 +36,14 @@ export function KanbanCardConfig({
         {pedido.urgencia && (
           <span
             className={cn(
-              'text-[9px] font-bold uppercase px-1.5 py-0.5 rounded shrink-0',
-              pedido.urgencia === 'Urgente'
-                ? 'bg-red-100 text-red-700'
-                : pedido.urgencia === 'Alta'
-                  ? 'bg-amber-100 text-amber-700'
-                  : pedido.urgencia === 'Média'
-                    ? 'bg-slate-100 text-slate-600'
-                    : 'bg-slate-50 text-slate-500'
+              "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded shrink-0",
+              pedido.urgencia === "Urgente"
+                ? "bg-red-100 text-red-700"
+                : pedido.urgencia === "Alta"
+                  ? "bg-amber-100 text-amber-700"
+                  : pedido.urgencia === "Média"
+                    ? "bg-slate-100 text-slate-600"
+                    : "bg-slate-50 text-slate-500",
             )}
           >
             {pedido.urgencia}
@@ -53,8 +55,8 @@ export function KanbanCardConfig({
       </h3>
       <div className="text-[11px] text-slate-500 mb-3 space-y-1">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span>{pedido.tipo === 'cliente' ? 'Cliente' : 'Técnico'}</span>
-          {pedido.tipo === 'misto' && (
+          <span>{pedido.tipo === "cliente" ? "Cliente" : "Técnico"}</span>
+          {pedido.tipo === "misto" && (
             <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border bg-purple-50 text-purple-700 border-purple-200">
               Misto
             </span>
@@ -63,41 +65,46 @@ export function KanbanCardConfig({
         {pedido.cidadeEstado && (
           <span className="block text-slate-400">{pedido.cidadeEstado}</span>
         )}
-        {pedido.tipo === 'misto' && pedido.itensMisto && pedido.itensMisto.length > 0 && (
-          <div className="flex flex-wrap gap-1 pt-0.5">
-            {pedido.itensMisto.map((item, i) => (
-              <span
-                key={i}
-                className={cn(
-                  'text-[9px] font-bold px-1.5 py-0.5 rounded border',
-                  item.label === 'Infinity'
-                    ? 'bg-blue-50 text-blue-700 border-blue-200'
-                    : 'bg-slate-50 text-slate-600 border-slate-200'
-                )}
-              >
-                {item.label} · {item.quantidade}
-              </span>
-            ))}
-          </div>
-        )}
+        {pedido.tipo === "misto" &&
+          pedido.itensMisto &&
+          pedido.itensMisto.length > 0 && (
+            <div className="flex flex-wrap gap-1 pt-0.5">
+              {pedido.itensMisto.map((item, i) => (
+                <span
+                  key={i}
+                  className={cn(
+                    "text-[9px] font-bold px-1.5 py-0.5 rounded border",
+                    item.label === "Infinity"
+                      ? "bg-blue-50 text-blue-700 border-blue-200"
+                      : "bg-slate-50 text-slate-600 border-slate-200",
+                  )}
+                >
+                  {item.label} · {item.quantidade}
+                </span>
+              ))}
+            </div>
+          )}
       </div>
       {pedido.solicitadoEm && (
-        <p className="text-[10px] text-slate-400 mb-3">{formatarFromNow(pedido.solicitadoEm)}</p>
+        <p className="text-[10px] text-slate-400 mb-3">
+          {formatarFromNow(pedido.solicitadoEm)}
+        </p>
       )}
       <div className="space-y-1.5">
         <div className="flex justify-between text-[10px] font-bold text-slate-600">
           <span>Progresso de Montagem</span>
-          <span className={progress > 0 ? 'text-erp-blue' : ''}>
-            {String(progress).padStart(2,'0')} / {String(total).padStart(2, '0')}
+          <span className={progress > 0 ? "text-erp-blue" : ""}>
+            {String(progress).padStart(2, "0")} /{" "}
+            {String(total).padStart(2, "0")}
           </span>
         </div>
         <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
           <div
             className="h-full bg-erp-blue rounded-full transition-all"
-            style={{ width: total ? `${(progress / total) * 100}%` : '0%' }}
+            style={{ width: total ? `${(progress / total) * 100}%` : "0%" }}
           />
         </div>
       </div>
     </div>
-  )
+  );
 }

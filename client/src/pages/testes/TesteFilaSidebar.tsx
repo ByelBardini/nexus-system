@@ -1,27 +1,27 @@
-import { Search } from 'lucide-react'
-import { Input } from '@/components/ui/input'
-import { TesteFilaCard } from './TesteFilaCard'
-import type { OsTeste } from './testes-types'
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { TesteFilaCard } from "./TesteFilaCard";
+import type { OsTeste } from "./testes-types";
 
 interface TesteFilaSidebarProps {
-  items: OsTeste[]
-  selectedId: number | null
-  search: string
-  onSearchChange: (v: string) => void
-  onSelect: (id: number) => void
+  items: OsTeste[];
+  selectedId: number | null;
+  search: string;
+  onSearchChange: (v: string) => void;
+  onSelect: (id: number) => void;
 }
 
 function filterItems(items: OsTeste[], search: string): OsTeste[] {
-  if (!search.trim()) return items
-  const term = search.toLowerCase().trim()
+  if (!search.trim()) return items;
+  const term = search.toLowerCase().trim();
   return items.filter(
     (i) =>
       String(i.numero).includes(term) ||
-      (i.veiculo?.placa ?? '').toLowerCase().includes(term) ||
-      (i.cliente?.nome ?? '').toLowerCase().includes(term) ||
-      (i.subcliente?.nome ?? '').toLowerCase().includes(term) ||
-      (i.idAparelho?.toLowerCase().includes(term) ?? false)
-  )
+      (i.veiculo?.placa ?? "").toLowerCase().includes(term) ||
+      (i.cliente?.nome ?? "").toLowerCase().includes(term) ||
+      (i.subcliente?.nome ?? "").toLowerCase().includes(term) ||
+      (i.idAparelho?.toLowerCase().includes(term) ?? false),
+  );
 }
 
 export function TesteFilaSidebar({
@@ -31,7 +31,7 @@ export function TesteFilaSidebar({
   onSearchChange,
   onSelect,
 }: TesteFilaSidebarProps) {
-  const filtered = filterItems(items, search)
+  const filtered = filterItems(items, search);
 
   return (
     <aside className="w-80 shrink-0 bg-white border-l border-slate-200 flex flex-col h-full overflow-hidden">
@@ -53,7 +53,10 @@ export function TesteFilaSidebar({
         {filtered.length === 0 ? (
           <div className="p-4 text-center text-[11px] text-slate-500">
             {search.trim() ? (
-              <>Nenhum resultado para a busca. Limpe o filtro para ver todos os itens em testes.</>
+              <>
+                Nenhum resultado para a busca. Limpe o filtro para ver todos os
+                itens em testes.
+              </>
             ) : (
               <>Nenhum item na fila</>
             )}
@@ -70,5 +73,5 @@ export function TesteFilaSidebar({
         )}
       </div>
     </aside>
-  )
+  );
 }

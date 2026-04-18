@@ -1,151 +1,202 @@
-import { useState, useMemo, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Loader2 } from 'lucide-react'
-import { Input } from '@/components/ui/input'
-import { MaterialIcon } from '@/components/MaterialIcon'
-import { api } from '@/lib/api'
+import { useState, useMemo, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { MaterialIcon } from "@/components/MaterialIcon";
+import { api } from "@/lib/api";
 import {
   mapPedidoToView,
   STATUS_ORDER,
   type PedidoRastreadorView,
   type PedidoRastreadorApi,
   type StatusPedidoKey,
-} from './types'
-import type { KitVinculado, KitDetalhe, TipoDespacho } from './pedidos-config-types'
-import { SidePanel } from './SidePanel'
-import { KanbanColumnConfig } from './KanbanColumnConfig'
+} from "./types";
+import type {
+  KitVinculado,
+  KitDetalhe,
+  TipoDespacho,
+} from "./pedidos-config-types";
+import { SidePanel } from "./SidePanel";
+import { KanbanColumnConfig } from "./KanbanColumnConfig";
 
-const STORAGE_KEY = 'nexus-pedidos-config-workspace'
+const STORAGE_KEY = "nexus-pedidos-config-workspace";
 
 interface WorkspacePersisted {
-  kitsPorPedido: Record<string, KitVinculado[]>
-  tipoDespachoPorPedido: Record<string, TipoDespacho>
-  transportadoraPorPedido: Record<string, string>
-  numeroNfPorPedido: Record<string, string>
+  kitsPorPedido: Record<string, KitVinculado[]>;
+  tipoDespachoPorPedido: Record<string, TipoDespacho>;
+  transportadoraPorPedido: Record<string, string>;
+  numeroNfPorPedido: Record<string, string>;
 }
 
 function loadWorkspaceFromStorage(): WorkspacePersisted {
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEY)
-    if (!raw) return { kitsPorPedido: {}, tipoDespachoPorPedido: {}, transportadoraPorPedido: {}, numeroNfPorPedido: {} }
-    const parsed = JSON.parse(raw) as WorkspacePersisted
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw)
+      return {
+        kitsPorPedido: {},
+        tipoDespachoPorPedido: {},
+        transportadoraPorPedido: {},
+        numeroNfPorPedido: {},
+      };
+    const parsed = JSON.parse(raw) as WorkspacePersisted;
     return {
       kitsPorPedido: parsed.kitsPorPedido ?? {},
       tipoDespachoPorPedido: parsed.tipoDespachoPorPedido ?? {},
       transportadoraPorPedido: parsed.transportadoraPorPedido ?? {},
       numeroNfPorPedido: parsed.numeroNfPorPedido ?? {},
-    }
+    };
   } catch {
-    return { kitsPorPedido: {}, tipoDespachoPorPedido: {}, transportadoraPorPedido: {}, numeroNfPorPedido: {} }
+    return {
+      kitsPorPedido: {},
+      tipoDespachoPorPedido: {},
+      transportadoraPorPedido: {},
+      numeroNfPorPedido: {},
+    };
   }
 }
 
-function parseKitsFromStorage(raw: Record<string, KitVinculado[]>): Record<number, KitVinculado[]> {
-  const out: Record<number, KitVinculado[]> = {}
+function parseKitsFromStorage(
+  raw: Record<string, KitVinculado[]>,
+): Record<number, KitVinculado[]> {
+  const out: Record<number, KitVinculado[]> = {};
   Object.entries(raw).forEach(([k, v]) => {
-    if (Array.isArray(v) && v.every((x) => x && typeof x.id === 'number' && typeof x.nome === 'string' && typeof x.quantidade === 'number')) {
-      out[Number(k)] = v
+    if (
+      Array.isArray(v) &&
+      v.every(
+        (x) =>
+          x &&
+          typeof x.id === "number" &&
+          typeof x.nome === "string" &&
+          typeof x.quantidade === "number",
+      )
+    ) {
+      out[Number(k)] = v;
     }
-  })
-  return out
+  });
+  return out;
 }
 
 export function PedidosConfigPage() {
-  const [busca, setBusca] = useState('')
-  const [panelOpen, setPanelOpen] = useState(false)
-  const [pedidoSelecionado, setPedidoSelecionado] = useState<PedidoRastreadorView | null>(null)
-  const [pedidoApiSelecionado, setPedidoApiSelecionado] = useState<PedidoRastreadorApi | null>(null)
-  const [kitsPorPedido, setKitsPorPedido] = useState<Record<number, KitVinculado[]>>(() => {
-    const s = loadWorkspaceFromStorage()
-    return parseKitsFromStorage(s.kitsPorPedido)
-  })
-  const [tipoDespachoPorPedido, setTipoDespachoPorPedido] = useState<Record<number, TipoDespacho>>(() => {
-    const s = loadWorkspaceFromStorage()
-    const out: Record<number, TipoDespacho> = {}
+  const [busca, setBusca] = useState("");
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [pedidoSelecionado, setPedidoSelecionado] =
+    useState<PedidoRastreadorView | null>(null);
+  const [pedidoApiSelecionado, setPedidoApiSelecionado] =
+    useState<PedidoRastreadorApi | null>(null);
+  const [kitsPorPedido, setKitsPorPedido] = useState<
+    Record<number, KitVinculado[]>
+  >(() => {
+    const s = loadWorkspaceFromStorage();
+    return parseKitsFromStorage(s.kitsPorPedido);
+  });
+  const [tipoDespachoPorPedido, setTipoDespachoPorPedido] = useState<
+    Record<number, TipoDespacho>
+  >(() => {
+    const s = loadWorkspaceFromStorage();
+    const out: Record<number, TipoDespacho> = {};
     Object.entries(s.tipoDespachoPorPedido ?? {}).forEach(([k, v]) => {
-      if (v === 'TRANSPORTADORA' || v === 'CORREIOS' || v === 'EM_MAOS') out[Number(k)] = v
-    })
-    return out
-  })
-  const [transportadoraPorPedido, setTransportadoraPorPedido] = useState<Record<number, string>>(() => {
-    const s = loadWorkspaceFromStorage()
-    const out: Record<number, string> = {}
+      if (v === "TRANSPORTADORA" || v === "CORREIOS" || v === "EM_MAOS")
+        out[Number(k)] = v;
+    });
+    return out;
+  });
+  const [transportadoraPorPedido, setTransportadoraPorPedido] = useState<
+    Record<number, string>
+  >(() => {
+    const s = loadWorkspaceFromStorage();
+    const out: Record<number, string> = {};
     Object.entries(s.transportadoraPorPedido ?? {}).forEach(([k, v]) => {
-      if (typeof v === 'string') out[Number(k)] = v
-    })
-    return out
-  })
-  const [numeroNfPorPedido, setNumeroNfPorPedido] = useState<Record<number, string>>(() => {
-    const s = loadWorkspaceFromStorage()
-    const out: Record<number, string> = {}
+      if (typeof v === "string") out[Number(k)] = v;
+    });
+    return out;
+  });
+  const [numeroNfPorPedido, setNumeroNfPorPedido] = useState<
+    Record<number, string>
+  >(() => {
+    const s = loadWorkspaceFromStorage();
+    const out: Record<number, string> = {};
     Object.entries(s.numeroNfPorPedido ?? {}).forEach(([k, v]) => {
-      if (typeof v === 'string') out[Number(k)] = v
-    })
-    return out
-  })
+      if (typeof v === "string") out[Number(k)] = v;
+    });
+    return out;
+  });
   useEffect(() => {
     const raw: WorkspacePersisted = {
       kitsPorPedido: Object.fromEntries(
-        Object.entries(kitsPorPedido).map(([k, v]) => [k, v])
+        Object.entries(kitsPorPedido).map(([k, v]) => [k, v]),
       ),
       tipoDespachoPorPedido: Object.fromEntries(
-        Object.entries(tipoDespachoPorPedido).map(([k, v]) => [k, v])
+        Object.entries(tipoDespachoPorPedido).map(([k, v]) => [k, v]),
       ),
       transportadoraPorPedido: Object.fromEntries(
-        Object.entries(transportadoraPorPedido).map(([k, v]) => [String(k), v])
+        Object.entries(transportadoraPorPedido).map(([k, v]) => [String(k), v]),
       ),
       numeroNfPorPedido: Object.fromEntries(
-        Object.entries(numeroNfPorPedido).map(([k, v]) => [String(k), v])
+        Object.entries(numeroNfPorPedido).map(([k, v]) => [String(k), v]),
       ),
-    }
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(raw))
-  }, [kitsPorPedido, tipoDespachoPorPedido, transportadoraPorPedido, numeroNfPorPedido])
+    };
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(raw));
+  }, [
+    kitsPorPedido,
+    tipoDespachoPorPedido,
+    transportadoraPorPedido,
+    numeroNfPorPedido,
+  ]);
 
   const { data: lista, isLoading } = useQuery({
-    queryKey: ['pedidos-rastreadores', 'config', busca],
+    queryKey: ["pedidos-rastreadores", "config", busca],
     queryFn: () => {
-      const params = new URLSearchParams()
-      params.set('limit', '500')
-      if (busca.trim()) params.set('search', busca.trim())
-      return api<{ data: PedidoRastreadorApi[] }>(`/pedidos-rastreadores?${params}`)
+      const params = new URLSearchParams();
+      params.set("limit", "500");
+      if (busca.trim()) params.set("search", busca.trim());
+      return api<{ data: PedidoRastreadorApi[] }>(
+        `/pedidos-rastreadores?${params}`,
+      );
     },
-  })
+  });
 
   const { data: kitsDetalhes = [] } = useQuery<KitDetalhe[]>({
-    queryKey: ['aparelhos', 'pareamento', 'kits', 'detalhes'],
-    queryFn: () => api('/aparelhos/pareamento/kits/detalhes'),
+    queryKey: ["aparelhos", "pareamento", "kits", "detalhes"],
+    queryFn: () => api("/aparelhos/pareamento/kits/detalhes"),
     enabled: panelOpen && (pedidoApiSelecionado?.kitIds?.length ?? 0) > 0,
-  })
+  });
 
   useEffect(() => {
-    if (!panelOpen || !pedidoApiSelecionado) return
-    const ids = pedidoApiSelecionado.kitIds
-    if (!ids || !Array.isArray(ids) || ids.length === 0) return
-    if (kitsDetalhes.length === 0) return
-    const current = kitsPorPedido[pedidoApiSelecionado.id]
-    if (current && current.length > 0) return
-    const mapById = new Map(kitsDetalhes.map((k) => [k.id, k]))
+    if (!panelOpen || !pedidoApiSelecionado) return;
+    const ids = pedidoApiSelecionado.kitIds;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) return;
+    if (kitsDetalhes.length === 0) return;
+    const current = kitsPorPedido[pedidoApiSelecionado.id];
+    if (current && current.length > 0) return;
+    const mapById = new Map(kitsDetalhes.map((k) => [k.id, k]));
     const kits: KitVinculado[] = ids.map((id) => {
-      const d = mapById.get(id)
-      return { id, nome: d?.nome ?? `Kit #${id}`, quantidade: d?.quantidade ?? 1 }
-    })
+      const d = mapById.get(id);
+      return {
+        id,
+        nome: d?.nome ?? `Kit #${id}`,
+        quantidade: d?.quantidade ?? 1,
+      };
+    });
     if (kits.length > 0) {
-      setKitsPorPedido((prev) => ({ ...prev, [pedidoApiSelecionado.id]: kits }))
+      setKitsPorPedido((prev) => ({
+        ...prev,
+        [pedidoApiSelecionado.id]: kits,
+      }));
     }
-  }, [panelOpen, pedidoApiSelecionado, kitsDetalhes, kitsPorPedido])
+  }, [panelOpen, pedidoApiSelecionado, kitsDetalhes, kitsPorPedido]);
 
   const pedidosView = useMemo(() => {
-    const arr = lista?.data ?? []
-    return arr.map(mapPedidoToView)
-  }, [lista?.data])
+    const arr = lista?.data ?? [];
+    return arr.map(mapPedidoToView);
+  }, [lista?.data]);
 
   const progressPorPedido = useMemo(() => {
-    const map: Record<number, number> = {}
+    const map: Record<number, number> = {};
     Object.entries(kitsPorPedido).forEach(([pedidoId, kits]) => {
-      map[Number(pedidoId)] = kits.reduce((s, k) => s + k.quantidade, 0)
-    })
-    return map
-  }, [kitsPorPedido])
+      map[Number(pedidoId)] = kits.reduce((s, k) => s + k.quantidade, 0);
+    });
+    return map;
+  }, [kitsPorPedido]);
 
   const pedidosPorStatus = useMemo(() => {
     const porStatus: Record<StatusPedidoKey, PedidoRastreadorView[]> = {
@@ -154,16 +205,18 @@ export function PedidosConfigPage() {
       configurado: [],
       despachado: [],
       entregue: [],
-    }
-    pedidosView.forEach((p) => porStatus[p.status].push(p))
-    return porStatus
-  }, [pedidosView])
+    };
+    pedidosView.forEach((p) => porStatus[p.status].push(p));
+    return porStatus;
+  }, [pedidosView]);
 
   function handleCardClick(pedido: PedidoRastreadorView) {
-    const raw = lista?.data?.find((p: PedidoRastreadorApi) => p.id === pedido.id)
-    setPedidoSelecionado(pedido)
-    setPedidoApiSelecionado(raw ?? null)
-    setPanelOpen(true)
+    const raw = lista?.data?.find(
+      (p: PedidoRastreadorApi) => p.id === pedido.id,
+    );
+    setPedidoSelecionado(pedido);
+    setPedidoApiSelecionado(raw ?? null);
+    setPanelOpen(true);
   }
 
   if (isLoading) {
@@ -171,7 +224,7 @@ export function PedidosConfigPage() {
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
-    )
+    );
   }
 
   return (
@@ -213,37 +266,59 @@ export function PedidosConfigPage() {
         pedidoApi={pedidoApiSelecionado as PedidoRastreadorApi | null}
         open={panelOpen}
         onClose={() => setPanelOpen(false)}
-        onStatusUpdated={() => { }}
-        kitsVinculados={pedidoSelecionado ? (kitsPorPedido[pedidoSelecionado.id] ?? []) : []}
+        onStatusUpdated={() => {}}
+        kitsVinculados={
+          pedidoSelecionado ? (kitsPorPedido[pedidoSelecionado.id] ?? []) : []
+        }
         kitsPorPedido={kitsPorPedido}
         onKitsChange={(kits) => {
           if (pedidoSelecionado) {
-            setKitsPorPedido((prev) => ({ ...prev, [pedidoSelecionado.id]: kits }))
+            setKitsPorPedido((prev) => ({
+              ...prev,
+              [pedidoSelecionado.id]: kits,
+            }));
           }
         }}
         tipoDespacho={
           pedidoSelecionado
-            ? (tipoDespachoPorPedido[pedidoSelecionado.id] ?? 'TRANSPORTADORA')
-            : 'TRANSPORTADORA'
+            ? (tipoDespachoPorPedido[pedidoSelecionado.id] ?? "TRANSPORTADORA")
+            : "TRANSPORTADORA"
         }
         onTipoDespachoChange={(tipo) => {
           if (pedidoSelecionado) {
-            setTipoDespachoPorPedido((prev) => ({ ...prev, [pedidoSelecionado.id]: tipo }))
+            setTipoDespachoPorPedido((prev) => ({
+              ...prev,
+              [pedidoSelecionado.id]: tipo,
+            }));
           }
         }}
-        transportadora={pedidoSelecionado ? (transportadoraPorPedido[pedidoSelecionado.id] ?? '') : ''}
-        numeroNf={pedidoSelecionado ? (numeroNfPorPedido[pedidoSelecionado.id] ?? '') : ''}
+        transportadora={
+          pedidoSelecionado
+            ? (transportadoraPorPedido[pedidoSelecionado.id] ?? "")
+            : ""
+        }
+        numeroNf={
+          pedidoSelecionado
+            ? (numeroNfPorPedido[pedidoSelecionado.id] ?? "")
+            : ""
+        }
         onTransportadoraChange={(valor) => {
           if (pedidoSelecionado) {
-            setTransportadoraPorPedido((prev) => ({ ...prev, [pedidoSelecionado.id]: valor }))
+            setTransportadoraPorPedido((prev) => ({
+              ...prev,
+              [pedidoSelecionado.id]: valor,
+            }));
           }
         }}
         onNumeroNfChange={(valor) => {
           if (pedidoSelecionado) {
-            setNumeroNfPorPedido((prev) => ({ ...prev, [pedidoSelecionado.id]: valor }))
+            setNumeroNfPorPedido((prev) => ({
+              ...prev,
+              [pedidoSelecionado.id]: valor,
+            }));
           }
         }}
       />
     </div>
-  )
+  );
 }

@@ -1,25 +1,29 @@
-import { useState, useEffect, useMemo } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { Checkbox } from '@/components/ui/checkbox'
-import { MaterialIcon } from '@/components/MaterialIcon'
-import { SearchableSelect } from '@/components/SearchableSelect'
-import { api } from '@/lib/api'
-import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
-import { formatarDataHora } from '@/lib/format'
-import type { PedidoRastreadorView, PedidoRastreadorApi, AparelhosDestinatariosResponse } from './types'
+import { useState, useEffect, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { MaterialIcon } from "@/components/MaterialIcon";
+import { SearchableSelect } from "@/components/SearchableSelect";
+import { api } from "@/lib/api";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { formatarDataHora } from "@/lib/format";
+import type {
+  PedidoRastreadorView,
+  PedidoRastreadorApi,
+  AparelhosDestinatariosResponse,
+} from "./types";
 import type {
   KitResumo,
   KitVinculado,
   KitComAparelhos,
   AparelhoNoKit,
   KitDetalhe,
-} from './pedidos-config-types'
+} from "./pedidos-config-types";
 
 export function ModalSelecaoEKit({
   open,
@@ -31,127 +35,170 @@ export function ModalSelecaoEKit({
   kitsPorPedido,
   filtrosPedido,
 }: {
-  open: boolean
-  onOpenChange: (o: boolean) => void
-  pedido: PedidoRastreadorView | null
-  pedidoApi: PedidoRastreadorApi | null
-  onVincular: (kit: KitResumo, qtd: number) => void
-  kitParaEditar?: { id: number; nome: string } | null
-  kitsPorPedido?: Record<number, KitVinculado[]>
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  pedido: PedidoRastreadorView | null;
+  pedidoApi: PedidoRastreadorApi | null;
+  onVincular: (kit: KitResumo, qtd: number) => void;
+  kitParaEditar?: { id: number; nome: string } | null;
+  kitsPorPedido?: Record<number, KitVinculado[]>;
   filtrosPedido?: {
-    clienteId?: number | null
-    modeloEquipamentoId?: number | null
-    marcaEquipamentoId?: number | null
-    operadoraId?: number | null
-  } | null
+    clienteId?: number | null;
+    modeloEquipamentoId?: number | null;
+    marcaEquipamentoId?: number | null;
+    operadoraId?: number | null;
+  } | null;
 }) {
-  const queryClient = useQueryClient()
-  const [step, setStep] = useState<'selecao' | 'edicao'>('selecao')
-  const [kitSelecionado, setKitSelecionado] = useState<KitComAparelhos | null>(null)
-  const [filtroBusca, setFiltroBusca] = useState('')
-  const [showCriarNovo, setShowCriarNovo] = useState(false)
-  const [nomeNovoKit, setNomeNovoKit] = useState('')
-  const [aparelhosSelecionados, setAparelhosSelecionados] = useState<Set<number>>(new Set())
-  const [buscaAparelho, setBuscaAparelho] = useState('')
-  const [filtroMarcaModelo, setFiltroMarcaModelo] = useState('')
-  const [filtroOperadora, setFiltroOperadora] = useState('')
-  const [filtroCliente, setFiltroCliente] = useState('')
+  const queryClient = useQueryClient();
+  const [step, setStep] = useState<"selecao" | "edicao">("selecao");
+  const [kitSelecionado, setKitSelecionado] = useState<KitComAparelhos | null>(
+    null,
+  );
+  const [filtroBusca, setFiltroBusca] = useState("");
+  const [showCriarNovo, setShowCriarNovo] = useState(false);
+  const [nomeNovoKit, setNomeNovoKit] = useState("");
+  const [aparelhosSelecionados, setAparelhosSelecionados] = useState<
+    Set<number>
+  >(new Set());
+  const [buscaAparelho, setBuscaAparelho] = useState("");
+  const [filtroMarcaModelo, setFiltroMarcaModelo] = useState("");
+  const [filtroOperadora, setFiltroOperadora] = useState("");
+  const [filtroCliente, setFiltroCliente] = useState("");
 
-  const isMisto = pedidoApi?.tipoDestino === 'MISTO'
+  const isMisto = pedidoApi?.tipoDestino === "MISTO";
   const [destinatarioLote, setDestinatarioLote] = useState<{
-    proprietario: 'INFINITY' | 'CLIENTE'
-    clienteId: number | null
-  } | null>(null)
-  const [showAllClientes, setShowAllClientes] = useState(false)
+    proprietario: "INFINITY" | "CLIENTE";
+    clienteId: number | null;
+  } | null>(null);
+  const [showAllClientes, setShowAllClientes] = useState(false);
 
   useEffect(() => {
     if (open && kitParaEditar) {
-      setStep('edicao')
+      setStep("edicao");
       setKitSelecionado({
         id: kitParaEditar.id,
         nome: kitParaEditar.nome,
-        criadoEm: '',
+        criadoEm: "",
         aparelhos: [],
-      })
+      });
     }
-  }, [open, kitParaEditar])
+  }, [open, kitParaEditar]);
 
-  const { data: kitsDetalhes = [], isLoading: loadingKits } = useQuery<KitDetalhe[]>({
-    queryKey: ['aparelhos', 'pareamento', 'kits', 'detalhes'],
-    queryFn: () => api('/aparelhos/pareamento/kits/detalhes'),
-    enabled: open && step === 'selecao',
-  })
+  const { data: kitsDetalhes = [], isLoading: loadingKits } = useQuery<
+    KitDetalhe[]
+  >({
+    queryKey: ["aparelhos", "pareamento", "kits", "detalhes"],
+    queryFn: () => api("/aparelhos/pareamento/kits/detalhes"),
+    enabled: open && step === "selecao",
+  });
 
-  const { data: kitComAparelhos, refetch: refetchKit } = useQuery<KitComAparelhos>({
-    queryKey: ['kit', kitSelecionado?.id],
-    queryFn: () => api(`/aparelhos/pareamento/kits/${kitSelecionado!.id}`),
-    enabled: open && step === 'edicao' && kitSelecionado != null,
-  })
+  const { data: kitComAparelhos, refetch: refetchKit } =
+    useQuery<KitComAparelhos>({
+      queryKey: ["kit", kitSelecionado?.id],
+      queryFn: () => api(`/aparelhos/pareamento/kits/${kitSelecionado!.id}`),
+      enabled: open && step === "edicao" && kitSelecionado != null,
+    });
 
   const { data: destinatariosData } = useQuery<AparelhosDestinatariosResponse>({
-    queryKey: ['pedido-aparelhos-destinatarios', pedidoApi?.id],
-    queryFn: () => api(`/pedidos-rastreadores/${pedidoApi!.id}/aparelhos-destinatarios`),
-    enabled: open && step === 'edicao' && isMisto && pedidoApi != null,
-  })
+    queryKey: ["pedido-aparelhos-destinatarios", pedidoApi?.id],
+    queryFn: () =>
+      api(`/pedidos-rastreadores/${pedidoApi!.id}/aparelhos-destinatarios`),
+    enabled: open && step === "edicao" && isMisto && pedidoApi != null,
+  });
 
   const { data: aparelhosDisponiveis = [] } = useQuery<AparelhoNoKit[]>({
-    queryKey: ['aparelhos', 'disponiveis', kitSelecionado?.id, filtrosPedido, isMisto, showAllClientes],
+    queryKey: [
+      "aparelhos",
+      "disponiveis",
+      kitSelecionado?.id,
+      filtrosPedido,
+      isMisto,
+      showAllClientes,
+    ],
     queryFn: () => {
-      const params = new URLSearchParams()
+      const params = new URLSearchParams();
       if (isMisto && !showAllClientes && pedidoApi?.itens) {
         pedidoApi.itens.forEach((item) => {
-          if (item.proprietario === 'CLIENTE' && item.clienteId) {
-            params.append('clienteIds', String(item.clienteId))
+          if (item.proprietario === "CLIENTE" && item.clienteId) {
+            params.append("clienteIds", String(item.clienteId));
           }
-        })
-        if (pedidoApi.itens.some((item) => item.proprietario === 'INFINITY')) {
-          params.set('includeInfinity', 'true')
+        });
+        if (pedidoApi.itens.some((item) => item.proprietario === "INFINITY")) {
+          params.set("includeInfinity", "true");
         }
       } else if (!isMisto && !showAllClientes && filtrosPedido?.clienteId) {
-        params.set('clienteId', String(filtrosPedido.clienteId))
+        params.set("clienteId", String(filtrosPedido.clienteId));
       }
-      if (filtrosPedido?.modeloEquipamentoId) params.set('modeloEquipamentoId', String(filtrosPedido.modeloEquipamentoId))
-      if (filtrosPedido?.marcaEquipamentoId) params.set('marcaEquipamentoId', String(filtrosPedido.marcaEquipamentoId))
-      if (filtrosPedido?.operadoraId) params.set('operadoraId', String(filtrosPedido.operadoraId))
-      const qs = params.toString()
-      return api(qs ? `/aparelhos/pareamento/aparelhos-disponiveis?${qs}` : '/aparelhos/pareamento/aparelhos-disponiveis')
+      if (filtrosPedido?.modeloEquipamentoId)
+        params.set(
+          "modeloEquipamentoId",
+          String(filtrosPedido.modeloEquipamentoId),
+        );
+      if (filtrosPedido?.marcaEquipamentoId)
+        params.set(
+          "marcaEquipamentoId",
+          String(filtrosPedido.marcaEquipamentoId),
+        );
+      if (filtrosPedido?.operadoraId)
+        params.set("operadoraId", String(filtrosPedido.operadoraId));
+      const qs = params.toString();
+      return api(
+        qs
+          ? `/aparelhos/pareamento/aparelhos-disponiveis?${qs}`
+          : "/aparelhos/pareamento/aparelhos-disponiveis",
+      );
     },
-    enabled: open && step === 'edicao' && kitSelecionado != null,
-  })
+    enabled: open && step === "edicao" && kitSelecionado != null,
+  });
 
   const createMutation = useMutation({
     mutationFn: (nome: string) =>
-      api<KitResumo>('/aparelhos/pareamento/kits', {
-        method: 'POST',
+      api<KitResumo>("/aparelhos/pareamento/kits", {
+        method: "POST",
         body: JSON.stringify({ nome: nome.trim() }),
       }),
     onSuccess: (data) => {
-      toast.success('Kit criado')
-      queryClient.invalidateQueries({ queryKey: ['aparelhos', 'pareamento', 'kits'] })
-      setKitSelecionado({ id: data.id, nome: data.nome, criadoEm: new Date().toISOString(), aparelhos: [] })
-      setShowCriarNovo(false)
-      setNomeNovoKit('')
-      setStep('edicao')
+      toast.success("Kit criado");
+      queryClient.invalidateQueries({
+        queryKey: ["aparelhos", "pareamento", "kits"],
+      });
+      setKitSelecionado({
+        id: data.id,
+        nome: data.nome,
+        criadoEm: new Date().toISOString(),
+        aparelhos: [],
+      });
+      setShowCriarNovo(false);
+      setNomeNovoKit("");
+      setStep("edicao");
     },
     onError: (err) =>
-      toast.error(err instanceof Error ? err.message : 'Erro ao criar kit'),
-  })
+      toast.error(err instanceof Error ? err.message : "Erro ao criar kit"),
+  });
 
   const updateKitMutation = useMutation({
-    mutationFn: ({ aparelhoId, kitId }: { aparelhoId: number; kitId: number | null }) =>
+    mutationFn: ({
+      aparelhoId,
+      kitId,
+    }: {
+      aparelhoId: number;
+      kitId: number | null;
+    }) =>
       api(`/aparelhos/pareamento/aparelho/${aparelhoId}/kit`, {
-        method: 'PATCH',
+        method: "PATCH",
         body: JSON.stringify({ kitId }),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['kit', kitSelecionado?.id] })
-      queryClient.invalidateQueries({ queryKey: ['aparelhos', 'pareamento', 'kits'] })
-      queryClient.invalidateQueries({ queryKey: ['aparelhos', 'disponiveis'] })
-      refetchKit()
+      queryClient.invalidateQueries({ queryKey: ["kit", kitSelecionado?.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["aparelhos", "pareamento", "kits"],
+      });
+      queryClient.invalidateQueries({ queryKey: ["aparelhos", "disponiveis"] });
+      refetchKit();
     },
     onError: (err) =>
-      toast.error(err instanceof Error ? err.message : 'Erro ao atualizar'),
-  })
+      toast.error(err instanceof Error ? err.message : "Erro ao atualizar"),
+  });
 
   const setDestinatariosMutation = useMutation({
     mutationFn: ({
@@ -160,143 +207,196 @@ export function ModalSelecaoEKit({
       destinatarioProprietario,
       destinatarioClienteId,
     }: {
-      pedidoId: number
-      aparelhoIds: number[]
-      destinatarioProprietario: 'INFINITY' | 'CLIENTE'
-      destinatarioClienteId: number | null
+      pedidoId: number;
+      aparelhoIds: number[];
+      destinatarioProprietario: "INFINITY" | "CLIENTE";
+      destinatarioClienteId: number | null;
     }) =>
       api(`/pedidos-rastreadores/${pedidoId}/aparelhos-destinatarios`, {
-        method: 'POST',
-        body: JSON.stringify({ aparelhoIds, destinatarioProprietario, destinatarioClienteId }),
+        method: "POST",
+        body: JSON.stringify({
+          aparelhoIds,
+          destinatarioProprietario,
+          destinatarioClienteId,
+        }),
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pedido-aparelhos-destinatarios'] })
+      queryClient.invalidateQueries({
+        queryKey: ["pedido-aparelhos-destinatarios"],
+      });
     },
     onError: (err) =>
-      toast.error(err instanceof Error ? err.message : 'Erro ao atribuir destinatário'),
-  })
+      toast.error(
+        err instanceof Error ? err.message : "Erro ao atribuir destinatário",
+      ),
+  });
 
   const removeDestinatarioMutation = useMutation({
-    mutationFn: ({ pedidoId, aparelhoId }: { pedidoId: number; aparelhoId: number }) =>
-      api(`/pedidos-rastreadores/${pedidoId}/aparelhos-destinatarios/${aparelhoId}`, {
-        method: 'DELETE',
-      }),
+    mutationFn: ({
+      pedidoId,
+      aparelhoId,
+    }: {
+      pedidoId: number;
+      aparelhoId: number;
+    }) =>
+      api(
+        `/pedidos-rastreadores/${pedidoId}/aparelhos-destinatarios/${aparelhoId}`,
+        {
+          method: "DELETE",
+        },
+      ),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pedido-aparelhos-destinatarios'] })
+      queryClient.invalidateQueries({
+        queryKey: ["pedido-aparelhos-destinatarios"],
+      });
     },
     onError: (err) =>
-      toast.error(err instanceof Error ? err.message : 'Erro ao remover destinatário'),
-  })
+      toast.error(
+        err instanceof Error ? err.message : "Erro ao remover destinatário",
+      ),
+  });
 
   const kitIdsEmOutrosPedidos = useMemo(() => {
-    if (!pedido?.id || !kitsPorPedido) return new Set<number>()
-    const ids = new Set<number>()
+    if (!pedido?.id || !kitsPorPedido) return new Set<number>();
+    const ids = new Set<number>();
     Object.entries(kitsPorPedido).forEach(([pedidoIdStr, kits]) => {
       if (Number(pedidoIdStr) !== pedido.id) {
-        kits.forEach((k) => ids.add(k.id))
+        kits.forEach((k) => ids.add(k.id));
       }
-    })
-    return ids
-  }, [pedido?.id, kitsPorPedido])
+    });
+    return ids;
+  }, [pedido?.id, kitsPorPedido]);
 
   const kitsDisponiveis = useMemo(() => {
-    return kitsDetalhes.filter((k) => !k.kitConcluido && !kitIdsEmOutrosPedidos.has(k.id))
-  }, [kitsDetalhes, kitIdsEmOutrosPedidos])
+    return kitsDetalhes.filter(
+      (k) => !k.kitConcluido && !kitIdsEmOutrosPedidos.has(k.id),
+    );
+  }, [kitsDetalhes, kitIdsEmOutrosPedidos]);
 
   const kitsCompativeis = useMemo(() => {
-    const temRequisito = !!(pedido?.marcaModelo || pedido?.operadora)
-    if (!temRequisito) return kitsDisponiveis
+    const temRequisito = !!(pedido?.marcaModelo || pedido?.operadora);
+    if (!temRequisito) return kitsDisponiveis;
 
     return kitsDisponiveis.filter((k) => {
-      if (k.quantidade === 0 || (k.marcas.length === 0 && k.modelos.length === 0 && k.operadoras.length === 0)) return true
+      if (
+        k.quantidade === 0 ||
+        (k.marcas.length === 0 &&
+          k.modelos.length === 0 &&
+          k.operadoras.length === 0)
+      )
+        return true;
 
-      const parts = pedido?.marcaModelo?.split(' / ') ?? []
-      const marcaReq = parts[0]?.trim() ?? null
-      const modeloReq = parts[1]?.trim() ?? null
-      const operadoraReq = pedido?.operadora ?? null
+      const parts = pedido?.marcaModelo?.split(" / ") ?? [];
+      const marcaReq = parts[0]?.trim() ?? null;
+      const modeloReq = parts[1]?.trim() ?? null;
+      const operadoraReq = pedido?.operadora ?? null;
 
-      if (modeloReq && k.modelos.length > 0 && !k.modelos.every((m) => m === modeloReq)) return false
-      if (marcaReq && !modeloReq && k.marcas.length > 0 && !k.marcas.every((m) => m === marcaReq)) return false
-      if (operadoraReq && k.operadoras.length > 0 && !k.operadoras.every((op) => op === operadoraReq)) return false
+      if (
+        modeloReq &&
+        k.modelos.length > 0 &&
+        !k.modelos.every((m) => m === modeloReq)
+      )
+        return false;
+      if (
+        marcaReq &&
+        !modeloReq &&
+        k.marcas.length > 0 &&
+        !k.marcas.every((m) => m === marcaReq)
+      )
+        return false;
+      if (
+        operadoraReq &&
+        k.operadoras.length > 0 &&
+        !k.operadoras.every((op) => op === operadoraReq)
+      )
+        return false;
 
-      return true
-    })
-  }, [kitsDisponiveis, pedido])
+      return true;
+    });
+  }, [kitsDisponiveis, pedido]);
 
   const kitsFiltrados = useMemo(() => {
-    if (!filtroBusca.trim()) return kitsCompativeis
-    const s = filtroBusca.toLowerCase()
+    if (!filtroBusca.trim()) return kitsCompativeis;
+    const s = filtroBusca.toLowerCase();
     return kitsCompativeis.filter(
       (k) =>
         k.nome.toLowerCase().includes(s) ||
-        k.modelosOperadoras.toLowerCase().includes(s)
-    )
-  }, [kitsCompativeis, filtroBusca])
+        k.modelosOperadoras.toLowerCase().includes(s),
+    );
+  }, [kitsCompativeis, filtroBusca]);
 
   const aparelhosParaAdicionar = useMemo(() => {
-    const noKit = kitComAparelhos?.aparelhos ?? []
-    const idsNoKit = new Set(noKit.map((a) => a.id))
-    return aparelhosDisponiveis.filter((a) => !idsNoKit.has(a.id))
-  }, [aparelhosDisponiveis, kitComAparelhos?.aparelhos])
+    const noKit = kitComAparelhos?.aparelhos ?? [];
+    const idsNoKit = new Set(noKit.map((a) => a.id));
+    return aparelhosDisponiveis.filter((a) => !idsNoKit.has(a.id));
+  }, [aparelhosDisponiveis, kitComAparelhos?.aparelhos]);
 
   const opcoesMarcaModelo = useMemo(() => {
-    const set = new Set<string>()
+    const set = new Set<string>();
     aparelhosParaAdicionar.forEach((a) => {
-      const mm = [a.marca, a.modelo].filter(Boolean).join(' / ')
-      if (mm) set.add(mm)
-    })
-    return Array.from(set).sort()
-  }, [aparelhosParaAdicionar])
+      const mm = [a.marca, a.modelo].filter(Boolean).join(" / ");
+      if (mm) set.add(mm);
+    });
+    return Array.from(set).sort();
+  }, [aparelhosParaAdicionar]);
 
   const opcoesOperadora = useMemo(() => {
-    const set = new Set<string>()
+    const set = new Set<string>();
     aparelhosParaAdicionar.forEach((a) => {
-      const op = a.operadora ?? a.simVinculado?.operadora
-      if (op) set.add(op)
-    })
-    return Array.from(set).sort()
-  }, [aparelhosParaAdicionar])
+      const op = a.operadora ?? a.simVinculado?.operadora;
+      if (op) set.add(op);
+    });
+    return Array.from(set).sort();
+  }, [aparelhosParaAdicionar]);
 
   const opcoesCliente = useMemo(() => {
-    const set = new Set<string>()
+    const set = new Set<string>();
     aparelhosParaAdicionar.forEach((a) => {
       const c =
         a.cliente?.nome ??
         a.tecnico?.nome ??
-        (a.proprietario === 'INFINITY' ? 'Infinity' : null)
-      if (c) set.add(c)
-    })
-    return Array.from(set).sort()
-  }, [aparelhosParaAdicionar])
+        (a.proprietario === "INFINITY" ? "Infinity" : null);
+      if (c) set.add(c);
+    });
+    return Array.from(set).sort();
+  }, [aparelhosParaAdicionar]);
 
   const aparelhosFiltrados = useMemo(() => {
     return aparelhosParaAdicionar.filter((a) => {
       if (buscaAparelho.trim()) {
-        const s = buscaAparelho.toLowerCase()
+        const s = buscaAparelho.toLowerCase();
         if (
           !(a.identificador?.toLowerCase().includes(s) ?? false) &&
           !(a.marca?.toLowerCase().includes(s) ?? false) &&
           !(a.modelo?.toLowerCase().includes(s) ?? false)
         )
-          return false
+          return false;
       }
-      const mm = [a.marca, a.modelo].filter(Boolean).join(' / ')
-      if (filtroMarcaModelo && mm !== filtroMarcaModelo) return false
-      const op = a.operadora ?? a.simVinculado?.operadora
-      if (filtroOperadora && op !== filtroOperadora) return false
+      const mm = [a.marca, a.modelo].filter(Boolean).join(" / ");
+      if (filtroMarcaModelo && mm !== filtroMarcaModelo) return false;
+      const op = a.operadora ?? a.simVinculado?.operadora;
+      if (filtroOperadora && op !== filtroOperadora) return false;
       const clienteLabel =
-        a.cliente?.nome ?? a.tecnico?.nome ?? (a.proprietario === 'INFINITY' ? 'Infinity' : '')
-      if (filtroCliente && clienteLabel !== filtroCliente) return false
-      return true
-    })
-  }, [aparelhosParaAdicionar, buscaAparelho, filtroMarcaModelo, filtroOperadora, filtroCliente])
+        a.cliente?.nome ??
+        a.tecnico?.nome ??
+        (a.proprietario === "INFINITY" ? "Infinity" : "");
+      if (filtroCliente && clienteLabel !== filtroCliente) return false;
+      return true;
+    });
+  }, [
+    aparelhosParaAdicionar,
+    buscaAparelho,
+    filtroMarcaModelo,
+    filtroOperadora,
+    filtroCliente,
+  ]);
 
   function getClienteLabel(a: AparelhoNoKit): string {
     return (
       a.cliente?.nome ??
       a.tecnico?.nome ??
-      (a.proprietario === 'INFINITY' ? 'Infinity' : '-')
-    )
+      (a.proprietario === "INFINITY" ? "Infinity" : "-")
+    );
   }
 
   function handleEscolherKit(kit: KitDetalhe) {
@@ -305,89 +405,89 @@ export function ModalSelecaoEKit({
       nome: kit.nome,
       criadoEm: kit.criadoEm,
       aparelhos: [],
-    })
-    setStep('edicao')
+    });
+    setStep("edicao");
   }
 
   function handleCriarNovo() {
-    if (!nomeNovoKit.trim()) return
-    createMutation.mutate(nomeNovoKit.trim())
+    if (!nomeNovoKit.trim()) return;
+    createMutation.mutate(nomeNovoKit.trim());
   }
 
   function handleVoltar() {
-    setStep('selecao')
-    setKitSelecionado(null)
-    setAparelhosSelecionados(new Set())
-    setDestinatarioLote(null)
-    setShowAllClientes(false)
+    setStep("selecao");
+    setKitSelecionado(null);
+    setAparelhosSelecionados(new Set());
+    setDestinatarioLote(null);
+    setShowAllClientes(false);
   }
 
   function handleRemoverAparelho(aparelhoId: number) {
-    if (!kitSelecionado) return
-    updateKitMutation.mutate({ aparelhoId, kitId: null })
+    if (!kitSelecionado) return;
+    updateKitMutation.mutate({ aparelhoId, kitId: null });
     if (isMisto && pedidoApi) {
-      removeDestinatarioMutation.mutate({ pedidoId: pedidoApi.id, aparelhoId })
+      removeDestinatarioMutation.mutate({ pedidoId: pedidoApi.id, aparelhoId });
     }
   }
 
   function handleAdicionarSelecionados() {
-    if (!kitSelecionado) return
+    if (!kitSelecionado) return;
     if (isMisto && !destinatarioLote) {
-      toast.error('Selecione o cliente destinatário antes de adicionar')
-      return
+      toast.error("Selecione o cliente destinatário antes de adicionar");
+      return;
     }
     aparelhosSelecionados.forEach((apId) => {
-      updateKitMutation.mutate({ aparelhoId: apId, kitId: kitSelecionado.id })
-    })
+      updateKitMutation.mutate({ aparelhoId: apId, kitId: kitSelecionado.id });
+    });
     if (isMisto && destinatarioLote && pedidoApi) {
       setDestinatariosMutation.mutate({
         pedidoId: pedidoApi.id,
         aparelhoIds: Array.from(aparelhosSelecionados),
         destinatarioProprietario: destinatarioLote.proprietario,
         destinatarioClienteId: destinatarioLote.clienteId,
-      })
+      });
     }
-    setAparelhosSelecionados(new Set())
+    setAparelhosSelecionados(new Set());
   }
 
   function handleSalvarEVincular() {
-    if (!kitSelecionado) return
-    const qtd = kitComAparelhos?.aparelhos?.length ?? 0
-    onVincular({ id: kitSelecionado.id, nome: kitSelecionado.nome }, qtd)
-    toast.success(`Kit ${kitSelecionado.nome} vinculado`)
-    onOpenChange(false)
-    handleVoltar()
+    if (!kitSelecionado) return;
+    const qtd = kitComAparelhos?.aparelhos?.length ?? 0;
+    onVincular({ id: kitSelecionado.id, nome: kitSelecionado.nome }, qtd);
+    toast.success(`Kit ${kitSelecionado.nome} vinculado`);
+    onOpenChange(false);
+    handleVoltar();
   }
 
   function handleClose() {
-    onOpenChange(false)
-    setStep('selecao')
-    setKitSelecionado(null)
-    setShowCriarNovo(false)
-    setNomeNovoKit('')
-    setAparelhosSelecionados(new Set())
-    setBuscaAparelho('')
-    setFiltroMarcaModelo('')
-    setFiltroOperadora('')
-    setFiltroCliente('')
-    setDestinatarioLote(null)
-    setShowAllClientes(false)
+    onOpenChange(false);
+    setStep("selecao");
+    setKitSelecionado(null);
+    setShowCriarNovo(false);
+    setNomeNovoKit("");
+    setAparelhosSelecionados(new Set());
+    setBuscaAparelho("");
+    setFiltroMarcaModelo("");
+    setFiltroOperadora("");
+    setFiltroCliente("");
+    setDestinatarioLote(null);
+    setShowAllClientes(false);
   }
 
-  const aparelhosNoKit = kitComAparelhos?.aparelhos ?? []
-  const progressQtd = aparelhosNoKit.length
-  const qtdEsperada = pedido?.quantidade ?? 1
+  const aparelhosNoKit = kitComAparelhos?.aparelhos ?? [];
+  const progressQtd = aparelhosNoKit.length;
+  const qtdEsperada = pedido?.quantidade ?? 1;
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
       <DialogContent
         hideClose
         className={cn(
-          'max-w-[800px] max-h-[90vh] p-0 flex flex-col overflow-hidden',
-          step === 'edicao' && 'max-w-[850px]'
+          "max-w-[800px] max-h-[90vh] p-0 flex flex-col overflow-hidden",
+          step === "edicao" && "max-w-[850px]",
         )}
       >
-        {step === 'selecao' ? (
+        {step === "selecao" ? (
           <>
             <header className="bg-white border-b border-slate-200 px-6 py-5 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
@@ -418,16 +518,27 @@ export function ModalSelecaoEKit({
                   onChange={(e) => setNomeNovoKit(e.target.value)}
                   placeholder="Nome do novo kit (ex: KIT-015)"
                   className="text-sm flex-1"
-                  onKeyDown={(e) => e.key === 'Enter' && handleCriarNovo()}
+                  onKeyDown={(e) => e.key === "Enter" && handleCriarNovo()}
                 />
                 <Button
                   size="sm"
                   onClick={() => handleCriarNovo()}
                   disabled={!nomeNovoKit.trim() || createMutation.isPending}
                 >
-                  {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Criar'}
+                  {createMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Criar"
+                  )}
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => { setShowCriarNovo(false); setNomeNovoKit('') }}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowCriarNovo(false);
+                    setNomeNovoKit("");
+                  }}
+                >
                   Cancelar
                 </Button>
               </div>
@@ -476,24 +587,37 @@ export function ModalSelecaoEKit({
                     </tr>
                   ) : kitsFiltrados.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
+                      <td
+                        colSpan={5}
+                        className="px-4 py-8 text-center text-slate-500"
+                      >
                         Nenhum kit encontrado.
                       </td>
                     </tr>
                   ) : (
                     kitsFiltrados.map((k) => (
                       <tr key={k.id} className="hover:bg-slate-50/50">
-                        <td className="px-4 py-3 font-bold text-slate-900">{k.nome}</td>
-                        <td className="px-4 py-3 text-slate-500">{formatarDataHora(k.criadoEm)}</td>
+                        <td className="px-4 py-3 font-bold text-slate-900">
+                          {k.nome}
+                        </td>
+                        <td className="px-4 py-3 text-slate-500">
+                          {formatarDataHora(k.criadoEm)}
+                        </td>
                         <td className="px-4 py-3">{k.quantidade}</td>
-                        <td className="px-4 py-3 text-slate-600">{k.modelosOperadoras}</td>
+                        <td className="px-4 py-3 text-slate-600">
+                          {k.modelosOperadoras}
+                        </td>
                         <td className="px-4 py-3 text-right">
                           <Button
                             size="sm"
                             className="bg-emerald-600 hover:bg-emerald-700 text-[10px] font-bold"
                             onClick={() => handleEscolherKit(k)}
                           >
-                            Escolher <MaterialIcon name="chevron_right" className="text-sm" />
+                            Escolher{" "}
+                            <MaterialIcon
+                              name="chevron_right"
+                              className="text-sm"
+                            />
                           </Button>
                         </td>
                       </tr>
@@ -505,13 +629,23 @@ export function ModalSelecaoEKit({
             <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <span className="text-[11px] text-slate-500 uppercase">
-                  Exibindo <span className="font-bold text-slate-700">{kitsFiltrados.length} kits</span>
+                  Exibindo{" "}
+                  <span className="font-bold text-slate-700">
+                    {kitsFiltrados.length} kits
+                  </span>
                 </span>
                 {kitsDisponiveis.length - kitsCompativeis.length > 0 && (
                   <span className="text-[10px] text-amber-600 font-bold flex items-center gap-1">
                     <MaterialIcon name="info" className="text-sm" />
-                    {kitsDisponiveis.length - kitsCompativeis.length}{' '}
-                    kit{kitsDisponiveis.length - kitsCompativeis.length > 1 ? 's' : ''} oculto{kitsDisponiveis.length - kitsCompativeis.length > 1 ? 's' : ''} por incompatibilidade
+                    {kitsDisponiveis.length - kitsCompativeis.length} kit
+                    {kitsDisponiveis.length - kitsCompativeis.length > 1
+                      ? "s"
+                      : ""}{" "}
+                    oculto
+                    {kitsDisponiveis.length - kitsCompativeis.length > 1
+                      ? "s"
+                      : ""}{" "}
+                    por incompatibilidade
                   </span>
                 )}
               </div>
@@ -543,15 +677,25 @@ export function ModalSelecaoEKit({
                   </h3>
                   <div className="grid grid-cols-3 gap-4 bg-slate-50 p-4 rounded border border-slate-200">
                     <div>
-                      <Label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Pedido</Label>
-                      <div className="text-xs font-bold text-slate-700">{pedido.codigo}</div>
+                      <Label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
+                        Pedido
+                      </Label>
+                      <div className="text-xs font-bold text-slate-700">
+                        {pedido.codigo}
+                      </div>
                     </div>
                     <div>
-                      <Label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Destino</Label>
-                      <div className="text-xs font-bold text-slate-700">{pedido.destinatario}</div>
+                      <Label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
+                        Destino
+                      </Label>
+                      <div className="text-xs font-bold text-slate-700">
+                        {pedido.destinatario}
+                      </div>
                     </div>
                     <div>
-                      <Label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Quantidade Esperada</Label>
+                      <Label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">
+                        Quantidade Esperada
+                      </Label>
                       <div className="text-xs font-bold text-erp-blue bg-blue-50 inline-block px-2 py-0.5 rounded">
                         {qtdEsperada} Unidades
                       </div>
@@ -567,12 +711,16 @@ export function ModalSelecaoEKit({
                   <div className="text-right w-48">
                     <div className="flex justify-between text-[10px] font-bold text-slate-500 mb-1 uppercase">
                       <span>Progresso</span>
-                      <span>{progressQtd} / {qtdEsperada} Equipamentos</span>
+                      <span>
+                        {progressQtd} / {qtdEsperada} Equipamentos
+                      </span>
                     </div>
                     <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-amber-500"
-                        style={{ width: `${Math.min(100, (progressQtd / qtdEsperada) * 100)}%` }}
+                        style={{
+                          width: `${Math.min(100, (progressQtd / qtdEsperada) * 100)}%`,
+                        }}
                       />
                     </div>
                   </div>
@@ -581,43 +729,79 @@ export function ModalSelecaoEKit({
                   <table className="w-full text-[11px]">
                     <thead>
                       <tr>
-                        <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 text-left">IMEI</th>
-                        <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 text-left">ICCID</th>
-                        <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 text-left">Marca / Modelo</th>
-                        <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 text-left">Kit</th>
-                        <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 text-left">Cliente</th>
+                        <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 text-left">
+                          IMEI
+                        </th>
+                        <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 text-left">
+                          ICCID
+                        </th>
+                        <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 text-left">
+                          Marca / Modelo
+                        </th>
+                        <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 text-left">
+                          Kit
+                        </th>
+                        <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 text-left">
+                          Cliente
+                        </th>
                         {isMisto && (
-                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 text-left">Destino</th>
+                          <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 text-left">
+                            Destino
+                          </th>
                         )}
-                        <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 text-right">Ação</th>
+                        <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 text-right">
+                          Ação
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {aparelhosNoKit.length === 0 ? (
                         <tr>
-                          <td colSpan={isMisto ? 7 : 6} className="px-3 py-6 text-center text-slate-500 text-[11px]">
+                          <td
+                            colSpan={isMisto ? 7 : 6}
+                            className="px-3 py-6 text-center text-slate-500 text-[11px]"
+                          >
                             Nenhum rastreador no kit.
                           </td>
                         </tr>
                       ) : (
                         aparelhosNoKit.map((a) => {
-                          const asg = destinatariosData?.assignments.find((x) => x.aparelhoId === a.id)
+                          const asg = destinatariosData?.assignments.find(
+                            (x) => x.aparelhoId === a.id,
+                          );
                           const destinatarioLabel = asg
-                            ? asg.destinatarioProprietario === 'INFINITY'
-                              ? 'Infinity'
-                              : pedidoApi?.itens?.find((i) => i.clienteId === asg.destinatarioClienteId)?.cliente?.nome ?? `#${asg.destinatarioClienteId}`
-                            : null
+                            ? asg.destinatarioProprietario === "INFINITY"
+                              ? "Infinity"
+                              : (pedidoApi?.itens?.find(
+                                  (i) =>
+                                    i.clienteId === asg.destinatarioClienteId,
+                                )?.cliente?.nome ??
+                                `#${asg.destinatarioClienteId}`)
+                            : null;
                           return (
-                            <tr key={a.id} className="border-b border-slate-100">
-                              <td className="px-3 py-2 font-bold">{a.identificador ?? '-'}</td>
-                              <td className="px-3 py-2">{a.simVinculado?.identificador ?? '-'}</td>
-                              <td className="px-3 py-2">{[a.marca, a.modelo].filter(Boolean).join(' / ') || '-'}</td>
+                            <tr
+                              key={a.id}
+                              className="border-b border-slate-100"
+                            >
+                              <td className="px-3 py-2 font-bold">
+                                {a.identificador ?? "-"}
+                              </td>
+                              <td className="px-3 py-2">
+                                {a.simVinculado?.identificador ?? "-"}
+                              </td>
+                              <td className="px-3 py-2">
+                                {[a.marca, a.modelo]
+                                  .filter(Boolean)
+                                  .join(" / ") || "-"}
+                              </td>
                               <td className="px-3 py-2">
                                 <span className="text-[11px] font-bold text-violet-600">
-                                  {a.kit?.nome ?? kitComAparelhos?.nome ?? '-'}
+                                  {a.kit?.nome ?? kitComAparelhos?.nome ?? "-"}
                                 </span>
                               </td>
-                              <td className="px-3 py-2">{getClienteLabel(a)}</td>
+                              <td className="px-3 py-2">
+                                {getClienteLabel(a)}
+                              </td>
                               {isMisto && (
                                 <td className="px-3 py-2">
                                   {destinatarioLabel ? (
@@ -625,7 +809,9 @@ export function ModalSelecaoEKit({
                                       {destinatarioLabel}
                                     </span>
                                   ) : (
-                                    <span className="text-slate-400 text-[10px]">—</span>
+                                    <span className="text-slate-400 text-[10px]">
+                                      —
+                                    </span>
                                   )}
                                 </td>
                               )}
@@ -639,7 +825,7 @@ export function ModalSelecaoEKit({
                                 </button>
                               </td>
                             </tr>
-                          )
+                          );
                         })
                       )}
                     </tbody>
@@ -649,50 +835,87 @@ export function ModalSelecaoEKit({
               <section className="bg-slate-50 p-5 rounded-lg border border-slate-200 border-dashed">
                 {(pedido?.marcaModelo || pedido?.operadora) && (
                   <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded text-[10px] font-bold text-blue-700 mb-4">
-                    <MaterialIcon name="filter_alt" className="text-sm shrink-0" />
-                    <span className="shrink-0">Aparelhos filtrados por requisitos do pedido:</span>
+                    <MaterialIcon
+                      name="filter_alt"
+                      className="text-sm shrink-0"
+                    />
+                    <span className="shrink-0">
+                      Aparelhos filtrados por requisitos do pedido:
+                    </span>
                     {pedido.marcaModelo && (
-                      <span className="bg-blue-100 px-1.5 py-0.5 rounded">{pedido.marcaModelo}</span>
+                      <span className="bg-blue-100 px-1.5 py-0.5 rounded">
+                        {pedido.marcaModelo}
+                      </span>
                     )}
                     {pedido.operadora && (
-                      <span className="bg-blue-100 px-1.5 py-0.5 rounded">Operadora: {pedido.operadora}</span>
+                      <span className="bg-blue-100 px-1.5 py-0.5 rounded">
+                        Operadora: {pedido.operadora}
+                      </span>
                     )}
                   </div>
                 )}
-                {isMisto && destinatariosData?.quotaUsage && destinatariosData.quotaUsage.length > 0 && (
-                  <div className="flex gap-2 flex-wrap mb-3">
-                    {destinatariosData.quotaUsage.map((q) => {
-                      const label = q.proprietario === 'INFINITY' ? 'Infinity' : (q.clienteNome ?? `Cliente #${q.clienteId}`)
-                      return (
-                        <div
-                          key={`${q.proprietario}-${q.clienteId}`}
-                          className={cn(
-                            'flex items-center gap-1 border rounded px-2 py-0.5 text-[10px] font-bold',
-                            q.atribuido >= q.total
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : 'bg-amber-50 text-amber-700 border-amber-200'
-                          )}
-                        >
-                          <span>{label}:</span>
-                          <span>{q.atribuido}/{q.total}</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
+                {isMisto &&
+                  destinatariosData?.quotaUsage &&
+                  destinatariosData.quotaUsage.length > 0 && (
+                    <div className="flex gap-2 flex-wrap mb-3">
+                      {destinatariosData.quotaUsage.map((q) => {
+                        const label =
+                          q.proprietario === "INFINITY"
+                            ? "Infinity"
+                            : (q.clienteNome ?? `Cliente #${q.clienteId}`);
+                        return (
+                          <div
+                            key={`${q.proprietario}-${q.clienteId}`}
+                            className={cn(
+                              "flex items-center gap-1 border rounded px-2 py-0.5 text-[10px] font-bold",
+                              q.atribuido >= q.total
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : "bg-amber-50 text-amber-700 border-amber-200",
+                            )}
+                          >
+                            <span>{label}:</span>
+                            <span>
+                              {q.atribuido}/{q.total}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 {isMisto && pedidoApi?.itens && (
                   <div className="flex items-end gap-4 mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
                     <div className="flex-1">
-                      <Label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Destino deste lote</Label>
+                      <Label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
+                        Destino deste lote
+                      </Label>
                       <SearchableSelect
                         options={pedidoApi.itens.map((item) => ({
-                          value: JSON.stringify({ proprietario: item.proprietario, clienteId: item.clienteId ?? null }),
-                          label: item.proprietario === 'INFINITY' ? 'Infinity' : (item.cliente?.nome ?? `Cliente #${item.clienteId}`),
+                          value: JSON.stringify({
+                            proprietario: item.proprietario,
+                            clienteId: item.clienteId ?? null,
+                          }),
+                          label:
+                            item.proprietario === "INFINITY"
+                              ? "Infinity"
+                              : (item.cliente?.nome ??
+                                `Cliente #${item.clienteId}`),
                         }))}
-                        value={destinatarioLote ? JSON.stringify(destinatarioLote) : ''}
+                        value={
+                          destinatarioLote
+                            ? JSON.stringify(destinatarioLote)
+                            : ""
+                        }
                         onChange={(val) => {
-                          if (!val) { setDestinatarioLote(null); return }
-                          setDestinatarioLote(JSON.parse(val) as { proprietario: 'INFINITY' | 'CLIENTE'; clienteId: number | null })
+                          if (!val) {
+                            setDestinatarioLote(null);
+                            return;
+                          }
+                          setDestinatarioLote(
+                            JSON.parse(val) as {
+                              proprietario: "INFINITY" | "CLIENTE";
+                              clienteId: number | null;
+                            },
+                          );
                         }}
                         placeholder="Selecionar destino..."
                       />
@@ -706,7 +929,10 @@ export function ModalSelecaoEKit({
                     onCheckedChange={(v) => setShowAllClientes(!!v)}
                     className="rounded border-slate-300 data-[state=checked]:bg-erp-blue data-[state=checked]:border-erp-blue"
                   />
-                  <label htmlFor="showAllClientes" className="text-[10px] font-bold text-slate-500 cursor-pointer select-none">
+                  <label
+                    htmlFor="showAllClientes"
+                    className="text-[10px] font-bold text-slate-500 cursor-pointer select-none"
+                  >
                     Exibir rastreadores de outros proprietários
                   </label>
                 </div>
@@ -718,16 +944,25 @@ export function ModalSelecaoEKit({
                   <Button
                     size="sm"
                     onClick={handleAdicionarSelecionados}
-                    disabled={aparelhosSelecionados.size === 0 || (isMisto && !destinatarioLote)}
+                    disabled={
+                      aparelhosSelecionados.size === 0 ||
+                      (isMisto && !destinatarioLote)
+                    }
                   >
-                    <MaterialIcon name="add" className="text-sm" /> Adicionar ao Kit
+                    <MaterialIcon name="add" className="text-sm" /> Adicionar ao
+                    Kit
                   </Button>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-4">
                   <div>
-                    <Label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Buscar por ID ou IMEI</Label>
+                    <Label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
+                      Buscar por ID ou IMEI
+                    </Label>
                     <div className="relative">
-                      <MaterialIcon name="search" className="absolute left-2 top-2 text-slate-400 text-sm" />
+                      <MaterialIcon
+                        name="search"
+                        className="absolute left-2 top-2 text-slate-400 text-sm"
+                      />
                       <Input
                         value={buscaAparelho}
                         onChange={(e) => setBuscaAparelho(e.target.value)}
@@ -737,7 +972,9 @@ export function ModalSelecaoEKit({
                     </div>
                   </div>
                   <div>
-                    <Label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Marca/Modelo</Label>
+                    <Label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
+                      Marca/Modelo
+                    </Label>
                     <select
                       value={filtroMarcaModelo}
                       onChange={(e) => setFiltroMarcaModelo(e.target.value)}
@@ -745,12 +982,16 @@ export function ModalSelecaoEKit({
                     >
                       <option value="">Todos</option>
                       {opcoesMarcaModelo.map((o) => (
-                        <option key={o} value={o}>{o}</option>
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <Label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Operadora</Label>
+                    <Label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
+                      Operadora
+                    </Label>
                     <select
                       value={filtroOperadora}
                       onChange={(e) => setFiltroOperadora(e.target.value)}
@@ -758,12 +999,16 @@ export function ModalSelecaoEKit({
                     >
                       <option value="">Todas</option>
                       {opcoesOperadora.map((o) => (
-                        <option key={o} value={o}>{o}</option>
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <Label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Cliente</Label>
+                    <Label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
+                      Cliente
+                    </Label>
                     <select
                       value={filtroCliente}
                       onChange={(e) => setFiltroCliente(e.target.value)}
@@ -771,7 +1016,9 @@ export function ModalSelecaoEKit({
                     >
                       <option value="">Todos</option>
                       {opcoesCliente.map((o) => (
-                        <option key={o} value={o}>{o}</option>
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -782,70 +1029,103 @@ export function ModalSelecaoEKit({
                       <tr>
                         <th className="px-3 py-2 text-[10px] font-bold uppercase text-slate-500 w-10">
                           <Checkbox
-                            checked={aparelhosFiltrados.length > 0 && aparelhosSelecionados.size === aparelhosFiltrados.length}
+                            checked={
+                              aparelhosFiltrados.length > 0 &&
+                              aparelhosSelecionados.size ===
+                                aparelhosFiltrados.length
+                            }
                             onCheckedChange={(v) => {
                               if (v) {
-                                setAparelhosSelecionados(new Set(aparelhosFiltrados.map((a) => a.id)))
+                                setAparelhosSelecionados(
+                                  new Set(aparelhosFiltrados.map((a) => a.id)),
+                                );
                               } else {
-                                setAparelhosSelecionados(new Set())
+                                setAparelhosSelecionados(new Set());
                               }
                             }}
                             className="rounded border-slate-300 data-[state=checked]:bg-erp-blue data-[state=checked]:border-erp-blue"
                           />
                         </th>
-                        <th className="px-3 py-2 text-[10px] font-bold uppercase text-slate-500 text-left">IMEI</th>
-                        <th className="px-3 py-2 text-[10px] font-bold uppercase text-slate-500 text-left">Marca/Modelo</th>
-                        <th className="px-3 py-2 text-[10px] font-bold uppercase text-slate-500 text-left">Operadora</th>
-                        <th className="px-3 py-2 text-[10px] font-bold uppercase text-slate-500 text-left">Cliente</th>
-                        <th className="px-3 py-2 text-[10px] font-bold uppercase text-slate-500 text-left">Status</th>
+                        <th className="px-3 py-2 text-[10px] font-bold uppercase text-slate-500 text-left">
+                          IMEI
+                        </th>
+                        <th className="px-3 py-2 text-[10px] font-bold uppercase text-slate-500 text-left">
+                          Marca/Modelo
+                        </th>
+                        <th className="px-3 py-2 text-[10px] font-bold uppercase text-slate-500 text-left">
+                          Operadora
+                        </th>
+                        <th className="px-3 py-2 text-[10px] font-bold uppercase text-slate-500 text-left">
+                          Cliente
+                        </th>
+                        <th className="px-3 py-2 text-[10px] font-bold uppercase text-slate-500 text-left">
+                          Status
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {aparelhosFiltrados.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="px-3 py-6 text-center text-slate-500 text-[11px]">
+                          <td
+                            colSpan={6}
+                            className="px-3 py-6 text-center text-slate-500 text-[11px]"
+                          >
                             Nenhum aparelho disponível.
                           </td>
                         </tr>
                       ) : (
                         aparelhosFiltrados.map((a) => {
-                          const selecionado = aparelhosSelecionados.has(a.id)
+                          const selecionado = aparelhosSelecionados.has(a.id);
                           const toggleSelecao = () => {
                             setAparelhosSelecionados((prev) => {
-                              const next = new Set(prev)
-                              if (selecionado) next.delete(a.id)
-                              else next.add(a.id)
-                              return next
-                            })
-                          }
+                              const next = new Set(prev);
+                              if (selecionado) next.delete(a.id);
+                              else next.add(a.id);
+                              return next;
+                            });
+                          };
                           return (
-                          <tr
-                            key={a.id}
-                            onClick={toggleSelecao}
-                            className={cn(
-                              'border-b border-slate-100 cursor-pointer select-none',
-                              selecionado ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-slate-50'
-                            )}
-                          >
-                            <td className="px-3 py-2">
-                              <Checkbox
-                                checked={selecionado}
-                                onCheckedChange={toggleSelecao}
-                                onClick={(e) => e.stopPropagation()}
-                                className="rounded border-slate-300 data-[state=checked]:bg-erp-blue data-[state=checked]:border-erp-blue"
-                              />
-                            </td>
-                            <td className="px-3 py-2 font-medium">{a.identificador ?? '-'}</td>
-                            <td className="px-3 py-2">{[a.marca, a.modelo].filter(Boolean).join(' / ') || '-'}</td>
-                            <td className="px-3 py-2">{a.operadora ?? a.simVinculado?.operadora ?? '-'}</td>
-                            <td className="px-3 py-2">{getClienteLabel(a)}</td>
-                            <td className="px-3 py-2">
-                              <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded border border-emerald-200">
-                                {a.status}
-                              </span>
-                            </td>
-                          </tr>
-                          )
+                            <tr
+                              key={a.id}
+                              onClick={toggleSelecao}
+                              className={cn(
+                                "border-b border-slate-100 cursor-pointer select-none",
+                                selecionado
+                                  ? "bg-blue-50 hover:bg-blue-100"
+                                  : "hover:bg-slate-50",
+                              )}
+                            >
+                              <td className="px-3 py-2">
+                                <Checkbox
+                                  checked={selecionado}
+                                  onCheckedChange={toggleSelecao}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="rounded border-slate-300 data-[state=checked]:bg-erp-blue data-[state=checked]:border-erp-blue"
+                                />
+                              </td>
+                              <td className="px-3 py-2 font-medium">
+                                {a.identificador ?? "-"}
+                              </td>
+                              <td className="px-3 py-2">
+                                {[a.marca, a.modelo]
+                                  .filter(Boolean)
+                                  .join(" / ") || "-"}
+                              </td>
+                              <td className="px-3 py-2">
+                                {a.operadora ??
+                                  a.simVinculado?.operadora ??
+                                  "-"}
+                              </td>
+                              <td className="px-3 py-2">
+                                {getClienteLabel(a)}
+                              </td>
+                              <td className="px-3 py-2">
+                                <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded border border-emerald-200">
+                                  {a.status}
+                                </span>
+                              </td>
+                            </tr>
+                          );
                         })
                       )}
                     </tbody>
@@ -856,14 +1136,16 @@ export function ModalSelecaoEKit({
             <footer className="bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-between items-center shrink-0">
               <span
                 className={cn(
-                  'text-[10px] font-bold px-3 py-1 rounded-full border uppercase flex items-center gap-1.5',
+                  "text-[10px] font-bold px-3 py-1 rounded-full border uppercase flex items-center gap-1.5",
                   progressQtd >= qtdEsperada
-                    ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
-                    : 'bg-amber-50 text-amber-600 border-amber-200'
+                    ? "bg-emerald-100 text-emerald-700 border-emerald-300"
+                    : "bg-amber-50 text-amber-600 border-amber-200",
                 )}
               >
                 <MaterialIcon name="check_circle" className="text-sm" />
-                {progressQtd >= qtdEsperada ? 'Kit Completo' : `Em andamento (${progressQtd}/${qtdEsperada})`}
+                {progressQtd >= qtdEsperada
+                  ? "Kit Completo"
+                  : `Em andamento (${progressQtd}/${qtdEsperada})`}
               </span>
               <div className="flex gap-3">
                 <Button variant="ghost" size="sm" onClick={handleClose}>
@@ -882,5 +1164,5 @@ export function ModalSelecaoEKit({
         )}
       </DialogContent>
     </Dialog>
-  )
+  );
 }

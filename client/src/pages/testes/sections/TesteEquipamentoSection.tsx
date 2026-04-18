@@ -1,10 +1,10 @@
-import { MaterialIcon } from '@/components/MaterialIcon'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { SelectRastreadorTeste } from '../SelectRastreadorTeste'
-import { STATUS_CONFIG_APARELHO } from '@/lib/aparelho-status'
-import { formatarTempoMinutos } from '@/lib/format'
-import type { RastreadorParaTeste } from '../testes-types'
+import { MaterialIcon } from "@/components/MaterialIcon";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { SelectRastreadorTeste } from "../SelectRastreadorTeste";
+import { STATUS_CONFIG_APARELHO } from "@/lib/aparelho-status";
+import { formatarTempoMinutos } from "@/lib/format";
+import type { RastreadorParaTeste } from "../testes-types";
 
 function operadoraMarcaIccid(r: RastreadorParaTeste): string {
   const operadora =
@@ -12,22 +12,26 @@ function operadoraMarcaIccid(r: RastreadorParaTeste): string {
     r.operadora ??
     r.simVinculado?.marcaSimcard?.operadora?.nome ??
     r.simVinculado?.operadora ??
-    null
-  const marcaSim = r.marcaSimcard?.nome ?? r.simVinculado?.marcaSimcard?.nome ?? null
-  const iccid = (r.simVinculado?.identificador ?? '').trim()
-  const plano = r.planoSimcard?.planoMb ?? r.simVinculado?.planoSimcard?.planoMb
-  const planoStr = plano != null ? `${plano} MB` : null
-  const partes = [operadora, marcaSim, iccid || null, planoStr].filter((x): x is string => !!x)
-  return partes.length > 0 ? partes.join(' / ') : '—'
+    null;
+  const marcaSim =
+    r.marcaSimcard?.nome ?? r.simVinculado?.marcaSimcard?.nome ?? null;
+  const iccid = (r.simVinculado?.identificador ?? "").trim();
+  const plano =
+    r.planoSimcard?.planoMb ?? r.simVinculado?.planoSimcard?.planoMb;
+  const planoStr = plano != null ? `${plano} MB` : null;
+  const partes = [operadora, marcaSim, iccid || null, planoStr].filter(
+    (x): x is string => !!x,
+  );
+  return partes.length > 0 ? partes.join(" / ") : "—";
 }
 
 interface TesteEquipamentoSectionProps {
-  rastreadores: RastreadorParaTeste[]
-  value: string
-  onChange: (v: string) => void
-  aparelhoSelecionado: RastreadorParaTeste | null
-  onTrocarAparelho: () => void
-  tempoRastreadorEmTestesMin?: number
+  rastreadores: RastreadorParaTeste[];
+  value: string;
+  onChange: (v: string) => void;
+  aparelhoSelecionado: RastreadorParaTeste | null;
+  onTrocarAparelho: () => void;
+  tempoRastreadorEmTestesMin?: number;
 }
 
 export function TesteEquipamentoSection({
@@ -39,8 +43,10 @@ export function TesteEquipamentoSection({
   tempoRastreadorEmTestesMin,
 }: TesteEquipamentoSectionProps) {
   const statusConfig = aparelhoSelecionado
-    ? STATUS_CONFIG_APARELHO[aparelhoSelecionado.status as keyof typeof STATUS_CONFIG_APARELHO]
-    : null
+    ? STATUS_CONFIG_APARELHO[
+        aparelhoSelecionado.status as keyof typeof STATUS_CONFIG_APARELHO
+      ]
+    : null;
 
   return (
     <section className="bg-white border border-slate-300 shadow-sm overflow-hidden">
@@ -53,7 +59,10 @@ export function TesteEquipamentoSection({
         </div>
         {tempoRastreadorEmTestesMin != null && aparelhoSelecionado && (
           <span className="text-[10px] font-medium text-slate-500">
-            Rastreador em testes: <span className="font-bold text-slate-700">{formatarTempoMinutos(tempoRastreadorEmTestesMin)}</span>
+            Rastreador em testes:{" "}
+            <span className="font-bold text-slate-700">
+              {formatarTempoMinutos(tempoRastreadorEmTestesMin)}
+            </span>
           </span>
         )}
       </div>
@@ -81,32 +90,43 @@ export function TesteEquipamentoSection({
         {aparelhoSelecionado && (
           <div className="grid grid-cols-3 gap-6 bg-erp-blue/5 p-4 rounded border border-erp-blue/20">
             <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-erp-blue uppercase">Modelo</span>
+              <span className="text-[10px] font-bold text-erp-blue uppercase">
+                Modelo
+              </span>
               <span className="text-sm font-bold text-slate-700">
-                {[aparelhoSelecionado.marca, aparelhoSelecionado.modelo].filter(Boolean).join(' ') || '—'}
+                {[aparelhoSelecionado.marca, aparelhoSelecionado.modelo]
+                  .filter(Boolean)
+                  .join(" ") || "—"}
               </span>
             </div>
             <div className="flex flex-col border-l border-erp-blue/20 pl-6">
-              <span className="text-[10px] font-bold text-erp-blue uppercase">Operadora / Marca / ICCID</span>
-              <span className="text-sm font-medium text-slate-700 truncate" title={operadoraMarcaIccid(aparelhoSelecionado)}>
+              <span className="text-[10px] font-bold text-erp-blue uppercase">
+                Operadora / Marca / ICCID
+              </span>
+              <span
+                className="text-sm font-medium text-slate-700 truncate"
+                title={operadoraMarcaIccid(aparelhoSelecionado)}
+              >
                 {operadoraMarcaIccid(aparelhoSelecionado)}
               </span>
             </div>
             <div className="flex flex-col border-l border-erp-blue/20 pl-6">
-              <span className="text-[10px] font-bold text-erp-blue uppercase">Status</span>
+              <span className="text-[10px] font-bold text-erp-blue uppercase">
+                Status
+              </span>
               <span
                 className={
                   statusConfig
                     ? `text-sm font-bold ${statusConfig.color}`
-                    : 'text-sm font-medium text-slate-700'
+                    : "text-sm font-medium text-slate-700"
                 }
               >
-                {statusConfig?.label ?? aparelhoSelecionado.status ?? '—'}
+                {statusConfig?.label ?? aparelhoSelecionado.status ?? "—"}
               </span>
             </div>
           </div>
         )}
       </div>
     </section>
-  )
+  );
 }

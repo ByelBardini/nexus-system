@@ -1,10 +1,10 @@
-import { MaterialIcon } from '@/components/MaterialIcon'
-import { Label } from '@/components/ui/label'
-import { formatarTempoMinutos, TIPO_OS_LABELS } from '@/lib/format'
-import type { OsTeste } from '../testes-types'
+import { MaterialIcon } from "@/components/MaterialIcon";
+import { Label } from "@/components/ui/label";
+import { formatarTempoMinutos, TIPO_OS_LABELS } from "@/lib/format";
+import type { OsTeste } from "../testes-types";
 
 interface TesteOsDataSectionProps {
-  os: OsTeste | null
+  os: OsTeste | null;
 }
 
 export function TesteOsDataSection({ os }: TesteOsDataSectionProps) {
@@ -21,7 +21,7 @@ export function TesteOsDataSection({ os }: TesteOsDataSectionProps) {
           Selecione uma OS na fila à direita
         </div>
       </section>
-    )
+    );
   }
 
   return (
@@ -34,7 +34,10 @@ export function TesteOsDataSection({ os }: TesteOsDataSectionProps) {
           </h2>
         </div>
         <span className="text-[10px] font-medium text-slate-500">
-          Tempo em testes: <span className="font-bold text-slate-700">{formatarTempoMinutos(os.tempoEmTestesMin)}</span>
+          Tempo em testes:{" "}
+          <span className="font-bold text-slate-700">
+            {formatarTempoMinutos(os.tempoEmTestesMin)}
+          </span>
         </span>
       </div>
       <div className="p-4 grid grid-cols-5 gap-6">
@@ -48,14 +51,16 @@ export function TesteOsDataSection({ os }: TesteOsDataSectionProps) {
           <Label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">
             Cliente / Associação
           </Label>
-          <p className="text-sm font-semibold text-slate-800 truncate">{os.cliente.nome}</p>
+          <p className="text-sm font-semibold text-slate-800 truncate">
+            {os.cliente.nome}
+          </p>
         </div>
         <div>
           <Label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">
             Subcliente / Base
           </Label>
           <p className="text-sm font-medium text-slate-700">
-            {os.subcliente?.nome ?? os.subclienteSnapshotNome ?? '—'}
+            {os.subcliente?.nome ?? os.subclienteSnapshotNome ?? "—"}
           </p>
         </div>
         <div>
@@ -63,10 +68,12 @@ export function TesteOsDataSection({ os }: TesteOsDataSectionProps) {
             Veículo (Placa/Modelo)
           </Label>
           <p className="text-sm font-bold text-slate-800">
-            {os.veiculo?.placa ?? '—'}
+            {os.veiculo?.placa ?? "—"}
             {os.veiculo && (
               <span className="text-xs font-normal text-slate-500 ml-1">
-                {[os.veiculo.marca, os.veiculo.modelo].filter(Boolean).join(' ')}
+                {[os.veiculo.marca, os.veiculo.modelo]
+                  .filter(Boolean)
+                  .join(" ")}
               </span>
             )}
           </p>
@@ -76,10 +83,10 @@ export function TesteOsDataSection({ os }: TesteOsDataSectionProps) {
             Tipo de Serviço
           </Label>
           <p className="text-sm font-bold text-indigo-600">
-            {TIPO_OS_LABELS[os.tipo] ?? os.tipo ?? '—'}
+            {TIPO_OS_LABELS[os.tipo] ?? os.tipo ?? "—"}
           </p>
         </div>
       </div>
     </section>
-  )
+  );
 }

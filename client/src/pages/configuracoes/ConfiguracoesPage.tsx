@@ -1,108 +1,111 @@
-import { Link } from 'react-router-dom'
-import { MaterialIcon } from '@/components/MaterialIcon'
+import { Link } from "react-router-dom";
+import { MaterialIcon } from "@/components/MaterialIcon";
 
 const navTileClasses =
-  'flex items-center justify-between p-4 border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer text-sm font-medium text-slate-700 group'
+  "flex items-center justify-between p-4 border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer text-sm font-medium text-slate-700 group";
 
 const cardHeaderClasses =
-  'flex items-center gap-3 px-4 py-3 bg-slate-50 border-b border-slate-200'
+  "flex items-center gap-3 px-4 py-3 bg-slate-50 border-b border-slate-200";
 
 const industrialCardClasses =
-  'bg-white border border-slate-200 rounded-sm overflow-hidden'
+  "bg-white border border-slate-200 rounded-sm overflow-hidden";
 
 export function ConfiguracoesPage() {
   return (
     <div className="flex min-h-[calc(100dvh-var(--header-h,4rem))] flex-col px-8 pb-8 max-w-7xl mx-auto -mt-4">
       <div className="flex flex-1 flex-col justify-center">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Agendamento */}
-        <section className={industrialCardClasses}>
-          <div className={cardHeaderClasses}>
-            <MaterialIcon name="calendar_month" className="text-blue-600" />
-            <h2 className="text-sm font-bold uppercase tracking-tight text-slate-800">
-              Agendamento
-            </h2>
-          </div>
-          <div className="p-4 grid grid-cols-1 gap-2">
-            <Link to="/tecnicos" className={navTileClasses}>
-              <div className="flex items-center gap-3">
-                <MaterialIcon name="engineering" className="text-slate-400" />
-                <span>Técnicos</span>
-              </div>
-              <MaterialIcon
-                name="chevron_right"
-                className="text-slate-300 group-hover:text-slate-600"
-              />
-            </Link>
-            <Link to="/clientes" className={navTileClasses}>
-              <div className="flex items-center gap-3">
-                <MaterialIcon name="groups" className="text-slate-400" />
-                <span>Clientes</span>
-              </div>
-              <MaterialIcon
-                name="chevron_right"
-                className="text-slate-300 group-hover:text-slate-600"
-              />
-            </Link>
-          </div>
-        </section>
-
-        {/* Controle de Acesso */}
-        <section className={industrialCardClasses}>
-          <div className={cardHeaderClasses}>
-            <MaterialIcon name="lock" className="text-amber-600" />
-            <h2 className="text-sm font-bold uppercase tracking-tight text-slate-800">
-              Controle de Acesso
-            </h2>
-          </div>
-          <div className="p-4 grid grid-cols-1 gap-2">
-            <Link to="/cargos" className={navTileClasses}>
-              <div className="flex items-center gap-3">
+          {/* Agendamento */}
+          <section className={industrialCardClasses}>
+            <div className={cardHeaderClasses}>
+              <MaterialIcon name="calendar_month" className="text-blue-600" />
+              <h2 className="text-sm font-bold uppercase tracking-tight text-slate-800">
+                Agendamento
+              </h2>
+            </div>
+            <div className="p-4 grid grid-cols-1 gap-2">
+              <Link to="/tecnicos" className={navTileClasses}>
+                <div className="flex items-center gap-3">
+                  <MaterialIcon name="engineering" className="text-slate-400" />
+                  <span>Técnicos</span>
+                </div>
                 <MaterialIcon
-                  name="admin_panel_settings"
-                  className="text-slate-400"
+                  name="chevron_right"
+                  className="text-slate-300 group-hover:text-slate-600"
                 />
-                <span>Cargos e Permissões</span>
-              </div>
-              <MaterialIcon
-                name="chevron_right"
-                className="text-slate-300 group-hover:text-slate-600"
-              />
-            </Link>
-            <Link to="/usuarios" className={navTileClasses}>
-              <div className="flex items-center gap-3">
-                <MaterialIcon name="person_add" className="text-slate-400" />
-                <span>Usuários</span>
-              </div>
-              <MaterialIcon
-                name="chevron_right"
-                className="text-slate-300 group-hover:text-slate-600"
-              />
-            </Link>
-          </div>
-        </section>
+              </Link>
+              <Link to="/clientes" className={navTileClasses}>
+                <div className="flex items-center gap-3">
+                  <MaterialIcon name="groups" className="text-slate-400" />
+                  <span>Clientes</span>
+                </div>
+                <MaterialIcon
+                  name="chevron_right"
+                  className="text-slate-300 group-hover:text-slate-600"
+                />
+              </Link>
+            </div>
+          </section>
 
-        {/* Equipamentos */}
-        <section className={industrialCardClasses}>
-          <div className={cardHeaderClasses}>
-            <MaterialIcon name="sensors" className="text-emerald-600" />
-            <h2 className="text-sm font-bold uppercase tracking-tight text-slate-800">
-              Configuração
-            </h2>
-          </div>
-          <div className="p-4 grid grid-cols-1 gap-2">
-            <Link to="/equipamentos/config" className={navTileClasses}>
-              <div className="flex items-center gap-3">
-                <MaterialIcon name="precision_manufacturing" className="text-slate-400" />
-                <span>Marcas, Modelos e Operadoras</span>
-              </div>
-              <MaterialIcon
-                name="chevron_right"
-                className="text-slate-300 group-hover:text-slate-600"
-              />
-            </Link>
-          </div>
-        </section>
+          {/* Controle de Acesso */}
+          <section className={industrialCardClasses}>
+            <div className={cardHeaderClasses}>
+              <MaterialIcon name="lock" className="text-amber-600" />
+              <h2 className="text-sm font-bold uppercase tracking-tight text-slate-800">
+                Controle de Acesso
+              </h2>
+            </div>
+            <div className="p-4 grid grid-cols-1 gap-2">
+              <Link to="/cargos" className={navTileClasses}>
+                <div className="flex items-center gap-3">
+                  <MaterialIcon
+                    name="admin_panel_settings"
+                    className="text-slate-400"
+                  />
+                  <span>Cargos e Permissões</span>
+                </div>
+                <MaterialIcon
+                  name="chevron_right"
+                  className="text-slate-300 group-hover:text-slate-600"
+                />
+              </Link>
+              <Link to="/usuarios" className={navTileClasses}>
+                <div className="flex items-center gap-3">
+                  <MaterialIcon name="person_add" className="text-slate-400" />
+                  <span>Usuários</span>
+                </div>
+                <MaterialIcon
+                  name="chevron_right"
+                  className="text-slate-300 group-hover:text-slate-600"
+                />
+              </Link>
+            </div>
+          </section>
+
+          {/* Equipamentos */}
+          <section className={industrialCardClasses}>
+            <div className={cardHeaderClasses}>
+              <MaterialIcon name="sensors" className="text-emerald-600" />
+              <h2 className="text-sm font-bold uppercase tracking-tight text-slate-800">
+                Configuração
+              </h2>
+            </div>
+            <div className="p-4 grid grid-cols-1 gap-2">
+              <Link to="/equipamentos/config" className={navTileClasses}>
+                <div className="flex items-center gap-3">
+                  <MaterialIcon
+                    name="precision_manufacturing"
+                    className="text-slate-400"
+                  />
+                  <span>Marcas, Modelos e Operadoras</span>
+                </div>
+                <MaterialIcon
+                  name="chevron_right"
+                  className="text-slate-300 group-hover:text-slate-600"
+                />
+              </Link>
+            </div>
+          </section>
         </div>
       </div>
 
@@ -120,5 +123,5 @@ export function ConfiguracoesPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
