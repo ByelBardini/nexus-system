@@ -5,7 +5,8 @@
     "dev": "concurrently -n server,client -c cyan,magenta \"npm run start:dev --prefix server\" \"npm run dev --prefix client\"",
     "db:sync-permissions": "npm run prisma:sync-permissions --prefix server",
     "dev:server": "npm run start:dev --prefix server",
-    "dev:client": "npm run dev --prefix client"
+    "dev:client": "npm run dev --prefix client",
+    "format": "npm run format --prefix server && npm run format --prefix client"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
