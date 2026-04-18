@@ -2,10 +2,11 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useState,
   type ReactNode,
 } from 'react';
-import { api } from '@/lib/api';
+import { api, setOnUnauthorized } from '@/lib/api';
 
 export interface User {
   id: number;
@@ -85,6 +86,21 @@ function getInitialState(): AuthState {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>(getInitialState);
 
+  const logout = useCallback(() => {
+    clearAuth();
+    setState({
+      user: null,
+      permissions: [],
+      accessToken: null,
+      isLoading: false,
+      isAuthenticated: false,
+    });
+  }, []);
+
+  useEffect(() => {
+    setOnUnauthorized(logout);
+  }, [logout]);
+
   const login = useCallback(async (email: string, password: string): Promise<LoginResponse> => {
     const res = await api<{
       accessToken: string;
@@ -110,17 +126,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: true,
     });
     return { exigeTrocaSenha: res.exigeTrocaSenha };
-  }, []);
-
-  const logout = useCallback(() => {
-    clearAuth();
-    setState({
-      user: null,
-      permissions: [],
-      accessToken: null,
-      isLoading: false,
-      isAuthenticated: false,
-    });
   }, []);
 
   const hasPermission = useCallback(
