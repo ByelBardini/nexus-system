@@ -1,25 +1,23 @@
-import { cn } from '@/lib/utils'
-import type { PedidoRastreadorView, StatusPedidoKey } from './types'
-import { STATUS_CONFIG } from './types'
-import { KanbanCard } from './KanbanCard'
+import { cn } from "@/lib/utils";
+import type { PedidoRastreadorView, StatusPedidoKey } from "./types";
+import { STATUS_CONFIG } from "./types";
+import { KanbanCard } from "./KanbanCard";
 
 export function KanbanColumn({
   status,
   pedidos,
   onCardClick,
 }: {
-  status: StatusPedidoKey
-  pedidos: PedidoRastreadorView[]
-  onCardClick: (p: PedidoRastreadorView) => void
+  status: StatusPedidoKey;
+  pedidos: PedidoRastreadorView[];
+  onCardClick: (p: PedidoRastreadorView) => void;
 }) {
-  const config = STATUS_CONFIG[status]
+  const config = STATUS_CONFIG[status];
 
   return (
     <div className="flex-1 min-w-[280px] flex flex-col h-full bg-slate-200/80 rounded border border-slate-200 p-3">
       <div className="flex items-center gap-2 mb-4 px-1">
-        <div
-          className={cn('w-2.5 h-2.5 rounded-full', config.dotColor)}
-        />
+        <div className={cn("w-2.5 h-2.5 rounded-full", config.dotColor)} />
         <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
           {config.label}
         </span>
@@ -39,5 +37,5 @@ export function KanbanColumn({
         )}
       </div>
     </div>
-  )
+  );
 }

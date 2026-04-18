@@ -5,8 +5,8 @@ import {
   useEffect,
   useState,
   type ReactNode,
-} from 'react';
-import { api, setOnUnauthorized } from '@/lib/api';
+} from "react";
+import { api, setOnUnauthorized } from "@/lib/api";
 
 export interface User {
   id: number;
@@ -34,7 +34,7 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const STORAGE_KEY = 'nexus_auth';
+const STORAGE_KEY = "nexus_auth";
 
 function loadStoredAuth(): Partial<AuthState> {
   try {
@@ -57,7 +57,7 @@ function saveAuth(data: Partial<AuthState>) {
 
 function clearAuth() {
   localStorage.removeItem(STORAGE_KEY);
-  localStorage.removeItem('accessToken');
+  localStorage.removeItem("accessToken");
 }
 
 // Inicializa o estado síncronamente no primeiro render (localStorage é síncrono)
@@ -65,7 +65,7 @@ function clearAuth() {
 function getInitialState(): AuthState {
   const stored = loadStoredAuth();
   if (stored.accessToken && stored.user) {
-    localStorage.setItem('accessToken', stored.accessToken);
+    localStorage.setItem("accessToken", stored.accessToken);
     return {
       user: stored.user,
       permissions: stored.permissions ?? [],
@@ -101,36 +101,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setOnUnauthorized(logout);
   }, [logout]);
 
-  const login = useCallback(async (email: string, password: string): Promise<LoginResponse> => {
-    const res = await api<{
-      accessToken: string;
-      user: User;
-      permissions: string[];
-      exigeTrocaSenha?: boolean;
-    }>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
-    const data = {
-      accessToken: res.accessToken,
-      user: res.user,
-      permissions: res.permissions,
-    };
-    localStorage.setItem('accessToken', res.accessToken);
-    saveAuth(data);
-    setState({
-      user: res.user,
-      permissions: res.permissions,
-      accessToken: res.accessToken,
-      isLoading: false,
-      isAuthenticated: true,
-    });
-    return { exigeTrocaSenha: res.exigeTrocaSenha };
-  }, []);
+  const login = useCallback(
+    async (email: string, password: string): Promise<LoginResponse> => {
+      const res = await api<{
+        accessToken: string;
+        user: User;
+        permissions: string[];
+        exigeTrocaSenha?: boolean;
+      }>("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+      const data = {
+        accessToken: res.accessToken,
+        user: res.user,
+        permissions: res.permissions,
+      };
+      localStorage.setItem("accessToken", res.accessToken);
+      saveAuth(data);
+      setState({
+        user: res.user,
+        permissions: res.permissions,
+        accessToken: res.accessToken,
+        isLoading: false,
+        isAuthenticated: true,
+      });
+      return { exigeTrocaSenha: res.exigeTrocaSenha };
+    },
+    [],
+  );
 
   const hasPermission = useCallback(
     (code: string) => state.permissions.includes(code),
-    [state.permissions]
+    [state.permissions],
   );
 
   const value: AuthContextValue = {
@@ -145,6 +148,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 }

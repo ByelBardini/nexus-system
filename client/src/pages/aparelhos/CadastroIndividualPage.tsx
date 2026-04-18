@@ -124,24 +124,24 @@ const STATUS_CONFIG: Record<
 };
 
 interface DebitoRastreadorApi {
-  id: number
-  devedorTipo: "INFINITY" | "CLIENTE"
-  devedorClienteId: number | null
-  devedorCliente: { id: number; nome: string } | null
-  credorTipo: "INFINITY" | "CLIENTE"
-  credorClienteId: number | null
-  credorCliente: { id: number; nome: string } | null
-  marcaId: number
-  marca: { id: number; nome: string }
-  modeloId: number
-  modelo: { id: number; nome: string }
-  quantidade: number
+  id: number;
+  devedorTipo: "INFINITY" | "CLIENTE";
+  devedorClienteId: number | null;
+  devedorCliente: { id: number; nome: string } | null;
+  credorTipo: "INFINITY" | "CLIENTE";
+  credorClienteId: number | null;
+  credorCliente: { id: number; nome: string } | null;
+  marcaId: number;
+  marca: { id: number; nome: string };
+  modeloId: number;
+  modelo: { id: number; nome: string };
+  quantidade: number;
 }
 
 function formatDebitoLabel(d: DebitoRastreadorApi): string {
-  const devedor = d.devedorCliente?.nome ?? "Infinity"
-  const credor = d.credorCliente?.nome ?? "Infinity"
-  return `${devedor} deve ${d.quantidade}x ${d.marca.nome} ${d.modelo.nome} → ${credor}`
+  const devedor = d.devedorCliente?.nome ?? "Infinity";
+  const credor = d.credorCliente?.nome ?? "Infinity";
+  return `${devedor} deve ${d.quantidade}x ${d.marca.nome} ${d.modelo.nome} → ${credor}`;
 }
 
 const schema = z
@@ -346,7 +346,6 @@ export function CadastroIndividualPage() {
     return found || null;
   }, [watchIdentificador, aparelhosExistentes]);
 
-
   const marcasSimcardFiltradas = useMemo(
     () =>
       marcasSimcard.filter(
@@ -390,20 +389,34 @@ export function CadastroIndividualPage() {
         watchProprietario === "INFINITY"
           ? d.devedorTipo === "INFINITY"
           : watchClienteId
-            ? d.devedorTipo === "CLIENTE" && d.devedorClienteId === watchClienteId
+            ? d.devedorTipo === "CLIENTE" &&
+              d.devedorClienteId === watchClienteId
             : false;
       if (!isDevedor) return false;
       // If brand/model selected, also filter by them
       if (watchMarca && watchModelo) {
         const marcaEncontrada = marcasAtivas.find((m) => m.nome === watchMarca);
-        const modeloEncontrado = modelosDisponiveis.find((m) => m.nome === watchModelo);
+        const modeloEncontrado = modelosDisponiveis.find(
+          (m) => m.nome === watchModelo,
+        );
         if (marcaEncontrada && modeloEncontrado) {
-          return d.marcaId === marcaEncontrada.id && d.modeloId === modeloEncontrado.id;
+          return (
+            d.marcaId === marcaEncontrada.id &&
+            d.modeloId === modeloEncontrado.id
+          );
         }
       }
       return true;
     });
-  }, [debitosData, watchProprietario, watchClienteId, watchMarca, watchModelo, marcasAtivas, modelosDisponiveis]);
+  }, [
+    debitosData,
+    watchProprietario,
+    watchClienteId,
+    watchMarca,
+    watchModelo,
+    marcasAtivas,
+    modelosDisponiveis,
+  ]);
 
   const selectedDebito = useMemo(
     () => debitosFiltrados.find((d) => d.id === watchAbaterDebitoId) ?? null,
@@ -483,7 +496,8 @@ export function CadastroIndividualPage() {
         responsavelEntrega,
         proprietario: data.proprietario,
         clienteId: data.clienteId,
-        notaFiscal: data.origem === "COMPRA_AVULSA" ? (data.notaFiscal || null) : null,
+        notaFiscal:
+          data.origem === "COMPRA_AVULSA" ? data.notaFiscal || null : null,
         observacoes: obsPartes.length > 0 ? obsPartes.join(" | ") : null,
         statusEntrada: data.status,
         categoriaFalha:
@@ -899,10 +913,14 @@ export function CadastroIndividualPage() {
                           form.setValue("clienteId", null);
                           form.setValue("notaFiscal", "");
                           const currentStatus = form.getValues("status");
-                          if (v === "COMPRA_AVULSA" && currentStatus !== "NOVO_OK")
+                          if (
+                            v === "COMPRA_AVULSA" &&
+                            currentStatus !== "NOVO_OK"
+                          )
                             form.setValue("status", "NOVO_OK");
                           if (
-                            (v === "RETIRADA_CLIENTE" || v === "DEVOLUCAO_TECNICO") &&
+                            (v === "RETIRADA_CLIENTE" ||
+                              v === "DEVOLUCAO_TECNICO") &&
                             currentStatus === "NOVO_OK"
                           )
                             form.setValue("status", "EM_MANUTENCAO");
@@ -1218,8 +1236,7 @@ export function CadastroIndividualPage() {
                   <div className="space-y-4">
                     <div>
                       <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                        Débito a Abater{" "}
-                        <span className="text-red-500">*</span>
+                        Débito a Abater <span className="text-red-500">*</span>
                       </Label>
                       <Controller
                         name="abaterDebitoId"
@@ -1255,7 +1272,8 @@ export function CadastroIndividualPage() {
                               <p className="text-[10px] text-amber-700 mt-1.5 bg-amber-50 border border-amber-200 rounded px-2 py-1">
                                 Este aparelho será vinculado ao credor:{" "}
                                 <strong>
-                                  {selectedDebito.credorCliente?.nome ?? "Infinity"}
+                                  {selectedDebito.credorCliente?.nome ??
+                                    "Infinity"}
                                 </strong>
                               </p>
                             )}
@@ -1330,16 +1348,17 @@ export function CadastroIndividualPage() {
                         {watchIdentificador.trim() || "--- não definido ---"}
                       </p>
                     </div>
-                    {watchOrigem === "COMPRA_AVULSA" && form.watch("notaFiscal")?.trim() && (
-                      <div>
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                          Nota Fiscal
-                        </label>
-                        <p className="text-sm font-medium">
-                          {form.watch("notaFiscal")}
-                        </p>
-                      </div>
-                    )}
+                    {watchOrigem === "COMPRA_AVULSA" &&
+                      form.watch("notaFiscal")?.trim() && (
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            Nota Fiscal
+                          </label>
+                          <p className="text-sm font-medium">
+                            {form.watch("notaFiscal")}
+                          </p>
+                        </div>
+                      )}
                     <div>
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                         Vinculação
@@ -1347,9 +1366,14 @@ export function CadastroIndividualPage() {
                       <p className="text-sm font-medium">
                         {watchProprietario === "CLIENTE"
                           ? (() => {
-                              const c = clientes.find((c) => c.id === watchClienteId);
+                              const c = clientes.find(
+                                (c) => c.id === watchClienteId,
+                              );
                               if (!c) return "--- cliente não selecionado ---";
-                              const loc = c.cidade && c.estado ? `${c.cidade} - ${c.estado}` : c.cidade ?? c.estado ?? '';
+                              const loc =
+                                c.cidade && c.estado
+                                  ? `${c.cidade} - ${c.estado}`
+                                  : (c.cidade ?? c.estado ?? "");
                               return loc ? `${c.nome} (${loc})` : c.nome;
                             })()
                           : "Infinity"}

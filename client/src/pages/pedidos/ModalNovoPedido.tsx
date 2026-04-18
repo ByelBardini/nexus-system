@@ -1,75 +1,79 @@
-import { useEffect, useMemo } from 'react'
-import { useForm, Controller, useFieldArray } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Loader2, Plus, Trash2, X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { useEffect, useMemo } from "react";
+import { useForm, Controller, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Loader2, Plus, Trash2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Checkbox } from '@/components/ui/checkbox'
-import { MaterialIcon } from '@/components/MaterialIcon'
-import { SelectTecnicoSearch } from '@/components/SelectTecnicoSearch'
-import { api } from '@/lib/api'
-import { useAuth } from '@/contexts/AuthContext'
-import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
-import type { ClienteResumo, SubclienteResumo, TecnicoResumo } from './types'
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { MaterialIcon } from "@/components/MaterialIcon";
+import { SelectTecnicoSearch } from "@/components/SelectTecnicoSearch";
+import { api } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import type { ClienteResumo, SubclienteResumo, TecnicoResumo } from "./types";
 
 const schemaItemMisto = z.object({
-  proprietario: z.enum(['INFINITY', 'CLIENTE']),
+  proprietario: z.enum(["INFINITY", "CLIENTE"]),
   clienteId: z.number().optional(),
-  quantidade: z.number().min(1, 'Mínimo 1'),
+  quantidade: z.number().min(1, "Mínimo 1"),
   marcaModeloEspecifico: z.boolean().optional(),
   marcaEquipamentoId: z.number().optional(),
   modeloEquipamentoId: z.number().optional(),
   operadoraEspecifica: z.boolean().optional(),
   operadoraId: z.number().optional(),
-})
+});
 
 const schemaNovoPedido = z
   .object({
-    tipoDestino: z.enum(['TECNICO', 'CLIENTE', 'MISTO']),
+    tipoDestino: z.enum(["TECNICO", "CLIENTE", "MISTO"]),
     tecnicoId: z.number().optional(),
     destinoCliente: z.string().optional(),
     deCliente: z.boolean().optional(),
     deClienteId: z.number().optional(),
-    dataSolicitacao: z.string().min(1, 'Data obrigatória'),
+    dataSolicitacao: z.string().min(1, "Data obrigatória"),
     marcaModeloEspecifico: z.boolean().optional(),
     marcaEquipamentoId: z.number().optional(),
     modeloEquipamentoId: z.number().optional(),
     operadoraEspecifica: z.boolean().optional(),
     operadoraId: z.number().optional(),
-    quantidade: z.number().min(1, 'Mínimo 1 unidade').optional(),
+    quantidade: z.number().min(1, "Mínimo 1 unidade").optional(),
     itensMisto: z.array(schemaItemMisto).optional(),
-    urgencia: z.enum(['BAIXA', 'MEDIA', 'ALTA', 'URGENTE']).optional(),
+    urgencia: z.enum(["BAIXA", "MEDIA", "ALTA", "URGENTE"]).optional(),
     observacao: z.string().optional(),
   })
   .refine(
-    (d) => d.tipoDestino !== 'TECNICO' || (d.tecnicoId != null && d.tecnicoId > 0),
-    { message: 'Selecione o técnico', path: ['tecnicoId'] },
+    (d) =>
+      d.tipoDestino !== "TECNICO" || (d.tecnicoId != null && d.tecnicoId > 0),
+    { message: "Selecione o técnico", path: ["tecnicoId"] },
   )
   .refine(
-    (d) => d.tipoDestino !== 'MISTO' || (d.tecnicoId != null && d.tecnicoId > 0),
-    { message: 'Selecione o técnico', path: ['tecnicoId'] },
+    (d) =>
+      d.tipoDestino !== "MISTO" || (d.tecnicoId != null && d.tecnicoId > 0),
+    { message: "Selecione o técnico", path: ["tecnicoId"] },
   )
   .refine(
-    (d) => d.tipoDestino !== 'CLIENTE' || (d.destinoCliente != null && d.destinoCliente.length > 0),
-    { message: 'Selecione o destinatário', path: ['destinoCliente'] },
-  )
+    (d) =>
+      d.tipoDestino !== "CLIENTE" ||
+      (d.destinoCliente != null && d.destinoCliente.length > 0),
+    { message: "Selecione o destinatário", path: ["destinoCliente"] },
+  );
 
-type FormNovoPedido = z.infer<typeof schemaNovoPedido>
+type FormNovoPedido = z.infer<typeof schemaNovoPedido>;
 
 interface ClienteComSubclientes extends ClienteResumo {
-  subclientes?: SubclienteResumo[]
+  subclientes?: SubclienteResumo[];
 }
 
 export function ModalNovoPedido({
@@ -77,18 +81,18 @@ export function ModalNovoPedido({
   onOpenChange,
   onSuccess,
 }: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSuccess: () => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
 }) {
-  const queryClient = useQueryClient()
-  const { user } = useAuth()
-  const hoje = new Date().toISOString().slice(0, 10)
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const hoje = new Date().toISOString().slice(0, 10);
 
   const defaultValues: FormNovoPedido = {
-    tipoDestino: 'TECNICO',
+    tipoDestino: "TECNICO",
     tecnicoId: undefined,
-    destinoCliente: '',
+    destinoCliente: "",
     deCliente: false,
     deClienteId: undefined,
     dataSolicitacao: hoje,
@@ -98,211 +102,272 @@ export function ModalNovoPedido({
     operadoraEspecifica: false,
     operadoraId: undefined,
     quantidade: 1,
-    itensMisto: [{ proprietario: 'INFINITY', quantidade: 1 }],
-    urgencia: 'MEDIA',
-    observacao: '',
-  }
+    itensMisto: [{ proprietario: "INFINITY", quantidade: 1 }],
+    urgencia: "MEDIA",
+    observacao: "",
+  };
 
   const form = useForm<FormNovoPedido>({
     resolver: zodResolver(schemaNovoPedido),
     defaultValues,
-  })
+  });
 
-  const { fields: itensMistoFields, append: appendItem, remove: removeItem } = useFieldArray({
+  const {
+    fields: itensMistoFields,
+    append: appendItem,
+    remove: removeItem,
+  } = useFieldArray({
     control: form.control,
-    name: 'itensMisto',
-  })
+    name: "itensMisto",
+  });
 
   useEffect(() => {
     if (open) {
-      form.reset({ ...defaultValues, dataSolicitacao: new Date().toISOString().slice(0, 10) })
+      form.reset({
+        ...defaultValues,
+        dataSolicitacao: new Date().toISOString().slice(0, 10),
+      });
     }
-  }, [open])
+  }, [open]);
 
-  const tipoDestino = form.watch('tipoDestino')
-  const tecnicoId = form.watch('tecnicoId')
-  const destinoCliente = form.watch('destinoCliente')
-  const deCliente = form.watch('deCliente')
-  const marcaModeloEspecifico = form.watch('marcaModeloEspecifico')
-  const marcaEquipamentoId = form.watch('marcaEquipamentoId')
-  const operadoraEspecifica = form.watch('operadoraEspecifica')
-  const quantidade = form.watch('quantidade')
-  const itensMistoValues = form.watch('itensMisto')
+  const tipoDestino = form.watch("tipoDestino");
+  const tecnicoId = form.watch("tecnicoId");
+  const destinoCliente = form.watch("destinoCliente");
+  const deCliente = form.watch("deCliente");
+  const marcaModeloEspecifico = form.watch("marcaModeloEspecifico");
+  const marcaEquipamentoId = form.watch("marcaEquipamentoId");
+  const operadoraEspecifica = form.watch("operadoraEspecifica");
+  const quantidade = form.watch("quantidade");
+  const itensMistoValues = form.watch("itensMisto");
 
-  const { clienteId, subclienteId } = useMemo((): { clienteId?: number; subclienteId?: number } => {
-    if (!destinoCliente || (!destinoCliente.startsWith('cliente-') && !destinoCliente.startsWith('subcliente-')))
-      return {}
-    const [tipo, idStr] = destinoCliente.split('-')
-    const id = parseInt(idStr, 10)
-    if (isNaN(id)) return {}
-    return tipo === 'cliente' ? { clienteId: id } : { subclienteId: id }
-  }, [destinoCliente])
+  const { clienteId, subclienteId } = useMemo((): {
+    clienteId?: number;
+    subclienteId?: number;
+  } => {
+    if (
+      !destinoCliente ||
+      (!destinoCliente.startsWith("cliente-") &&
+        !destinoCliente.startsWith("subcliente-"))
+    )
+      return {};
+    const [tipo, idStr] = destinoCliente.split("-");
+    const id = parseInt(idStr, 10);
+    if (isNaN(id)) return {};
+    return tipo === "cliente" ? { clienteId: id } : { subclienteId: id };
+  }, [destinoCliente]);
 
-  const { data: tecnicos = [], isLoading: loadingTecnicos } = useQuery<TecnicoResumo[]>({
-    queryKey: ['tecnicos'],
-    queryFn: () => api('/tecnicos'),
+  const { data: tecnicos = [], isLoading: loadingTecnicos } = useQuery<
+    TecnicoResumo[]
+  >({
+    queryKey: ["tecnicos"],
+    queryFn: () => api("/tecnicos"),
     enabled: open,
-  })
+  });
 
-  const { data: clientes = [], isLoading: loadingClientes } = useQuery<ClienteComSubclientes[]>({
-    queryKey: ['clientes', 'com-subclientes'],
-    queryFn: () => api('/clientes?subclientes=true'),
+  const { data: clientes = [], isLoading: loadingClientes } = useQuery<
+    ClienteComSubclientes[]
+  >({
+    queryKey: ["clientes", "com-subclientes"],
+    queryFn: () => api("/clientes?subclientes=true"),
     enabled: open,
-  })
+  });
 
   const { data: marcas = [] } = useQuery<{ id: number; nome: string }[]>({
-    queryKey: ['equipamentos', 'marcas'],
-    queryFn: () => api('/equipamentos/marcas'),
+    queryKey: ["equipamentos", "marcas"],
+    queryFn: () => api("/equipamentos/marcas"),
     enabled: open,
-  })
+  });
 
   const { data: operadoras = [] } = useQuery<{ id: number; nome: string }[]>({
-    queryKey: ['equipamentos', 'operadoras'],
-    queryFn: () => api('/equipamentos/operadoras'),
+    queryKey: ["equipamentos", "operadoras"],
+    queryFn: () => api("/equipamentos/operadoras"),
     enabled: open,
-  })
+  });
 
-  const { data: modelosRaw = [] } = useQuery<{ id: number; nome: string; marcaId: number }[]>({
-    queryKey: ['equipamentos', 'modelos', marcaEquipamentoId],
+  const { data: modelosRaw = [] } = useQuery<
+    { id: number; nome: string; marcaId: number }[]
+  >({
+    queryKey: ["equipamentos", "modelos", marcaEquipamentoId],
     queryFn: () =>
       api(
-        marcaEquipamentoId ? `/equipamentos/modelos?marcaId=${marcaEquipamentoId}` : '/equipamentos/modelos'
+        marcaEquipamentoId
+          ? `/equipamentos/modelos?marcaId=${marcaEquipamentoId}`
+          : "/equipamentos/modelos",
       ),
     enabled: open,
-  })
+  });
 
-  const modelos = modelosRaw
+  const modelos = modelosRaw;
   const modelosFiltrados = useMemo(
-    () => (marcaEquipamentoId ? modelos.filter((m) => m.marcaId === marcaEquipamentoId) : modelos),
-    [modelos, marcaEquipamentoId]
-  )
+    () =>
+      marcaEquipamentoId
+        ? modelos.filter((m) => m.marcaId === marcaEquipamentoId)
+        : modelos,
+    [modelos, marcaEquipamentoId],
+  );
 
   const opcoesCliente = useMemo(() => {
     const opts: Array<{
-      tipo: 'cliente' | 'subcliente'
-      id: number
-      label: string
-      item: ClienteComSubclientes | (SubclienteResumo & { cliente?: ClienteResumo })
-    }> = []
+      tipo: "cliente" | "subcliente";
+      id: number;
+      label: string;
+      item:
+        | ClienteComSubclientes
+        | (SubclienteResumo & { cliente?: ClienteResumo });
+    }> = [];
     clientes.forEach((c) => {
-      opts.push({ tipo: 'cliente', id: c.id, label: c.nome, item: c })
-      ;(c.subclientes ?? []).forEach((s) => {
+      opts.push({ tipo: "cliente", id: c.id, label: c.nome, item: c });
+      (c.subclientes ?? []).forEach((s) => {
         opts.push({
-          tipo: 'subcliente',
+          tipo: "subcliente",
           id: s.id,
           label: `${s.nome} — ${c.nome}`,
           item: { ...s, cliente: c },
-        })
-      })
-    })
-    return opts
-  }, [clientes])
+        });
+      });
+    });
+    return opts;
+  }, [clientes]);
 
   const destinatarioSelecionado =
-    tipoDestino === 'TECNICO'
-      ? tecnicos.find((t) => t.id === tecnicoId) ?? null
+    tipoDestino === "TECNICO"
+      ? (tecnicos.find((t) => t.id === tecnicoId) ?? null)
       : clienteId
-        ? clientes.find((c) => c.id === clienteId) ?? null
+        ? (clientes.find((c) => c.id === clienteId) ?? null)
         : subclienteId
-          ? opcoesCliente.find((o) => o.tipo === 'subcliente' && o.id === subclienteId)?.item ?? null
-          : null
+          ? (opcoesCliente.find(
+              (o) => o.tipo === "subcliente" && o.id === subclienteId,
+            )?.item ?? null)
+          : null;
 
   const createMutation = useMutation({
     mutationFn: (data: FormNovoPedido) => {
-      if (data.tipoDestino === 'MISTO') {
-        return api('/pedidos-rastreadores', {
-          method: 'POST',
+      if (data.tipoDestino === "MISTO") {
+        return api("/pedidos-rastreadores", {
+          method: "POST",
           body: JSON.stringify({
-            tipoDestino: 'MISTO',
+            tipoDestino: "MISTO",
             tecnicoId: data.tecnicoId,
             dataSolicitacao: data.dataSolicitacao,
-            urgencia: data.urgencia ?? 'MEDIA',
+            urgencia: data.urgencia ?? "MEDIA",
             observacao: data.observacao ?? undefined,
             itens: data.itensMisto?.map((item) => ({
               proprietario: item.proprietario,
-              clienteId: item.proprietario === 'CLIENTE' ? item.clienteId : undefined,
+              clienteId:
+                item.proprietario === "CLIENTE" ? item.clienteId : undefined,
               quantidade: item.quantidade,
               marcaEquipamentoId: data.marcaModeloEspecifico
                 ? data.marcaEquipamentoId
-                : item.marcaModeloEspecifico ? item.marcaEquipamentoId : undefined,
+                : item.marcaModeloEspecifico
+                  ? item.marcaEquipamentoId
+                  : undefined,
               modeloEquipamentoId: data.marcaModeloEspecifico
                 ? data.modeloEquipamentoId
-                : item.marcaModeloEspecifico ? item.modeloEquipamentoId : undefined,
+                : item.marcaModeloEspecifico
+                  ? item.modeloEquipamentoId
+                  : undefined,
               operadoraId: data.operadoraEspecifica
                 ? data.operadoraId
-                : item.operadoraEspecifica ? item.operadoraId : undefined,
+                : item.operadoraEspecifica
+                  ? item.operadoraId
+                  : undefined,
             })),
           }),
-        })
+        });
       }
-      const dest = data.destinoCliente ?? ''
-      const [tipo, idStr] = dest.split('-')
-      const id = parseInt(idStr, 10)
-      const isCliente = tipo === 'cliente' && !isNaN(id)
-      const isSubcliente = tipo === 'subcliente' && !isNaN(id)
-      return api('/pedidos-rastreadores', {
-        method: 'POST',
+      const dest = data.destinoCliente ?? "";
+      const [tipo, idStr] = dest.split("-");
+      const id = parseInt(idStr, 10);
+      const isCliente = tipo === "cliente" && !isNaN(id);
+      const isSubcliente = tipo === "subcliente" && !isNaN(id);
+      return api("/pedidos-rastreadores", {
+        method: "POST",
         body: JSON.stringify({
           tipoDestino: data.tipoDestino,
-          tecnicoId: data.tipoDestino === 'TECNICO' ? data.tecnicoId : undefined,
-          clienteId: data.tipoDestino === 'CLIENTE' && isCliente ? id : undefined,
-          subclienteId: data.tipoDestino === 'CLIENTE' && isSubcliente ? id : undefined,
+          tecnicoId:
+            data.tipoDestino === "TECNICO" ? data.tecnicoId : undefined,
+          clienteId:
+            data.tipoDestino === "CLIENTE" && isCliente ? id : undefined,
+          subclienteId:
+            data.tipoDestino === "CLIENTE" && isSubcliente ? id : undefined,
           dataSolicitacao: data.dataSolicitacao,
-          deClienteId: data.tipoDestino === 'TECNICO' && data.deCliente ? data.deClienteId : undefined,
-          marcaEquipamentoId: data.marcaModeloEspecifico ? data.marcaEquipamentoId : undefined,
-          modeloEquipamentoId: data.marcaModeloEspecifico ? data.modeloEquipamentoId : undefined,
+          deClienteId:
+            data.tipoDestino === "TECNICO" && data.deCliente
+              ? data.deClienteId
+              : undefined,
+          marcaEquipamentoId: data.marcaModeloEspecifico
+            ? data.marcaEquipamentoId
+            : undefined,
+          modeloEquipamentoId: data.marcaModeloEspecifico
+            ? data.modeloEquipamentoId
+            : undefined,
           operadoraId: data.operadoraEspecifica ? data.operadoraId : undefined,
           quantidade: data.quantidade,
-          urgencia: data.urgencia ?? 'MEDIA',
+          urgencia: data.urgencia ?? "MEDIA",
           observacao: data.observacao ?? undefined,
         }),
-      })
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pedidos-rastreadores'] })
-      form.reset(defaultValues)
-      onOpenChange(false)
-      onSuccess()
-      toast.success('Pedido criado com sucesso')
+      queryClient.invalidateQueries({ queryKey: ["pedidos-rastreadores"] });
+      form.reset(defaultValues);
+      onOpenChange(false);
+      onSuccess();
+      toast.success("Pedido criado com sucesso");
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : 'Erro ao criar pedido'),
-  })
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Erro ao criar pedido"),
+  });
 
   function handleClose() {
-    form.reset(defaultValues)
-    onOpenChange(false)
+    form.reset(defaultValues);
+    onOpenChange(false);
   }
 
   function onSubmit(data: FormNovoPedido) {
-    createMutation.mutate(data)
+    createMutation.mutate(data);
   }
 
   const cidadeDisplay =
-    destinatarioSelecionado && 'cidade' in destinatarioSelecionado && 'estado' in destinatarioSelecionado
+    destinatarioSelecionado &&
+    "cidade" in destinatarioSelecionado &&
+    "estado" in destinatarioSelecionado
       ? destinatarioSelecionado.cidade && destinatarioSelecionado.estado
         ? `${destinatarioSelecionado.cidade}, ${destinatarioSelecionado.estado}`
-        : destinatarioSelecionado.cidade ?? '-'
-      : null
+        : (destinatarioSelecionado.cidade ?? "-")
+      : null;
   const filialDisplay =
-    destinatarioSelecionado && 'cliente' in destinatarioSelecionado
-      ? (destinatarioSelecionado as SubclienteResumo & { cliente?: ClienteResumo }).cliente?.nome ?? '-'
-      : null
+    destinatarioSelecionado && "cliente" in destinatarioSelecionado
+      ? ((
+          destinatarioSelecionado as SubclienteResumo & {
+            cliente?: ClienteResumo;
+          }
+        ).cliente?.nome ?? "-")
+      : null;
 
   return (
     <Dialog
       open={open}
       onOpenChange={(o) => {
-        if (!o) form.reset(defaultValues)
-        onOpenChange(o)
+        if (!o) form.reset(defaultValues);
+        onOpenChange(o);
       }}
     >
-      <DialogContent hideClose className="p-0 max-w-[600px] gap-0 overflow-hidden rounded-sm border-slate-200">
+      <DialogContent
+        hideClose
+        className="p-0 max-w-[600px] gap-0 overflow-hidden rounded-sm border-slate-200"
+      >
         <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <MaterialIcon name="add_circle" className="text-xl text-blue-600" />
-            <h2 className="text-base font-bold text-slate-800">Novo Pedido de Rastreador</h2>
+            <h2 className="text-base font-bold text-slate-800">
+              Novo Pedido de Rastreador
+            </h2>
           </div>
-          <button onClick={handleClose} className="text-slate-400 hover:text-slate-600">
+          <button
+            onClick={handleClose}
+            className="text-slate-400 hover:text-slate-600"
+          >
             <X className="h-5 w-5" />
           </button>
         </header>
@@ -334,7 +399,7 @@ export function ModalNovoPedido({
                   Criado por
                 </Label>
                 <div className="bg-slate-50 border border-slate-200 rounded-sm px-3 py-2 text-xs text-slate-600 font-medium truncate">
-                  {user?.nome ?? '-'}
+                  {user?.nome ?? "-"}
                 </div>
               </div>
             </div>
@@ -349,16 +414,19 @@ export function ModalNovoPedido({
                       id="marcaModeloEspecifico"
                       checked={field.value ?? false}
                       onCheckedChange={(checked) => {
-                        field.onChange(checked)
+                        field.onChange(checked);
                         if (!checked) {
-                          form.setValue('marcaEquipamentoId', undefined)
-                          form.setValue('modeloEquipamentoId', undefined)
+                          form.setValue("marcaEquipamentoId", undefined);
+                          form.setValue("modeloEquipamentoId", undefined);
                         }
                       }}
                     />
                   )}
                 />
-                <Label htmlFor="marcaModeloEspecifico" className="text-xs font-medium cursor-pointer">
+                <Label
+                  htmlFor="marcaModeloEspecifico"
+                  className="text-xs font-medium cursor-pointer"
+                >
                   Marca/modelo específico
                 </Label>
               </div>
@@ -373,10 +441,10 @@ export function ModalNovoPedido({
                       control={form.control}
                       render={({ field }) => (
                         <Select
-                          value={field.value ? String(field.value) : ''}
+                          value={field.value ? String(field.value) : ""}
                           onValueChange={(v) => {
-                            field.onChange(v ? +v : undefined)
-                            form.setValue('modeloEquipamentoId', undefined)
+                            field.onChange(v ? +v : undefined);
+                            form.setValue("modeloEquipamentoId", undefined);
                           }}
                         >
                           <SelectTrigger className="h-9 text-xs w-full">
@@ -402,8 +470,10 @@ export function ModalNovoPedido({
                       control={form.control}
                       render={({ field }) => (
                         <Select
-                          value={field.value ? String(field.value) : ''}
-                          onValueChange={(v) => field.onChange(v ? +v : undefined)}
+                          value={field.value ? String(field.value) : ""}
+                          onValueChange={(v) =>
+                            field.onChange(v ? +v : undefined)
+                          }
                           disabled={!marcaEquipamentoId}
                         >
                           <SelectTrigger className="h-9 text-xs w-full">
@@ -432,13 +502,16 @@ export function ModalNovoPedido({
                       id="operadoraEspecifica"
                       checked={field.value ?? false}
                       onCheckedChange={(checked) => {
-                        field.onChange(checked)
-                        if (!checked) form.setValue('operadoraId', undefined)
+                        field.onChange(checked);
+                        if (!checked) form.setValue("operadoraId", undefined);
                       }}
                     />
                   )}
                 />
-                <Label htmlFor="operadoraEspecifica" className="text-xs font-medium cursor-pointer">
+                <Label
+                  htmlFor="operadoraEspecifica"
+                  className="text-xs font-medium cursor-pointer"
+                >
                   Operadora específica
                 </Label>
               </div>
@@ -452,8 +525,10 @@ export function ModalNovoPedido({
                     control={form.control}
                     render={({ field }) => (
                       <Select
-                        value={field.value ? String(field.value) : ''}
-                        onValueChange={(v) => field.onChange(v ? +v : undefined)}
+                        value={field.value ? String(field.value) : ""}
+                        onValueChange={(v) =>
+                          field.onChange(v ? +v : undefined)
+                        }
                       >
                         <SelectTrigger className="h-9 text-xs w-full">
                           <SelectValue placeholder="Selecione a operadora" />
@@ -480,17 +555,17 @@ export function ModalNovoPedido({
                 <button
                   type="button"
                   onClick={() => {
-                    form.setValue('tipoDestino', 'TECNICO')
-                    form.setValue('tecnicoId', undefined)
-                    form.setValue('destinoCliente', '')
-                    form.setValue('deCliente', false)
-                    form.setValue('deClienteId', undefined)
+                    form.setValue("tipoDestino", "TECNICO");
+                    form.setValue("tecnicoId", undefined);
+                    form.setValue("destinoCliente", "");
+                    form.setValue("deCliente", false);
+                    form.setValue("deClienteId", undefined);
                   }}
                   className={cn(
-                    'flex-1 py-2 text-xs font-bold uppercase tracking-wider border border-slate-200 transition-all',
-                    tipoDestino === 'TECNICO' || tipoDestino === 'MISTO'
-                      ? 'bg-erp-blue text-white border-erp-blue'
-                      : 'bg-white text-slate-500 hover:bg-slate-50'
+                    "flex-1 py-2 text-xs font-bold uppercase tracking-wider border border-slate-200 transition-all",
+                    tipoDestino === "TECNICO" || tipoDestino === "MISTO"
+                      ? "bg-erp-blue text-white border-erp-blue"
+                      : "bg-white text-slate-500 hover:bg-slate-50",
                   )}
                 >
                   Técnico
@@ -498,33 +573,44 @@ export function ModalNovoPedido({
                 <button
                   type="button"
                   onClick={() => {
-                    form.setValue('tipoDestino', 'CLIENTE')
-                    form.setValue('tecnicoId', undefined)
-                    form.setValue('destinoCliente', '')
-                    form.setValue('itensMisto', [{ proprietario: 'INFINITY', quantidade: 1 }])
+                    form.setValue("tipoDestino", "CLIENTE");
+                    form.setValue("tecnicoId", undefined);
+                    form.setValue("destinoCliente", "");
+                    form.setValue("itensMisto", [
+                      { proprietario: "INFINITY", quantidade: 1 },
+                    ]);
                   }}
                   className={cn(
-                    'flex-1 py-2 text-xs font-bold uppercase tracking-wider border border-slate-200 transition-all',
-                    tipoDestino === 'CLIENTE'
-                      ? 'bg-erp-blue text-white border-erp-blue'
-                      : 'bg-white text-slate-500 hover:bg-slate-50'
+                    "flex-1 py-2 text-xs font-bold uppercase tracking-wider border border-slate-200 transition-all",
+                    tipoDestino === "CLIENTE"
+                      ? "bg-erp-blue text-white border-erp-blue"
+                      : "bg-white text-slate-500 hover:bg-slate-50",
                   )}
                 >
                   Cliente
                 </button>
               </div>
 
-              {(tipoDestino === 'TECNICO' || tipoDestino === 'MISTO') && (
+              {(tipoDestino === "TECNICO" || tipoDestino === "MISTO") && (
                 <div className="flex items-center gap-2">
                   <Checkbox
                     id="pedidoMisto"
-                    checked={tipoDestino === 'MISTO'}
+                    checked={tipoDestino === "MISTO"}
                     onCheckedChange={(checked) => {
-                      form.setValue('tipoDestino', checked ? 'MISTO' : 'TECNICO')
-                      if (!checked) form.setValue('itensMisto', [{ proprietario: 'INFINITY', quantidade: 1 }])
+                      form.setValue(
+                        "tipoDestino",
+                        checked ? "MISTO" : "TECNICO",
+                      );
+                      if (!checked)
+                        form.setValue("itensMisto", [
+                          { proprietario: "INFINITY", quantidade: 1 },
+                        ]);
                     }}
                   />
-                  <Label htmlFor="pedidoMisto" className="text-xs font-medium cursor-pointer">
+                  <Label
+                    htmlFor="pedidoMisto"
+                    className="text-xs font-medium cursor-pointer"
+                  >
                     Pedido misto (múltiplos proprietários para o mesmo técnico)
                   </Label>
                 </div>
@@ -534,7 +620,7 @@ export function ModalNovoPedido({
                 <Label className="text-[10px] font-bold uppercase text-slate-500 block mb-1.5">
                   Pesquisar Destinatário
                 </Label>
-                {tipoDestino !== 'CLIENTE' ? (
+                {tipoDestino !== "CLIENTE" ? (
                   <Controller
                     name="tecnicoId"
                     control={form.control}
@@ -558,8 +644,8 @@ export function ModalNovoPedido({
                           className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"
                         />
                         <Select
-                          value={String(field.value ?? '')}
-                          onValueChange={(v) => field.onChange(v ?? '')}
+                          value={String(field.value ?? "")}
+                          onValueChange={(v) => field.onChange(v ?? "")}
                           disabled={loadingClientes}
                         >
                           <SelectTrigger className="pl-9 h-9 text-xs">
@@ -567,7 +653,10 @@ export function ModalNovoPedido({
                           </SelectTrigger>
                           <SelectContent>
                             {opcoesCliente.map((o) => (
-                              <SelectItem key={`${o.tipo}-${o.id}`} value={`${o.tipo}-${o.id}`}>
+                              <SelectItem
+                                key={`${o.tipo}-${o.id}`}
+                                value={`${o.tipo}-${o.id}`}
+                              >
                                 {o.label}
                               </SelectItem>
                             ))}
@@ -577,10 +666,15 @@ export function ModalNovoPedido({
                     )}
                   />
                 )}
-                {(form.formState.errors.tecnicoId ?? form.formState.errors.destinoCliente ?? form.formState.errors.root) && (
+                {(form.formState.errors.tecnicoId ??
+                  form.formState.errors.destinoCliente ??
+                  form.formState.errors.root) && (
                   <p className="text-xs text-destructive mt-1">
-                    {(form.formState.errors.tecnicoId ?? form.formState.errors.destinoCliente ?? form.formState.errors.root)
-                      ?.message ?? 'Selecione o destinatário'}
+                    {(
+                      form.formState.errors.tecnicoId ??
+                      form.formState.errors.destinoCliente ??
+                      form.formState.errors.root
+                    )?.message ?? "Selecione o destinatário"}
                   </p>
                 )}
               </div>
@@ -589,7 +683,9 @@ export function ModalNovoPedido({
                 <div className="bg-slate-50 border border-slate-200 rounded p-4 flex items-start gap-4">
                   <div className="bg-blue-100 text-blue-600 p-2 rounded shrink-0">
                     <MaterialIcon
-                      name={tipoDestino === 'CLIENTE' ? 'business' : 'engineering'}
+                      name={
+                        tipoDestino === "CLIENTE" ? "business" : "engineering"
+                      }
                       className="text-lg"
                     />
                   </div>
@@ -600,13 +696,19 @@ export function ModalNovoPedido({
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
                       {cidadeDisplay && (
                         <span className="flex items-center gap-1">
-                          <MaterialIcon name="location_on" className="text-[14px]" />
+                          <MaterialIcon
+                            name="location_on"
+                            className="text-[14px]"
+                          />
                           {cidadeDisplay}
                         </span>
                       )}
                       {filialDisplay && (
                         <span className="flex items-center gap-1">
-                          <MaterialIcon name="apartment" className="text-[14px]" />
+                          <MaterialIcon
+                            name="apartment"
+                            className="text-[14px]"
+                          />
                           {filialDisplay}
                         </span>
                       )}
@@ -615,7 +717,7 @@ export function ModalNovoPedido({
                 </div>
               )}
 
-              {tipoDestino === 'TECNICO' && (
+              {tipoDestino === "TECNICO" && (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Controller
@@ -626,13 +728,17 @@ export function ModalNovoPedido({
                           id="deCliente"
                           checked={field.value ?? false}
                           onCheckedChange={(checked) => {
-                            field.onChange(checked)
-                            if (!checked) form.setValue('deClienteId', undefined)
+                            field.onChange(checked);
+                            if (!checked)
+                              form.setValue("deClienteId", undefined);
                           }}
                         />
                       )}
                     />
-                    <Label htmlFor="deCliente" className="text-xs font-medium cursor-pointer">
+                    <Label
+                      htmlFor="deCliente"
+                      className="text-xs font-medium cursor-pointer"
+                    >
                       De Cliente (cliente enviando rastreadores para o técnico)
                     </Label>
                   </div>
@@ -646,8 +752,10 @@ export function ModalNovoPedido({
                         control={form.control}
                         render={({ field }) => (
                           <Select
-                            value={field.value ? String(field.value) : ''}
-                            onValueChange={(v) => field.onChange(v ? +v : undefined)}
+                            value={field.value ? String(field.value) : ""}
+                            onValueChange={(v) =>
+                              field.onChange(v ? +v : undefined)
+                            }
                             disabled={loadingClientes}
                           >
                             <SelectTrigger className="h-9 text-xs">
@@ -668,53 +776,82 @@ export function ModalNovoPedido({
                 </div>
               )}
 
-              {tipoDestino === 'MISTO' && (
+              {tipoDestino === "MISTO" && (
                 <div className="space-y-3">
                   {itensMistoFields.map((field, index) => {
-                    const itemProprietario = form.watch(`itensMisto.${index}.proprietario`)
-                    const itemMarcaId = form.watch(`itensMisto.${index}.marcaEquipamentoId`)
-                    const itemMarcaModelo = form.watch(`itensMisto.${index}.marcaModeloEspecifico`)
-                    const itemOperadora = form.watch(`itensMisto.${index}.operadoraEspecifica`)
+                    const itemProprietario = form.watch(
+                      `itensMisto.${index}.proprietario`,
+                    );
+                    const itemMarcaId = form.watch(
+                      `itensMisto.${index}.marcaEquipamentoId`,
+                    );
+                    const itemMarcaModelo = form.watch(
+                      `itensMisto.${index}.marcaModeloEspecifico`,
+                    );
+                    const itemOperadora = form.watch(
+                      `itensMisto.${index}.operadoraEspecifica`,
+                    );
                     const modelosFiltradosItem = itemMarcaId
                       ? modelosRaw.filter((m) => m.marcaId === itemMarcaId)
-                      : modelosRaw
+                      : modelosRaw;
                     const infinityTaken = (itensMistoValues ?? []).some(
-                      (item, i) => i !== index && item.proprietario === 'INFINITY'
-                    )
+                      (item, i) =>
+                        i !== index && item.proprietario === "INFINITY",
+                    );
                     const clientesJaUsados = new Set(
                       (itensMistoValues ?? [])
-                        .filter((item, i) => i !== index && item.proprietario === 'CLIENTE')
+                        .filter(
+                          (item, i) =>
+                            i !== index && item.proprietario === "CLIENTE",
+                        )
                         .map((item) => item.clienteId)
-                        .filter((id): id is number => id != null)
-                    )
-                    const clientesDisponiveis = clientes.filter((c) => !clientesJaUsados.has(c.id))
+                        .filter((id): id is number => id != null),
+                    );
+                    const clientesDisponiveis = clientes.filter(
+                      (c) => !clientesJaUsados.has(c.id),
+                    );
                     return (
-                      <div key={field.id} className="border border-slate-200 rounded p-3 space-y-3 bg-slate-50">
+                      <div
+                        key={field.id}
+                        className="border border-slate-200 rounded p-3 space-y-3 bg-slate-50"
+                      >
                         <div className="flex items-center justify-between gap-3">
                           <div className="flex rounded overflow-hidden flex-1">
                             <button
                               type="button"
-                              onClick={() => form.setValue(`itensMisto.${index}.proprietario`, 'INFINITY')}
-                              disabled={infinityTaken && itemProprietario !== 'INFINITY'}
+                              onClick={() =>
+                                form.setValue(
+                                  `itensMisto.${index}.proprietario`,
+                                  "INFINITY",
+                                )
+                              }
+                              disabled={
+                                infinityTaken && itemProprietario !== "INFINITY"
+                              }
                               className={cn(
-                                'flex-1 py-1.5 text-[11px] font-bold uppercase tracking-wider border border-slate-200 transition-all',
-                                itemProprietario === 'INFINITY'
-                                  ? 'bg-erp-blue text-white border-erp-blue'
+                                "flex-1 py-1.5 text-[11px] font-bold uppercase tracking-wider border border-slate-200 transition-all",
+                                itemProprietario === "INFINITY"
+                                  ? "bg-erp-blue text-white border-erp-blue"
                                   : infinityTaken
-                                    ? 'bg-slate-50 text-slate-300 cursor-not-allowed'
-                                    : 'bg-white text-slate-500 hover:bg-slate-50'
+                                    ? "bg-slate-50 text-slate-300 cursor-not-allowed"
+                                    : "bg-white text-slate-500 hover:bg-slate-50",
                               )}
                             >
                               Infinity
                             </button>
                             <button
                               type="button"
-                              onClick={() => form.setValue(`itensMisto.${index}.proprietario`, 'CLIENTE')}
+                              onClick={() =>
+                                form.setValue(
+                                  `itensMisto.${index}.proprietario`,
+                                  "CLIENTE",
+                                )
+                              }
                               className={cn(
-                                'flex-1 py-1.5 text-[11px] font-bold uppercase tracking-wider border border-slate-200 transition-all',
-                                itemProprietario === 'CLIENTE'
-                                  ? 'bg-erp-blue text-white border-erp-blue'
-                                  : 'bg-white text-slate-500 hover:bg-slate-50'
+                                "flex-1 py-1.5 text-[11px] font-bold uppercase tracking-wider border border-slate-200 transition-all",
+                                itemProprietario === "CLIENTE"
+                                  ? "bg-erp-blue text-white border-erp-blue"
+                                  : "bg-white text-slate-500 hover:bg-slate-50",
                               )}
                             >
                               Cliente
@@ -730,7 +867,7 @@ export function ModalNovoPedido({
                           </button>
                         </div>
 
-                        {itemProprietario === 'CLIENTE' && (
+                        {itemProprietario === "CLIENTE" && (
                           <div>
                             <Label className="text-[10px] font-bold uppercase text-slate-500 block mb-1.5">
                               Cliente
@@ -740,10 +877,12 @@ export function ModalNovoPedido({
                               control={form.control}
                               render={({ field: f }) => (
                                 <Select
-                                  value={f.value ? `cliente-${f.value}` : ''}
+                                  value={f.value ? `cliente-${f.value}` : ""}
                                   onValueChange={(v) => {
-                                    if (v.startsWith('cliente-')) {
-                                      f.onChange(parseInt(v.replace('cliente-', ''), 10))
+                                    if (v.startsWith("cliente-")) {
+                                      f.onChange(
+                                        parseInt(v.replace("cliente-", ""), 10),
+                                      );
                                     }
                                   }}
                                   disabled={loadingClientes}
@@ -753,7 +892,10 @@ export function ModalNovoPedido({
                                   </SelectTrigger>
                                   <SelectContent>
                                     {clientesDisponiveis.map((c) => (
-                                      <SelectItem key={c.id} value={`cliente-${c.id}`}>
+                                      <SelectItem
+                                        key={c.id}
+                                        value={`cliente-${c.id}`}
+                                      >
                                         {c.nome}
                                       </SelectItem>
                                     ))}
@@ -779,8 +921,8 @@ export function ModalNovoPedido({
                                   className="h-9 text-xs"
                                   value={f.value}
                                   onChange={(e) => {
-                                    const v = parseInt(e.target.value, 10)
-                                    f.onChange(isNaN(v) ? 1 : Math.max(1, v))
+                                    const v = parseInt(e.target.value, 10);
+                                    f.onChange(isNaN(v) ? 1 : Math.max(1, v));
                                   }}
                                 />
                               )}
@@ -806,16 +948,24 @@ export function ModalNovoPedido({
                                     <Checkbox
                                       checked={f.value ?? false}
                                       onCheckedChange={(checked) => {
-                                        f.onChange(checked)
+                                        f.onChange(checked);
                                         if (!checked) {
-                                          form.setValue(`itensMisto.${index}.marcaEquipamentoId`, undefined)
-                                          form.setValue(`itensMisto.${index}.modeloEquipamentoId`, undefined)
+                                          form.setValue(
+                                            `itensMisto.${index}.marcaEquipamentoId`,
+                                            undefined,
+                                          );
+                                          form.setValue(
+                                            `itensMisto.${index}.modeloEquipamentoId`,
+                                            undefined,
+                                          );
                                         }
                                       }}
                                     />
                                   )}
                                 />
-                                <span className="text-xs font-medium">Marca/modelo específico</span>
+                                <span className="text-xs font-medium">
+                                  Marca/modelo específico
+                                </span>
                               </div>
                               {itemMarcaModelo && (
                                 <div className="grid grid-cols-2 gap-2">
@@ -824,10 +974,13 @@ export function ModalNovoPedido({
                                     control={form.control}
                                     render={({ field: f }) => (
                                       <Select
-                                        value={f.value ? String(f.value) : ''}
+                                        value={f.value ? String(f.value) : ""}
                                         onValueChange={(v) => {
-                                          f.onChange(v ? +v : undefined)
-                                          form.setValue(`itensMisto.${index}.modeloEquipamentoId`, undefined)
+                                          f.onChange(v ? +v : undefined);
+                                          form.setValue(
+                                            `itensMisto.${index}.modeloEquipamentoId`,
+                                            undefined,
+                                          );
                                         }}
                                       >
                                         <SelectTrigger className="h-8 text-xs">
@@ -835,7 +988,12 @@ export function ModalNovoPedido({
                                         </SelectTrigger>
                                         <SelectContent>
                                           {marcas.map((m) => (
-                                            <SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>
+                                            <SelectItem
+                                              key={m.id}
+                                              value={String(m.id)}
+                                            >
+                                              {m.nome}
+                                            </SelectItem>
                                           ))}
                                         </SelectContent>
                                       </Select>
@@ -846,8 +1004,10 @@ export function ModalNovoPedido({
                                     control={form.control}
                                     render={({ field: f }) => (
                                       <Select
-                                        value={f.value ? String(f.value) : ''}
-                                        onValueChange={(v) => f.onChange(v ? +v : undefined)}
+                                        value={f.value ? String(f.value) : ""}
+                                        onValueChange={(v) =>
+                                          f.onChange(v ? +v : undefined)
+                                        }
                                         disabled={!itemMarcaId}
                                       >
                                         <SelectTrigger className="h-8 text-xs">
@@ -855,7 +1015,12 @@ export function ModalNovoPedido({
                                         </SelectTrigger>
                                         <SelectContent>
                                           {modelosFiltradosItem.map((m) => (
-                                            <SelectItem key={m.id} value={String(m.id)}>{m.nome}</SelectItem>
+                                            <SelectItem
+                                              key={m.id}
+                                              value={String(m.id)}
+                                            >
+                                              {m.nome}
+                                            </SelectItem>
                                           ))}
                                         </SelectContent>
                                       </Select>
@@ -883,13 +1048,19 @@ export function ModalNovoPedido({
                                     <Checkbox
                                       checked={f.value ?? false}
                                       onCheckedChange={(checked) => {
-                                        f.onChange(checked)
-                                        if (!checked) form.setValue(`itensMisto.${index}.operadoraId`, undefined)
+                                        f.onChange(checked);
+                                        if (!checked)
+                                          form.setValue(
+                                            `itensMisto.${index}.operadoraId`,
+                                            undefined,
+                                          );
                                       }}
                                     />
                                   )}
                                 />
-                                <span className="text-xs font-medium">Operadora específica</span>
+                                <span className="text-xs font-medium">
+                                  Operadora específica
+                                </span>
                               </div>
                               {itemOperadora && (
                                 <Controller
@@ -897,15 +1068,22 @@ export function ModalNovoPedido({
                                   control={form.control}
                                   render={({ field: f }) => (
                                     <Select
-                                      value={f.value ? String(f.value) : ''}
-                                      onValueChange={(v) => f.onChange(v ? +v : undefined)}
+                                      value={f.value ? String(f.value) : ""}
+                                      onValueChange={(v) =>
+                                        f.onChange(v ? +v : undefined)
+                                      }
                                     >
                                       <SelectTrigger className="h-8 text-xs">
                                         <SelectValue placeholder="Operadora" />
                                       </SelectTrigger>
                                       <SelectContent>
                                         {operadoras.map((o) => (
-                                          <SelectItem key={o.id} value={String(o.id)}>{o.nome}</SelectItem>
+                                          <SelectItem
+                                            key={o.id}
+                                            value={String(o.id)}
+                                          >
+                                            {o.nome}
+                                          </SelectItem>
                                         ))}
                                       </SelectContent>
                                     </Select>
@@ -916,14 +1094,19 @@ export function ModalNovoPedido({
                           )}
                         </div>
                       </div>
-                    )
+                    );
                   })}
 
                   <button
                     type="button"
                     onClick={() => {
-                      const infinityTomado = (itensMistoValues ?? []).some(i => i.proprietario === 'INFINITY')
-                      appendItem({ proprietario: infinityTomado ? 'CLIENTE' : 'INFINITY', quantidade: 1 })
+                      const infinityTomado = (itensMistoValues ?? []).some(
+                        (i) => i.proprietario === "INFINITY",
+                      );
+                      appendItem({
+                        proprietario: infinityTomado ? "CLIENTE" : "INFINITY",
+                        quantidade: 1,
+                      });
                     }}
                     className="w-full py-2 text-xs font-bold text-erp-blue border border-dashed border-erp-blue rounded hover:bg-blue-50 flex items-center justify-center gap-1"
                   >
@@ -933,8 +1116,13 @@ export function ModalNovoPedido({
                 </div>
               )}
 
-              <div className={cn('grid gap-4 w-full', tipoDestino !== 'MISTO' ? 'grid-cols-2' : 'grid-cols-1')}>
-                {tipoDestino !== 'MISTO' && (
+              <div
+                className={cn(
+                  "grid gap-4 w-full",
+                  tipoDestino !== "MISTO" ? "grid-cols-2" : "grid-cols-1",
+                )}
+              >
+                {tipoDestino !== "MISTO" && (
                   <div>
                     <Label className="text-[10px] font-bold uppercase text-slate-500 block mb-1.5">
                       Quantidade <span className="text-red-500">*</span>
@@ -950,13 +1138,15 @@ export function ModalNovoPedido({
                             className="h-9 text-xs flex-1"
                             {...field}
                             onChange={(e) => {
-                              const v = parseInt(e.target.value, 10)
-                              field.onChange(isNaN(v) ? 1 : Math.max(1, v))
+                              const v = parseInt(e.target.value, 10);
+                              field.onChange(isNaN(v) ? 1 : Math.max(1, v));
                             }}
                           />
                         )}
                       />
-                      <span className="text-[11px] font-bold text-slate-500 shrink-0">Unidades</span>
+                      <span className="text-[11px] font-bold text-slate-500 shrink-0">
+                        Unidades
+                      </span>
                     </div>
                   </div>
                 )}
@@ -968,7 +1158,10 @@ export function ModalNovoPedido({
                     name="urgencia"
                     control={form.control}
                     render={({ field }) => (
-                      <Select value={field.value ?? 'MEDIA'} onValueChange={field.onChange}>
+                      <Select
+                        value={field.value ?? "MEDIA"}
+                        onValueChange={field.onChange}
+                      >
                         <SelectTrigger className="h-9 text-xs w-full">
                           <SelectValue />
                         </SelectTrigger>
@@ -984,10 +1177,14 @@ export function ModalNovoPedido({
                 </div>
               </div>
               {form.formState.errors.quantidade && (
-                <p className="text-xs text-destructive">{form.formState.errors.quantidade.message}</p>
+                <p className="text-xs text-destructive">
+                  {form.formState.errors.quantidade.message}
+                </p>
               )}
               {form.formState.errors.dataSolicitacao && (
-                <p className="text-xs text-destructive">{form.formState.errors.dataSolicitacao.message}</p>
+                <p className="text-xs text-destructive">
+                  {form.formState.errors.dataSolicitacao.message}
+                </p>
               )}
             </div>
 
@@ -996,40 +1193,50 @@ export function ModalNovoPedido({
                 Observação (Opcional)
               </Label>
               <textarea
-                {...form.register('observacao')}
+                {...form.register("observacao")}
                 placeholder="Ex: Solicitação urgente para manutenção preventiva."
                 className="w-full h-20 p-3 bg-white border border-slate-300 rounded-sm text-xs focus:ring-2 focus:ring-erp-blue focus:border-erp-blue outline-none resize-none"
               />
             </div>
 
-            {tipoDestino === 'MISTO' && itensMistoFields.length > 0 && (
+            {tipoDestino === "MISTO" && itensMistoFields.length > 0 && (
               <div className="bg-blue-50 border border-blue-100 rounded p-3 space-y-1">
-                <p className="text-xs font-bold text-blue-800">Distribuição do pedido:</p>
+                <p className="text-xs font-bold text-blue-800">
+                  Distribuição do pedido:
+                </p>
                 {itensMistoFields.map((f, i) => {
-                  const item = form.watch(`itensMisto.${i}`)
-                  if (!item) return null
+                  const item = form.watch(`itensMisto.${i}`);
+                  if (!item) return null;
                   const label =
-                    item.proprietario === 'INFINITY'
-                      ? 'Infinity'
-                      : clientes.find((c) => c.id === item.clienteId)?.nome ?? 'Cliente'
+                    item.proprietario === "INFINITY"
+                      ? "Infinity"
+                      : (clientes.find((c) => c.id === item.clienteId)?.nome ??
+                        "Cliente");
                   return (
                     <p key={f.id} className="text-xs text-blue-700">
                       {item.quantidade}× → {label}
                     </p>
-                  )
+                  );
                 })}
               </div>
             )}
-            {tipoDestino !== 'MISTO' && (destinatarioSelecionado ?? (quantidade ?? 0) > 0) && (
-              <div className="bg-blue-50 border border-blue-100 rounded p-3">
-                <p className="text-xs text-blue-800 font-medium flex items-center gap-2">
-                  <MaterialIcon name="info" className="text-sm" />
-                  Você está solicitando{' '}
-                  <span className="font-bold underline">{quantidade} unidades</span> para{' '}
-                  <span className="font-bold">{destinatarioSelecionado?.nome ?? '...'}</span>.
-                </p>
-              </div>
-            )}
+            {tipoDestino !== "MISTO" &&
+              (destinatarioSelecionado ?? (quantidade ?? 0) > 0) && (
+                <div className="bg-blue-50 border border-blue-100 rounded p-3">
+                  <p className="text-xs text-blue-800 font-medium flex items-center gap-2">
+                    <MaterialIcon name="info" className="text-sm" />
+                    Você está solicitando{" "}
+                    <span className="font-bold underline">
+                      {quantidade} unidades
+                    </span>{" "}
+                    para{" "}
+                    <span className="font-bold">
+                      {destinatarioSelecionado?.nome ?? "..."}
+                    </span>
+                    .
+                  </p>
+                </div>
+              )}
           </div>
 
           <footer className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-3 shrink-0">
@@ -1047,12 +1254,12 @@ export function ModalNovoPedido({
                   Enviando...
                 </>
               ) : (
-                'Enviar Solicitação'
+                "Enviar Solicitação"
               )}
             </Button>
           </footer>
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

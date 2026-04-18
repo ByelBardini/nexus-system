@@ -1,378 +1,406 @@
-import { useCallback, useMemo, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm, Controller, useWatch } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
-import { Loader2, ArrowLeft } from 'lucide-react'
-import { InputPlaca } from '@/components/InputPlaca'
-import { placaApenasAlfanumericos, telefoneApenasDigitos, TIPO_OS_LABELS } from '@/lib/format'
-import { useConsultaPlaca } from '@/hooks/useConsultaPlaca'
-import { Link } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { SelectTecnicoSearch } from '@/components/SelectTecnicoSearch'
-import { InputCEP } from '@/components/InputCEP'
-import { InputTelefone } from '@/components/InputTelefone'
-import { InputCPFCNPJ } from '@/components/InputCPFCNPJ'
-import { SelectUF } from '@/components/SelectUF'
-import { SelectCidade } from '@/components/SelectCidade'
-import { useUFs, useMunicipios } from '@/hooks/useBrasilAPI'
-import type { EnderecoCEP } from '@/hooks/useBrasilAPI'
-import { api } from '@/lib/api'
-import { useAuth } from '@/contexts/AuthContext'
-import { toast } from 'sonner'
-import { MaterialIcon } from '@/components/MaterialIcon'
-import { SelectClienteSearch } from '@/components/SelectClienteSearch'
-import { SubclienteNomeAutocomplete } from '@/components/SubclienteNomeAutocomplete'
-import { IdAparelhoSearch } from '@/components/IdAparelhoSearch'
-import { Label } from '@/components/ui/label'
+import { useCallback, useMemo, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useForm, Controller, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Loader2, ArrowLeft } from "lucide-react";
+import { InputPlaca } from "@/components/InputPlaca";
+import {
+  placaApenasAlfanumericos,
+  telefoneApenasDigitos,
+  TIPO_OS_LABELS,
+} from "@/lib/format";
+import { useConsultaPlaca } from "@/hooks/useConsultaPlaca";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { SelectTecnicoSearch } from "@/components/SelectTecnicoSearch";
+import { InputCEP } from "@/components/InputCEP";
+import { InputTelefone } from "@/components/InputTelefone";
+import { InputCPFCNPJ } from "@/components/InputCPFCNPJ";
+import { SelectUF } from "@/components/SelectUF";
+import { SelectCidade } from "@/components/SelectCidade";
+import { useUFs, useMunicipios } from "@/hooks/useBrasilAPI";
+import type { EnderecoCEP } from "@/hooks/useBrasilAPI";
+import { api } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import { MaterialIcon } from "@/components/MaterialIcon";
+import { SelectClienteSearch } from "@/components/SelectClienteSearch";
+import { SubclienteNomeAutocomplete } from "@/components/SubclienteNomeAutocomplete";
+import { IdAparelhoSearch } from "@/components/IdAparelhoSearch";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { cn } from '@/lib/utils'
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 const tipoServicoConfig = {
-  INSTALACAO: { label: 'Instalação', icon: 'add_circle' as const },
-  REVISAO: { label: 'Revisão', icon: 'build_circle' as const },
-  RETIRADA: { label: 'Retirada', icon: 'remove_circle' as const },
-}
+  INSTALACAO: { label: "Instalação", icon: "add_circle" as const },
+  REVISAO: { label: "Revisão", icon: "build_circle" as const },
+  RETIRADA: { label: "Retirada", icon: "remove_circle" as const },
+};
 
 const cobrancaOptions = [
-  { value: 'INFINITY', label: 'Infinity (Padrão)' },
-  { value: 'CLIENTE', label: 'Direto Cliente' },
-]
+  { value: "INFINITY", label: "Infinity (Padrão)" },
+  { value: "CLIENTE", label: "Direto Cliente" },
+];
 
 const veiculoTipoIconMap: Record<string, string> = {
-  AUTO: 'directions_car',
-  MOTOCICLETA: 'two_wheeler',
-  CAMINHONETE: 'local_shipping',
-  UTILITARIO: 'airport_shuttle',
-  CAMINHÃO: 'local_shipping',
-  MOTONETA: 'two_wheeler',
-  CICLOMOTOR: 'two_wheeler',
-}
+  AUTO: "directions_car",
+  MOTOCICLETA: "two_wheeler",
+  CAMINHONETE: "local_shipping",
+  UTILITARIO: "airport_shuttle",
+  CAMINHÃO: "local_shipping",
+  MOTONETA: "two_wheeler",
+  CICLOMOTOR: "two_wheeler",
+};
 
 const VEICULO_TIPOS = [
-  { value: 'AUTO', label: 'Auto' },
-  { value: 'MOTOCICLETA', label: 'Motocicleta' },
-  { value: 'MOTONETA', label: 'Motoneta' },
-  { value: 'CICLOMOTOR', label: 'Ciclomotor' },
-  { value: 'CAMINHONETE', label: 'Caminhonete' },
-  { value: 'UTILITARIO', label: 'Utilitário' },
-  { value: 'CAMINHÃO', label: 'Caminhão' },
-] as const
+  { value: "AUTO", label: "Auto" },
+  { value: "MOTOCICLETA", label: "Motocicleta" },
+  { value: "MOTONETA", label: "Motoneta" },
+  { value: "CICLOMOTOR", label: "Ciclomotor" },
+  { value: "CAMINHONETE", label: "Caminhonete" },
+  { value: "UTILITARIO", label: "Utilitário" },
+  { value: "CAMINHÃO", label: "Caminhão" },
+] as const;
 
-const schema = z.object({
-  ordemInstalacao: z.enum(['INFINITY', 'CLIENTE']),
-  clienteOrdemId: z.number().optional(),
-  isNovoSubcliente: z.boolean(),
-  subclienteId: z.number().optional(),
-  // Dados do subcliente (quando novo)
-  subclienteNome: z.string().optional(),
-  subclienteCep: z.string().optional(),
-  subclienteLogradouro: z.string().optional(),
-  subclienteNumero: z.string().optional(),
-  subclienteComplemento: z.string().optional(),
-  subclienteBairro: z.string().optional(),
-  subclienteCidade: z.string().optional(),
-  subclienteEstado: z.string().optional(),
-  subclienteCpf: z.string().optional(),
-  subclienteEmail: z.string().email('E-mail inválido').optional().or(z.literal('')),
-  subclienteTelefone: z.string().optional(),
-  subclienteCobranca: z.string().optional(),
-  tecnicoId: z.number().optional(),
-  veiculoPlaca: z.string().optional(),
-  veiculoMarca: z.string().optional(),
-  veiculoModelo: z.string().optional(),
-  veiculoAno: z.string().optional(),
-  veiculoCor: z.string().optional(),
-  veiculoTipo: z.string().optional(),
-  tipo: z.string().min(1, 'Tipo de serviço obrigatório'),
-  idAparelho: z.string().optional(),
-  localInstalacao: z.string().optional(),
-  posChave: z.string().optional(),
-  observacoes: z.string().optional(),
-}).refine(
-  (data) => {
-    const placa = (data.veiculoPlaca ?? '').trim()
-    if (!placa) return true
-    return !!(
-      (data.veiculoMarca ?? '').trim() &&
-      (data.veiculoModelo ?? '').trim() &&
-      (data.veiculoAno ?? '').trim() &&
-      (data.veiculoCor ?? '').trim()
-    )
-  },
-  { message: 'Marca, modelo, ano e cor são obrigatórios quando o veículo é informado', path: ['veiculoMarca'] }
-)
+const schema = z
+  .object({
+    ordemInstalacao: z.enum(["INFINITY", "CLIENTE"]),
+    clienteOrdemId: z.number().optional(),
+    isNovoSubcliente: z.boolean(),
+    subclienteId: z.number().optional(),
+    // Dados do subcliente (quando novo)
+    subclienteNome: z.string().optional(),
+    subclienteCep: z.string().optional(),
+    subclienteLogradouro: z.string().optional(),
+    subclienteNumero: z.string().optional(),
+    subclienteComplemento: z.string().optional(),
+    subclienteBairro: z.string().optional(),
+    subclienteCidade: z.string().optional(),
+    subclienteEstado: z.string().optional(),
+    subclienteCpf: z.string().optional(),
+    subclienteEmail: z
+      .string()
+      .email("E-mail inválido")
+      .optional()
+      .or(z.literal("")),
+    subclienteTelefone: z.string().optional(),
+    subclienteCobranca: z.string().optional(),
+    tecnicoId: z.number().optional(),
+    veiculoPlaca: z.string().optional(),
+    veiculoMarca: z.string().optional(),
+    veiculoModelo: z.string().optional(),
+    veiculoAno: z.string().optional(),
+    veiculoCor: z.string().optional(),
+    veiculoTipo: z.string().optional(),
+    tipo: z.string().min(1, "Tipo de serviço obrigatório"),
+    idAparelho: z.string().optional(),
+    localInstalacao: z.string().optional(),
+    posChave: z.string().optional(),
+    observacoes: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      const placa = (data.veiculoPlaca ?? "").trim();
+      if (!placa) return true;
+      return !!(
+        (data.veiculoMarca ?? "").trim() &&
+        (data.veiculoModelo ?? "").trim() &&
+        (data.veiculoAno ?? "").trim() &&
+        (data.veiculoCor ?? "").trim()
+      );
+    },
+    {
+      message:
+        "Marca, modelo, ano e cor são obrigatórios quando o veículo é informado",
+      path: ["veiculoMarca"],
+    },
+  );
 
-type FormData = z.infer<typeof schema>
+type FormData = z.infer<typeof schema>;
 
 interface SubclienteFull {
-  id: number
-  nome: string
-  cep?: string | null
-  logradouro?: string | null
-  numero?: string | null
-  complemento?: string | null
-  bairro?: string | null
-  cidade?: string | null
-  estado?: string | null
-  cpf?: string | null
-  email?: string | null
-  telefone?: string | null
-  cobrancaTipo?: string | null
+  id: number;
+  nome: string;
+  cep?: string | null;
+  logradouro?: string | null;
+  numero?: string | null;
+  complemento?: string | null;
+  bairro?: string | null;
+  cidade?: string | null;
+  estado?: string | null;
+  cpf?: string | null;
+  email?: string | null;
+  telefone?: string | null;
+  cobrancaTipo?: string | null;
 }
 
 interface Cliente {
-  id: number
-  nome: string
-  subclientes?: SubclienteFull[]
+  id: number;
+  nome: string;
+  subclientes?: SubclienteFull[];
 }
 
 interface PrecoTecnico {
-  instalacaoComBloqueio?: number | string
-  instalacaoSemBloqueio?: number | string
-  revisao?: number | string
-  retirada?: number | string
-  deslocamento?: number | string
+  instalacaoComBloqueio?: number | string;
+  instalacaoSemBloqueio?: number | string;
+  revisao?: number | string;
+  retirada?: number | string;
+  deslocamento?: number | string;
 }
 
 interface Tecnico {
-  id: number
-  nome: string
-  cidade?: string | null
-  estado?: string | null
-  precos?: PrecoTecnico | null
+  id: number;
+  nome: string;
+  cidade?: string | null;
+  estado?: string | null;
+  precos?: PrecoTecnico | null;
 }
 
 const tipoToPrecoKey: Record<string, keyof PrecoTecnico> = {
-  INSTALACAO_COM_BLOQUEIO: 'instalacaoComBloqueio',
-  INSTALACAO_SEM_BLOQUEIO: 'instalacaoSemBloqueio',
-  REVISAO: 'revisao',
-  RETIRADA: 'retirada',
-  DESLOCAMENTO: 'deslocamento',
-}
+  INSTALACAO_COM_BLOQUEIO: "instalacaoComBloqueio",
+  INSTALACAO_SEM_BLOQUEIO: "instalacaoSemBloqueio",
+  REVISAO: "revisao",
+  RETIRADA: "retirada",
+  DESLOCAMENTO: "deslocamento",
+};
 
 const defaultValues: FormData = {
-  ordemInstalacao: 'INFINITY',
+  ordemInstalacao: "INFINITY",
   clienteOrdemId: undefined,
   isNovoSubcliente: true,
   subclienteId: undefined,
-  subclienteNome: '',
-  subclienteCep: '',
-  subclienteLogradouro: '',
-  subclienteNumero: '',
-  subclienteComplemento: '',
-  subclienteBairro: '',
-  subclienteCidade: '',
-  subclienteEstado: '',
-  subclienteCpf: '',
-  subclienteEmail: '',
-  subclienteTelefone: '',
-  subclienteCobranca: 'INFINITY',
+  subclienteNome: "",
+  subclienteCep: "",
+  subclienteLogradouro: "",
+  subclienteNumero: "",
+  subclienteComplemento: "",
+  subclienteBairro: "",
+  subclienteCidade: "",
+  subclienteEstado: "",
+  subclienteCpf: "",
+  subclienteEmail: "",
+  subclienteTelefone: "",
+  subclienteCobranca: "INFINITY",
   tecnicoId: undefined,
-  veiculoPlaca: '',
-  veiculoMarca: '',
-  veiculoModelo: '',
-  veiculoAno: '',
-  veiculoCor: '',
-  veiculoTipo: '',
-  tipo: '',
-  idAparelho: '',
-  localInstalacao: '',
-  posChave: '',
-  observacoes: '',
-}
+  veiculoPlaca: "",
+  veiculoMarca: "",
+  veiculoModelo: "",
+  veiculoAno: "",
+  veiculoCor: "",
+  veiculoTipo: "",
+  tipo: "",
+  idAparelho: "",
+  localInstalacao: "",
+  posChave: "",
+  observacoes: "",
+};
 
 export function OrdensServicoCriacaoPage() {
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const { user, hasPermission } = useAuth()
-  const canCreate = hasPermission('AGENDAMENTO.OS.CRIAR')
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { user, hasPermission } = useAuth();
+  const canCreate = hasPermission("AGENDAMENTO.OS.CRIAR");
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues,
-  })
+  });
 
-  const [kmEstimado, setKmEstimado] = useState<number | ''>('')
+  const [kmEstimado, setKmEstimado] = useState<number | "">("");
 
-  const ordemInstalacao = form.watch('ordemInstalacao')
-  const clienteOrdemId = form.watch('clienteOrdemId')
-  const tipo = form.watch('tipo')
+  const ordemInstalacao = form.watch("ordemInstalacao");
+  const clienteOrdemId = form.watch("clienteOrdemId");
+  const tipo = form.watch("tipo");
 
   const { data: clientes = [] } = useQuery<Cliente[]>({
-    queryKey: ['clientes', 'subclientes'],
-    queryFn: () => api('/clientes?subclientes=1'),
-  })
+    queryKey: ["clientes", "subclientes"],
+    queryFn: () => api("/clientes?subclientes=1"),
+  });
 
   const { data: clienteInfinityData } = useQuery<{ clienteId: number | null }>({
-    queryKey: ['ordens-servico', 'cliente-infinity'],
-    queryFn: () => api('/ordens-servico/cliente-infinity'),
-  })
-  const clienteInfinityId = clienteInfinityData?.clienteId ?? null
+    queryKey: ["ordens-servico", "cliente-infinity"],
+    queryFn: () => api("/ordens-servico/cliente-infinity"),
+  });
+  const clienteInfinityId = clienteInfinityData?.clienteId ?? null;
 
-  const { data: infinityClienteDetalhes } = useQuery<{ subclientes?: SubclienteFull[] }>({
-    queryKey: ['clientes', clienteInfinityId, 'subclientes'],
+  const { data: infinityClienteDetalhes } = useQuery<{
+    subclientes?: SubclienteFull[];
+  }>({
+    queryKey: ["clientes", clienteInfinityId, "subclientes"],
     queryFn: () => api(`/clientes/${clienteInfinityId}`),
     enabled: clienteInfinityId != null,
-  })
+  });
 
   const clienteSelecionado =
-    ordemInstalacao === 'CLIENTE'
+    ordemInstalacao === "CLIENTE"
       ? clientes.find((c) => c.id === clienteOrdemId)
-      : null
+      : null;
   const subclientes =
-    ordemInstalacao === 'INFINITY'
+    ordemInstalacao === "INFINITY"
       ? (infinityClienteDetalhes?.subclientes ?? [])
-      : (clienteSelecionado?.subclientes ?? [])
+      : (clienteSelecionado?.subclientes ?? []);
 
   const { data: tecnicos = [] } = useQuery<Tecnico[]>({
-    queryKey: ['tecnicos'],
-    queryFn: () => api('/tecnicos'),
-  })
+    queryKey: ["tecnicos"],
+    queryFn: () => api("/tecnicos"),
+  });
 
   const { data: aparelhosRaw = [] } = useQuery<
-    { id: number; identificador?: string | null; tipo: string; status: string }[]
+    {
+      id: number;
+      identificador?: string | null;
+      tipo: string;
+      status: string;
+    }[]
   >({
-    queryKey: ['aparelhos'],
-    queryFn: () => api('/aparelhos'),
-  })
+    queryKey: ["aparelhos"],
+    queryFn: () => api("/aparelhos"),
+  });
 
   const rastreadoresInstalados = useMemo(() => {
     return aparelhosRaw.filter(
-      (a) => a.tipo === 'RASTREADOR' && a.status === 'INSTALADO' && (a.identificador ?? '').trim()
-    )
-  }, [aparelhosRaw])
+      (a) =>
+        a.tipo === "RASTREADOR" &&
+        a.status === "INSTALADO" &&
+        (a.identificador ?? "").trim(),
+    );
+  }, [aparelhosRaw]);
 
-  const tecnicoId = form.watch('tecnicoId')
-  const tecnicoSelecionado = tecnicos.find((t) => t.id === tecnicoId)
+  const tecnicoId = form.watch("tecnicoId");
+  const tecnicoSelecionado = tecnicos.find((t) => t.id === tecnicoId);
 
-  const veiculoPlaca = form.watch('veiculoPlaca')
+  const veiculoPlaca = form.watch("veiculoPlaca");
   const {
     data: dadosVeiculo,
     isFetching: consultaPlacaLoading,
     isSuccess: consultaPlacaSuccess,
     isError: consultaPlacaError,
     error: consultaPlacaErrorObj,
-  } = useConsultaPlaca(veiculoPlaca ?? '')
+  } = useConsultaPlaca(veiculoPlaca ?? "");
 
   useEffect(() => {
     if (consultaPlacaSuccess && dadosVeiculo) {
-      form.setValue('veiculoMarca', dadosVeiculo.marca ?? '')
-      form.setValue('veiculoModelo', dadosVeiculo.modelo ?? '')
-      form.setValue('veiculoAno', dadosVeiculo.ano ?? '')
-      form.setValue('veiculoCor', dadosVeiculo.cor ?? '')
-      form.setValue('veiculoTipo', dadosVeiculo.tipo ?? '')
-      toast.success('Dados do veículo consultados')
+      form.setValue("veiculoMarca", dadosVeiculo.marca ?? "");
+      form.setValue("veiculoModelo", dadosVeiculo.modelo ?? "");
+      form.setValue("veiculoAno", dadosVeiculo.ano ?? "");
+      form.setValue("veiculoCor", dadosVeiculo.cor ?? "");
+      form.setValue("veiculoTipo", dadosVeiculo.tipo ?? "");
+      toast.success("Dados do veículo consultados");
     } else if (consultaPlacaSuccess && !dadosVeiculo) {
-      toast.error('Placa não encontrada')
+      toast.error("Placa não encontrada");
     }
-  }, [consultaPlacaSuccess, dadosVeiculo, form])
+  }, [consultaPlacaSuccess, dadosVeiculo, form]);
 
   useEffect(() => {
     if (consultaPlacaError) {
-      toast.error(consultaPlacaErrorObj instanceof Error ? consultaPlacaErrorObj.message : 'Erro ao consultar placa')
+      toast.error(
+        consultaPlacaErrorObj instanceof Error
+          ? consultaPlacaErrorObj.message
+          : "Erro ao consultar placa",
+      );
     }
-  }, [consultaPlacaError, consultaPlacaErrorObj])
+  }, [consultaPlacaError, consultaPlacaErrorObj]);
 
-  const subclienteEstado = form.watch('subclienteEstado')
-  const { data: ufs = [] } = useUFs()
-  const { data: municipios = [] } = useMunicipios(subclienteEstado || null)
+  const subclienteEstado = form.watch("subclienteEstado");
+  const { data: ufs = [] } = useUFs();
+  const { data: municipios = [] } = useMunicipios(subclienteEstado || null);
 
   const handleSubclienteAddressFound = useCallback(
     (endereco: EnderecoCEP) => {
-      form.setValue('subclienteLogradouro', endereco.logradouro)
-      form.setValue('subclienteBairro', endereco.bairro)
-      form.setValue('subclienteComplemento', endereco.complemento)
-      form.setValue('subclienteCidade', endereco.localidade)
-      form.setValue('subclienteEstado', endereco.uf)
+      form.setValue("subclienteLogradouro", endereco.logradouro);
+      form.setValue("subclienteBairro", endereco.bairro);
+      form.setValue("subclienteComplemento", endereco.complemento);
+      form.setValue("subclienteCidade", endereco.localidade);
+      form.setValue("subclienteEstado", endereco.uf);
     },
-    [form]
-  )
+    [form],
+  );
 
   const createMutation = useMutation({
     mutationFn: async (payload: {
-      tipo: string
-      clienteId: number
-      subclienteId?: number
+      tipo: string;
+      clienteId: number;
+      subclienteId?: number;
       subclienteCreate?: {
-        nome: string
-        cep: string
-        logradouro?: string
-        numero?: string
-        complemento?: string
-        bairro?: string
-        cidade: string
-        estado: string
-        cpf?: string
-        email?: string
-        telefone?: string
-        cobrancaTipo?: string
-      }
+        nome: string;
+        cep: string;
+        logradouro?: string;
+        numero?: string;
+        complemento?: string;
+        bairro?: string;
+        cidade: string;
+        estado: string;
+        cpf?: string;
+        email?: string;
+        telefone?: string;
+        cobrancaTipo?: string;
+      };
       subclienteUpdate?: {
-        nome: string
-        cep: string
-        logradouro?: string
-        numero?: string
-        complemento?: string
-        bairro?: string
-        cidade: string
-        estado: string
-        cpf?: string
-        email?: string
-        telefone?: string
-        cobrancaTipo?: string
-      }
-      tecnicoId?: number
-      veiculoId?: number
-      observacoes?: string
-      idAparelho?: string
-      localInstalacao?: string
-      posChave?: string
+        nome: string;
+        cep: string;
+        logradouro?: string;
+        numero?: string;
+        complemento?: string;
+        bairro?: string;
+        cidade: string;
+        estado: string;
+        cpf?: string;
+        email?: string;
+        telefone?: string;
+        cobrancaTipo?: string;
+      };
+      tecnicoId?: number;
+      veiculoId?: number;
+      observacoes?: string;
+      idAparelho?: string;
+      localInstalacao?: string;
+      posChave?: string;
     }) => {
-      const res = await api<{ id: number; numero: number }>('/ordens-servico', {
-        method: 'POST',
+      const res = await api<{ id: number; numero: number }>("/ordens-servico", {
+        method: "POST",
         body: JSON.stringify(payload),
-      })
-      return res
+      });
+      return res;
     },
     onSuccess: (data: { id: number; numero: number }, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['ordens-servico'] })
+      queryClient.invalidateQueries({ queryKey: ["ordens-servico"] });
       if (variables.subclienteUpdate) {
-        queryClient.invalidateQueries({ queryKey: ['clientes'] })
+        queryClient.invalidateQueries({ queryKey: ["clientes"] });
       }
-      toast.success(`Ordem de serviço #${data.numero} criada`)
-      navigate('/')
+      toast.success(`Ordem de serviço #${data.numero} criada`);
+      navigate("/");
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : 'Erro ao criar OS'),
-  })
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Erro ao criar OS"),
+  });
 
-  const showDetalhesRevisaoRetirada =
-    tipo === 'REVISAO' || tipo === 'RETIRADA'
+  const showDetalhesRevisaoRetirada = tipo === "REVISAO" || tipo === "RETIRADA";
 
   const handleSubmit = (data: FormData) => {
-    if (!canCreate) return
+    if (!canCreate) return;
 
-    const observacoes = data.observacoes?.trim() || undefined
+    const observacoes = data.observacoes?.trim() || undefined;
 
     const subclienteId =
       !data.isNovoSubcliente && data.subclienteId && data.subclienteId > 0
         ? data.subclienteId
-        : undefined
+        : undefined;
 
     const dadosSubclienteCompletos =
       data.subclienteNome?.trim() &&
       data.subclienteCep?.trim() &&
       data.subclienteCidade?.trim() &&
       data.subclienteEstado?.trim() &&
-      telefoneApenasDigitos(data.subclienteTelefone ?? '').length >= 10
+      telefoneApenasDigitos(data.subclienteTelefone ?? "").length >= 10;
 
     const subclienteCreate =
       data.isNovoSubcliente && dadosSubclienteCompletos
@@ -387,16 +415,17 @@ export function OrdensServicoCriacaoPage() {
             estado: data.subclienteEstado!.trim(),
             cpf: data.subclienteCpf?.trim() || undefined,
             email: data.subclienteEmail?.trim() || undefined,
-            telefone: telefoneApenasDigitos(data.subclienteTelefone ?? ''),
-            cobrancaTipo: data.ordemInstalacao === 'INFINITY' ? 'INFINITY' : (data.subclienteCobranca || undefined),
+            telefone: telefoneApenasDigitos(data.subclienteTelefone ?? ""),
+            cobrancaTipo:
+              data.ordemInstalacao === "INFINITY"
+                ? "INFINITY"
+                : data.subclienteCobranca || undefined,
           }
-        : undefined
+        : undefined;
 
     // Ao editar subcliente existente: atualiza o cadastro e grava snapshot na OS (não afeta OS já existentes)
     const subclienteUpdate =
-      !data.isNovoSubcliente &&
-      subclienteId &&
-      dadosSubclienteCompletos
+      !data.isNovoSubcliente && subclienteId && dadosSubclienteCompletos
         ? {
             nome: data.subclienteNome!.trim(),
             cep: data.subclienteCep!.trim(),
@@ -408,27 +437,40 @@ export function OrdensServicoCriacaoPage() {
             estado: data.subclienteEstado!.trim(),
             cpf: data.subclienteCpf?.trim() || undefined,
             email: data.subclienteEmail?.trim() || undefined,
-            telefone: telefoneApenasDigitos(data.subclienteTelefone ?? ''),
-            cobrancaTipo: data.ordemInstalacao === 'INFINITY' ? 'INFINITY' : (data.subclienteCobranca || undefined),
+            telefone: telefoneApenasDigitos(data.subclienteTelefone ?? ""),
+            cobrancaTipo:
+              data.ordemInstalacao === "INFINITY"
+                ? "INFINITY"
+                : data.subclienteCobranca || undefined,
           }
-        : undefined
+        : undefined;
 
-    if (data.ordemInstalacao === 'CLIENTE' && (!data.clienteOrdemId || data.clienteOrdemId <= 0)) {
-      toast.error('Selecione o cliente para criar a ordem de serviço.')
-      return
+    if (
+      data.ordemInstalacao === "CLIENTE" &&
+      (!data.clienteOrdemId || data.clienteOrdemId <= 0)
+    ) {
+      toast.error("Selecione o cliente para criar a ordem de serviço.");
+      return;
     }
 
-    if (data.ordemInstalacao === 'INFINITY' && (!clienteInfinityId || clienteInfinityId <= 0)) {
-      toast.error('Modo Infinity: não foi possível carregar o cliente do sistema. Tente novamente.')
-      return
+    if (
+      data.ordemInstalacao === "INFINITY" &&
+      (!clienteInfinityId || clienteInfinityId <= 0)
+    ) {
+      toast.error(
+        "Modo Infinity: não foi possível carregar o cliente do sistema. Tente novamente.",
+      );
+      return;
     }
 
     const clienteIdFinal =
-      data.ordemInstalacao === 'INFINITY' ? clienteInfinityId! : data.clienteOrdemId!
+      data.ordemInstalacao === "INFINITY"
+        ? clienteInfinityId!
+        : data.clienteOrdemId!;
 
     const runCreate = async () => {
-      let veiculoId: number | undefined
-      const placa = placaApenasAlfanumericos(data.veiculoPlaca ?? '')
+      let veiculoId: number | undefined;
+      const placa = placaApenasAlfanumericos(data.veiculoPlaca ?? "");
       if (
         placa.length >= 7 &&
         data.veiculoMarca?.trim() &&
@@ -437,17 +479,20 @@ export function OrdensServicoCriacaoPage() {
         data.veiculoCor?.trim()
       ) {
         try {
-          const veiculo = await api<{ id: number }>('/veiculos/criar-ou-buscar', {
-            method: 'POST',
-            body: JSON.stringify({
-              placa,
-              marca: data.veiculoMarca.trim(),
-              modelo: data.veiculoModelo.trim(),
-              ano: data.veiculoAno!.trim(),
-              cor: data.veiculoCor!.trim(),
-            }),
-          })
-          veiculoId = veiculo?.id
+          const veiculo = await api<{ id: number }>(
+            "/veiculos/criar-ou-buscar",
+            {
+              method: "POST",
+              body: JSON.stringify({
+                placa,
+                marca: data.veiculoMarca.trim(),
+                modelo: data.veiculoModelo.trim(),
+                ano: data.veiculoAno!.trim(),
+                cor: data.veiculoCor!.trim(),
+              }),
+            },
+          );
+          veiculoId = veiculo?.id;
         } catch {
           // continua sem veiculoId se falhar
         }
@@ -459,26 +504,39 @@ export function OrdensServicoCriacaoPage() {
         subclienteId: subclienteCreate ? undefined : subclienteId,
         subclienteCreate,
         subclienteUpdate,
-        tecnicoId: data.tecnicoId && data.tecnicoId > 0 ? data.tecnicoId : undefined,
+        tecnicoId:
+          data.tecnicoId && data.tecnicoId > 0 ? data.tecnicoId : undefined,
         veiculoId,
         observacoes,
         idAparelho: data.idAparelho?.trim() || undefined,
         localInstalacao: data.localInstalacao?.trim() || undefined,
         posChave: data.posChave || undefined,
-      })
-    }
+      });
+    };
 
-    runCreate()
-  }
+    runCreate();
+  };
 
   const watchedFields = useWatch({
     control: form.control,
     name: [
-      'subclienteTelefone', 'subclienteNome', 'subclienteCep', 'subclienteLogradouro',
-      'subclienteNumero', 'subclienteBairro', 'subclienteEstado', 'subclienteCidade',
-      'ordemInstalacao', 'clienteOrdemId', 'tecnicoId', 'veiculoPlaca', 'veiculoMarca', 'veiculoModelo', 'tipo',
+      "subclienteTelefone",
+      "subclienteNome",
+      "subclienteCep",
+      "subclienteLogradouro",
+      "subclienteNumero",
+      "subclienteBairro",
+      "subclienteEstado",
+      "subclienteCidade",
+      "ordemInstalacao",
+      "clienteOrdemId",
+      "tecnicoId",
+      "veiculoPlaca",
+      "veiculoMarca",
+      "veiculoModelo",
+      "tipo",
     ],
-  })
+  });
   const watched = {
     subclienteTelefone: watchedFields[0],
     subclienteNome: watchedFields[1],
@@ -495,30 +553,30 @@ export function OrdensServicoCriacaoPage() {
     veiculoMarca: watchedFields[12],
     veiculoModelo: watchedFields[13],
     tipo: watchedFields[14],
-  }
+  };
   const telefoneCompleto =
-    (telefoneApenasDigitos(watched.subclienteTelefone ?? '').length >= 10)
+    telefoneApenasDigitos(watched.subclienteTelefone ?? "").length >= 10;
   const temDadosSubcliente =
-    !!(watched.subclienteNome ?? '').trim() &&
-    !!(watched.subclienteCep ?? '').trim() &&
-    !!(watched.subclienteLogradouro ?? '').trim() &&
-    !!(watched.subclienteNumero ?? '').trim() &&
-    !!(watched.subclienteBairro ?? '').trim() &&
-    !!(watched.subclienteEstado ?? '').trim() &&
-    !!(watched.subclienteCidade ?? '').trim() &&
-    telefoneCompleto
+    !!(watched.subclienteNome ?? "").trim() &&
+    !!(watched.subclienteCep ?? "").trim() &&
+    !!(watched.subclienteLogradouro ?? "").trim() &&
+    !!(watched.subclienteNumero ?? "").trim() &&
+    !!(watched.subclienteBairro ?? "").trim() &&
+    !!(watched.subclienteEstado ?? "").trim() &&
+    !!(watched.subclienteCidade ?? "").trim() &&
+    telefoneCompleto;
   const temCliente =
     temDadosSubcliente &&
-    (watched.ordemInstalacao === 'INFINITY'
+    (watched.ordemInstalacao === "INFINITY"
       ? !!clienteInfinityId && clienteInfinityId > 0
-      : watched.ordemInstalacao === 'CLIENTE' &&
+      : watched.ordemInstalacao === "CLIENTE" &&
         !!watched.clienteOrdemId &&
-        watched.clienteOrdemId > 0)
-  const temTecnico = !!watched.tecnicoId && watched.tecnicoId > 0
-  const temVeiculo = !!(watched.veiculoPlaca ?? '').trim()
-  const temTipo = !!watched.tipo
+        watched.clienteOrdemId > 0);
+  const temTecnico = !!watched.tecnicoId && watched.tecnicoId > 0;
+  const temVeiculo = !!(watched.veiculoPlaca ?? "").trim();
+  const temTipo = !!watched.tipo;
 
-  const isFormValid = temCliente && temTipo
+  const isFormValid = temCliente && temTipo;
 
   return (
     <div className="-m-4 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-slate-100">
@@ -533,9 +591,11 @@ export function OrdensServicoCriacaoPage() {
           <div className="flex items-center gap-3">
             <MaterialIcon name="assignment" className="text-blue-600 text-xl" />
             <div>
-              <h1 className="text-lg font-bold text-slate-800">Nova Ordem de Serviço</h1>
+              <h1 className="text-lg font-bold text-slate-800">
+                Nova Ordem de Serviço
+              </h1>
               <p className="text-xs text-slate-500">
-                Criado por: {user?.nome ?? '—'}
+                Criado por: {user?.nome ?? "—"}
               </p>
             </div>
           </div>
@@ -544,7 +604,7 @@ export function OrdensServicoCriacaoPage() {
           <Button
             variant="outline"
             className="text-[11px] font-bold uppercase"
-            onClick={() => navigate('/')}
+            onClick={() => navigate("/")}
           >
             Cancelar
           </Button>
@@ -573,7 +633,10 @@ export function OrdensServicoCriacaoPage() {
             {/* Cliente / Associação */}
             <section className="bg-white border border-slate-300 shadow-sm overflow-hidden">
               <div className="bg-slate-50 border-b border-slate-300 px-4 py-2 flex items-center gap-2">
-                <MaterialIcon name="corporate_fare" className="text-slate-400 text-lg" />
+                <MaterialIcon
+                  name="corporate_fare"
+                  className="text-slate-400 text-lg"
+                />
                 <h2 className="text-xs font-bold text-slate-700 font-condensed uppercase">
                   Cliente / Associação
                 </h2>
@@ -586,39 +649,45 @@ export function OrdensServicoCriacaoPage() {
                   <div className="flex justify-center gap-4">
                     <Button
                       type="button"
-                      variant={ordemInstalacao === 'INFINITY' ? 'default' : 'outline'}
+                      variant={
+                        ordemInstalacao === "INFINITY" ? "default" : "outline"
+                      }
                       size="sm"
                       className={cn(
-                        'h-9 text-[11px] font-bold uppercase',
-                        ordemInstalacao === 'INFINITY' && 'bg-erp-blue hover:bg-blue-700'
+                        "h-9 text-[11px] font-bold uppercase",
+                        ordemInstalacao === "INFINITY" &&
+                          "bg-erp-blue hover:bg-blue-700",
                       )}
                       onClick={() => {
-                        form.setValue('ordemInstalacao', 'INFINITY')
-                        form.setValue('clienteOrdemId', undefined)
-                        form.setValue('isNovoSubcliente', true)
-                        form.setValue('subclienteId', undefined)
+                        form.setValue("ordemInstalacao", "INFINITY");
+                        form.setValue("clienteOrdemId", undefined);
+                        form.setValue("isNovoSubcliente", true);
+                        form.setValue("subclienteId", undefined);
                       }}
                     >
                       Infinity
                     </Button>
                     <Button
                       type="button"
-                      variant={ordemInstalacao === 'CLIENTE' ? 'default' : 'outline'}
+                      variant={
+                        ordemInstalacao === "CLIENTE" ? "default" : "outline"
+                      }
                       size="sm"
                       className={cn(
-                        'h-9 text-[11px] font-bold uppercase',
-                        ordemInstalacao === 'CLIENTE' && 'bg-erp-blue hover:bg-blue-700'
+                        "h-9 text-[11px] font-bold uppercase",
+                        ordemInstalacao === "CLIENTE" &&
+                          "bg-erp-blue hover:bg-blue-700",
                       )}
                       onClick={() => {
-                        form.setValue('ordemInstalacao', 'CLIENTE')
-                        form.setValue('isNovoSubcliente', true)
-                        form.setValue('subclienteId', undefined)
+                        form.setValue("ordemInstalacao", "CLIENTE");
+                        form.setValue("isNovoSubcliente", true);
+                        form.setValue("subclienteId", undefined);
                       }}
                     >
                       Cliente
                     </Button>
                   </div>
-                  {ordemInstalacao === 'CLIENTE' && (
+                  {ordemInstalacao === "CLIENTE" && (
                     <div className="mt-4">
                       <Label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">
                         Cliente
@@ -628,7 +697,10 @@ export function OrdensServicoCriacaoPage() {
                         control={form.control}
                         render={({ field }) => (
                           <SelectClienteSearch
-                            clientes={clientes.map((c) => ({ id: c.id, nome: c.nome }))}
+                            clientes={clientes.map((c) => ({
+                              id: c.id,
+                              nome: c.nome,
+                            }))}
                             value={field.value}
                             onChange={field.onChange}
                             placeholder="Digite para pesquisar cliente..."
@@ -656,45 +728,55 @@ export function OrdensServicoCriacaoPage() {
                       </Label>
                       <SubclienteNomeAutocomplete
                         subclientes={subclientes}
-                        value={form.watch('subclienteNome') ?? ''}
-                        subclienteId={form.watch('subclienteId')}
-                        isNovoSubcliente={form.watch('isNovoSubcliente')}
+                        value={form.watch("subclienteNome") ?? ""}
+                        subclienteId={form.watch("subclienteId")}
+                        isNovoSubcliente={form.watch("isNovoSubcliente")}
                         onSelect={(s) => {
-                          form.setValue('isNovoSubcliente', false)
-                          form.setValue('subclienteId', s.id)
-                          form.setValue('subclienteNome', s.nome)
-                          form.setValue('subclienteCep', s.cep ?? '')
-                          form.setValue('subclienteLogradouro', s.logradouro ?? '')
-                          form.setValue('subclienteNumero', s.numero ?? '')
-                          form.setValue('subclienteComplemento', s.complemento ?? '')
-                          form.setValue('subclienteBairro', s.bairro ?? '')
-                          form.setValue('subclienteCidade', s.cidade ?? '')
-                          form.setValue('subclienteEstado', s.estado ?? '')
-                          form.setValue('subclienteCpf', s.cpf ?? '')
-                          form.setValue('subclienteEmail', s.email ?? '')
-                          form.setValue('subclienteTelefone', s.telefone ?? '')
-                          form.setValue('subclienteCobranca', (s.cobrancaTipo as 'INFINITY' | 'CLIENTE') ?? 'INFINITY')
+                          form.setValue("isNovoSubcliente", false);
+                          form.setValue("subclienteId", s.id);
+                          form.setValue("subclienteNome", s.nome);
+                          form.setValue("subclienteCep", s.cep ?? "");
+                          form.setValue(
+                            "subclienteLogradouro",
+                            s.logradouro ?? "",
+                          );
+                          form.setValue("subclienteNumero", s.numero ?? "");
+                          form.setValue(
+                            "subclienteComplemento",
+                            s.complemento ?? "",
+                          );
+                          form.setValue("subclienteBairro", s.bairro ?? "");
+                          form.setValue("subclienteCidade", s.cidade ?? "");
+                          form.setValue("subclienteEstado", s.estado ?? "");
+                          form.setValue("subclienteCpf", s.cpf ?? "");
+                          form.setValue("subclienteEmail", s.email ?? "");
+                          form.setValue("subclienteTelefone", s.telefone ?? "");
+                          form.setValue(
+                            "subclienteCobranca",
+                            (s.cobrancaTipo as "INFINITY" | "CLIENTE") ??
+                              "INFINITY",
+                          );
                         }}
                         onSelectNovo={() => {
-                          form.setValue('isNovoSubcliente', true)
-                          form.setValue('subclienteId', undefined)
-                          form.setValue('subclienteNome', '')
-                          form.setValue('subclienteCep', '')
-                          form.setValue('subclienteLogradouro', '')
-                          form.setValue('subclienteNumero', '')
-                          form.setValue('subclienteComplemento', '')
-                          form.setValue('subclienteBairro', '')
-                          form.setValue('subclienteCidade', '')
-                          form.setValue('subclienteEstado', '')
-                          form.setValue('subclienteCpf', '')
-                          form.setValue('subclienteEmail', '')
-                          form.setValue('subclienteTelefone', '')
+                          form.setValue("isNovoSubcliente", true);
+                          form.setValue("subclienteId", undefined);
+                          form.setValue("subclienteNome", "");
+                          form.setValue("subclienteCep", "");
+                          form.setValue("subclienteLogradouro", "");
+                          form.setValue("subclienteNumero", "");
+                          form.setValue("subclienteComplemento", "");
+                          form.setValue("subclienteBairro", "");
+                          form.setValue("subclienteCidade", "");
+                          form.setValue("subclienteEstado", "");
+                          form.setValue("subclienteCpf", "");
+                          form.setValue("subclienteEmail", "");
+                          form.setValue("subclienteTelefone", "");
                         }}
                         onChange={(nome) => {
-                          form.setValue('subclienteNome', nome)
-                          if (form.watch('subclienteId')) {
-                            form.setValue('subclienteId', undefined)
-                            form.setValue('isNovoSubcliente', true)
+                          form.setValue("subclienteNome", nome);
+                          if (form.watch("subclienteId")) {
+                            form.setValue("subclienteId", undefined);
+                            form.setValue("isNovoSubcliente", true);
                           }
                         }}
                         placeholder="Digite para buscar ou criar novo..."
@@ -710,7 +792,7 @@ export function OrdensServicoCriacaoPage() {
                         control={form.control}
                         render={({ field }) => (
                           <InputCEP
-                            value={field.value ?? ''}
+                            value={field.value ?? ""}
                             onChange={field.onChange}
                             onAddressFound={handleSubclienteAddressFound}
                             placeholder="00000-000"
@@ -724,7 +806,7 @@ export function OrdensServicoCriacaoPage() {
                         Logradouro
                       </Label>
                       <Input
-                        {...form.register('subclienteLogradouro')}
+                        {...form.register("subclienteLogradouro")}
                         placeholder="Rua, Av., etc."
                         className="h-9"
                         autoComplete="off"
@@ -735,7 +817,7 @@ export function OrdensServicoCriacaoPage() {
                         Nº
                       </Label>
                       <Input
-                        {...form.register('subclienteNumero')}
+                        {...form.register("subclienteNumero")}
                         placeholder="Nº"
                         className="h-9"
                         autoComplete="off"
@@ -746,7 +828,7 @@ export function OrdensServicoCriacaoPage() {
                         Compl.
                       </Label>
                       <Input
-                        {...form.register('subclienteComplemento')}
+                        {...form.register("subclienteComplemento")}
                         placeholder="Sala, etc."
                         className="h-9"
                         autoComplete="off"
@@ -757,7 +839,7 @@ export function OrdensServicoCriacaoPage() {
                         Bairro
                       </Label>
                       <Input
-                        {...form.register('subclienteBairro')}
+                        {...form.register("subclienteBairro")}
                         placeholder="Bairro"
                         className="h-9"
                         autoComplete="off"
@@ -773,7 +855,7 @@ export function OrdensServicoCriacaoPage() {
                         render={({ field }) => (
                           <SelectUF
                             ufs={ufs}
-                            value={field.value ?? ''}
+                            value={field.value ?? ""}
                             onChange={field.onChange}
                             placeholder="UF"
                             className="h-9"
@@ -791,7 +873,7 @@ export function OrdensServicoCriacaoPage() {
                         render={({ field }) => (
                           <SelectCidade
                             municipios={municipios}
-                            value={field.value ?? ''}
+                            value={field.value ?? ""}
                             onChange={field.onChange}
                             placeholder="Cidade"
                             className="h-9"
@@ -808,7 +890,7 @@ export function OrdensServicoCriacaoPage() {
                         control={form.control}
                         render={({ field }) => (
                           <InputCPFCNPJ
-                            value={field.value ?? ''}
+                            value={field.value ?? ""}
                             onChange={field.onChange}
                             className="h-9"
                           />
@@ -820,7 +902,7 @@ export function OrdensServicoCriacaoPage() {
                         E-mail (opcional)
                       </Label>
                       <Input
-                        {...form.register('subclienteEmail')}
+                        {...form.register("subclienteEmail")}
                         type="email"
                         placeholder="email@exemplo.com"
                         className="h-9"
@@ -836,14 +918,14 @@ export function OrdensServicoCriacaoPage() {
                         control={form.control}
                         render={({ field }) => (
                           <InputTelefone
-                            value={field.value ?? ''}
+                            value={field.value ?? ""}
                             onChange={field.onChange}
                             className="h-9"
                           />
                         )}
                       />
                     </div>
-                    {ordemInstalacao === 'CLIENTE' && (
+                    {ordemInstalacao === "CLIENTE" && (
                       <div className="col-span-6">
                         <Label className="text-[10px] font-bold uppercase text-slate-500 mb-2 block">
                           Cobrança
@@ -857,11 +939,16 @@ export function OrdensServicoCriacaoPage() {
                                 <Button
                                   key={opt.value}
                                   type="button"
-                                  variant={field.value === opt.value ? 'default' : 'outline'}
+                                  variant={
+                                    field.value === opt.value
+                                      ? "default"
+                                      : "outline"
+                                  }
                                   size="sm"
                                   className={cn(
-                                    'h-9 text-[11px] font-bold uppercase',
-                                    field.value === opt.value && 'bg-erp-blue hover:bg-blue-700'
+                                    "h-9 text-[11px] font-bold uppercase",
+                                    field.value === opt.value &&
+                                      "bg-erp-blue hover:bg-blue-700",
                                   )}
                                   onClick={() => field.onChange(opt.value)}
                                 >
@@ -881,7 +968,10 @@ export function OrdensServicoCriacaoPage() {
             {/* Técnico */}
             <section className="bg-white border border-slate-300 shadow-sm overflow-hidden">
               <div className="bg-slate-50 border-b border-slate-300 px-4 py-2 flex items-center gap-2">
-                <MaterialIcon name="engineering" className="text-slate-400 text-lg" />
+                <MaterialIcon
+                  name="engineering"
+                  className="text-slate-400 text-lg"
+                />
                 <h2 className="text-xs font-bold text-slate-700 font-condensed uppercase">
                   Técnico Responsável
                 </h2>
@@ -898,34 +988,51 @@ export function OrdensServicoCriacaoPage() {
                       tecnicos={tecnicos}
                       value={field.value}
                       onChange={field.onChange}
-                      subclienteCidade={form.watch('subclienteCidade')}
-                      subclienteEstado={form.watch('subclienteEstado')}
+                      subclienteCidade={form.watch("subclienteCidade")}
+                      subclienteEstado={form.watch("subclienteEstado")}
                       placeholder="Digite para pesquisar técnico (nome, cidade ou estado)..."
                     />
                   )}
                 />
                 <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                   {[
-                    { key: 'instalacaoComBloqueio', label: 'Instalação c/ bloqueio' },
-                    { key: 'instalacaoSemBloqueio', label: 'Instalação s/ bloqueio' },
-                    { key: 'revisao', label: 'Revisão' },
-                    { key: 'retirada', label: 'Retirada' },
-                    { key: 'deslocamento', label: 'Deslocamento' },
+                    {
+                      key: "instalacaoComBloqueio",
+                      label: "Instalação c/ bloqueio",
+                    },
+                    {
+                      key: "instalacaoSemBloqueio",
+                      label: "Instalação s/ bloqueio",
+                    },
+                    { key: "revisao", label: "Revisão" },
+                    { key: "retirada", label: "Retirada" },
+                    { key: "deslocamento", label: "Deslocamento" },
                   ].map(({ key, label }) => {
-                    const valor = tecnicoSelecionado?.precos?.[key as keyof PrecoTecnico]
-                    const num = typeof valor === 'string' ? parseFloat(valor) : Number(valor ?? 0)
-                    const temValor = !Number.isNaN(num) && num > 0
+                    const valor =
+                      tecnicoSelecionado?.precos?.[key as keyof PrecoTecnico];
+                    const num =
+                      typeof valor === "string"
+                        ? parseFloat(valor)
+                        : Number(valor ?? 0);
+                    const temValor = !Number.isNaN(num) && num > 0;
                     return (
                       <div
                         key={key}
                         className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2"
                       >
-                        <p className="text-[9px] font-bold uppercase text-slate-500">{label}</p>
+                        <p className="text-[9px] font-bold uppercase text-slate-500">
+                          {label}
+                        </p>
                         <p className="text-sm font-bold text-slate-800">
-                          {temValor ? num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—'}
+                          {temValor
+                            ? num.toLocaleString("pt-BR", {
+                                style: "currency",
+                                currency: "BRL",
+                              })
+                            : "—"}
                         </p>
                       </div>
-                    )
+                    );
                   })}
                 </div>
               </div>
@@ -934,7 +1041,10 @@ export function OrdensServicoCriacaoPage() {
             {/* Veículo */}
             <section className="bg-white border border-slate-300 shadow-sm overflow-hidden">
               <div className="bg-slate-50 border-b border-slate-300 px-4 py-2 flex items-center gap-2">
-                <MaterialIcon name="local_shipping" className="text-slate-400 text-lg" />
+                <MaterialIcon
+                  name="local_shipping"
+                  className="text-slate-400 text-lg"
+                />
                 <h2 className="text-xs font-bold text-slate-700 font-condensed uppercase">
                   Veículo
                 </h2>
@@ -950,7 +1060,7 @@ export function OrdensServicoCriacaoPage() {
                       control={form.control}
                       render={({ field }) => (
                         <InputPlaca
-                          value={field.value ?? ''}
+                          value={field.value ?? ""}
                           onChange={field.onChange}
                           placeholder="ABC-1D23"
                         />
@@ -965,7 +1075,7 @@ export function OrdensServicoCriacaoPage() {
                       Marca
                     </Label>
                     <Input
-                      {...form.register('veiculoMarca')}
+                      {...form.register("veiculoMarca")}
                       placeholder="Marca"
                       className="h-9"
                       autoComplete="off"
@@ -976,7 +1086,7 @@ export function OrdensServicoCriacaoPage() {
                       Modelo
                     </Label>
                     <Input
-                      {...form.register('veiculoModelo')}
+                      {...form.register("veiculoModelo")}
                       placeholder="Modelo"
                       className="h-9"
                       autoComplete="off"
@@ -987,7 +1097,7 @@ export function OrdensServicoCriacaoPage() {
                       Ano
                     </Label>
                     <Input
-                      {...form.register('veiculoAno')}
+                      {...form.register("veiculoAno")}
                       placeholder="Ano"
                       className="h-9"
                       autoComplete="off"
@@ -998,7 +1108,7 @@ export function OrdensServicoCriacaoPage() {
                       Cor
                     </Label>
                     <Input
-                      {...form.register('veiculoCor')}
+                      {...form.register("veiculoCor")}
                       placeholder="Cor"
                       className="h-9"
                       autoComplete="off"
@@ -1013,13 +1123,17 @@ export function OrdensServicoCriacaoPage() {
                       control={form.control}
                       render={({ field }) => (
                         <Select
-                          value={field.value || ''}
-                          onValueChange={(v) => field.onChange(v || '')}
+                          value={field.value || ""}
+                          onValueChange={(v) => field.onChange(v || "")}
                         >
                           <SelectTrigger className="h-9 flex items-center gap-2">
                             {field.value && (
                               <MaterialIcon
-                                name={veiculoTipoIconMap[field.value.toUpperCase()] ?? 'directions_car'}
+                                name={
+                                  veiculoTipoIconMap[
+                                    field.value.toUpperCase()
+                                  ] ?? "directions_car"
+                                }
                                 className="text-slate-500 text-lg shrink-0"
                               />
                             )}
@@ -1054,58 +1168,80 @@ export function OrdensServicoCriacaoPage() {
                     Tipo de Serviço
                   </Label>
                   <div className="grid grid-cols-3 gap-3">
-                    {(['INSTALACAO', 'REVISAO', 'RETIRADA'] as const).map((cat) => {
-                      const isActive =
-                        cat === 'INSTALACAO'
-                          ? tipo?.startsWith('INSTALACAO_')
-                          : tipo === cat
-                      return (
-                        <Button
-                          key={cat}
-                          type="button"
-                          variant={isActive ? 'default' : 'outline'}
-                          size="lg"
-                          className={cn(
-                            'h-14 w-full text-sm font-bold uppercase gap-2',
-                            isActive && 'bg-erp-blue hover:bg-blue-700'
-                          )}
-                          onClick={() => {
-                            if (cat === 'INSTALACAO') {
-                              form.setValue('tipo', 'INSTALACAO_COM_BLOQUEIO')
-                            } else {
-                              form.setValue('tipo', cat)
-                            }
-                          }}
-                        >
-                          <MaterialIcon name={tipoServicoConfig[cat].icon} className="text-xl" />
-                          {tipoServicoConfig[cat].label}
-                        </Button>
-                      )
-                    })}
+                    {(["INSTALACAO", "REVISAO", "RETIRADA"] as const).map(
+                      (cat) => {
+                        const isActive =
+                          cat === "INSTALACAO"
+                            ? tipo?.startsWith("INSTALACAO_")
+                            : tipo === cat;
+                        return (
+                          <Button
+                            key={cat}
+                            type="button"
+                            variant={isActive ? "default" : "outline"}
+                            size="lg"
+                            className={cn(
+                              "h-14 w-full text-sm font-bold uppercase gap-2",
+                              isActive && "bg-erp-blue hover:bg-blue-700",
+                            )}
+                            onClick={() => {
+                              if (cat === "INSTALACAO") {
+                                form.setValue(
+                                  "tipo",
+                                  "INSTALACAO_COM_BLOQUEIO",
+                                );
+                              } else {
+                                form.setValue("tipo", cat);
+                              }
+                            }}
+                          >
+                            <MaterialIcon
+                              name={tipoServicoConfig[cat].icon}
+                              className="text-xl"
+                            />
+                            {tipoServicoConfig[cat].label}
+                          </Button>
+                        );
+                      },
+                    )}
                   </div>
-                  {tipo?.startsWith('INSTALACAO_') && (
+                  {tipo?.startsWith("INSTALACAO_") && (
                     <div className="mt-3 grid grid-cols-2 gap-2">
                       <Button
                         type="button"
-                        variant={tipo === 'INSTALACAO_COM_BLOQUEIO' ? 'default' : 'outline'}
+                        variant={
+                          tipo === "INSTALACAO_COM_BLOQUEIO"
+                            ? "default"
+                            : "outline"
+                        }
                         size="sm"
                         className={cn(
-                          'h-9 w-full text-[11px] font-bold uppercase',
-                          tipo === 'INSTALACAO_COM_BLOQUEIO' && 'bg-erp-blue hover:bg-blue-700'
+                          "h-9 w-full text-[11px] font-bold uppercase",
+                          tipo === "INSTALACAO_COM_BLOQUEIO" &&
+                            "bg-erp-blue hover:bg-blue-700",
                         )}
-                        onClick={() => form.setValue('tipo', 'INSTALACAO_COM_BLOQUEIO')}
+                        onClick={() =>
+                          form.setValue("tipo", "INSTALACAO_COM_BLOQUEIO")
+                        }
                       >
                         Com bloqueio
                       </Button>
                       <Button
                         type="button"
-                        variant={tipo === 'INSTALACAO_SEM_BLOQUEIO' ? 'default' : 'outline'}
+                        variant={
+                          tipo === "INSTALACAO_SEM_BLOQUEIO"
+                            ? "default"
+                            : "outline"
+                        }
                         size="sm"
                         className={cn(
-                          'h-9 w-full text-[11px] font-bold uppercase',
-                          tipo === 'INSTALACAO_SEM_BLOQUEIO' && 'bg-erp-blue hover:bg-blue-700'
+                          "h-9 w-full text-[11px] font-bold uppercase",
+                          tipo === "INSTALACAO_SEM_BLOQUEIO" &&
+                            "bg-erp-blue hover:bg-blue-700",
                         )}
-                        onClick={() => form.setValue('tipo', 'INSTALACAO_SEM_BLOQUEIO')}
+                        onClick={() =>
+                          form.setValue("tipo", "INSTALACAO_SEM_BLOQUEIO")
+                        }
                       >
                         Sem bloqueio
                       </Button>
@@ -1126,8 +1262,8 @@ export function OrdensServicoCriacaoPage() {
                       </Label>
                       <IdAparelhoSearch
                         rastreadores={rastreadoresInstalados}
-                        value={form.watch('idAparelho') ?? ''}
-                        onChange={(v) => form.setValue('idAparelho', v)}
+                        value={form.watch("idAparelho") ?? ""}
+                        onChange={(v) => form.setValue("idAparelho", v)}
                         placeholder="Buscar ou digitar ID..."
                       />
                     </div>
@@ -1136,7 +1272,7 @@ export function OrdensServicoCriacaoPage() {
                         Local de Instalação
                       </Label>
                       <Input
-                        {...form.register('localInstalacao')}
+                        {...form.register("localInstalacao")}
                         placeholder="Ex: PAINEL FRONTAL"
                         className="h-9"
                         autoComplete="off"
@@ -1150,21 +1286,23 @@ export function OrdensServicoCriacaoPage() {
                         name="posChave"
                         control={form.control}
                         render={({ field }) => {
-                          const isSim = field.value === 'SIM'
+                          const isSim = field.value === "SIM";
                           return (
                             <Button
                               type="button"
-                              variant={isSim ? 'default' : 'outline'}
+                              variant={isSim ? "default" : "outline"}
                               size="sm"
                               className={cn(
-                                'h-9 w-full text-[11px] font-bold uppercase',
-                                isSim && 'bg-erp-blue hover:bg-blue-700'
+                                "h-9 w-full text-[11px] font-bold uppercase",
+                                isSim && "bg-erp-blue hover:bg-blue-700",
                               )}
-                              onClick={() => field.onChange(isSim ? 'NAO' : 'SIM')}
+                              onClick={() =>
+                                field.onChange(isSim ? "NAO" : "SIM")
+                              }
                             >
-                              {isSim ? 'Sim' : 'Não'}
+                              {isSim ? "Sim" : "Não"}
                             </Button>
-                          )
+                          );
                         }}
                       />
                     </div>
@@ -1176,14 +1314,17 @@ export function OrdensServicoCriacaoPage() {
             {/* Observações */}
             <section className="bg-white border border-slate-300 shadow-sm overflow-hidden">
               <div className="bg-slate-50 border-b border-slate-300 px-4 py-2 flex items-center gap-2">
-                <MaterialIcon name="chat_bubble" className="text-slate-400 text-lg" />
+                <MaterialIcon
+                  name="chat_bubble"
+                  className="text-slate-400 text-lg"
+                />
                 <h2 className="text-xs font-bold text-slate-700 font-condensed uppercase">
                   Observações Internas
                 </h2>
               </div>
               <div className="p-4">
                 <textarea
-                  {...form.register('observacoes')}
+                  {...form.register("observacoes")}
                   className="w-full min-h-[96px] rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring"
                   placeholder="Detalhes técnicos adicionais para o serviço em campo..."
                   autoComplete="off"
@@ -1206,11 +1347,11 @@ export function OrdensServicoCriacaoPage() {
                   Cliente Selecionado
                 </span>
                 <p className="text-xs font-black text-slate-800 truncate">
-                  {ordemInstalacao === 'INFINITY'
-                    ? 'Infinity'
-                    : ordemInstalacao === 'CLIENTE' && clienteSelecionado
+                  {ordemInstalacao === "INFINITY"
+                    ? "Infinity"
+                    : ordemInstalacao === "CLIENTE" && clienteSelecionado
                       ? clienteSelecionado.nome
-                      : '—'}
+                      : "—"}
                 </p>
               </div>
               <div>
@@ -1218,7 +1359,7 @@ export function OrdensServicoCriacaoPage() {
                   Técnico Atribuído
                 </span>
                 <p className="text-xs font-black text-slate-800 uppercase">
-                  {tecnicoSelecionado?.nome ?? '—'}
+                  {tecnicoSelecionado?.nome ?? "—"}
                 </p>
               </div>
               <div>
@@ -1227,10 +1368,14 @@ export function OrdensServicoCriacaoPage() {
                 </span>
                 <p className="text-xs font-black text-slate-800 uppercase">
                   {watched.veiculoPlaca
-                    ? [watched.veiculoPlaca, watched.veiculoMarca, watched.veiculoModelo]
+                    ? [
+                        watched.veiculoPlaca,
+                        watched.veiculoMarca,
+                        watched.veiculoModelo,
+                      ]
                         .filter(Boolean)
-                        .join(' • ') || '—'
-                    : '—'}
+                        .join(" • ") || "—"
+                    : "—"}
                 </p>
               </div>
               <div>
@@ -1238,7 +1383,7 @@ export function OrdensServicoCriacaoPage() {
                   Tipo de Serviço
                 </span>
                 <p className="text-xs font-black text-erp-blue uppercase">
-                  {tipo ? TIPO_OS_LABELS[tipo] ?? tipo : '—'}
+                  {tipo ? (TIPO_OS_LABELS[tipo] ?? tipo) : "—"}
                 </p>
               </div>
             </div>
@@ -1250,16 +1395,22 @@ export function OrdensServicoCriacaoPage() {
             </h3>
             <div className="space-y-3">
               {[
-                { label: 'Dados do Cliente', ok: temCliente },
-                { label: 'Técnico Selecionado', ok: temTecnico },
-                { label: 'Dados do Veículo', ok: temVeiculo },
-                { label: 'Tipo de Serviço', ok: temTipo },
+                { label: "Dados do Cliente", ok: temCliente },
+                { label: "Técnico Selecionado", ok: temTecnico },
+                { label: "Dados do Veículo", ok: temVeiculo },
+                { label: "Tipo de Serviço", ok: temTipo },
               ].map(({ label, ok }) => (
-                <div key={label} className="flex items-center justify-between text-xs">
+                <div
+                  key={label}
+                  className="flex items-center justify-between text-xs"
+                >
                   <span className="font-bold text-slate-600">{label}</span>
                   <MaterialIcon
-                    name={ok ? 'check_circle' : 'radio_button_unchecked'}
-                    className={cn('text-lg', ok ? 'text-erp-green' : 'text-slate-300')}
+                    name={ok ? "check_circle" : "radio_button_unchecked"}
+                    className={cn(
+                      "text-lg",
+                      ok ? "text-erp-green" : "text-slate-300",
+                    )}
                   />
                 </div>
               ))}
@@ -1268,13 +1419,16 @@ export function OrdensServicoCriacaoPage() {
           <div className="p-5 border-t border-slate-200 shrink-0 space-y-3">
             {/* Deslocamento com campo KM */}
             {(() => {
-              const valor = tecnicoSelecionado?.precos?.deslocamento
-              const precoKm = typeof valor === 'string' ? parseFloat(valor) : Number(valor ?? 0)
-              const temPrecoKm = !Number.isNaN(precoKm) && precoKm > 0
+              const valor = tecnicoSelecionado?.precos?.deslocamento;
+              const precoKm =
+                typeof valor === "string"
+                  ? parseFloat(valor)
+                  : Number(valor ?? 0);
+              const temPrecoKm = !Number.isNaN(precoKm) && precoKm > 0;
               const totalDeslocamento =
-                temPrecoKm && kmEstimado !== '' && kmEstimado > 0
+                temPrecoKm && kmEstimado !== "" && kmEstimado > 0
                   ? precoKm * kmEstimado
-                  : null
+                  : null;
               return (
                 <div>
                   <span className="text-[11px] text-slate-500 font-bold uppercase block mb-2">
@@ -1287,47 +1441,68 @@ export function OrdensServicoCriacaoPage() {
                       placeholder="0"
                       value={kmEstimado}
                       onChange={(e) => {
-                        const v = e.target.value
-                        setKmEstimado(v === '' ? '' : Math.max(0, Number(v)))
+                        const v = e.target.value;
+                        setKmEstimado(v === "" ? "" : Math.max(0, Number(v)));
                       }}
                       className="h-8 w-20 text-xs text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     />
                     <span className="text-xs font-bold text-slate-500">KM</span>
                     {temPrecoKm && (
                       <span className="text-xs text-slate-400">
-                        × {precoKm.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}/KM
+                        ×{" "}
+                        {precoKm.toLocaleString("pt-BR", {
+                          style: "currency",
+                          currency: "BRL",
+                        })}
+                        /KM
                       </span>
                     )}
                     {totalDeslocamento !== null && (
                       <span className="text-xs font-bold text-slate-700 ml-auto">
-                        = {totalDeslocamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        ={" "}
+                        {totalDeslocamento.toLocaleString("pt-BR", {
+                          style: "currency",
+                          currency: "BRL",
+                        })}
                       </span>
                     )}
                   </div>
                 </div>
-              )
+              );
             })()}
 
             <div className="border-t border-slate-100" />
 
             {/* Valor total aproximado */}
             {(() => {
-              const key = tipo && tipoToPrecoKey[tipo]
-              const valorServico = key ? tecnicoSelecionado?.precos?.[key] : null
+              const key = tipo && tipoToPrecoKey[tipo];
+              const valorServico = key
+                ? tecnicoSelecionado?.precos?.[key]
+                : null;
               const numServico =
-                typeof valorServico === 'string' ? parseFloat(valorServico) : Number(valorServico ?? 0)
-              const precoServico = !Number.isNaN(numServico) && numServico > 0 ? numServico : null
+                typeof valorServico === "string"
+                  ? parseFloat(valorServico)
+                  : Number(valorServico ?? 0);
+              const precoServico =
+                !Number.isNaN(numServico) && numServico > 0 ? numServico : null;
 
-              const valorKm = tecnicoSelecionado?.precos?.deslocamento
+              const valorKm = tecnicoSelecionado?.precos?.deslocamento;
               const precoKm =
-                typeof valorKm === 'string' ? parseFloat(valorKm) : Number(valorKm ?? 0)
+                typeof valorKm === "string"
+                  ? parseFloat(valorKm)
+                  : Number(valorKm ?? 0);
               const totalDeslocamento =
-                !Number.isNaN(precoKm) && precoKm > 0 && kmEstimado !== '' && kmEstimado > 0
+                !Number.isNaN(precoKm) &&
+                precoKm > 0 &&
+                kmEstimado !== "" &&
+                kmEstimado > 0
                   ? precoKm * kmEstimado
-                  : null
+                  : null;
 
               const valorTotal =
-                precoServico !== null ? precoServico + (totalDeslocamento ?? 0) : null
+                precoServico !== null
+                  ? precoServico + (totalDeslocamento ?? 0)
+                  : null;
 
               return (
                 <div>
@@ -1336,19 +1511,28 @@ export function OrdensServicoCriacaoPage() {
                   </span>
                   <p className="text-2xl font-black text-slate-800">
                     {valorTotal !== null
-                      ? valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-                      : '—'}
+                      ? valorTotal.toLocaleString("pt-BR", {
+                          style: "currency",
+                          currency: "BRL",
+                        })
+                      : "—"}
                   </p>
                   {totalDeslocamento !== null && precoServico !== null && (
                     <p className="text-[10px] text-slate-400 mt-0.5">
-                      serviço{' '}
-                      {precoServico.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                      {' + deslocamento '}
-                      {totalDeslocamento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      serviço{" "}
+                      {precoServico.toLocaleString("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      })}
+                      {" + deslocamento "}
+                      {totalDeslocamento.toLocaleString("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      })}
                     </p>
                   )}
                 </div>
-              )
+              );
             })()}
           </div>
           <div className="p-5 bg-slate-50 border-t border-slate-200 shrink-0">
@@ -1365,11 +1549,13 @@ export function OrdensServicoCriacaoPage() {
               Emitir Ordem
             </Button>
             <p className="text-[9px] text-slate-500 text-center mt-3 font-bold uppercase">
-              {isFormValid ? 'Pronto para emitir' : 'Preencha os campos obrigatórios'}
+              {isFormValid
+                ? "Pronto para emitir"
+                : "Preencha os campos obrigatórios"}
             </p>
           </div>
         </aside>
       </div>
     </div>
-  )
+  );
 }

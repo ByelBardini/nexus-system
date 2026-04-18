@@ -1,61 +1,105 @@
-import { lazy, Suspense } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { ProtectedRoute } from '@/components/ProtectedRoute'
-import { AppLayout } from '@/layouts/AppLayout'
-import { Login } from '@/pages/Login'
-import { Loader2 } from 'lucide-react'
+import { lazy, Suspense } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AppLayout } from "@/layouts/AppLayout";
+import { Login } from "@/pages/Login";
+import { Loader2 } from "lucide-react";
 
-const OrdensServicoPage = lazy(() => import('@/pages/OrdensServicoPage').then((m) => ({ default: m.OrdensServicoPage })))
+const OrdensServicoPage = lazy(() =>
+  import("@/pages/OrdensServicoPage").then((m) => ({
+    default: m.OrdensServicoPage,
+  })),
+);
 const OrdensServicoCriacaoPage = lazy(() =>
-  import('@/pages/ordens-servico/OrdensServicoCriacaoPage').then((m) => ({
+  import("@/pages/ordens-servico/OrdensServicoCriacaoPage").then((m) => ({
     default: m.OrdensServicoCriacaoPage,
-  }))
-)
-const ConfiguracoesPage = lazy(() => import('@/pages/configuracoes/ConfiguracoesPage').then((m) => ({ default: m.ConfiguracoesPage })))
-const UsuariosPage = lazy(() => import('@/pages/usuarios/UsuariosPage').then((m) => ({ default: m.UsuariosPage })))
-const CargosPage = lazy(() => import('@/pages/cargos/CargosPage').then((m) => ({ default: m.CargosPage })))
-const ClientesPage = lazy(() => import('@/pages/clientes/ClientesPage').then((m) => ({ default: m.ClientesPage })))
-const TecnicosPage = lazy(() => import('@/pages/tecnicos/TecnicosPage').then((m) => ({ default: m.TecnicosPage })))
-const AparelhosPage = lazy(() => import('@/pages/aparelhos/AparelhosPage').then((m) => ({ default: m.AparelhosPage })))
-const CadastroLotePage = lazy(() => import('@/pages/aparelhos/CadastroLotePage').then((m) => ({ default: m.CadastroLotePage })))
+  })),
+);
+const ConfiguracoesPage = lazy(() =>
+  import("@/pages/configuracoes/ConfiguracoesPage").then((m) => ({
+    default: m.ConfiguracoesPage,
+  })),
+);
+const UsuariosPage = lazy(() =>
+  import("@/pages/usuarios/UsuariosPage").then((m) => ({
+    default: m.UsuariosPage,
+  })),
+);
+const CargosPage = lazy(() =>
+  import("@/pages/cargos/CargosPage").then((m) => ({ default: m.CargosPage })),
+);
+const ClientesPage = lazy(() =>
+  import("@/pages/clientes/ClientesPage").then((m) => ({
+    default: m.ClientesPage,
+  })),
+);
+const TecnicosPage = lazy(() =>
+  import("@/pages/tecnicos/TecnicosPage").then((m) => ({
+    default: m.TecnicosPage,
+  })),
+);
+const AparelhosPage = lazy(() =>
+  import("@/pages/aparelhos/AparelhosPage").then((m) => ({
+    default: m.AparelhosPage,
+  })),
+);
+const CadastroLotePage = lazy(() =>
+  import("@/pages/aparelhos/CadastroLotePage").then((m) => ({
+    default: m.CadastroLotePage,
+  })),
+);
 const EquipamentosPage = lazy(() =>
-  import('@/pages/equipamentos/EquipamentosPage').then((m) => ({
+  import("@/pages/equipamentos/EquipamentosPage").then((m) => ({
     default: m.EquipamentosPage,
-  }))
-)
+  })),
+);
 const EquipamentosConfigPage = lazy(() =>
-  import('@/pages/equipamentos/EquipamentosConfigPage').then((m) => ({
+  import("@/pages/equipamentos/EquipamentosConfigPage").then((m) => ({
     default: m.EquipamentosConfigPage,
-  }))
-)
+  })),
+);
 const PareamentoPage = lazy(() =>
-  import('@/pages/equipamentos/PareamentoPage').then((m) => ({ default: m.PareamentoPage }))
-)
-const CadastroIndividualPage = lazy(() => import('@/pages/aparelhos/CadastroIndividualPage').then((m) => ({ default: m.CadastroIndividualPage })))
+  import("@/pages/equipamentos/PareamentoPage").then((m) => ({
+    default: m.PareamentoPage,
+  })),
+);
+const CadastroIndividualPage = lazy(() =>
+  import("@/pages/aparelhos/CadastroIndividualPage").then((m) => ({
+    default: m.CadastroIndividualPage,
+  })),
+);
 const PedidosRastreadoresPage = lazy(() =>
-  import('@/pages/pedidos/PedidosRastreadoresPage').then((m) => ({ default: m.PedidosRastreadoresPage }))
-)
+  import("@/pages/pedidos/PedidosRastreadoresPage").then((m) => ({
+    default: m.PedidosRastreadoresPage,
+  })),
+);
 const PedidosConfigPage = lazy(() =>
-  import('@/pages/pedidos/PedidosConfigPage').then((m) => ({ default: m.PedidosConfigPage }))
-)
+  import("@/pages/pedidos/PedidosConfigPage").then((m) => ({
+    default: m.PedidosConfigPage,
+  })),
+);
 const TestesPage = lazy(() =>
-  import('@/pages/testes/TestesPage').then((m) => ({ default: m.TestesPage }))
-)
+  import("@/pages/testes/TestesPage").then((m) => ({ default: m.TestesPage })),
+);
 const DebitosEquipamentosPage = lazy(() =>
-  import('@/pages/debitos-equipamentos/DebitosEquipamentosPage').then((m) => ({ default: m.DebitosEquipamentosPage }))
-)
+  import("@/pages/debitos-equipamentos/DebitosEquipamentosPage").then((m) => ({
+    default: m.DebitosEquipamentosPage,
+  })),
+);
 const CadastroRastreamentoPage = lazy(() =>
-  import('@/pages/cadastro-rastreamento/CadastroRastreamentoPage').then((m) => ({
-    default: m.CadastroRastreamentoPage,
-  }))
-)
+  import("@/pages/cadastro-rastreamento/CadastroRastreamentoPage").then(
+    (m) => ({
+      default: m.CadastroRastreamentoPage,
+    }),
+  ),
+);
 
 function PageLoader() {
   return (
     <div className="flex min-h-[200px] items-center justify-center">
       <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
     </div>
-  )
+  );
 }
 
 function App() {
@@ -233,7 +277,7 @@ function App() {
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
-  )
+  );
 }
 
-export default App
+export default App;

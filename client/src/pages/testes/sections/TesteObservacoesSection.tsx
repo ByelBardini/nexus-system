@@ -1,11 +1,14 @@
-import { MaterialIcon } from '@/components/MaterialIcon'
+import { MaterialIcon } from "@/components/MaterialIcon";
 
 interface TesteObservacoesSectionProps {
-  value: string
-  onChange: (v: string) => void
+  value: string;
+  onChange: (v: string) => void;
 }
 
-export function TesteObservacoesSection({ value, onChange }: TesteObservacoesSectionProps) {
+export function TesteObservacoesSection({
+  value,
+  onChange,
+}: TesteObservacoesSectionProps) {
   return (
     <section className="bg-white border border-slate-300 shadow-sm overflow-hidden">
       <div className="bg-slate-50 border-b border-slate-300 px-4 py-2 flex items-center gap-2">
@@ -24,5 +27,5 @@ export function TesteObservacoesSection({ value, onChange }: TesteObservacoesSec
         />
       </div>
     </section>
-  )
+  );
 }

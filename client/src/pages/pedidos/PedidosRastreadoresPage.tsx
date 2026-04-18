@@ -1,36 +1,42 @@
-import { useState, useMemo } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { MaterialIcon } from '@/components/MaterialIcon'
-import { api } from '@/lib/api'
-import { mapPedidoToView, STATUS_ORDER, type PedidoRastreadorView, type StatusPedidoKey } from './types'
-import { KanbanColumn } from './KanbanColumn'
-import { DrawerDetalhes } from './DrawerDetalhes'
-import { ModalNovoPedido } from './ModalNovoPedido'
+import { useState, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { MaterialIcon } from "@/components/MaterialIcon";
+import { api } from "@/lib/api";
+import {
+  mapPedidoToView,
+  STATUS_ORDER,
+  type PedidoRastreadorView,
+  type StatusPedidoKey,
+} from "./types";
+import { KanbanColumn } from "./KanbanColumn";
+import { DrawerDetalhes } from "./DrawerDetalhes";
+import { ModalNovoPedido } from "./ModalNovoPedido";
 
 export function PedidosRastreadoresPage() {
-  const queryClient = useQueryClient()
-  const [busca, setBusca] = useState('')
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [pedidoSelecionado, setPedidoSelecionado] = useState<PedidoRastreadorView | null>(null)
-  const [modalNovoPedidoOpen, setModalNovoPedidoOpen] = useState(false)
+  const queryClient = useQueryClient();
+  const [busca, setBusca] = useState("");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [pedidoSelecionado, setPedidoSelecionado] =
+    useState<PedidoRastreadorView | null>(null);
+  const [modalNovoPedidoOpen, setModalNovoPedidoOpen] = useState(false);
 
   const { data: lista, isLoading } = useQuery({
-    queryKey: ['pedidos-rastreadores', busca],
+    queryKey: ["pedidos-rastreadores", busca],
     queryFn: () => {
-      const params = new URLSearchParams()
-      params.set('limit', '500')
-      if (busca.trim()) params.set('search', busca.trim())
-      return api<{ data: unknown[] }>(`/pedidos-rastreadores?${params}`)
+      const params = new URLSearchParams();
+      params.set("limit", "500");
+      if (busca.trim()) params.set("search", busca.trim());
+      return api<{ data: unknown[] }>(`/pedidos-rastreadores?${params}`);
     },
-  })
+  });
 
   const pedidosView = useMemo(() => {
-    const arr = (lista?.data ?? []) as Parameters<typeof mapPedidoToView>[0][]
-    return arr.map(mapPedidoToView)
-  }, [lista?.data])
+    const arr = (lista?.data ?? []) as Parameters<typeof mapPedidoToView>[0][];
+    return arr.map(mapPedidoToView);
+  }, [lista?.data]);
 
   const pedidosPorStatus = useMemo(() => {
     const porStatus: Record<StatusPedidoKey, PedidoRastreadorView[]> = {
@@ -39,14 +45,14 @@ export function PedidosRastreadoresPage() {
       configurado: [],
       despachado: [],
       entregue: [],
-    }
-    pedidosView.forEach((p) => porStatus[p.status].push(p))
-    return porStatus
-  }, [pedidosView])
+    };
+    pedidosView.forEach((p) => porStatus[p.status].push(p));
+    return porStatus;
+  }, [pedidosView]);
 
   function handleCardClick(pedido: PedidoRastreadorView) {
-    setPedidoSelecionado(pedido)
-    setDrawerOpen(true)
+    setPedidoSelecionado(pedido);
+    setDrawerOpen(true);
   }
 
   if (isLoading) {
@@ -54,7 +60,7 @@ export function PedidosRastreadoresPage() {
       <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
-    )
+    );
   }
 
   return (
@@ -108,8 +114,10 @@ export function PedidosRastreadoresPage() {
       <ModalNovoPedido
         open={modalNovoPedidoOpen}
         onOpenChange={setModalNovoPedidoOpen}
-        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['pedidos-rastreadores'] })}
+        onSuccess={() =>
+          queryClient.invalidateQueries({ queryKey: ["pedidos-rastreadores"] })
+        }
       />
     </div>
-  )
+  );
 }

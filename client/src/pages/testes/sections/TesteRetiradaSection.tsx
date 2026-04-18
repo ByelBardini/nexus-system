@@ -1,8 +1,8 @@
-import { MaterialIcon } from '@/components/MaterialIcon'
-import type { OsTeste } from '../testes-types'
+import { MaterialIcon } from "@/components/MaterialIcon";
+import type { OsTeste } from "../testes-types";
 
 interface TesteRetiradaSectionProps {
-  os: OsTeste | null
+  os: OsTeste | null;
 }
 
 export function TesteRetiradaSection({ os }: TesteRetiradaSectionProps) {
@@ -17,13 +17,15 @@ export function TesteRetiradaSection({ os }: TesteRetiradaSectionProps) {
       <div className="p-6">
         <div className="grid grid-cols-1 gap-4 max-w-md">
           <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-slate-500 uppercase">ID a retirar</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase">
+              ID a retirar
+            </span>
             <span className="text-sm font-bold text-slate-700">
-              {os?.idAparelho?.trim() ?? '—'}
+              {os?.idAparelho?.trim() ?? "—"}
             </span>
           </div>
         </div>
       </div>
     </section>
-  )
+  );
 }

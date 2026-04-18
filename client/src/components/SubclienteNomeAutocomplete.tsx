@@ -1,26 +1,26 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
-import { Search } from 'lucide-react'
-import { Input } from '@/components/ui/input'
-import { cn } from '@/lib/utils'
+import { useState, useMemo, useEffect, useRef } from "react";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 export interface SubclienteAutocompleteItem {
-  id: number
-  nome: string
-  cep?: string | null
-  logradouro?: string | null
-  numero?: string | null
-  complemento?: string | null
-  bairro?: string | null
-  cidade?: string | null
-  estado?: string | null
-  cpf?: string | null
-  email?: string | null
-  telefone?: string | null
-  cobrancaTipo?: string | null
+  id: number;
+  nome: string;
+  cep?: string | null;
+  logradouro?: string | null;
+  numero?: string | null;
+  complemento?: string | null;
+  bairro?: string | null;
+  cidade?: string | null;
+  estado?: string | null;
+  cpf?: string | null;
+  email?: string | null;
+  telefone?: string | null;
+  cobrancaTipo?: string | null;
 }
 
-const BLUR_DELAY_MS = 150
-const MAX_VISIBLE = 8
+const BLUR_DELAY_MS = 150;
+const MAX_VISIBLE = 8;
 
 export function SubclienteNomeAutocomplete({
   subclientes,
@@ -32,59 +32,61 @@ export function SubclienteNomeAutocomplete({
   onChange,
   placeholder,
 }: {
-  subclientes: SubclienteAutocompleteItem[]
-  value: string
-  subclienteId?: number
-  isNovoSubcliente: boolean
-  onSelect: (s: SubclienteAutocompleteItem) => void
-  onSelectNovo: () => void
-  onChange: (nome: string) => void
-  placeholder?: string
+  subclientes: SubclienteAutocompleteItem[];
+  value: string;
+  subclienteId?: number;
+  isNovoSubcliente: boolean;
+  onSelect: (s: SubclienteAutocompleteItem) => void;
+  onSelectNovo: () => void;
+  onChange: (nome: string) => void;
+  placeholder?: string;
 }) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState(value)
-  const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState(value);
+  const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const filtered = useMemo(() => {
-    if (!searchTerm.trim()) return subclientes.slice(0, MAX_VISIBLE)
-    const term = searchTerm.toLowerCase()
-    return subclientes.filter((s) => s.nome.toLowerCase().includes(term)).slice(0, MAX_VISIBLE)
-  }, [subclientes, searchTerm])
+    if (!searchTerm.trim()) return subclientes.slice(0, MAX_VISIBLE);
+    const term = searchTerm.toLowerCase();
+    return subclientes
+      .filter((s) => s.nome.toLowerCase().includes(term))
+      .slice(0, MAX_VISIBLE);
+  }, [subclientes, searchTerm]);
 
-  const displayValue = isOpen ? searchTerm : value
+  const displayValue = isOpen ? searchTerm : value;
 
   useEffect(() => {
-    if (!isOpen) setSearchTerm(value)
-  }, [isOpen, value])
+    if (!isOpen) setSearchTerm(value);
+  }, [isOpen, value]);
 
   useEffect(() => {
     return () => {
-      if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current)
-    }
-  }, [])
+      if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+    };
+  }, []);
 
   function handleFocus() {
-    setIsOpen(true)
-    setSearchTerm(value)
+    setIsOpen(true);
+    setSearchTerm(value);
   }
 
   function handleBlur() {
-    if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current)
+    if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
     blurTimeoutRef.current = setTimeout(() => {
-      blurTimeoutRef.current = null
-      setIsOpen(false)
-      setSearchTerm(value)
-    }, BLUR_DELAY_MS)
+      blurTimeoutRef.current = null;
+      setIsOpen(false);
+      setSearchTerm(value);
+    }, BLUR_DELAY_MS);
   }
 
   function handleSelect(s: SubclienteAutocompleteItem) {
-    onSelect(s)
-    setIsOpen(false)
+    onSelect(s);
+    setIsOpen(false);
   }
 
   function handleInputChange(v: string) {
-    setSearchTerm(v)
-    onChange(v)
+    setSearchTerm(v);
+    onChange(v);
   }
 
   return (
@@ -111,15 +113,15 @@ export function SubclienteNomeAutocomplete({
                   key={s.id}
                   type="button"
                   className={cn(
-                    'flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground',
-                    !isNovoSubcliente && subclienteId === s.id && 'bg-accent'
+                    "flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                    !isNovoSubcliente && subclienteId === s.id && "bg-accent",
                   )}
                   onMouseDown={() => handleSelect(s)}
                 >
                   <span className="truncate font-medium">{s.nome}</span>
                   {(s.cidade || s.estado) && (
                     <span className="shrink-0 text-[11px] text-slate-400">
-                      {[s.cidade, s.estado].filter(Boolean).join('/')}
+                      {[s.cidade, s.estado].filter(Boolean).join("/")}
                     </span>
                   )}
                 </button>
@@ -128,7 +130,8 @@ export function SubclienteNomeAutocomplete({
           )}
           {filtered.length === 0 && (
             <p className="px-3 py-2 text-[11px] text-slate-500">
-              Nenhum subcliente encontrado. Clique em "Novo Subcliente" para criar.
+              Nenhum subcliente encontrado. Clique em "Novo Subcliente" para
+              criar.
             </p>
           )}
           <div className="border-t px-2 py-2">
@@ -136,8 +139,8 @@ export function SubclienteNomeAutocomplete({
               type="button"
               className="w-full cursor-pointer rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600 outline-none transition-colors hover:border-erp-blue hover:bg-erp-blue/5 hover:text-erp-blue"
               onMouseDown={() => {
-                onSelectNovo()
-                setIsOpen(false)
+                onSelectNovo();
+                setIsOpen(false);
               }}
             >
               + Novo Subcliente
@@ -146,5 +149,5 @@ export function SubclienteNomeAutocomplete({
         </div>
       )}
     </div>
-  )
+  );
 }

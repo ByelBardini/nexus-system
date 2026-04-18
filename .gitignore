@@ -25,6 +25,7 @@ dist-ssr
 
 # Coverage reports
 server/coverage/
+client/coverage/
 
 # Keep environment variables out of version control
 .env
