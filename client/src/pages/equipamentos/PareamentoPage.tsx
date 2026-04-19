@@ -488,6 +488,8 @@ export function PareamentoPage() {
   }, [
     imeiIndividual,
     iccidIndividual,
+    minImeiIndividual,
+    minIccidIndividual,
     pertenceLoteRastreador,
     pertenceLoteSim,
     loteRastreadorSelecionado,
@@ -599,7 +601,7 @@ export function PareamentoPage() {
     modo,
     podeConfirmarIndividual,
     preview,
-    previewMutation.isPending,
+    previewMutation,
     imeiIndividual,
     iccidIndividual,
   ]);

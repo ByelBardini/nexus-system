@@ -228,7 +228,13 @@ export function TestesPage() {
         setComunicacaoResult(v);
       }
     },
-    [aparelhoSelecionado, selectedOs, observacoes, vincularAparelhoMutation],
+    [
+      aparelhoSelecionado,
+      selectedOs,
+      observacoes,
+      vincularAparelhoMutation,
+      updateStatusAparelhoMutation,
+    ],
   );
 
   const handleCancelarClick = useCallback(() => {

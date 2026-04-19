@@ -69,7 +69,7 @@ export function SelectClienteSearch({
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen, clienteSelecionado?.nome]);
+  }, [isOpen, clienteSelecionado]);
 
   function handleFocus() {
     if (disabled) return;
