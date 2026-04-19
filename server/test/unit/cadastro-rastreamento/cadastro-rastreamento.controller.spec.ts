@@ -89,20 +89,20 @@ describe('CadastroRastreamentoController', () => {
       );
     });
 
-    it('converte dataInicio e dataFim de string para Date quando informadas', async () => {
+    it('repassa dataInicio e dataFim para o service quando informadas', async () => {
       (service.findPendentes as jest.Mock).mockResolvedValue({
         data: [],
         total: 0,
       });
 
-      await controller.findPendentes({
-        dataInicio: '2025-01-01' as any,
-        dataFim: '2025-01-31' as any,
-      });
+      const dataInicio = new Date('2025-01-01');
+      const dataFim = new Date('2025-01-31');
+
+      await controller.findPendentes({ dataInicio, dataFim });
 
       const call = (service.findPendentes as jest.Mock).mock.calls[0][0];
-      expect(call.dataInicio).toBeInstanceOf(Date);
-      expect(call.dataFim).toBeInstanceOf(Date);
+      expect(call.dataInicio).toBe(dataInicio);
+      expect(call.dataFim).toBe(dataFim);
     });
 
     it('não inclui dataInicio/dataFim na chamada quando não informados', async () => {
