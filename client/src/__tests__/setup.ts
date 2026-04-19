@@ -1,12 +1,12 @@
-import '@testing-library/jest-dom'
-import { afterEach, vi } from 'vitest'
+import "@testing-library/jest-dom";
+import { afterEach, vi } from "vitest";
 
 afterEach(() => {
-  localStorage.clear()
-  vi.restoreAllMocks()
-})
+  localStorage.clear();
+  vi.restoreAllMocks();
+});
 
-vi.mock('sonner', () => ({
+vi.mock("sonner", () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),
@@ -14,4 +14,4 @@ vi.mock('sonner', () => ({
     warning: vi.fn(),
   },
   Toaster: () => null,
-}))
+}));
