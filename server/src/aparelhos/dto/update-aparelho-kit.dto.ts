@@ -4,7 +4,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 export class UpdateAparelhoKitDto {
   @ApiPropertyOptional({ description: 'ID do kit ou null para remover' })
   @IsOptional()
-  @ValidateIf((o) => o.kitId != null)
+  @ValidateIf((o: UpdateAparelhoKitDto) => o.kitId != null)
   @IsNumber()
   kitId?: number | null;
 }

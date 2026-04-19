@@ -2,6 +2,15 @@ import { BadGatewayException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { consultarPlaca } from 'api-placa-fipe';
 
+interface PlacaResultado {
+  marca?: string;
+  modelo?: string;
+  anoModelo?: string | number;
+  anoFabricacao?: string | number;
+  cor?: string;
+  tipoVeiculo?: string;
+}
+
 function normalizarPlaca(placa: string): string {
   return placa
     .replace(/[^a-zA-Z0-9]/g, '')
@@ -41,9 +50,9 @@ export class VeiculosService {
   async consultaPlaca(placa: string) {
     const raw = normalizarPlaca(placa);
     if (raw.length < 7) return null;
-    let resultado;
+    let resultado: PlacaResultado | null | undefined;
     try {
-      resultado = await consultarPlaca(raw);
+      resultado = (await consultarPlaca(raw)) as PlacaResultado | null;
     } catch {
       throw new BadGatewayException(
         'Erro ao consultar API de placas. Tente novamente.',

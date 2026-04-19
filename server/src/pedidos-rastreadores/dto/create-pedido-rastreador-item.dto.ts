@@ -10,7 +10,10 @@ export class CreatePedidoRastreadorItemDto {
   @ApiPropertyOptional({
     description: 'ID do cliente destino quando proprietario = CLIENTE',
   })
-  @ValidateIf((o) => o.proprietario === ProprietarioTipo.CLIENTE)
+  @ValidateIf(
+    (o: CreatePedidoRastreadorItemDto) =>
+      o.proprietario === ProprietarioTipo.CLIENTE,
+  )
   @IsInt()
   @Min(1)
   clienteId?: number;
