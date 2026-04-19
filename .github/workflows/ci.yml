@@ -29,6 +29,8 @@ jobs:
 
       - name: Gerar Prisma Client
         run: npx prisma generate
+        env:
+          DATABASE_URL: mysql://ci:ci@localhost:3306/ci
 
       - name: Rodar testes
         run: npm test
@@ -78,6 +80,8 @@ jobs:
 
       - name: Gerar Prisma Client
         run: npx prisma generate
+        env:
+          DATABASE_URL: mysql://ci:ci@localhost:3306/ci
 
       - name: Verificar lint
         run: npm run lint:check
