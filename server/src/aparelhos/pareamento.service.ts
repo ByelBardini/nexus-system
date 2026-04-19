@@ -1,9 +1,14 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { DebitosRastreadoresService } from '../debitos-rastreadores/debitos-rastreadores.service';
+import { ProprietarioTipo } from '@prisma/client';
 
 @Injectable()
 export class PareamentoService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly debitosService: DebitosRastreadoresService,
+  ) {}
 
   /** Resolve rastreador por IMEI: FOUND_AVAILABLE | FOUND_ALREADY_LINKED | NEEDS_CREATE | INVALID_FORMAT */
   private async resolveRastreador(imei: string): Promise<{
@@ -222,10 +227,25 @@ export class PareamentoService {
       for (const linha of preview.linhas) {
         let rastreadorId: number;
         let simId: number;
+        let rastreadorAnterior: {
+          proprietario: ProprietarioTipo;
+          clienteId: number | null;
+          marca: string | null;
+          modelo: string | null;
+        } | null = null;
 
         // Resolver rastreador
         if (linha.tracker_status === 'FOUND_AVAILABLE' && linha.trackerId) {
           rastreadorId = linha.trackerId;
+          rastreadorAnterior = await tx.aparelho.findUnique({
+            where: { id: linha.trackerId },
+            select: {
+              proprietario: true,
+              clienteId: true,
+              marca: true,
+              modelo: true,
+            },
+          });
         } else if (
           linha.tracker_status === 'NEEDS_CREATE' &&
           loteRastreadorId
@@ -237,12 +257,19 @@ export class PareamentoService {
               identificador: null,
               status: 'EM_ESTOQUE',
             },
+            include: { lote: true },
           });
           if (!aparelhoSemId) {
             throw new BadRequestException(
               `Lote de rastreadores sem saldo disponível para IMEI ${linha.imei}`,
             );
           }
+          rastreadorAnterior = {
+            proprietario: aparelhoSemId.proprietario,
+            clienteId: aparelhoSemId.clienteId,
+            marca: aparelhoSemId.marca ?? aparelhoSemId.lote?.marca ?? null,
+            modelo: aparelhoSemId.modelo ?? aparelhoSemId.lote?.modelo ?? null,
+          };
           const cleanImei = linha.imei.replace(/\D/g, '');
           await tx.aparelho.update({
             where: { id: aparelhoSemId.id },
@@ -342,6 +369,7 @@ export class PareamentoService {
           data: {
             simVinculadoId: simId,
             status: 'CONFIGURADO',
+            proprietario: proprietarioFinal,
             clienteId: clienteId ?? null,
             ...(tecnicoId !== undefined ? { tecnicoId } : {}),
           },
@@ -350,6 +378,43 @@ export class PareamentoService {
           where: { id: simId },
           data: { status: 'CONFIGURADO' },
         });
+
+        if (rastreadorAnterior) {
+          const proprietarioMudou =
+            rastreadorAnterior.proprietario !== proprietarioFinal ||
+            rastreadorAnterior.clienteId !== (clienteId ?? null);
+
+          if (
+            proprietarioMudou &&
+            rastreadorAnterior.marca &&
+            rastreadorAnterior.modelo
+          ) {
+            const marcaRec = await tx.marcaEquipamento.findFirst({
+              where: { nome: rastreadorAnterior.marca },
+            });
+            const modeloRec = marcaRec
+              ? await tx.modeloEquipamento.findFirst({
+                  where: {
+                    marcaId: marcaRec.id,
+                    nome: rastreadorAnterior.modelo,
+                  },
+                })
+              : null;
+
+            if (marcaRec && modeloRec) {
+              await this.debitosService.consolidarDebitoTx(tx, {
+                devedorTipo: proprietarioFinal,
+                devedorClienteId: clienteId ?? null,
+                credorTipo: rastreadorAnterior.proprietario,
+                credorClienteId: rastreadorAnterior.clienteId,
+                marcaId: marcaRec.id,
+                modeloId: modeloRec.id,
+                delta: 1,
+                aparelhoId: rastreadorId,
+              });
+            }
+          }
+        }
 
         await tx.aparelhoHistorico.create({
           data: {

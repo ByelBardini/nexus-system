@@ -528,7 +528,7 @@ export function UsuariosPage() {
     return Math.round((uniqueCount / permissoes.length) * 100);
   }, [permissoes.length, selectedRoleIds, cargosComPermissoes]);
 
-  const users = response?.data ?? [];
+  const users = useMemo(() => response?.data ?? [], [response]);
   const totalUsers = response?.total ?? 0;
   const totalPages = response?.totalPages ?? 1;
   const activeCount = useMemo(

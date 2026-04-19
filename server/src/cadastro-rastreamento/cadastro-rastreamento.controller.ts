@@ -30,10 +30,8 @@ export class CadastroRastreamentoController {
       ...query,
       page: query.page ? +query.page : undefined,
       limit: query.limit ? +query.limit : undefined,
-      dataInicio: query.dataInicio
-        ? new Date(query.dataInicio as any)
-        : undefined,
-      dataFim: query.dataFim ? new Date(query.dataFim as any) : undefined,
+      dataInicio: query.dataInicio,
+      dataFim: query.dataFim,
     });
   }
 

@@ -39,7 +39,7 @@ export class CreatePedidoRastreadorDto {
   @ApiPropertyOptional({
     description: 'ID do técnico quando tipoDestino = TECNICO',
   })
-  @ValidateIf((o) => o.tipoDestino === 'TECNICO')
+  @ValidateIf((o: CreatePedidoRastreadorDto) => o.tipoDestino === 'TECNICO')
   @IsInt()
   @Min(1)
   tecnicoId?: number;
@@ -48,7 +48,7 @@ export class CreatePedidoRastreadorDto {
     description:
       'ID do cliente (associação) quando tipoDestino = CLIENTE e sem subcliente',
   })
-  @ValidateIf((o) => o.tipoDestino === 'CLIENTE')
+  @ValidateIf((o: CreatePedidoRastreadorDto) => o.tipoDestino === 'CLIENTE')
   @IsOptional()
   @IsInt()
   @Min(1)
@@ -57,7 +57,7 @@ export class CreatePedidoRastreadorDto {
   @ApiPropertyOptional({
     description: 'ID do subcliente (beneficiário) quando tipoDestino = CLIENTE',
   })
-  @ValidateIf((o) => o.tipoDestino === 'CLIENTE')
+  @ValidateIf((o: CreatePedidoRastreadorDto) => o.tipoDestino === 'CLIENTE')
   @IsOptional()
   @IsInt()
   @Min(1)
@@ -109,7 +109,7 @@ export class CreatePedidoRastreadorDto {
     description:
       'Obrigatório para TECNICO/CLIENTE; omitido para MISTO (calculado como soma dos itens)',
   })
-  @ValidateIf((o) => o.tipoDestino !== 'MISTO')
+  @ValidateIf((o: CreatePedidoRastreadorDto) => o.tipoDestino !== 'MISTO')
   @IsInt()
   @Min(1)
   quantidade?: number;
@@ -118,7 +118,7 @@ export class CreatePedidoRastreadorDto {
     type: [CreatePedidoRastreadorItemDto],
     description: 'Itens obrigatórios quando tipoDestino = MISTO',
   })
-  @ValidateIf((o) => o.tipoDestino === 'MISTO')
+  @ValidateIf((o: CreatePedidoRastreadorDto) => o.tipoDestino === 'MISTO')
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreatePedidoRastreadorItemDto)

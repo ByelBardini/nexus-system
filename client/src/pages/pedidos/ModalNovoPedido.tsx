@@ -89,23 +89,27 @@ export function ModalNovoPedido({
   const { user } = useAuth();
   const hoje = new Date().toISOString().slice(0, 10);
 
-  const defaultValues: FormNovoPedido = {
-    tipoDestino: "TECNICO",
-    tecnicoId: undefined,
-    destinoCliente: "",
-    deCliente: false,
-    deClienteId: undefined,
-    dataSolicitacao: hoje,
-    marcaModeloEspecifico: false,
-    marcaEquipamentoId: undefined,
-    modeloEquipamentoId: undefined,
-    operadoraEspecifica: false,
-    operadoraId: undefined,
-    quantidade: 1,
-    itensMisto: [{ proprietario: "INFINITY", quantidade: 1 }],
-    urgencia: "MEDIA",
-    observacao: "",
-  };
+  const defaultValues = useMemo<FormNovoPedido>(
+    () => ({
+      tipoDestino: "TECNICO",
+      tecnicoId: undefined,
+      destinoCliente: "",
+      deCliente: false,
+      deClienteId: undefined,
+      dataSolicitacao: hoje,
+      marcaModeloEspecifico: false,
+      marcaEquipamentoId: undefined,
+      modeloEquipamentoId: undefined,
+      operadoraEspecifica: false,
+      operadoraId: undefined,
+      quantidade: 1,
+      itensMisto: [{ proprietario: "INFINITY", quantidade: 1 }],
+      urgencia: "MEDIA",
+      observacao: "",
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
   const form = useForm<FormNovoPedido>({
     resolver: zodResolver(schemaNovoPedido),
@@ -128,7 +132,7 @@ export function ModalNovoPedido({
         dataSolicitacao: new Date().toISOString().slice(0, 10),
       });
     }
-  }, [open]);
+  }, [open, form, defaultValues]);
 
   const tipoDestino = form.watch("tipoDestino");
   const tecnicoId = form.watch("tecnicoId");

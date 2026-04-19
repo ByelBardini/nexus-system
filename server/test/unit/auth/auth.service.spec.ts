@@ -100,7 +100,6 @@ describe('AuthService', () => {
       });
       expect(result.permissions).toEqual(['AGENDAMENTO.OS.LISTAR']);
       expect(usersService.updateLastLogin).toHaveBeenCalledWith(1);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(jwtService.sign).toHaveBeenCalledWith({
         sub: 1,
         email: 'user@test.com',

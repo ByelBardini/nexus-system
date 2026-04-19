@@ -1,4 +1,16 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(npx eslint . --quiet *)",
+      "Bash(npm run test *)",
+      "Bash(npx jest *)",
+      "Bash(npx --prefix * jest *)",
+      "Bash(npm show *)",
+      "Bash(./node_modules/.bin/tsc *)",
+      "Bash(npm audit *)"
+    ]
+  },
   "hooks": {
     "PostToolUse": [
       {
