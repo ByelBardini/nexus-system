@@ -11,7 +11,9 @@ globalThis.ResizeObserver = vi.fn().mockImplementation(() => ({
 
 vi.mock("react-router-dom", async () => {
   const actual =
-    await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
+    await vi.importActual<typeof import("react-router-dom")>(
+      "react-router-dom",
+    );
   return {
     ...actual,
     useSearchParams: vi.fn().mockReturnValue([new URLSearchParams(), vi.fn()]),
@@ -22,10 +24,9 @@ vi.mock("react-router-dom", async () => {
 });
 
 vi.mock("@tanstack/react-query", async () => {
-  const actual =
-    await vi.importActual<typeof import("@tanstack/react-query")>(
-      "@tanstack/react-query",
-    );
+  const actual = await vi.importActual<typeof import("@tanstack/react-query")>(
+    "@tanstack/react-query",
+  );
   return {
     ...actual,
     useQuery: vi.fn().mockReturnValue({ data: [], isLoading: false }),
@@ -34,18 +35,15 @@ vi.mock("@tanstack/react-query", async () => {
   };
 });
 
-vi.mock(
-  "@/pages/equipamentos/PreviewPareamentoTable",
-  () => ({
-    PreviewPareamentoTable: () => <div />,
-    TRACKER_STATUS_LABELS: {
-      FOUND_AVAILABLE: { label: "", className: "" },
-      FOUND_ALREADY_LINKED: { label: "", className: "" },
-      NEEDS_CREATE: { label: "", className: "" },
-      INVALID_FORMAT: { label: "", className: "" },
-    },
-  }),
-);
+vi.mock("@/pages/equipamentos/PreviewPareamentoTable", () => ({
+  PreviewPareamentoTable: () => <div />,
+  TRACKER_STATUS_LABELS: {
+    FOUND_AVAILABLE: { label: "", className: "" },
+    FOUND_ALREADY_LINKED: { label: "", className: "" },
+    NEEDS_CREATE: { label: "", className: "" },
+    INVALID_FORMAT: { label: "", className: "" },
+  },
+}));
 
 vi.mock("@/components/SelectClienteSearch", () => ({
   SelectClienteSearch: () => <div />,
@@ -90,7 +88,9 @@ describe("PareamentoPage — estado inicial (modo individual)", () => {
       name: /criar novo/i,
     });
     expect(checkboxes).toHaveLength(2);
-    checkboxes.forEach((cb) => expect(cb).toHaveAttribute("aria-checked", "false"));
+    checkboxes.forEach((cb) =>
+      expect(cb).toHaveAttribute("aria-checked", "false"),
+    );
   });
 });
 
@@ -108,12 +108,8 @@ describe("PareamentoPage — CRIAR NOVO rastreador (modo individual)", () => {
     expect(
       screen.getByRole("checkbox", { name: /pertence a um lote/i }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(/marca \(se criar novo\)/i),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/modelo \(se criar novo\)/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/marca \(se criar novo\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/modelo \(se criar novo\)/i)).toBeInTheDocument();
   });
 
   it("ao desmarcar CRIAR NOVO, campos de criação somem", async () => {
@@ -165,9 +161,7 @@ describe("PareamentoPage — CRIAR NOVO rastreador (modo individual)", () => {
     await userEvent.click(pertenceLote); // marcar lote
     await userEvent.click(pertenceLote); // desmarcar lote
 
-    expect(
-      screen.getByText(/marca \(se criar novo\)/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/marca \(se criar novo\)/i)).toBeInTheDocument();
   });
 });
 
@@ -216,9 +210,12 @@ describe("PareamentoPage — CRIAR NOVO SIM (modo individual)", () => {
 
   it("marcar CRIAR NOVO de ambos exibe dois 'PERTENCE A UM LOTE'", async () => {
     renderPage();
-    const [criarNovoRastreador, criarNovoSim] = screen.getAllByRole("checkbox", {
-      name: /criar novo/i,
-    });
+    const [criarNovoRastreador, criarNovoSim] = screen.getAllByRole(
+      "checkbox",
+      {
+        name: /criar novo/i,
+      },
+    );
 
     await userEvent.click(criarNovoRastreador);
     await userEvent.click(criarNovoSim);
@@ -235,16 +232,23 @@ describe("PareamentoPage — CRIAR NOVO SIM (modo individual)", () => {
 describe("PareamentoPage — Limpar Campos (modo individual)", () => {
   it("Limpar Campos reseta os checkboxes CRIAR NOVO e oculta os campos de criação", async () => {
     renderPage();
-    const [criarNovoRastreador, criarNovoSim] = screen.getAllByRole("checkbox", {
-      name: /criar novo/i,
-    });
+    const [criarNovoRastreador, criarNovoSim] = screen.getAllByRole(
+      "checkbox",
+      {
+        name: /criar novo/i,
+      },
+    );
 
     await userEvent.click(criarNovoRastreador);
     await userEvent.click(criarNovoSim);
 
-    expect(screen.getAllByRole("checkbox", { name: /pertence a um lote/i })).toHaveLength(2);
+    expect(
+      screen.getAllByRole("checkbox", { name: /pertence a um lote/i }),
+    ).toHaveLength(2);
 
-    await userEvent.click(screen.getByRole("button", { name: /limpar campos/i }));
+    await userEvent.click(
+      screen.getByRole("button", { name: /limpar campos/i }),
+    );
 
     expect(criarNovoRastreador).toHaveAttribute("aria-checked", "false");
     expect(criarNovoSim).toHaveAttribute("aria-checked", "false");
@@ -321,9 +325,12 @@ describe("PareamentoPage — modo massa", () => {
     renderPage();
     await switchToMassa();
 
-    const [criarNovoRastreador, criarNovoSim] = screen.getAllByRole("checkbox", {
-      name: /criar novo/i,
-    });
+    const [criarNovoRastreador, criarNovoSim] = screen.getAllByRole(
+      "checkbox",
+      {
+        name: /criar novo/i,
+      },
+    );
     await userEvent.click(criarNovoRastreador);
     await userEvent.click(criarNovoSim);
 
