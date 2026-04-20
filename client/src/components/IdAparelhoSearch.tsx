@@ -20,6 +20,7 @@ export function IdAparelhoSearch({
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState(value);
   const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const [dropdownStyle, setDropdownStyle] = useState({
     top: 0,
     left: 0,
@@ -40,7 +41,10 @@ export function IdAparelhoSearch({
 
   useEffect(() => {
     if (!isOpen) return;
-    const onScroll = () => setIsOpen(false);
+    const onScroll = (e: Event) => {
+      if (dropdownRef.current?.contains(e.target as Node)) return;
+      setIsOpen(false);
+    };
     document.addEventListener("scroll", onScroll, true);
     return () => document.removeEventListener("scroll", onScroll, true);
   }, [isOpen]);
@@ -101,6 +105,7 @@ export function IdAparelhoSearch({
       {isOpen &&
         createPortal(
           <div
+            ref={dropdownRef}
             className="fixed z-[100] max-h-60 overflow-auto rounded-md border bg-popover py-1 text-popover-foreground shadow-md"
             style={{
               top: dropdownStyle.top,

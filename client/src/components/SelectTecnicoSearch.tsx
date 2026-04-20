@@ -95,7 +95,10 @@ export function SelectTecnicoSearch({
 
   useEffect(() => {
     if (!isOpen) return;
-    const onScroll = () => setIsOpen(false);
+    const onScroll = (e: Event) => {
+      if (dropdownRef.current?.contains(e.target as Node)) return;
+      setIsOpen(false);
+    };
     document.addEventListener("scroll", onScroll, true);
     return () => document.removeEventListener("scroll", onScroll, true);
   }, [isOpen]);
