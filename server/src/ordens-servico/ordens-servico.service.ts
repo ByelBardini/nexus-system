@@ -12,12 +12,14 @@ import {
   StatusOS,
   StatusAparelho,
   TipoOS,
+  ProprietarioTipo,
 } from '@prisma/client';
 import { CreateOrdemServicoDto } from './dto/create-ordem-servico.dto';
 import { UpdateOrdemServicoDto } from './dto/update-ordem-servico.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { HtmlOrdemServicoGenerator } from './html-ordem-servico.generator';
 import { PdfOrdemServicoGenerator } from './pdf-ordem-servico.generator';
+import { DebitosRastreadoresService } from '../debitos-rastreadores/debitos-rastreadores.service';
 
 @Injectable()
 export class OrdensServicoService {
@@ -25,6 +27,7 @@ export class OrdensServicoService {
     private readonly prisma: PrismaService,
     private readonly htmlOrdemServicoGenerator: HtmlOrdemServicoGenerator,
     private readonly pdfOrdemServicoGenerator: PdfOrdemServicoGenerator,
+    private readonly debitosService: DebitosRastreadoresService,
   ) {}
 
   private static readonly INFINITY_NOME = 'Infinity';
@@ -608,6 +611,43 @@ export class OrdensServicoService {
             await tx.aparelho.update({
               where: { id: aparelho.simVinculadoId },
               data: { status: StatusAparelho.INSTALADO },
+            });
+          }
+
+          const precisaDebito =
+            aparelho.proprietario === ProprietarioTipo.INFINITY ||
+            (aparelho.proprietario === ProprietarioTipo.CLIENTE &&
+              aparelho.clienteId !== os.clienteId);
+
+          if (precisaDebito && aparelho.marca && aparelho.modelo) {
+            const marcaEq = await tx.marcaEquipamento.findFirst({
+              where: { nome: aparelho.marca },
+            });
+            const modeloEq = marcaEq
+              ? await tx.modeloEquipamento.findFirst({
+                  where: { marcaId: marcaEq.id, nome: aparelho.modelo },
+                })
+              : null;
+
+            if (!marcaEq || !modeloEq) {
+              throw new BadRequestException(
+                `Débito não pode ser registrado: modelo "${aparelho.modelo}" da marca "${aparelho.marca}" não encontrado no catálogo.`,
+              );
+            }
+
+            await this.debitosService.consolidarDebitoTx(tx, {
+              devedorTipo: ProprietarioTipo.CLIENTE,
+              devedorClienteId: os.clienteId,
+              credorTipo: aparelho.proprietario,
+              credorClienteId:
+                aparelho.proprietario === ProprietarioTipo.INFINITY
+                  ? null
+                  : aparelho.clienteId,
+              marcaId: marcaEq.id,
+              modeloId: modeloEq.id,
+              delta: 1,
+              aparelhoId: aparelho.id,
+              ordemServicoId: id,
             });
           }
         }
