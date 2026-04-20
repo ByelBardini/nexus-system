@@ -626,65 +626,79 @@ export function CadastroLotePage() {
               </div>
               <div className="space-y-6">
                 <div className="space-y-3">
-                  <div>
-                    <Label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">
-                      Pertence a
-                    </Label>
-                    <Controller
-                      name="proprietarioTipo"
-                      control={form.control}
-                      render={({ field }) => (
-                        <div className="flex rounded-sm overflow-hidden">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              field.onChange("INFINITY");
-                              form.setValue("clienteId", null);
-                            }}
-                            className={cn(
-                              "flex-1 py-2.5 px-4 text-xs font-bold uppercase border transition-all",
-                              field.value === "INFINITY"
-                                ? "bg-slate-800 text-white border-slate-800"
-                                : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50",
-                            )}
-                          >
-                            Infinity
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => field.onChange("CLIENTE")}
-                            className={cn(
-                              "flex-1 py-2.5 px-4 text-xs font-bold uppercase border-t border-b border-r transition-all",
-                              field.value === "CLIENTE"
-                                ? "bg-slate-800 text-white border-slate-800"
-                                : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50",
-                            )}
-                          >
-                            Cliente
-                          </button>
+                  {watchTipo === "RASTREADOR" ? (
+                    <>
+                      <div>
+                        <Label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">
+                          Pertence a
+                        </Label>
+                        <Controller
+                          name="proprietarioTipo"
+                          control={form.control}
+                          render={({ field }) => (
+                            <div className="flex rounded-sm overflow-hidden">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  field.onChange("INFINITY");
+                                  form.setValue("clienteId", null);
+                                }}
+                                className={cn(
+                                  "flex-1 py-2.5 px-4 text-xs font-bold uppercase border transition-all",
+                                  field.value === "INFINITY"
+                                    ? "bg-slate-800 text-white border-slate-800"
+                                    : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50",
+                                )}
+                              >
+                                Infinity
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => field.onChange("CLIENTE")}
+                                className={cn(
+                                  "flex-1 py-2.5 px-4 text-xs font-bold uppercase border-t border-b border-r transition-all",
+                                  field.value === "CLIENTE"
+                                    ? "bg-slate-800 text-white border-slate-800"
+                                    : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50",
+                                )}
+                              >
+                                Cliente
+                              </button>
+                            </div>
+                          )}
+                        />
+                      </div>
+                      {watchProprietario === "CLIENTE" && (
+                        <div>
+                          <Label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">
+                            Cliente <span className="text-red-500">*</span>
+                          </Label>
+                          <SelectClienteSearch
+                            clientes={clientes}
+                            value={watchClienteId ?? undefined}
+                            onChange={(id) =>
+                              form.setValue("clienteId", id ?? null, {
+                                shouldValidate: true,
+                              })
+                            }
+                          />
+                          {form.formState.errors.clienteId && (
+                            <p className="text-[10px] text-red-600 mt-1">
+                              {form.formState.errors.clienteId.message}
+                            </p>
+                          )}
                         </div>
                       )}
-                    />
-                  </div>
-                  {watchProprietario === "CLIENTE" && (
-                    <div>
-                      <Label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">
-                        Cliente <span className="text-red-500">*</span>
-                      </Label>
-                      <SelectClienteSearch
-                        clientes={clientes}
-                        value={watchClienteId ?? undefined}
-                        onChange={(id) =>
-                          form.setValue("clienteId", id ?? null, {
-                            shouldValidate: true,
-                          })
-                        }
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-sm">
+                      <MaterialIcon
+                        name="info"
+                        className="text-slate-400 text-sm"
                       />
-                      {form.formState.errors.clienteId && (
-                        <p className="text-[10px] text-red-600 mt-1">
-                          {form.formState.errors.clienteId.message}
-                        </p>
-                      )}
+                      <span className="text-xs text-slate-500">
+                        Simcards são sempre registrados no estoque da Infinity
+                      </span>
                     </div>
                   )}
                 </div>
@@ -739,6 +753,8 @@ export function CadastroLotePage() {
                             field.onChange("SIM");
                             form.setValue("marca", "");
                             form.setValue("modelo", "");
+                            form.setValue("proprietarioTipo", "INFINITY");
+                            form.setValue("clienteId", null);
                           }}
                           className={cn(
                             "flex-1 flex flex-col items-center gap-2 p-4 border-2 rounded-sm transition-all",

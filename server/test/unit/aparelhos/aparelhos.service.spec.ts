@@ -248,6 +248,87 @@ describe('AparelhosService', () => {
       expect(result).toEqual(aparelho);
       expect(prisma.aparelhoHistorico.create).toHaveBeenCalled();
     });
+
+    it('SIM é criado com proprietario=INFINITY independente do proprietario enviado', async () => {
+      prisma.aparelho.findFirst.mockResolvedValue(null);
+      const sim = {
+        id: 2,
+        identificador: '89550012345678901234',
+        tipo: 'SIM',
+        tecnico: null,
+      };
+      prisma.aparelho.create.mockResolvedValue(sim);
+      prisma.aparelhoHistorico.create.mockResolvedValue({});
+
+      const result = await service.createIndividual({
+        identificador: '89550012345678901234',
+        tipo: 'SIM',
+        proprietario: 'CLIENTE',
+        clienteId: 99,
+        origem: 'COMPRA_AVULSA',
+        statusEntrada: 'NOVO_OK',
+      });
+
+      expect(prisma.aparelho.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            tipo: 'SIM',
+            proprietario: 'INFINITY',
+            clienteId: null,
+          }),
+        }),
+      );
+      expect(result).toEqual(sim);
+    });
+
+    it('SIM ignora abaterDebitoId e não consulta débitos', async () => {
+      prisma.aparelho.findFirst.mockResolvedValue(null);
+      prisma.aparelho.create.mockResolvedValue({
+        id: 3,
+        tipo: 'SIM',
+        tecnico: null,
+      });
+      prisma.aparelhoHistorico.create.mockResolvedValue({});
+
+      await service.createIndividual({
+        identificador: '89550012345678901235',
+        tipo: 'SIM',
+        abaterDebitoId: 7,
+        origem: 'COMPRA_AVULSA',
+        statusEntrada: 'NOVO_OK',
+      });
+
+      expect(prisma.debitoRastreador.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('SIM resolve operadora a partir de marcaSimcardId', async () => {
+      prisma.aparelho.findFirst.mockResolvedValue(null);
+      prisma.marcaSimcard.findUnique.mockResolvedValue({
+        id: 1,
+        nome: 'Getrak',
+        operadora: { nome: 'Claro' },
+      });
+      prisma.aparelho.create.mockResolvedValue({
+        id: 4,
+        tipo: 'SIM',
+        tecnico: null,
+      });
+      prisma.aparelhoHistorico.create.mockResolvedValue({});
+
+      await service.createIndividual({
+        identificador: '89550012345678901236',
+        tipo: 'SIM',
+        marcaSimcardId: 1,
+        origem: 'COMPRA_AVULSA',
+        statusEntrada: 'NOVO_OK',
+      });
+
+      expect(prisma.aparelho.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ operadora: 'Claro' }),
+        }),
+      );
+    });
   });
 
   describe('updateStatus', () => {

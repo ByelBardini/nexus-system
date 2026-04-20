@@ -51,6 +51,10 @@ export class LotesService {
     const qtdFinal = temIdentificadores ? identificadores.length : quantidade;
     const valorTotal = qtdFinal * valorUnitario;
 
+    // SIMs always belong to Infinity — ignore client assignment and debt abatement
+    const proprietarioFinal = tipo === 'SIM' ? 'INFINITY' : proprietarioTipo;
+    const clienteIdFinal = tipo === 'SIM' ? null : (clienteId ?? null);
+
     return this.prisma.$transaction(async (tx) => {
       const lote = await tx.loteAparelho.create({
         data: {
@@ -58,8 +62,8 @@ export class LotesService {
           notaFiscal,
           dataChegada: new Date(dataChegada),
           tipo,
-          proprietario: proprietarioTipo,
-          clienteId: clienteId ?? null,
+          proprietario: proprietarioFinal,
+          clienteId: clienteIdFinal,
           marca: tipo === 'RASTREADOR' ? marca : null,
           modelo: tipo === 'RASTREADOR' ? modelo : null,
           operadora: tipo === 'SIM' ? operadoraSim : null,
@@ -85,8 +89,8 @@ export class LotesService {
             tipo,
             identificador,
             status: 'EM_ESTOQUE',
-            proprietario: proprietarioTipo,
-            clienteId: clienteId ?? null,
+            proprietario: proprietarioFinal,
+            clienteId: clienteIdFinal,
             tecnicoId: tecnicoId ?? null,
             marca: tipo === 'RASTREADOR' ? marca : null,
             modelo: tipo === 'RASTREADOR' ? modelo : null,
@@ -101,8 +105,8 @@ export class LotesService {
             tipo,
             identificador: null,
             status: 'EM_ESTOQUE',
-            proprietario: proprietarioTipo,
-            clienteId: clienteId ?? null,
+            proprietario: proprietarioFinal,
+            clienteId: clienteIdFinal,
             tecnicoId: tecnicoId ?? null,
             marca: tipo === 'RASTREADOR' ? marca : null,
             modelo: tipo === 'RASTREADOR' ? modelo : null,
@@ -113,7 +117,12 @@ export class LotesService {
         }
       }
 
-      if (abaterDebitoId && abaterQuantidade && abaterQuantidade > 0) {
+      if (
+        tipo !== 'SIM' &&
+        abaterDebitoId &&
+        abaterQuantidade &&
+        abaterQuantidade > 0
+      ) {
         const debito = await tx.debitoRastreador.findUnique({
           where: { id: abaterDebitoId },
         });

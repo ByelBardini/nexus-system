@@ -688,6 +688,8 @@ export function CadastroIndividualPage() {
                           if (v === "SIM") {
                             form.setValue("marca", "");
                             form.setValue("modelo", "");
+                            form.setValue("proprietario", "INFINITY");
+                            form.setValue("clienteId", null);
                           } else {
                             form.setValue("operadora", "");
                             form.setValue("marcaSimcardId", "");
@@ -970,67 +972,85 @@ export function CadastroIndividualPage() {
                   )}
                 </div>
 
-                {/* Vinculação / Cliente — sempre visível */}
+                {/* Vinculação / Cliente — somente para Rastreadores */}
                 <div className="col-span-2">
-                  <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                    Vinculação / Destino <span className="text-red-500">*</span>
-                  </Label>
-                  <Controller
-                    name="proprietario"
-                    control={form.control}
-                    render={({ field }) => (
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            field.onChange("INFINITY");
-                            form.setValue("clienteId", null);
-                          }}
-                          className={cn(
-                            "flex-1 h-9 flex items-center justify-center gap-2 border rounded-sm text-sm font-medium transition-all",
-                            field.value === "INFINITY"
-                              ? "border-erp-blue bg-blue-50 text-erp-blue"
-                              : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100",
-                          )}
-                        >
-                          <MaterialIcon name="business" className="text-sm" />
-                          Infinity
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => field.onChange("CLIENTE")}
-                          className={cn(
-                            "flex-1 h-9 flex items-center justify-center gap-2 border rounded-sm text-sm font-medium transition-all",
-                            field.value === "CLIENTE"
-                              ? "border-erp-blue bg-blue-50 text-erp-blue"
-                              : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100",
-                          )}
-                        >
-                          <MaterialIcon name="person" className="text-sm" />
-                          Cliente
-                        </button>
-                      </div>
-                    )}
-                  />
-                  {watchProprietario === "CLIENTE" && (
-                    <div className="mt-2">
+                  {watchTipo === "RASTREADOR" ? (
+                    <>
+                      <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                        Vinculação / Destino{" "}
+                        <span className="text-red-500">*</span>
+                      </Label>
                       <Controller
-                        name="clienteId"
+                        name="proprietario"
                         control={form.control}
                         render={({ field }) => (
-                          <SelectClienteSearch
-                            clientes={clientes}
-                            value={field.value ?? undefined}
-                            onChange={(id) => field.onChange(id ?? null)}
-                            placeholder="Digite para pesquisar cliente..."
-                          />
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                field.onChange("INFINITY");
+                                form.setValue("clienteId", null);
+                              }}
+                              className={cn(
+                                "flex-1 h-9 flex items-center justify-center gap-2 border rounded-sm text-sm font-medium transition-all",
+                                field.value === "INFINITY"
+                                  ? "border-erp-blue bg-blue-50 text-erp-blue"
+                                  : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100",
+                              )}
+                            >
+                              <MaterialIcon
+                                name="business"
+                                className="text-sm"
+                              />
+                              Infinity
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => field.onChange("CLIENTE")}
+                              className={cn(
+                                "flex-1 h-9 flex items-center justify-center gap-2 border rounded-sm text-sm font-medium transition-all",
+                                field.value === "CLIENTE"
+                                  ? "border-erp-blue bg-blue-50 text-erp-blue"
+                                  : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100",
+                              )}
+                            >
+                              <MaterialIcon name="person" className="text-sm" />
+                              Cliente
+                            </button>
+                          </div>
                         )}
                       />
-                      {form.formState.errors.clienteId && (
-                        <p className="text-[10px] text-red-600 mt-1">
-                          {form.formState.errors.clienteId.message}
-                        </p>
+                      {watchProprietario === "CLIENTE" && (
+                        <div className="mt-2">
+                          <Controller
+                            name="clienteId"
+                            control={form.control}
+                            render={({ field }) => (
+                              <SelectClienteSearch
+                                clientes={clientes}
+                                value={field.value ?? undefined}
+                                onChange={(id) => field.onChange(id ?? null)}
+                                placeholder="Digite para pesquisar cliente..."
+                              />
+                            )}
+                          />
+                          {form.formState.errors.clienteId && (
+                            <p className="text-[10px] text-red-600 mt-1">
+                              {form.formState.errors.clienteId.message}
+                            </p>
+                          )}
+                        </div>
                       )}
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-sm">
+                      <MaterialIcon
+                        name="info"
+                        className="text-slate-400 text-sm"
+                      />
+                      <span className="text-xs text-slate-500">
+                        Simcards são sempre registrados no estoque da Infinity
+                      </span>
                     </div>
                   )}
                 </div>
