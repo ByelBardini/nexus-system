@@ -345,7 +345,19 @@ export class PedidosRastreadoresService {
     const statusAnterior = pedido.status;
     if (statusAnterior === dto.status) return this.findOne(id);
 
-    if (statusAnterior === StatusPedidoRastreador.DESPACHADO) {
+    const ordemStatus = [
+      StatusPedidoRastreador.SOLICITADO,
+      StatusPedidoRastreador.EM_CONFIGURACAO,
+      StatusPedidoRastreador.CONFIGURADO,
+      StatusPedidoRastreador.DESPACHADO,
+      StatusPedidoRastreador.ENTREGUE,
+    ];
+    const indiceAnterior = ordemStatus.indexOf(statusAnterior);
+    const indiceNovo = ordemStatus.indexOf(dto.status);
+    if (
+      statusAnterior === StatusPedidoRastreador.DESPACHADO &&
+      indiceNovo < indiceAnterior
+    ) {
       throw new BadRequestException(
         'Não é possível retroceder um pedido que já foi despachado.',
       );
@@ -620,7 +632,10 @@ export class PedidosRastreadoresService {
               status: novoStatusAparelho,
               proprietario: destProprietario,
               clienteId: destClienteId,
-              tecnicoId: null,
+              tecnicoId:
+                novoStatusAparelho === StatusAparelho.COM_TECNICO
+                  ? (pedido.tecnicoId ?? null)
+                  : null,
             };
           } else if (nonMistoDestino) {
             const { proprietario: destProprietario, clienteId: destClienteId } =
