@@ -15,6 +15,12 @@ import {
   type RastreadorParaTeste,
 } from "./testes-types";
 
+function imeiVinculadoNosTestes(os: OsTeste | null): string {
+  if (!os) return "";
+  if (os.tipo === "REVISAO") return (os.idEntrada ?? "").trim();
+  return (os.idAparelho ?? "").trim();
+}
+
 export function TestesPage() {
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
@@ -175,7 +181,7 @@ export function TestesPage() {
       return;
     }
     const id = imeiSearch.trim();
-    if (selectedOs.idAparelho === id) {
+    if (imeiVinculadoNosTestes(selectedOs) === id) {
       pendingLinkRef.current = null;
       return;
     }
@@ -273,7 +279,7 @@ export function TestesPage() {
   );
 
   const canFinalizar =
-    !!selectedOs?.idAparelho?.trim() &&
+    !!imeiVinculadoNosTestes(selectedOs) &&
     comunicacaoResult === "COMUNICANDO" &&
     !!novoLocalInstalacao.trim();
 
@@ -282,7 +288,7 @@ export function TestesPage() {
       toast.error("Selecione uma OS na fila");
       return;
     }
-    if (!selectedOs.idAparelho?.trim()) {
+    if (!imeiVinculadoNosTestes(selectedOs)) {
       toast.error("Selecione e vincule um aparelho para finalizar");
       return;
     }
@@ -329,8 +335,8 @@ export function TestesPage() {
   }, [listaTestando, selectedOsId, searchParams]);
 
   useEffect(() => {
-    setImeiSearch(selectedOs?.idAparelho ?? "");
-  }, [selectedOs?.id, selectedOs?.idAparelho]);
+    setImeiSearch(imeiVinculadoNosTestes(selectedOs));
+  }, [selectedOs]);
 
   return (
     <div className="-m-4 flex flex-1 min-h-0 overflow-hidden">

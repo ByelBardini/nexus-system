@@ -156,5 +156,76 @@ describe('HtmlOrdemServicoGenerator', () => {
 
       expect(result).toContain('<!DOCTYPE html>');
     });
+
+    describe('REVISÃO — emissão vs dados de teste (regressão IMEI/local)', () => {
+      const osRevisaoBase = {
+        ...osBase,
+        tipo: 'REVISAO' as const,
+        idAparelho: 'IMEI_SAIDA_EMISSAO',
+        idEntrada: 'IMEI_ENTRADA_TESTE',
+        localInstalacao: 'Local emissão',
+        posChave: 'SIM' as const,
+        localInstalacaoEntrada: 'Local testes',
+        posChaveEntrada: 'NAO' as const,
+      };
+
+      it('antes dos testes mostra só bloco de emissão (ID a substituir = idAparelho)', () => {
+        const result = generator.gerar({
+          ...osRevisaoBase,
+          status: StatusOS.AGENDADO,
+        });
+
+        expect(result).toContain('ID a substituir:');
+        expect(result).toContain('IMEI_SAIDA_EMISSAO');
+        expect(result).toContain('Local emissão');
+        expect(result).toContain(
+          'Pós-Chave:</span> <span class="field-value">Sim',
+        );
+        expect(result).not.toContain('IMEI_ENTRADA_TESTE');
+        expect(result).not.toContain('Local testes');
+      });
+
+      it('após testes mantém emissão na primeira linha e usa *Entrada na segunda (PDF)', () => {
+        const result = generator.gerar({
+          ...osRevisaoBase,
+          status: StatusOS.TESTES_REALIZADOS,
+        });
+
+        const idxSubstituir = result.indexOf('IMEI_SAIDA_EMISSAO');
+        const idxEntrada = result.indexOf('IMEI_ENTRADA_TESTE');
+        expect(idxSubstituir).toBeGreaterThan(-1);
+        expect(idxEntrada).toBeGreaterThan(-1);
+        expect(idxSubstituir).toBeLessThan(idxEntrada);
+
+        expect(result).toContain('Local emissão');
+        expect(result).toContain('Local testes');
+        expect(result).toMatch(
+          /ID de entrada:[\s\S]*IMEI_ENTRADA_TESTE[\s\S]*Local testes[\s\S]*Pós-Chave:[\s\S]*Não/,
+        );
+      });
+
+      it('com idEntrada ausente, ID de entrada faz fallback para idAparelho', () => {
+        const result = generator.gerar({
+          ...osRevisaoBase,
+          idEntrada: null,
+          status: StatusOS.TESTES_REALIZADOS,
+        });
+
+        expect(result).toContain('ID de entrada:');
+        const matches = result.match(/IMEI_SAIDA_EMISSAO/g);
+        expect(matches?.length).toBeGreaterThanOrEqual(2);
+      });
+
+      it('sem localInstalacaoEntrada, bloco de entrada usa local de emissão', () => {
+        const result = generator.gerar({
+          ...osRevisaoBase,
+          localInstalacaoEntrada: null,
+          status: StatusOS.TESTES_REALIZADOS,
+        });
+
+        expect(result).toContain('Local emissão');
+        expect(result).not.toContain('Local testes');
+      });
+    });
   });
 });

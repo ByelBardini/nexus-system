@@ -21,6 +21,7 @@ import {
   formatId,
   TIPO_OS_LABELS,
 } from "@/lib/format";
+import { getOsDadosTesteParaExibicao } from "@/lib/os-revisao-display";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { MaterialIcon } from "@/components/MaterialIcon";
@@ -99,6 +100,9 @@ interface OrdemServicoDetalhe {
   idAparelho?: string | null;
   localInstalacao?: string | null;
   posChave?: string | null;
+  idEntrada?: string | null;
+  localInstalacaoEntrada?: string | null;
+  posChaveEntrada?: string | null;
   cliente: { id: number; nome: string };
   subcliente?: SubclienteParaExibicao | null;
   subclienteSnapshotNome?: string | null;
@@ -945,40 +949,48 @@ export function OrdensServicoPage() {
                                           } = getDadosTeste(osDetalhe);
                                           return (
                                             <dl className="space-y-3 text-[11px]">
-                                              <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5">
-                                                <div>
-                                                  <dt className="text-[10px] text-slate-500 uppercase font-medium">
-                                                    ID de Entrada
-                                                  </dt>
-                                                  <dd className="font-semibold text-slate-800">
-                                                    {osDetalhe.idAparelho ||
-                                                      "—"}
-                                                  </dd>
-                                                </div>
-                                                <div>
-                                                  <dt className="text-[10px] text-slate-500 uppercase font-medium">
-                                                    Local Instalação
-                                                  </dt>
-                                                  <dd className="font-semibold text-slate-800">
-                                                    {osDetalhe.localInstalacao ||
-                                                      "—"}
-                                                  </dd>
-                                                </div>
-                                                <div>
-                                                  <dt className="text-[10px] text-slate-500 uppercase font-medium">
-                                                    Pós-chave
-                                                  </dt>
-                                                  <dd className="font-semibold text-slate-800">
-                                                    {osDetalhe.posChave ===
-                                                    "SIM"
-                                                      ? "Sim"
-                                                      : osDetalhe.posChave ===
-                                                          "NAO"
-                                                        ? "Não"
-                                                        : "—"}
-                                                  </dd>
-                                                </div>
-                                              </div>
+                                              {(() => {
+                                                const {
+                                                  imeiEntrada: idEntradaTeste,
+                                                  localInstalacao: localTeste,
+                                                  posChave: posChaveTeste,
+                                                } = getOsDadosTesteParaExibicao(
+                                                  osDetalhe,
+                                                );
+                                                return (
+                                                  <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5">
+                                                    <div>
+                                                      <dt className="text-[10px] text-slate-500 uppercase font-medium">
+                                                        ID de Entrada
+                                                      </dt>
+                                                      <dd className="font-semibold text-slate-800">
+                                                        {idEntradaTeste || "—"}
+                                                      </dd>
+                                                    </div>
+                                                    <div>
+                                                      <dt className="text-[10px] text-slate-500 uppercase font-medium">
+                                                        Local Instalação
+                                                      </dt>
+                                                      <dd className="font-semibold text-slate-800">
+                                                        {localTeste || "—"}
+                                                      </dd>
+                                                    </div>
+                                                    <div>
+                                                      <dt className="text-[10px] text-slate-500 uppercase font-medium">
+                                                        Pós-chave
+                                                      </dt>
+                                                      <dd className="font-semibold text-slate-800">
+                                                        {posChaveTeste === "SIM"
+                                                          ? "Sim"
+                                                          : posChaveTeste ===
+                                                              "NAO"
+                                                            ? "Não"
+                                                            : "—"}
+                                                      </dd>
+                                                    </div>
+                                                  </div>
+                                                );
+                                              })()}
                                               <div className="grid grid-cols-3 gap-x-4 gap-y-1.5">
                                                 <div>
                                                   <dt className="text-[10px] text-slate-500 uppercase font-medium">

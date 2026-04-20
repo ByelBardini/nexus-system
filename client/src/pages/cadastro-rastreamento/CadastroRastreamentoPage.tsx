@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { buildCadastroRastreamentoPeriodoQuery } from "@/lib/cadastro-rastreamento-periodo";
+import { getCadastroMapDeviceFields } from "@/lib/os-revisao-display";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -72,6 +74,8 @@ interface OSResponse {
   concluidoEm: string | null;
   localInstalacao: string | null;
   posChave: string | null;
+  localInstalacaoEntrada: string | null;
+  posChaveEntrada: string | null;
   criadoEm: string;
   cliente: { nome: string };
   subcliente: { nome: string } | null;
@@ -165,6 +169,17 @@ function mapOS(os: OSResponse): OrdemCadastro {
           ? "Troca de Equipamento"
           : "Retirada de Equipamento";
 
+  const dev = getCadastroMapDeviceFields(os.tipo, {
+    idAparelho: os.idAparelho,
+    idEntrada: os.idEntrada,
+    iccidAparelho: os.iccidAparelho,
+    iccidEntrada: os.iccidEntrada,
+    localInstalacao: os.localInstalacao,
+    localInstalacaoEntrada: os.localInstalacaoEntrada,
+    posChave: os.posChave,
+    posChaveEntrada: os.posChaveEntrada,
+  });
+
   return {
     id: os.id,
     status: os.statusCadastro,
@@ -181,47 +196,18 @@ function mapOS(os: OSResponse): OrdemCadastro {
       ? `${os.veiculo.marca} ${os.veiculo.modelo} (${os.veiculo.ano})`
       : "—",
     modeloAparelhoEntrada: formatModelo(os.aparelhoEntrada),
-    imei: os.idAparelho,
-    iccid: os.iccidAparelho ?? os.aparelhoEntrada?.iccid ?? null,
-    local: os.localInstalacao,
-    posChave: os.posChave,
-    imeiSaida: os.idEntrada,
-    iccidSaida: os.iccidEntrada ?? os.aparelhoSaida?.iccid ?? null,
+    imei: dev.imeiEntrada,
+    iccid: dev.iccidEntradaOs ?? os.aparelhoEntrada?.iccid ?? null,
+    local: dev.local,
+    posChave: dev.posChave,
+    imeiSaida: dev.imeiSaida,
+    iccidSaida: dev.iccidSaidaOs ?? os.aparelhoSaida?.iccid ?? null,
     modeloSaida: formatModelo(os.aparelhoSaida),
     data: formatDate(os.criadoEm),
     plataforma: os.plataforma,
     concluidoEm: os.concluidoEm ? formatDate(os.concluidoEm) : null,
     concluidoPor: os.concluidoPor?.nome ?? null,
   };
-}
-
-// ─── Period helpers ───────────────────────────────────────────────────────────
-
-function periodoParams(periodo: string): {
-  dataInicio: string;
-  dataFim: string;
-} {
-  const now = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const toISO = (d: Date) =>
-    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-
-  if (periodo === "hoje") {
-    const today = toISO(now);
-    return { dataInicio: today, dataFim: today };
-  }
-  if (periodo === "semana") {
-    const day = now.getDay();
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-    return { dataInicio: toISO(monday), dataFim: toISO(sunday) };
-  }
-  // mes
-  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  return { dataInicio: toISO(firstDay), dataFim: toISO(lastDay) };
 }
 
 // ─── Config Maps ──────────────────────────────────────────────────────────────
@@ -327,16 +313,25 @@ export function CadastroRastreamentoPage() {
   const [periodo, setPeriodo] = useState("hoje");
 
   const { dataInicio, dataFim } = useMemo(
-    () => periodoParams(periodo),
+    () =>
+      buildCadastroRastreamentoPeriodoQuery(
+        periodo as "hoje" | "semana" | "mes",
+      ),
     [periodo],
   );
 
   const { data: queryResult, isLoading } = useQuery({
     queryKey: ["cadastro-rastreamento", dataInicio, dataFim],
-    queryFn: () =>
-      api<{ data: OSResponse[]; total: number }>(
-        `/cadastro-rastreamento?dataInicio=${dataInicio}&dataFim=${dataFim}&limit=100`,
-      ),
+    queryFn: () => {
+      const q = new URLSearchParams({
+        dataInicio,
+        dataFim,
+        limit: "100",
+      });
+      return api<{ data: OSResponse[]; total: number }>(
+        `/cadastro-rastreamento?${q.toString()}`,
+      );
+    },
   });
 
   const ordens = useMemo(
@@ -657,6 +652,14 @@ export function CadastroRastreamentoPage() {
                 const isSelected = selectedId === ordem.id;
                 const cfgStatus = STATUS_CONFIG[ordem.status];
                 const cfgServico = badgeServicoColuna(ordem);
+                const saidaIgualEntradaCadastro =
+                  ordem.tipoRegistro === "CADASTRO" && !ordem.imeiSaida?.trim();
+                const imeiSaidaColuna = saidaIgualEntradaCadastro
+                  ? ordem.imei
+                  : ordem.imeiSaida;
+                const modeloSaidaColuna = saidaIgualEntradaCadastro
+                  ? ordem.modeloAparelhoEntrada
+                  : ordem.modeloSaida;
                 return (
                   <TableRow
                     key={ordem.id}
@@ -722,13 +725,13 @@ export function CadastroRastreamentoPage() {
                       )}
                     </TableCell>
                     <TableCell className="px-3 py-3">
-                      {ordem.imeiSaida ? (
+                      {imeiSaidaColuna ? (
                         <>
                           <div className="text-[10px] font-mono text-slate-600">
-                            {ordem.imeiSaida}
+                            {imeiSaidaColuna}
                           </div>
                           <div className="text-[10px] text-slate-400 mt-0.5">
-                            {ordem.modeloSaida ?? "—"}
+                            {modeloSaidaColuna ?? "—"}
                           </div>
                         </>
                       ) : (

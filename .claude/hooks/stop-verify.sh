@@ -14,7 +14,7 @@ INPUT=$(cat)
 
 # Prevent infinite loop: if this hook already blocked once and Claude
 # retried, allow the stop
-STOP_ACTIVE=$(echo "$INPUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(str(d.get('stop_hook_active', False)).lower())" 2>/dev/null || echo "false")
+STOP_ACTIVE=$(echo "$INPUT" | python -c "import json,sys; d=json.load(sys.stdin); print(str(d.get('stop_hook_active', False)).lower())" 2>/dev/null || echo "false")
 if [ "$STOP_ACTIVE" = "true" ]; then
   exit 0
 fi
@@ -49,7 +49,7 @@ run_eslint() {
 run_npm_test() {
   local dir="$1"
   if [ -f "$dir/package.json" ]; then
-    HAS_TEST=$(python3 -c "import json; d=json.load(open('$dir/package.json')); print(d.get('scripts', {}).get('test', ''))" 2>/dev/null)
+    HAS_TEST=$(python -c "import json; d=json.load(open('$dir/package.json')); print(d.get('scripts', {}).get('test', ''))" 2>/dev/null)
     if [ -n "$HAS_TEST" ] && [ "$HAS_TEST" != "echo \"Error: no test specified\" && exit 1" ]; then
       CHECKS_RUN=$((CHECKS_RUN + 1))
       TEST_OUTPUT=$(cd "$dir" && npm test 2>&1)
@@ -75,7 +75,7 @@ done
 
 # --- Root test suite (only if root has its own test script) ---
 if [ -f "package.json" ]; then
-  HAS_TEST=$(python3 -c "import json; d=json.load(open('package.json')); print(d.get('scripts', {}).get('test', ''))" 2>/dev/null)
+  HAS_TEST=$(python -c "import json; d=json.load(open('package.json')); print(d.get('scripts', {}).get('test', ''))" 2>/dev/null)
   if [ -n "$HAS_TEST" ] && [ "$HAS_TEST" != "echo \"Error: no test specified\" && exit 1" ]; then
     CHECKS_RUN=$((CHECKS_RUN + 1))
     TEST_OUTPUT=$(npm test 2>&1)
@@ -116,7 +116,7 @@ fi
 # --- Report ---
 if [ -n "$ERRORS" ]; then
   SUMMARY="Verification failed ($CHECKS_RUN checks ran). Fix these errors before completing:\n\n${ERRORS}"
-  printf '{"decision":"block","reason":"%s"}' "$(echo "$SUMMARY" | python3 -c "import json,sys; print(json.dumps(sys.stdin.read())[1:-1])")"
+  printf '{"decision":"block","reason":"%s"}' "$(echo "$SUMMARY" | python -c "import json,sys; print(json.dumps(sys.stdin.read())[1:-1])")"
   exit 2
 fi
 
