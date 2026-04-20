@@ -101,6 +101,11 @@ export function PareamentoPage() {
   const [proprietarioMassa, setProprietarioMassa] =
     useState<ProprietarioTipo>("INFINITY");
   const [clienteIdMassa, setClienteIdMassa] = useState<number | null>(null);
+  const [criarNovoRastreador, setCriarNovoRastreador] = useState(false);
+  const [criarNovoSim, setCriarNovoSim] = useState(false);
+  const [criarNovoRastreadorMassa, setCriarNovoRastreadorMassa] =
+    useState(false);
+  const [criarNovoSimMassa, setCriarNovoSimMassa] = useState(false);
 
   const imeis = useMemo(() => parseIds(textImeis), [textImeis]);
   const iccids = useMemo(() => parseIds(textIccids), [textIccids]);
@@ -340,26 +345,38 @@ export function PareamentoPage() {
         body: JSON.stringify({
           pares: paresParaEnviar,
           loteRastreadorId:
-            modo === "individual" && pertenceLoteRastreador && loteRastreadorId
+            modo === "individual" &&
+            criarNovoRastreador &&
+            pertenceLoteRastreador &&
+            loteRastreadorId
               ? +loteRastreadorId
               : modo === "massa" &&
+                  criarNovoRastreadorMassa &&
                   pertenceLoteRastreadorMassa &&
                   loteRastreadorId
                 ? +loteRastreadorId
                 : undefined,
           loteSimId:
-            modo === "individual" && pertenceLoteSim && loteSimId
+            modo === "individual" &&
+            criarNovoSim &&
+            pertenceLoteSim &&
+            loteSimId
               ? +loteSimId
-              : modo === "massa" && pertenceLoteSimMassa && loteSimId
+              : modo === "massa" &&
+                  criarNovoSimMassa &&
+                  pertenceLoteSimMassa &&
+                  loteSimId
                 ? +loteSimId
                 : undefined,
           rastreadorManual:
             modo === "individual" &&
+            criarNovoRastreador &&
             !pertenceLoteRastreador &&
             marcaRastreador &&
             modeloRastreador
               ? { marca: marcaRastreador, modelo: modeloRastreador }
               : modo === "massa" &&
+                  criarNovoRastreadorMassa &&
                   !pertenceLoteRastreadorMassa &&
                   marcaRastreadorMassa &&
                   modeloRastreadorMassa
@@ -367,6 +384,7 @@ export function PareamentoPage() {
                 : undefined,
           simManual:
             modo === "individual" &&
+            criarNovoSim &&
             !pertenceLoteSim &&
             (marcaSimcardIdSim || operadoraSim)
               ? marcaSimcardIdSim
@@ -378,6 +396,7 @@ export function PareamentoPage() {
                   }
                 : { operadora: operadoraSim }
               : modo === "massa" &&
+                  criarNovoSimMassa &&
                   !pertenceLoteSimMassa &&
                   (marcaSimcardIdSimMassa || operadoraSimMassa)
                 ? marcaSimcardIdSimMassa
@@ -403,6 +422,8 @@ export function PareamentoPage() {
       if (modo === "individual") {
         setImeiIndividual("");
         setIccidIndividual("");
+        setCriarNovoRastreador(false);
+        setCriarNovoSim(false);
         setPertenceLoteRastreador(false);
         setPertenceLoteSim(false);
         setMarcaRastreador("");
@@ -418,6 +439,8 @@ export function PareamentoPage() {
         setPreview(null);
         setTextImeis("");
         setTextIccids("");
+        setCriarNovoRastreadorMassa(false);
+        setCriarNovoSimMassa(false);
         setLoteRastreadorId("");
         setLoteSimId("");
         setPertenceLoteRastreadorMassa(true);
@@ -449,19 +472,21 @@ export function PareamentoPage() {
 
   const loteRastreadorSelecionado = useMemo(
     () =>
+      criarNovoRastreador &&
       pertenceLoteRastreador &&
       loteRastreadorId &&
       loteRastreadorId !== "_" &&
       !isNaN(Number(loteRastreadorId)),
-    [pertenceLoteRastreador, loteRastreadorId],
+    [criarNovoRastreador, pertenceLoteRastreador, loteRastreadorId],
   );
   const loteSimSelecionado = useMemo(
     () =>
+      criarNovoSim &&
       pertenceLoteSim &&
       loteSimId &&
       loteSimId !== "_" &&
       !isNaN(Number(loteSimId)),
-    [pertenceLoteSim, loteSimId],
+    [criarNovoSim, pertenceLoteSim, loteSimId],
   );
 
   const progressoVinculoIndividual = useMemo(() => {
@@ -473,12 +498,16 @@ export function PareamentoPage() {
     const iccidOk =
       iccid.length >= 1 &&
       (minIccidIndividual === 0 || iccid.length >= minIccidIndividual);
-    const rastreadorOk = pertenceLoteRastreador
-      ? loteRastreadorSelecionado
-      : !!(marcaRastreador && modeloRastreador);
-    const simOk = pertenceLoteSim
-      ? loteSimSelecionado
-      : !!(marcaSimcardIdSim || operadoraSim);
+    const rastreadorOk = criarNovoRastreador
+      ? pertenceLoteRastreador
+        ? !!loteRastreadorSelecionado
+        : !!(marcaRastreador && modeloRastreador)
+      : true;
+    const simOk = criarNovoSim
+      ? pertenceLoteSim
+        ? !!loteSimSelecionado
+        : !!(marcaSimcardIdSim || operadoraSim)
+      : true;
     const itensCompletos =
       (imeiOk ? 1 : 0) +
       (iccidOk ? 1 : 0) +
@@ -490,6 +519,8 @@ export function PareamentoPage() {
     iccidIndividual,
     minImeiIndividual,
     minIccidIndividual,
+    criarNovoRastreador,
+    criarNovoSim,
     pertenceLoteRastreador,
     pertenceLoteSim,
     loteRastreadorSelecionado,
@@ -511,12 +542,14 @@ export function PareamentoPage() {
         (l) => l.sim_status === "NEEDS_CREATE",
       );
       if (needTracker) {
+        if (!criarNovoRastreador) return false;
         const temLote = pertenceLoteRastreador && loteRastreadorId;
         const temManual =
           !pertenceLoteRastreador && marcaRastreador && modeloRastreador;
         if (!temLote && !temManual) return false;
       }
       if (needSim) {
+        if (!criarNovoSim) return false;
         const temLote = pertenceLoteSim && loteSimId;
         const temManual =
           !pertenceLoteSim && (marcaSimcardIdSim || operadoraSim);
@@ -528,6 +561,8 @@ export function PareamentoPage() {
   }, [
     podeConfirmarIndividual,
     preview,
+    criarNovoRastreador,
+    criarNovoSim,
     loteRastreadorId,
     loteSimId,
     pertenceLoteRastreador,
@@ -553,6 +588,7 @@ export function PareamentoPage() {
         (l) => l.sim_status === "NEEDS_CREATE",
       );
       if (needTracker) {
+        if (!criarNovoRastreadorMassa) return false;
         const temLote = pertenceLoteRastreadorMassa && loteRastreadorId;
         const temManual =
           !pertenceLoteRastreadorMassa &&
@@ -561,6 +597,7 @@ export function PareamentoPage() {
         if (!temLote && !temManual) return false;
       }
       if (needSim) {
+        if (!criarNovoSimMassa) return false;
         const temLote = pertenceLoteSimMassa && loteSimId;
         const temManual =
           !pertenceLoteSimMassa &&
@@ -573,6 +610,8 @@ export function PareamentoPage() {
     quantidadeBate,
     paresMassa,
     preview,
+    criarNovoRastreadorMassa,
+    criarNovoSimMassa,
     loteRastreadorId,
     loteSimId,
     pertenceLoteRastreadorMassa,
@@ -638,6 +677,8 @@ export function PareamentoPage() {
   const limparIndividual = () => {
     setImeiIndividual("");
     setIccidIndividual("");
+    setCriarNovoRastreador(false);
+    setCriarNovoSim(false);
     setPertenceLoteRastreador(false);
     setPertenceLoteSim(false);
     setMarcaRastreador("");
@@ -655,6 +696,8 @@ export function PareamentoPage() {
     setTextImeis("");
     setTextIccids("");
     setPreview(null);
+    setCriarNovoRastreadorMassa(false);
+    setCriarNovoSimMassa(false);
     setLoteRastreadorId("");
     setLoteSimId("");
     setPertenceLoteRastreadorMassa(true);
@@ -774,124 +817,146 @@ export function PareamentoPage() {
                       </div>
                       <label className="flex cursor-pointer items-center gap-2">
                         <Checkbox
-                          checked={pertenceLoteRastreador}
-                          onCheckedChange={(v) =>
-                            setPertenceLoteRastreador(!!v)
-                          }
+                          checked={criarNovoRastreador}
+                          onCheckedChange={(v) => {
+                            setCriarNovoRastreador(!!v);
+                            if (!v) {
+                              setPertenceLoteRastreador(false);
+                              setMarcaRastreador("");
+                              setModeloRastreador("");
+                              setLoteRastreadorId("");
+                            }
+                          }}
                           className="border-slate-300 data-[state=checked]:bg-erp-blue data-[state=checked]:border-erp-blue"
                         />
                         <span className="text-[11px] font-bold uppercase text-slate-600">
-                          Pertence a um lote
+                          Criar Novo
                         </span>
                       </label>
-                      {pertenceLoteRastreador ? (
-                        <div>
-                          <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-600">
-                            Lote
-                          </Label>
-                          <Select
-                            value={loteRastreadorId}
-                            onValueChange={setLoteRastreadorId}
-                            onOpenChange={(o) => {
-                              if (!o) setLoteBuscaRastreador("");
-                            }}
-                          >
-                            <SelectTrigger className="h-9">
-                              <SelectValue placeholder="Selecione o lote..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <div className="px-2 pb-1 pt-1">
-                                <Input
-                                  placeholder="Buscar lote..."
-                                  value={loteBuscaRastreador}
-                                  onChange={(e) =>
-                                    setLoteBuscaRastreador(e.target.value)
-                                  }
-                                  onKeyDown={(e) => e.stopPropagation()}
-                                  className="h-7 text-xs"
-                                />
-                              </div>
-                              {lotesRastreadoresFiltrados.map((l) => {
-                                const info = [l.marca, l.modelo]
-                                  .filter(Boolean)
-                                  .join(" / ");
-                                return (
-                                  <SelectItem
-                                    key={l.id}
-                                    value={String(l.id)}
-                                    textValue={l.referencia}
-                                  >
-                                    <span className="flex w-full items-center justify-between gap-3">
-                                      <span>{l.referencia}</span>
-                                      {info && (
-                                        <span className="text-[11px] text-slate-400">
-                                          ({info})
+                      {criarNovoRastreador && (
+                        <div className="space-y-3 pl-1">
+                          <label className="flex cursor-pointer items-center gap-2">
+                            <Checkbox
+                              checked={pertenceLoteRastreador}
+                              onCheckedChange={(v) =>
+                                setPertenceLoteRastreador(!!v)
+                              }
+                              className="border-slate-300 data-[state=checked]:bg-erp-blue data-[state=checked]:border-erp-blue"
+                            />
+                            <span className="text-[11px] font-bold uppercase text-slate-600">
+                              Pertence a um lote
+                            </span>
+                          </label>
+                          {pertenceLoteRastreador ? (
+                            <div>
+                              <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-600">
+                                Lote
+                              </Label>
+                              <Select
+                                value={loteRastreadorId}
+                                onValueChange={setLoteRastreadorId}
+                                onOpenChange={(o) => {
+                                  if (!o) setLoteBuscaRastreador("");
+                                }}
+                              >
+                                <SelectTrigger className="h-9">
+                                  <SelectValue placeholder="Selecione o lote..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <div className="px-2 pb-1 pt-1">
+                                    <Input
+                                      placeholder="Buscar lote..."
+                                      value={loteBuscaRastreador}
+                                      onChange={(e) =>
+                                        setLoteBuscaRastreador(e.target.value)
+                                      }
+                                      onKeyDown={(e) => e.stopPropagation()}
+                                      className="h-7 text-xs"
+                                    />
+                                  </div>
+                                  {lotesRastreadoresFiltrados.map((l) => {
+                                    const info = [l.marca, l.modelo]
+                                      .filter(Boolean)
+                                      .join(" / ");
+                                    return (
+                                      <SelectItem
+                                        key={l.id}
+                                        value={String(l.id)}
+                                        textValue={l.referencia}
+                                      >
+                                        <span className="flex w-full items-center justify-between gap-3">
+                                          <span>{l.referencia}</span>
+                                          {info && (
+                                            <span className="text-[11px] text-slate-400">
+                                              ({info})
+                                            </span>
+                                          )}
                                         </span>
-                                      )}
-                                    </span>
-                                  </SelectItem>
-                                );
-                              })}
-                              {lotesRastreadoresFiltrados.length === 0 && (
-                                <SelectItem value="_" disabled>
-                                  Nenhum lote encontrado
-                                </SelectItem>
-                              )}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-600">
-                              Marca (se criar novo)
-                            </Label>
-                            <Select
-                              value={marcaRastreador}
-                              onValueChange={(v) => {
-                                setMarcaRastreador(v);
-                                setModeloRastreador("");
-                              }}
-                            >
-                              <SelectTrigger className="h-9">
-                                <SelectValue placeholder="Selecione..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {marcasAtivas.map((m) => (
-                                  <SelectItem key={m.id} value={m.nome}>
-                                    {m.nome}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-600">
-                              Modelo (se criar novo)
-                            </Label>
-                            <Select
-                              value={modeloRastreador}
-                              onValueChange={setModeloRastreador}
-                              disabled={!marcaRastreador}
-                            >
-                              <SelectTrigger className="h-9">
-                                <SelectValue
-                                  placeholder={
-                                    marcaRastreador
-                                      ? "Selecione..."
-                                      : "Marca primeiro"
-                                  }
-                                />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {modelosPorMarca.map((m) => (
-                                  <SelectItem key={m.id} value={m.nome}>
-                                    {m.nome}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
+                                      </SelectItem>
+                                    );
+                                  })}
+                                  {lotesRastreadoresFiltrados.length === 0 && (
+                                    <SelectItem value="_" disabled>
+                                      Nenhum lote encontrado
+                                    </SelectItem>
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-600">
+                                  Marca (se criar novo)
+                                </Label>
+                                <Select
+                                  value={marcaRastreador}
+                                  onValueChange={(v) => {
+                                    setMarcaRastreador(v);
+                                    setModeloRastreador("");
+                                  }}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Selecione..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {marcasAtivas.map((m) => (
+                                      <SelectItem key={m.id} value={m.nome}>
+                                        {m.nome}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-600">
+                                  Modelo (se criar novo)
+                                </Label>
+                                <Select
+                                  value={modeloRastreador}
+                                  onValueChange={setModeloRastreador}
+                                  disabled={!marcaRastreador}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue
+                                      placeholder={
+                                        marcaRastreador
+                                          ? "Selecione..."
+                                          : "Marca primeiro"
+                                      }
+                                    />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {modelosPorMarca.map((m) => (
+                                      <SelectItem key={m.id} value={m.nome}>
+                                        {m.nome}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                       {preview?.linhas[0]?.tracker_status ===
@@ -953,165 +1018,188 @@ export function PareamentoPage() {
                       </div>
                       <label className="flex cursor-pointer items-center gap-2">
                         <Checkbox
-                          checked={pertenceLoteSim}
-                          onCheckedChange={(v) => setPertenceLoteSim(!!v)}
+                          checked={criarNovoSim}
+                          onCheckedChange={(v) => {
+                            setCriarNovoSim(!!v);
+                            if (!v) {
+                              setPertenceLoteSim(false);
+                              setOperadoraSim("");
+                              setMarcaSimcardIdSim("");
+                              setPlanoSimcardIdSim("");
+                              setLoteSimId("");
+                            }
+                          }}
                           className="border-slate-300 data-[state=checked]:bg-erp-blue data-[state=checked]:border-erp-blue"
                         />
                         <span className="text-[11px] font-bold uppercase text-slate-600">
-                          Pertence a um lote
+                          Criar Novo
                         </span>
                       </label>
-                      {pertenceLoteSim ? (
-                        <div>
-                          <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-600">
-                            Lote
-                          </Label>
-                          <Select
-                            value={loteSimId}
-                            onValueChange={setLoteSimId}
-                            onOpenChange={(o) => {
-                              if (!o) setLoteBuscaSim("");
-                            }}
-                          >
-                            <SelectTrigger className="h-9">
-                              <SelectValue placeholder="Selecione o lote..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <div className="px-2 pb-1 pt-1">
-                                <Input
-                                  placeholder="Buscar lote..."
-                                  value={loteBuscaSim}
-                                  onChange={(e) =>
-                                    setLoteBuscaSim(e.target.value)
-                                  }
-                                  onKeyDown={(e) => e.stopPropagation()}
-                                  className="h-7 text-xs"
-                                />
-                              </div>
-                              {lotesSimsFiltrados.map((l) => {
-                                const marcaNome =
-                                  marcasSimcard.find(
-                                    (m) => m.id === l.marcaSimcardId,
-                                  )?.nome ?? null;
-                                const info = [l.operadora, marcaNome]
-                                  .filter(Boolean)
-                                  .join(" / ");
-                                return (
-                                  <SelectItem
-                                    key={l.id}
-                                    value={String(l.id)}
-                                    textValue={l.referencia}
-                                  >
-                                    <span className="flex w-full items-center justify-between gap-3">
-                                      <span>{l.referencia}</span>
-                                      {info && (
-                                        <span className="text-[11px] text-slate-400">
-                                          ({info})
+                      {criarNovoSim && (
+                        <div className="space-y-3 pl-1">
+                          <label className="flex cursor-pointer items-center gap-2">
+                            <Checkbox
+                              checked={pertenceLoteSim}
+                              onCheckedChange={(v) => setPertenceLoteSim(!!v)}
+                              className="border-slate-300 data-[state=checked]:bg-erp-blue data-[state=checked]:border-erp-blue"
+                            />
+                            <span className="text-[11px] font-bold uppercase text-slate-600">
+                              Pertence a um lote
+                            </span>
+                          </label>
+                          {pertenceLoteSim ? (
+                            <div>
+                              <Label className="mb-1.5 block text-[10px] font-bold uppercase text-slate-600">
+                                Lote
+                              </Label>
+                              <Select
+                                value={loteSimId}
+                                onValueChange={setLoteSimId}
+                                onOpenChange={(o) => {
+                                  if (!o) setLoteBuscaSim("");
+                                }}
+                              >
+                                <SelectTrigger className="h-9">
+                                  <SelectValue placeholder="Selecione o lote..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <div className="px-2 pb-1 pt-1">
+                                    <Input
+                                      placeholder="Buscar lote..."
+                                      value={loteBuscaSim}
+                                      onChange={(e) =>
+                                        setLoteBuscaSim(e.target.value)
+                                      }
+                                      onKeyDown={(e) => e.stopPropagation()}
+                                      className="h-7 text-xs"
+                                    />
+                                  </div>
+                                  {lotesSimsFiltrados.map((l) => {
+                                    const marcaNome =
+                                      marcasSimcard.find(
+                                        (m) => m.id === l.marcaSimcardId,
+                                      )?.nome ?? null;
+                                    const info = [l.operadora, marcaNome]
+                                      .filter(Boolean)
+                                      .join(" / ");
+                                    return (
+                                      <SelectItem
+                                        key={l.id}
+                                        value={String(l.id)}
+                                        textValue={l.referencia}
+                                      >
+                                        <span className="flex w-full items-center justify-between gap-3">
+                                          <span>{l.referencia}</span>
+                                          {info && (
+                                            <span className="text-[11px] text-slate-400">
+                                              ({info})
+                                            </span>
+                                          )}
                                         </span>
-                                      )}
-                                    </span>
-                                  </SelectItem>
-                                );
-                              })}
-                              {lotesSimsFiltrados.length === 0 && (
-                                <SelectItem value="_" disabled>
-                                  Nenhum lote encontrado
-                                </SelectItem>
-                              )}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          <div>
-                            <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-600">
-                              Operadora
-                            </Label>
-                            <Select
-                              value={operadoraSim}
-                              onValueChange={(v) => {
-                                setOperadoraSim(v);
-                                setMarcaSimcardIdSim("");
-                                setPlanoSimcardIdSim("");
-                              }}
-                            >
-                              <SelectTrigger className="h-9">
-                                <SelectValue placeholder="Selecione..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {operadorasAtivas.map((o) => (
-                                  <SelectItem key={o.id} value={o.nome}>
-                                    {o.nome}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-600">
-                              Marca do Simcard
-                            </Label>
-                            <Select
-                              value={marcaSimcardIdSim}
-                              onValueChange={(v) => {
-                                setMarcaSimcardIdSim(v);
-                                setPlanoSimcardIdSim("");
-                              }}
-                              disabled={!operadoraSim}
-                            >
-                              <SelectTrigger className="h-9">
-                                <SelectValue
-                                  placeholder={
-                                    operadoraSim
-                                      ? "Ex: Getrak, 1nce..."
-                                      : "Selecione operadora"
-                                  }
-                                />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {marcasSimcardPorOperadora.map((m) => (
-                                  <SelectItem key={m.id} value={String(m.id)}>
-                                    {m.nome}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          {marcaSimcardIdSim &&
-                            (() => {
-                              const marcaSel = marcasSimcardPorOperadora.find(
-                                (m) => String(m.id) === marcaSimcardIdSim,
-                              );
-                              const planos = (marcaSel?.planos ?? []).filter(
-                                (p) => p.ativo,
-                              );
-                              return marcaSel?.temPlanos &&
-                                planos.length > 0 ? (
-                                <div>
-                                  <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-600">
-                                    Plano
-                                  </Label>
-                                  <Select
-                                    value={planoSimcardIdSim}
-                                    onValueChange={setPlanoSimcardIdSim}
-                                  >
-                                    <SelectTrigger className="h-9">
-                                      <SelectValue placeholder="Selecione o plano..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {planos.map((p) => (
-                                        <SelectItem
-                                          key={p.id}
-                                          value={String(p.id)}
-                                        >
-                                          {p.planoMb} MB
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              ) : null;
-                            })()}
+                                      </SelectItem>
+                                    );
+                                  })}
+                                  {lotesSimsFiltrados.length === 0 && (
+                                    <SelectItem value="_" disabled>
+                                      Nenhum lote encontrado
+                                    </SelectItem>
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              <div>
+                                <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-600">
+                                  Operadora
+                                </Label>
+                                <Select
+                                  value={operadoraSim}
+                                  onValueChange={(v) => {
+                                    setOperadoraSim(v);
+                                    setMarcaSimcardIdSim("");
+                                    setPlanoSimcardIdSim("");
+                                  }}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Selecione..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {operadorasAtivas.map((o) => (
+                                      <SelectItem key={o.id} value={o.nome}>
+                                        {o.nome}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-600">
+                                  Marca do Simcard
+                                </Label>
+                                <Select
+                                  value={marcaSimcardIdSim}
+                                  onValueChange={(v) => {
+                                    setMarcaSimcardIdSim(v);
+                                    setPlanoSimcardIdSim("");
+                                  }}
+                                  disabled={!operadoraSim}
+                                >
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue
+                                      placeholder={
+                                        operadoraSim
+                                          ? "Ex: Getrak, 1nce..."
+                                          : "Selecione operadora"
+                                      }
+                                    />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {marcasSimcardPorOperadora.map((m) => (
+                                      <SelectItem key={m.id} value={String(m.id)}>
+                                        {m.nome}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              {marcaSimcardIdSim &&
+                                (() => {
+                                  const marcaSel = marcasSimcardPorOperadora.find(
+                                    (m) => String(m.id) === marcaSimcardIdSim,
+                                  );
+                                  const planos = (marcaSel?.planos ?? []).filter(
+                                    (p) => p.ativo,
+                                  );
+                                  return marcaSel?.temPlanos &&
+                                    planos.length > 0 ? (
+                                    <div>
+                                      <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-600">
+                                        Plano
+                                      </Label>
+                                      <Select
+                                        value={planoSimcardIdSim}
+                                        onValueChange={setPlanoSimcardIdSim}
+                                      >
+                                        <SelectTrigger className="h-9">
+                                          <SelectValue placeholder="Selecione o plano..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {planos.map((p) => (
+                                            <SelectItem
+                                              key={p.id}
+                                              value={String(p.id)}
+                                            >
+                                              {p.planoMb} MB
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  ) : null;
+                                })()}
+                            </div>
+                          )}
                         </div>
                       )}
                       {preview?.linhas[0]?.sim_status === "FOUND_AVAILABLE" && (
@@ -1507,119 +1595,141 @@ export function PareamentoPage() {
                         </div>
                         <label className="flex cursor-pointer items-center gap-2">
                           <Checkbox
-                            checked={pertenceLoteRastreadorMassa}
-                            onCheckedChange={(v) =>
-                              setPertenceLoteRastreadorMassa(!!v)
-                            }
+                            checked={criarNovoRastreadorMassa}
+                            onCheckedChange={(v) => {
+                              setCriarNovoRastreadorMassa(!!v);
+                              if (!v) {
+                                setPertenceLoteRastreadorMassa(true);
+                                setMarcaRastreadorMassa("");
+                                setModeloRastreadorMassa("");
+                                setLoteRastreadorId("");
+                              }
+                            }}
                             className="border-slate-300 data-[state=checked]:bg-erp-blue data-[state=checked]:border-erp-blue"
                           />
                           <span className="text-[11px] font-bold uppercase text-slate-600">
-                            Pertence a um lote
+                            Criar Novo
                           </span>
                         </label>
-                        {pertenceLoteRastreadorMassa ? (
-                          <Select
-                            value={loteRastreadorId}
-                            onValueChange={setLoteRastreadorId}
-                            onOpenChange={(o) => {
-                              if (!o) setLoteBuscaRastreador("");
-                            }}
-                          >
-                            <SelectTrigger className="h-9">
-                              <SelectValue placeholder="Selecione o lote..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <div className="px-2 pb-1 pt-1">
-                                <Input
-                                  placeholder="Buscar lote..."
-                                  value={loteBuscaRastreador}
-                                  onChange={(e) =>
-                                    setLoteBuscaRastreador(e.target.value)
-                                  }
-                                  onKeyDown={(e) => e.stopPropagation()}
-                                  className="h-7 text-xs"
-                                />
-                              </div>
-                              {lotesRastreadoresFiltrados.map((l) => {
-                                const info = [l.marca, l.modelo]
-                                  .filter(Boolean)
-                                  .join(" / ");
-                                return (
-                                  <SelectItem
-                                    key={l.id}
-                                    value={String(l.id)}
-                                    textValue={l.referencia}
-                                  >
-                                    <span className="flex w-full items-center justify-between gap-3">
-                                      <span>{l.referencia}</span>
-                                      {info && (
-                                        <span className="text-[11px] text-slate-400">
-                                          ({info})
-                                        </span>
-                                      )}
-                                    </span>
-                                  </SelectItem>
-                                );
-                              })}
-                              {lotesRastreadoresFiltrados.length === 0 && (
-                                <SelectItem value="_" disabled>
-                                  Nenhum lote encontrado
-                                </SelectItem>
-                              )}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <Label className="mb-1 block text-[10px] font-bold text-slate-500">
-                                Marca
-                              </Label>
+                        {criarNovoRastreadorMassa && (
+                          <div className="space-y-3 pl-1">
+                            <label className="flex cursor-pointer items-center gap-2">
+                              <Checkbox
+                                checked={pertenceLoteRastreadorMassa}
+                                onCheckedChange={(v) =>
+                                  setPertenceLoteRastreadorMassa(!!v)
+                                }
+                                className="border-slate-300 data-[state=checked]:bg-erp-blue data-[state=checked]:border-erp-blue"
+                              />
+                              <span className="text-[11px] font-bold uppercase text-slate-600">
+                                Pertence a um lote
+                              </span>
+                            </label>
+                            {pertenceLoteRastreadorMassa ? (
                               <Select
-                                value={marcaRastreadorMassa}
-                                onValueChange={(v) => {
-                                  setMarcaRastreadorMassa(v);
-                                  setModeloRastreadorMassa("");
+                                value={loteRastreadorId}
+                                onValueChange={setLoteRastreadorId}
+                                onOpenChange={(o) => {
+                                  if (!o) setLoteBuscaRastreador("");
                                 }}
                               >
                                 <SelectTrigger className="h-9">
-                                  <SelectValue placeholder="Selecione..." />
+                                  <SelectValue placeholder="Selecione o lote..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {marcasAtivas.map((m) => (
-                                    <SelectItem key={m.id} value={m.nome}>
-                                      {m.nome}
+                                  <div className="px-2 pb-1 pt-1">
+                                    <Input
+                                      placeholder="Buscar lote..."
+                                      value={loteBuscaRastreador}
+                                      onChange={(e) =>
+                                        setLoteBuscaRastreador(e.target.value)
+                                      }
+                                      onKeyDown={(e) => e.stopPropagation()}
+                                      className="h-7 text-xs"
+                                    />
+                                  </div>
+                                  {lotesRastreadoresFiltrados.map((l) => {
+                                    const info = [l.marca, l.modelo]
+                                      .filter(Boolean)
+                                      .join(" / ");
+                                    return (
+                                      <SelectItem
+                                        key={l.id}
+                                        value={String(l.id)}
+                                        textValue={l.referencia}
+                                      >
+                                        <span className="flex w-full items-center justify-between gap-3">
+                                          <span>{l.referencia}</span>
+                                          {info && (
+                                            <span className="text-[11px] text-slate-400">
+                                              ({info})
+                                            </span>
+                                          )}
+                                        </span>
+                                      </SelectItem>
+                                    );
+                                  })}
+                                  {lotesRastreadoresFiltrados.length === 0 && (
+                                    <SelectItem value="_" disabled>
+                                      Nenhum lote encontrado
                                     </SelectItem>
-                                  ))}
+                                  )}
                                 </SelectContent>
                               </Select>
-                            </div>
-                            <div>
-                              <Label className="mb-1 block text-[10px] font-bold text-slate-500">
-                                Modelo
-                              </Label>
-                              <Select
-                                value={modeloRastreadorMassa}
-                                onValueChange={setModeloRastreadorMassa}
-                                disabled={!marcaRastreadorMassa}
-                              >
-                                <SelectTrigger className="h-9">
-                                  <SelectValue
-                                    placeholder={
-                                      marcaRastreadorMassa
-                                        ? "Selecione..."
-                                        : "Marca primeiro"
-                                    }
-                                  />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {modelosPorMarcaMassa.map((m) => (
-                                    <SelectItem key={m.id} value={m.nome}>
-                                      {m.nome}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
+                            ) : (
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <Label className="mb-1 block text-[10px] font-bold text-slate-500">
+                                    Marca
+                                  </Label>
+                                  <Select
+                                    value={marcaRastreadorMassa}
+                                    onValueChange={(v) => {
+                                      setMarcaRastreadorMassa(v);
+                                      setModeloRastreadorMassa("");
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-9">
+                                      <SelectValue placeholder="Selecione..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {marcasAtivas.map((m) => (
+                                        <SelectItem key={m.id} value={m.nome}>
+                                          {m.nome}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div>
+                                  <Label className="mb-1 block text-[10px] font-bold text-slate-500">
+                                    Modelo
+                                  </Label>
+                                  <Select
+                                    value={modeloRastreadorMassa}
+                                    onValueChange={setModeloRastreadorMassa}
+                                    disabled={!marcaRastreadorMassa}
+                                  >
+                                    <SelectTrigger className="h-9">
+                                      <SelectValue
+                                        placeholder={
+                                          marcaRastreadorMassa
+                                            ? "Selecione..."
+                                            : "Marca primeiro"
+                                        }
+                                      />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {modelosPorMarcaMassa.map((m) => (
+                                        <SelectItem key={m.id} value={m.nome}>
+                                          {m.nome}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1637,164 +1747,187 @@ export function PareamentoPage() {
                         </div>
                         <label className="flex cursor-pointer items-center gap-2">
                           <Checkbox
-                            checked={pertenceLoteSimMassa}
-                            onCheckedChange={(v) =>
-                              setPertenceLoteSimMassa(!!v)
-                            }
+                            checked={criarNovoSimMassa}
+                            onCheckedChange={(v) => {
+                              setCriarNovoSimMassa(!!v);
+                              if (!v) {
+                                setPertenceLoteSimMassa(true);
+                                setOperadoraSimMassa("");
+                                setMarcaSimcardIdSimMassa("");
+                                setPlanoSimcardIdSimMassa("");
+                                setLoteSimId("");
+                              }
+                            }}
                             className="border-slate-300 data-[state=checked]:bg-erp-blue data-[state=checked]:border-erp-blue"
                           />
                           <span className="text-[11px] font-bold uppercase text-slate-600">
-                            Pertence a um lote
+                            Criar Novo
                           </span>
                         </label>
-                        {pertenceLoteSimMassa ? (
-                          <Select
-                            value={loteSimId}
-                            onValueChange={setLoteSimId}
-                            onOpenChange={(o) => {
-                              if (!o) setLoteBuscaSim("");
-                            }}
-                          >
-                            <SelectTrigger className="h-9">
-                              <SelectValue placeholder="Selecione o lote..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <div className="px-2 pb-1 pt-1">
-                                <Input
-                                  placeholder="Buscar lote..."
-                                  value={loteBuscaSim}
-                                  onChange={(e) =>
-                                    setLoteBuscaSim(e.target.value)
-                                  }
-                                  onKeyDown={(e) => e.stopPropagation()}
-                                  className="h-7 text-xs"
-                                />
-                              </div>
-                              {lotesSimsFiltrados.map((l) => {
-                                const marcaNome =
-                                  marcasSimcard.find(
-                                    (m) => m.id === l.marcaSimcardId,
-                                  )?.nome ?? null;
-                                const info = [l.operadora, marcaNome]
-                                  .filter(Boolean)
-                                  .join(" / ");
-                                return (
-                                  <SelectItem
-                                    key={l.id}
-                                    value={String(l.id)}
-                                    textValue={l.referencia}
-                                  >
-                                    <span className="flex w-full items-center justify-between gap-3">
-                                      <span>{l.referencia}</span>
-                                      {info && (
-                                        <span className="text-[11px] text-slate-400">
-                                          ({info})
-                                        </span>
-                                      )}
-                                    </span>
-                                  </SelectItem>
-                                );
-                              })}
-                              {lotesSimsFiltrados.length === 0 && (
-                                <SelectItem value="_" disabled>
-                                  Nenhum lote encontrado
-                                </SelectItem>
-                              )}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <div className="space-y-3">
-                            <div>
-                              <Label className="mb-1 block text-[10px] font-bold text-slate-500">
-                                Operadora
-                              </Label>
+                        {criarNovoSimMassa && (
+                          <div className="space-y-3 pl-1">
+                            <label className="flex cursor-pointer items-center gap-2">
+                              <Checkbox
+                                checked={pertenceLoteSimMassa}
+                                onCheckedChange={(v) =>
+                                  setPertenceLoteSimMassa(!!v)
+                                }
+                                className="border-slate-300 data-[state=checked]:bg-erp-blue data-[state=checked]:border-erp-blue"
+                              />
+                              <span className="text-[11px] font-bold uppercase text-slate-600">
+                                Pertence a um lote
+                              </span>
+                            </label>
+                            {pertenceLoteSimMassa ? (
                               <Select
-                                value={operadoraSimMassa}
-                                onValueChange={(v) => {
-                                  setOperadoraSimMassa(v);
-                                  setMarcaSimcardIdSimMassa("");
-                                  setPlanoSimcardIdSimMassa("");
+                                value={loteSimId}
+                                onValueChange={setLoteSimId}
+                                onOpenChange={(o) => {
+                                  if (!o) setLoteBuscaSim("");
                                 }}
                               >
                                 <SelectTrigger className="h-9">
-                                  <SelectValue placeholder="Selecione..." />
+                                  <SelectValue placeholder="Selecione o lote..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {operadorasAtivas.map((o) => (
-                                    <SelectItem key={o.id} value={o.nome}>
-                                      {o.nome}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <Label className="mb-1 block text-[10px] font-bold text-slate-500">
-                                Marca do Simcard
-                              </Label>
-                              <Select
-                                value={marcaSimcardIdSimMassa}
-                                onValueChange={(v) => {
-                                  setMarcaSimcardIdSimMassa(v);
-                                  setPlanoSimcardIdSimMassa("");
-                                }}
-                                disabled={!operadoraSimMassa}
-                              >
-                                <SelectTrigger className="h-9">
-                                  <SelectValue
-                                    placeholder={
-                                      operadoraSimMassa
-                                        ? "Ex: Getrak, 1nce..."
-                                        : "Selecione operadora"
-                                    }
-                                  />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {marcasSimcardPorOperadoraMassa.map((m) => (
-                                    <SelectItem key={m.id} value={String(m.id)}>
-                                      {m.nome}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            {marcaSimcardIdSimMassa &&
-                              (() => {
-                                const marcaSel =
-                                  marcasSimcardPorOperadoraMassa.find(
-                                    (m) =>
-                                      String(m.id) === marcaSimcardIdSimMassa,
-                                  );
-                                const planos = (marcaSel?.planos ?? []).filter(
-                                  (p) => p.ativo,
-                                );
-                                return marcaSel?.temPlanos &&
-                                  planos.length > 0 ? (
-                                  <div>
-                                    <Label className="mb-1 block text-[10px] font-bold text-slate-500">
-                                      Plano
-                                    </Label>
-                                    <Select
-                                      value={planoSimcardIdSimMassa}
-                                      onValueChange={setPlanoSimcardIdSimMassa}
-                                    >
-                                      <SelectTrigger className="h-9">
-                                        <SelectValue placeholder="Selecione o plano..." />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {planos.map((p) => (
-                                          <SelectItem
-                                            key={p.id}
-                                            value={String(p.id)}
-                                          >
-                                            {p.planoMb} MB
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
+                                  <div className="px-2 pb-1 pt-1">
+                                    <Input
+                                      placeholder="Buscar lote..."
+                                      value={loteBuscaSim}
+                                      onChange={(e) =>
+                                        setLoteBuscaSim(e.target.value)
+                                      }
+                                      onKeyDown={(e) => e.stopPropagation()}
+                                      className="h-7 text-xs"
+                                    />
                                   </div>
-                                ) : null;
-                              })()}
+                                  {lotesSimsFiltrados.map((l) => {
+                                    const marcaNome =
+                                      marcasSimcard.find(
+                                        (m) => m.id === l.marcaSimcardId,
+                                      )?.nome ?? null;
+                                    const info = [l.operadora, marcaNome]
+                                      .filter(Boolean)
+                                      .join(" / ");
+                                    return (
+                                      <SelectItem
+                                        key={l.id}
+                                        value={String(l.id)}
+                                        textValue={l.referencia}
+                                      >
+                                        <span className="flex w-full items-center justify-between gap-3">
+                                          <span>{l.referencia}</span>
+                                          {info && (
+                                            <span className="text-[11px] text-slate-400">
+                                              ({info})
+                                            </span>
+                                          )}
+                                        </span>
+                                      </SelectItem>
+                                    );
+                                  })}
+                                  {lotesSimsFiltrados.length === 0 && (
+                                    <SelectItem value="_" disabled>
+                                      Nenhum lote encontrado
+                                    </SelectItem>
+                                  )}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <div className="space-y-3">
+                                <div>
+                                  <Label className="mb-1 block text-[10px] font-bold text-slate-500">
+                                    Operadora
+                                  </Label>
+                                  <Select
+                                    value={operadoraSimMassa}
+                                    onValueChange={(v) => {
+                                      setOperadoraSimMassa(v);
+                                      setMarcaSimcardIdSimMassa("");
+                                      setPlanoSimcardIdSimMassa("");
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-9">
+                                      <SelectValue placeholder="Selecione..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {operadorasAtivas.map((o) => (
+                                        <SelectItem key={o.id} value={o.nome}>
+                                          {o.nome}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div>
+                                  <Label className="mb-1 block text-[10px] font-bold text-slate-500">
+                                    Marca do Simcard
+                                  </Label>
+                                  <Select
+                                    value={marcaSimcardIdSimMassa}
+                                    onValueChange={(v) => {
+                                      setMarcaSimcardIdSimMassa(v);
+                                      setPlanoSimcardIdSimMassa("");
+                                    }}
+                                    disabled={!operadoraSimMassa}
+                                  >
+                                    <SelectTrigger className="h-9">
+                                      <SelectValue
+                                        placeholder={
+                                          operadoraSimMassa
+                                            ? "Ex: Getrak, 1nce..."
+                                            : "Selecione operadora"
+                                        }
+                                      />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {marcasSimcardPorOperadoraMassa.map((m) => (
+                                        <SelectItem key={m.id} value={String(m.id)}>
+                                          {m.nome}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                {marcaSimcardIdSimMassa &&
+                                  (() => {
+                                    const marcaSel =
+                                      marcasSimcardPorOperadoraMassa.find(
+                                        (m) =>
+                                          String(m.id) === marcaSimcardIdSimMassa,
+                                      );
+                                    const planos = (marcaSel?.planos ?? []).filter(
+                                      (p) => p.ativo,
+                                    );
+                                    return marcaSel?.temPlanos &&
+                                      planos.length > 0 ? (
+                                      <div>
+                                        <Label className="mb-1 block text-[10px] font-bold text-slate-500">
+                                          Plano
+                                        </Label>
+                                        <Select
+                                          value={planoSimcardIdSimMassa}
+                                          onValueChange={setPlanoSimcardIdSimMassa}
+                                        >
+                                          <SelectTrigger className="h-9">
+                                            <SelectValue placeholder="Selecione o plano..." />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {planos.map((p) => (
+                                              <SelectItem
+                                                key={p.id}
+                                                value={String(p.id)}
+                                              >
+                                                {p.planoMb} MB
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    ) : null;
+                                  })()}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
