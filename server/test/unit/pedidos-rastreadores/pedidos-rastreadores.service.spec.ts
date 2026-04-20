@@ -634,6 +634,253 @@ describe('PedidosRastreadoresService', () => {
       });
     });
 
+    it('MISTO com técnico ao atingir ENTREGUE vincula tecnicoId nos aparelhos', async () => {
+      const pedidoComTecnico = {
+        id: 1,
+        codigo: 'PED-0001',
+        status: StatusPedidoRastreador.DESPACHADO,
+        tipoDestino: 'MISTO' as TipoDestinoPedido,
+        kitIds: [10],
+        tecnicoId: 5,
+        clienteId: null,
+        tecnico: { id: 5, nome: 'Ismael Vieira' },
+        subcliente: null,
+        historico: [],
+      };
+      const aparelhosNoKit = [
+        {
+          id: 201,
+          kitId: 10,
+          status: StatusAparelho.DESPACHADO,
+          tipo: 'RASTREADOR',
+          simVinculadoId: null,
+        },
+      ];
+      prisma.pedidoRastreador.findUnique
+        .mockResolvedValueOnce(pedidoComTecnico)
+        .mockResolvedValueOnce({
+          ...pedidoComTecnico,
+          status: StatusPedidoRastreador.ENTREGUE,
+        });
+      prisma.pedidoRastreador.update.mockResolvedValue({});
+      prisma.aparelho.findMany.mockResolvedValue(aparelhosNoKit);
+      prisma.aparelhoHistorico.create.mockResolvedValue({});
+      prisma.aparelho.update.mockResolvedValue({});
+      (prisma as any).pedidoRastreadorAparelho.findMany.mockResolvedValue([
+        {
+          aparelhoId: 201,
+          destinatarioProprietario: 'INFINITY',
+          destinatarioClienteId: null,
+        },
+      ]);
+
+      await service.updateStatus(1, {
+        status: StatusPedidoRastreador.ENTREGUE,
+      });
+
+      expect(prisma.aparelho.update).toHaveBeenCalledWith({
+        where: { id: 201 },
+        data: expect.objectContaining({
+          status: StatusAparelho.COM_TECNICO,
+          tecnicoId: 5,
+        }),
+      });
+    });
+
+    it('MISTO com técnico ao atingir ENTREGUE vincula tecnicoId em aparelhos de proprietário CLIENTE', async () => {
+      const pedidoComTecnico = {
+        id: 1,
+        codigo: 'PED-0001',
+        status: StatusPedidoRastreador.DESPACHADO,
+        tipoDestino: 'MISTO' as TipoDestinoPedido,
+        kitIds: [10],
+        tecnicoId: 5,
+        clienteId: null,
+        tecnico: { id: 5, nome: 'Ismael Vieira' },
+        subcliente: null,
+        historico: [],
+      };
+      const aparelhosNoKit = [
+        {
+          id: 301,
+          kitId: 10,
+          status: StatusAparelho.DESPACHADO,
+          tipo: 'RASTREADOR',
+          simVinculadoId: null,
+          proprietario: 'CLIENTE',
+          clienteId: 7,
+          marca: null,
+          modelo: null,
+        },
+      ];
+      prisma.pedidoRastreador.findUnique
+        .mockResolvedValueOnce(pedidoComTecnico)
+        .mockResolvedValueOnce({
+          ...pedidoComTecnico,
+          status: StatusPedidoRastreador.ENTREGUE,
+        });
+      prisma.pedidoRastreador.update.mockResolvedValue({});
+      prisma.aparelho.findMany.mockResolvedValue(aparelhosNoKit);
+      prisma.aparelhoHistorico.create.mockResolvedValue({});
+      prisma.aparelho.update.mockResolvedValue({});
+      (prisma as any).pedidoRastreadorAparelho.findMany.mockResolvedValue([
+        {
+          aparelhoId: 301,
+          destinatarioProprietario: 'CLIENTE',
+          destinatarioClienteId: 7,
+        },
+      ]);
+
+      await service.updateStatus(1, {
+        status: StatusPedidoRastreador.ENTREGUE,
+      });
+
+      expect(prisma.aparelho.update).toHaveBeenCalledWith({
+        where: { id: 301 },
+        data: expect.objectContaining({
+          status: StatusAparelho.COM_TECNICO,
+          tecnicoId: 5,
+        }),
+      });
+    });
+
+    it('MISTO com técnico ao atingir ENTREGUE vincula tecnicoId em todos os aparelhos independente do proprietário', async () => {
+      const pedidoComTecnico = {
+        id: 1,
+        codigo: 'PED-0001',
+        status: StatusPedidoRastreador.DESPACHADO,
+        tipoDestino: 'MISTO' as TipoDestinoPedido,
+        kitIds: [10],
+        tecnicoId: 5,
+        clienteId: null,
+        tecnico: { id: 5, nome: 'Ismael Vieira' },
+        subcliente: null,
+        historico: [],
+      };
+      const aparelhosNoKit = [
+        {
+          id: 201,
+          kitId: 10,
+          status: StatusAparelho.DESPACHADO,
+          tipo: 'RASTREADOR',
+          simVinculadoId: null,
+          proprietario: 'INFINITY',
+          clienteId: null,
+          marca: null,
+          modelo: null,
+        },
+        {
+          id: 202,
+          kitId: 10,
+          status: StatusAparelho.DESPACHADO,
+          tipo: 'RASTREADOR',
+          simVinculadoId: null,
+          proprietario: 'CLIENTE',
+          clienteId: 7,
+          marca: null,
+          modelo: null,
+        },
+      ];
+      prisma.pedidoRastreador.findUnique
+        .mockResolvedValueOnce(pedidoComTecnico)
+        .mockResolvedValueOnce({
+          ...pedidoComTecnico,
+          status: StatusPedidoRastreador.ENTREGUE,
+        });
+      prisma.pedidoRastreador.update.mockResolvedValue({});
+      prisma.aparelho.findMany.mockResolvedValue(aparelhosNoKit);
+      prisma.aparelhoHistorico.create.mockResolvedValue({});
+      prisma.aparelho.update.mockResolvedValue({});
+      (prisma as any).pedidoRastreadorAparelho.findMany.mockResolvedValue([
+        {
+          aparelhoId: 201,
+          destinatarioProprietario: 'INFINITY',
+          destinatarioClienteId: null,
+        },
+        {
+          aparelhoId: 202,
+          destinatarioProprietario: 'CLIENTE',
+          destinatarioClienteId: 7,
+        },
+      ]);
+
+      await service.updateStatus(1, {
+        status: StatusPedidoRastreador.ENTREGUE,
+      });
+
+      expect(prisma.aparelho.update).toHaveBeenCalledWith({
+        where: { id: 201 },
+        data: expect.objectContaining({
+          status: StatusAparelho.COM_TECNICO,
+          tecnicoId: 5,
+        }),
+      });
+      expect(prisma.aparelho.update).toHaveBeenCalledWith({
+        where: { id: 202 },
+        data: expect.objectContaining({
+          status: StatusAparelho.COM_TECNICO,
+          tecnicoId: 5,
+        }),
+      });
+    });
+
+    it('MISTO com técnico ao atingir DESPACHADO não vincula tecnicoId nos aparelhos', async () => {
+      const pedidoComTecnico = {
+        id: 1,
+        codigo: 'PED-0001',
+        status: StatusPedidoRastreador.CONFIGURADO,
+        tipoDestino: 'MISTO' as TipoDestinoPedido,
+        kitIds: [10],
+        tecnicoId: 5,
+        clienteId: null,
+        tecnico: { id: 5, nome: 'Ismael Vieira' },
+        subcliente: null,
+        historico: [],
+      };
+      const aparelhosNoKit = [
+        {
+          id: 201,
+          kitId: 10,
+          status: StatusAparelho.CONFIGURADO,
+          tipo: 'RASTREADOR',
+          simVinculadoId: null,
+          proprietario: 'INFINITY',
+          clienteId: null,
+          marca: null,
+          modelo: null,
+        },
+      ];
+      prisma.pedidoRastreador.findUnique
+        .mockResolvedValueOnce(pedidoComTecnico)
+        .mockResolvedValueOnce({
+          ...pedidoComTecnico,
+          status: StatusPedidoRastreador.DESPACHADO,
+        });
+      prisma.pedidoRastreador.update.mockResolvedValue({});
+      prisma.aparelho.findMany.mockResolvedValue(aparelhosNoKit);
+      prisma.aparelhoHistorico.create.mockResolvedValue({});
+      prisma.aparelho.update.mockResolvedValue({});
+      (prisma as any).pedidoRastreadorAparelho.findMany.mockResolvedValue([
+        {
+          aparelhoId: 201,
+          destinatarioProprietario: 'INFINITY',
+          destinatarioClienteId: null,
+        },
+      ]);
+
+      await service.updateStatus(1, {
+        status: StatusPedidoRastreador.DESPACHADO,
+      });
+
+      expect(prisma.aparelho.update).toHaveBeenCalledWith({
+        where: { id: 201 },
+        data: expect.objectContaining({
+          status: StatusAparelho.DESPACHADO,
+          tecnicoId: null,
+        }),
+      });
+    });
+
     it('MISTO ao retroceder de DESPACHADO para CONFIGURADO lança BadRequestException', async () => {
       const pedidoDespachado = {
         id: 1,
@@ -652,6 +899,84 @@ describe('PedidosRastreadoresService', () => {
 
       await expect(
         service.updateStatus(1, { status: StatusPedidoRastreador.CONFIGURADO }),
+      ).rejects.toThrow(
+        'Não é possível retroceder um pedido que já foi despachado.',
+      );
+    });
+
+    it('avança de DESPACHADO para ENTREGUE sem lançar exceção', async () => {
+      const pedidoDespachado = {
+        id: 1,
+        codigo: 'PED-0001',
+        status: StatusPedidoRastreador.DESPACHADO,
+        kitIds: null,
+        tecnicoId: 5,
+        tecnico: { id: 5 },
+        subcliente: null,
+        historico: [],
+      };
+      prisma.pedidoRastreador.findUnique
+        .mockResolvedValueOnce(pedidoDespachado)
+        .mockResolvedValueOnce({
+          ...pedidoDespachado,
+          status: StatusPedidoRastreador.ENTREGUE,
+        });
+      prisma.pedidoRastreador.update.mockResolvedValue({});
+
+      await service.updateStatus(1, {
+        status: StatusPedidoRastreador.ENTREGUE,
+      });
+
+      expect(prisma.pedidoRastreador.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: expect.objectContaining({
+          status: StatusPedidoRastreador.ENTREGUE,
+          entregueEm: expect.any(Date),
+        }),
+      });
+    });
+
+    it('retroceder de DESPACHADO para SOLICITADO lança BadRequestException', async () => {
+      const pedidoDespachado = {
+        id: 1,
+        codigo: 'PED-0001',
+        status: StatusPedidoRastreador.DESPACHADO,
+        kitIds: null,
+        tecnicoId: null,
+        tecnico: null,
+        subcliente: null,
+        historico: [],
+      };
+      prisma.pedidoRastreador.findUnique.mockResolvedValueOnce(
+        pedidoDespachado,
+      );
+
+      await expect(
+        service.updateStatus(1, { status: StatusPedidoRastreador.SOLICITADO }),
+      ).rejects.toThrow(
+        'Não é possível retroceder um pedido que já foi despachado.',
+      );
+    });
+
+    it('retroceder de DESPACHADO para EM_CONFIGURACAO lança BadRequestException', async () => {
+      const pedidoDespachado = {
+        id: 1,
+        codigo: 'PED-0001',
+        status: StatusPedidoRastreador.DESPACHADO,
+        kitIds: null,
+        tecnicoId: null,
+        tecnico: null,
+        subcliente: null,
+        historico: [],
+      };
+      prisma.pedidoRastreador.findUnique.mockResolvedValueOnce(
+        pedidoDespachado,
+      );
+
+      await expect(
+        service.updateStatus(1, {
+          status: StatusPedidoRastreador.EM_CONFIGURACAO,
+        }),
       ).rejects.toThrow(
         'Não é possível retroceder um pedido que já foi despachado.',
       );
