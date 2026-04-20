@@ -338,6 +338,45 @@ export class AparelhosService {
       operadoraSim = marcaSim.operadora.nome;
     }
 
+    // SIMs always belong to Infinity — no client ownership, no debt abatement
+    if (tipo === 'SIM') {
+      return this.prisma.$transaction(async (tx) => {
+        const aparelho = await tx.aparelho.create({
+          data: {
+            tipo: 'SIM',
+            identificador,
+            status: 'EM_ESTOQUE',
+            proprietario: 'INFINITY',
+            clienteId: null,
+            operadora: operadoraSim ?? null,
+            marcaSimcardId: marcaSimcardId ?? null,
+            planoSimcardId: planoSimcardId ?? null,
+            tecnicoId: tecnicoId || null,
+          },
+          include: {
+            tecnico: { select: { id: true, nome: true } },
+          },
+        });
+        await tx.aparelhoHistorico.create({
+          data: {
+            aparelhoId: aparelho.id,
+            statusAnterior: 'EM_ESTOQUE',
+            statusNovo: 'EM_ESTOQUE',
+            observacao: [
+              `Entrada individual - Origem: ${origem}`,
+              responsavelEntrega ? `Responsável: ${responsavelEntrega}` : null,
+              notaFiscal ? `Nota Fiscal: ${notaFiscal}` : null,
+              'Vinculado à Infinity',
+              observacoes ? `Obs: ${observacoes}` : null,
+            ]
+              .filter(Boolean)
+              .join(' | '),
+          },
+        });
+        return aparelho;
+      });
+    }
+
     // If abating a debt, override the owner to the creditor
     let finalProprietario: ProprietarioTipo = proprietario ?? 'INFINITY';
     let finalClienteId: number | null =
@@ -381,11 +420,11 @@ export class AparelhosService {
           status: statusAparelho,
           proprietario: finalProprietario,
           clienteId: finalClienteId,
-          marca: tipo === 'RASTREADOR' ? marca : null,
-          modelo: tipo === 'RASTREADOR' ? modelo : null,
-          operadora: tipo === 'SIM' ? operadoraSim : null,
-          marcaSimcardId: tipo === 'SIM' ? (marcaSimcardId ?? null) : null,
-          planoSimcardId: tipo === 'SIM' ? (planoSimcardId ?? null) : null,
+          marca: marca ?? null,
+          modelo: modelo ?? null,
+          operadora: null,
+          marcaSimcardId: null,
+          planoSimcardId: null,
           tecnicoId: tecnicoId || null,
         },
         include: {

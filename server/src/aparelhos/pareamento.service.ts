@@ -376,7 +376,11 @@ export class PareamentoService {
         });
         await tx.aparelho.update({
           where: { id: simId },
-          data: { status: 'CONFIGURADO' },
+          data: {
+            status: 'CONFIGURADO',
+            proprietario: 'INFINITY',
+            clienteId: null,
+          },
         });
 
         if (rastreadorAnterior) {
