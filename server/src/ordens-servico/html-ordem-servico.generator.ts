@@ -35,6 +35,8 @@ type OsParaHtml = {
   localInstalacao?: string | null;
   posChave?: string | null;
   idEntrada?: string | null;
+  localInstalacaoEntrada?: string | null;
+  posChaveEntrada?: string | null;
   aparelhoEncontrado?: boolean | null;
   cliente: { nome: string; nomeFantasia?: string | null };
   subcliente?: SubclienteParaExibicao | null;
@@ -206,6 +208,20 @@ export class HtmlOrdemServicoGenerator {
     ].includes(d.status);
     const posChaveLabel =
       d.posChave === 'SIM' ? 'Sim' : d.posChave === 'NAO' ? 'Não' : '-';
+    // Em REVISÃO, os valores "de entrada" (aparelho novo escolhido nos testes)
+    // ficam em campos dedicados; para os demais tipos caímos nos campos base.
+    const posChaveEntradaSrc = isRevisao
+      ? (d.posChaveEntrada ?? d.posChave)
+      : d.posChave;
+    const posChaveEntradaLabel =
+      posChaveEntradaSrc === 'SIM'
+        ? 'Sim'
+        : posChaveEntradaSrc === 'NAO'
+          ? 'Não'
+          : '-';
+    const localInstalacaoEntradaSrc = isRevisao
+      ? (d.localInstalacaoEntrada ?? d.localInstalacao)
+      : d.localInstalacao;
     let aparelhoEncontradoLabel = '-';
     if (d.aparelhoEncontrado === true) aparelhoEncontradoLabel = 'Sim';
     else if (d.aparelhoEncontrado === false) aparelhoEncontradoLabel = 'Não';
@@ -388,9 +404,9 @@ export class HtmlOrdemServicoGenerator {
           <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1 justify-center text-center">
             <span><span class="label-title">ID de entrada:</span> <span class="field-value">${esc(idEntradaVal) || '-'}</span></span>
             <span class="text-gray-400">|</span>
-            <span><span class="label-title">Local:</span> <span class="field-value">${esc(d.localInstalacao) || '-'}</span></span>
+            <span><span class="label-title">Local:</span> <span class="field-value">${esc(localInstalacaoEntradaSrc) || '-'}</span></span>
             <span class="text-gray-400">|</span>
-            <span><span class="label-title">Pós-Chave:</span> <span class="field-value">${posChaveLabel}</span></span>
+            <span><span class="label-title">Pós-Chave:</span> <span class="field-value">${posChaveEntradaLabel}</span></span>
           </div>
         </div>
           `

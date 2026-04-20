@@ -29,13 +29,19 @@ export class FindPendentesQueryDto {
   @IsEnum(Plataforma)
   plataforma?: Plataforma;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description:
+      'Início inclusivo do período (instante ISO UTC, ex.: meia-noite local convertida).',
+  })
   @IsOptional()
   @Type(() => Date)
   @IsDate()
   dataInicio?: Date;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description:
+      'Fim exclusivo do período (instante ISO UTC; criadoEm < dataFim).',
+  })
   @IsOptional()
   @Type(() => Date)
   @IsDate()

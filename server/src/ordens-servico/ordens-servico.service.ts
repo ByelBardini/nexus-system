@@ -7,7 +7,12 @@ import { paginateParams } from '../common/pagination.helper';
 import { CLIENTE_INFINITY_ID } from '../common/constants';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
-import { StatusCadastro, StatusOS, StatusAparelho } from '@prisma/client';
+import {
+  StatusCadastro,
+  StatusOS,
+  StatusAparelho,
+  TipoOS,
+} from '@prisma/client';
 import { CreateOrdemServicoDto } from './dto/create-ordem-servico.dto';
 import { UpdateOrdemServicoDto } from './dto/update-ordem-servico.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
@@ -102,6 +107,7 @@ export class OrdensServicoService {
         { veiculo: { placa: { contains: s } } },
         { tecnico: { nome: { contains: s } } },
         { idAparelho: { contains: s } },
+        { idEntrada: { contains: s } },
       ];
     }
 
@@ -459,17 +465,31 @@ export class OrdensServicoService {
       statusCadastro?: StatusCadastro;
       localInstalacao?: string | null;
       posChave?: string | null;
+      localInstalacaoEntrada?: string | null;
+      posChaveEntrada?: string | null;
       observacoes?: string | null;
     } = { status: dto.status };
 
     if (dto.status === StatusOS.AGUARDANDO_CADASTRO) {
       updateData.statusCadastro = StatusCadastro.AGUARDANDO;
     }
+    // Em REVISÃO, local/posChave informados nos testes são do aparelho NOVO
+    // (entrada) e não podem sobrescrever os valores originais de emissão.
+    const isRevisao = os.tipo === TipoOS.REVISAO;
     if (dto.localInstalacao !== undefined) {
-      updateData.localInstalacao = dto.localInstalacao?.trim() || null;
+      const valor = dto.localInstalacao?.trim() || null;
+      if (isRevisao) {
+        updateData.localInstalacaoEntrada = valor;
+      } else {
+        updateData.localInstalacao = valor;
+      }
     }
     if (dto.posChave !== undefined) {
-      updateData.posChave = dto.posChave;
+      if (isRevisao) {
+        updateData.posChaveEntrada = dto.posChave;
+      } else {
+        updateData.posChave = dto.posChave;
+      }
     }
     if (dto.observacao?.trim()) {
       const prefixo = 'Observações do Teste:';
@@ -492,9 +512,67 @@ export class OrdensServicoService {
         where: { id },
         data: updateData,
       });
-      if (dto.status === StatusOS.TESTES_REALIZADOS && os.idAparelho?.trim()) {
+
+      // Ao finalizar testes em REVISÃO/RETIRADA: se o aparelho de saída
+      // (idAparelho) existir e estiver vinculado ao veículo da OS,
+      // desvincula dele (status = COM_TECNICO, zera veículo/subcliente).
+      // IMEI desconhecido ou vinculado a outro veículo = ignora silenciosamente.
+      if (
+        dto.status === StatusOS.TESTES_REALIZADOS &&
+        (os.tipo === TipoOS.REVISAO || os.tipo === TipoOS.RETIRADA) &&
+        os.idAparelho &&
+        os.veiculoId
+      ) {
+        const identificadorSaida = os.idAparelho.trim();
+        if (identificadorSaida) {
+          const aparelhoSaida = await tx.aparelho.findFirst({
+            where: { identificador: identificadorSaida },
+            select: { id: true, status: true, veiculoId: true },
+          });
+          if (aparelhoSaida && aparelhoSaida.veiculoId === os.veiculoId) {
+            const placa = os.veiculo?.placa ?? '-';
+            const obsSaida = `Retirado do veículo ${placa} via OS #${os.numero}`;
+            await tx.aparelhoHistorico.create({
+              data: {
+                aparelhoId: aparelhoSaida.id,
+                statusAnterior: aparelhoSaida.status,
+                statusNovo: StatusAparelho.COM_TECNICO,
+                observacao: obsSaida,
+              },
+            });
+            await tx.aparelho.update({
+              where: { id: aparelhoSaida.id },
+              data: {
+                status: StatusAparelho.COM_TECNICO,
+                veiculoId: null,
+                subclienteId: null,
+                observacao: obsSaida,
+              },
+            });
+          }
+        }
+      }
+
+      // Só INSTALAÇÃO e REVISÃO possuem aparelho novo sendo instalado no
+      // veículo ao final dos testes. RETIRADA não instala nada.
+      const tipoInstalaNovoAparelho =
+        os.tipo === TipoOS.REVISAO ||
+        os.tipo === TipoOS.INSTALACAO_COM_BLOQUEIO ||
+        os.tipo === TipoOS.INSTALACAO_SEM_BLOQUEIO;
+      const identificadorRastreadorNovo =
+        os.tipo === TipoOS.REVISAO
+          ? os.idEntrada?.trim()
+          : os.idAparelho?.trim();
+      if (
+        dto.status === StatusOS.TESTES_REALIZADOS &&
+        tipoInstalaNovoAparelho &&
+        identificadorRastreadorNovo
+      ) {
         const aparelho = await tx.aparelho.findFirst({
-          where: { identificador: os.idAparelho.trim(), tipo: 'RASTREADOR' },
+          where: {
+            identificador: identificadorRastreadorNovo,
+            tipo: 'RASTREADOR',
+          },
           include: { simVinculado: { select: { id: true, status: true } } },
         });
         if (aparelho) {
@@ -560,10 +638,32 @@ export class OrdensServicoService {
   }
 
   async updateIdAparelho(id: number, idAparelho: string) {
-    await this.findOne(id);
+    const os = await this.findOne(id);
+    const novo = idAparelho?.trim() || null;
+
+    const data: Prisma.OrdemServicoUncheckedUpdateInput = {};
+
+    if (os.tipo === TipoOS.REVISAO) {
+      // Em REVISÃO os campos de emissão (idAparelho/iccidAparelho) são
+      // imutáveis. O IMEI selecionado durante os testes representa o
+      // aparelho NOVO que está entrando e vai para idEntrada/iccidEntrada.
+      data.idEntrada = novo;
+      if (novo) {
+        const aparelhoNovo = await this.prisma.aparelho.findFirst({
+          where: { identificador: novo },
+          select: { simVinculado: { select: { identificador: true } } },
+        });
+        data.iccidEntrada = aparelhoNovo?.simVinculado?.identificador ?? null;
+      } else {
+        data.iccidEntrada = null;
+      }
+    } else {
+      data.idAparelho = novo;
+    }
+
     await this.prisma.ordemServico.update({
       where: { id },
-      data: { idAparelho: idAparelho || null },
+      data,
     });
     return this.findOne(id);
   }

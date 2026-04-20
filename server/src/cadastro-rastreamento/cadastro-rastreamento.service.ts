@@ -16,6 +16,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ConcluirCadastroDto } from './dto/concluir-cadastro.dto';
 import { FindPendentesQueryDto } from './dto/find-pendentes-query.dto';
 
+function normIdent(v: string | null | undefined): string | null {
+  if (v == null) return null;
+  const t = v.trim();
+  return t.length > 0 ? t : null;
+}
+
 @Injectable()
 export class CadastroRastreamentoService {
   constructor(private readonly prisma: PrismaService) {}
@@ -35,26 +41,30 @@ export class CadastroRastreamentoService {
       where.plataforma = params.plataforma;
     }
 
-    const dateRange =
-      params.dataInicio && params.dataFim
-        ? { gte: params.dataInicio, lte: params.dataFim }
-        : undefined;
+    let dateRange: { gte: Date; lt: Date } | undefined;
+    if (params.dataInicio && params.dataFim) {
+      dateRange = { gte: params.dataInicio, lt: params.dataFim };
+    }
 
     if (params.statusCadastro) {
       where.statusCadastro = params.statusCadastro;
-      if (params.statusCadastro === StatusCadastro.CONCLUIDO && dateRange) {
+      if (dateRange) {
         where.criadoEm = dateRange;
       }
     } else {
-      where.OR = [
+      const statusOu: Prisma.OrdemServicoWhereInput[] = [
         { statusCadastro: StatusCadastro.AGUARDANDO },
         {
           statusCadastro: {
             in: [StatusCadastro.EM_CADASTRO, StatusCadastro.CONCLUIDO],
           },
-          ...(dateRange ? { criadoEm: dateRange } : {}),
         },
       ];
+      if (dateRange) {
+        where.AND = [{ OR: statusOu }, { criadoEm: dateRange }];
+      } else {
+        where.OR = statusOu;
+      }
     }
 
     const [data, total] = await Promise.all([
@@ -78,9 +88,9 @@ export class CadastroRastreamentoService {
     const identificadores = [
       ...new Set(
         [
-          ...data.map((o) => o.idAparelho),
-          ...data.map((o) => o.idEntrada),
-        ].filter(Boolean) as string[],
+          ...data.map((o) => normIdent(o.idAparelho)),
+          ...data.map((o) => normIdent(o.idEntrada)),
+        ].filter((x): x is string => x != null),
       ),
     ];
 
@@ -99,7 +109,10 @@ export class CadastroRastreamentoService {
     > = {};
     if (identificadores.length > 0) {
       const aparelhos = await this.prisma.aparelho.findMany({
-        where: { identificador: { in: identificadores } },
+        where: {
+          tipo: TipoAparelho.RASTREADOR,
+          identificador: { in: identificadores },
+        },
         select: {
           identificador: true,
           marca: true,
@@ -119,30 +132,45 @@ export class CadastroRastreamentoService {
         },
       });
       for (const a of aparelhos) {
-        if (a.identificador)
-          aparelhoMap[a.identificador] = {
-            marca: a.marca,
-            modelo: a.modelo,
-            iccid: a.simVinculado?.identificador ?? null,
-            sim: a.simVinculado
-              ? {
-                  operadora:
-                    a.simVinculado.marcaSimcard?.operadora?.nome ?? null,
-                  marcaNome: a.simVinculado.marcaSimcard?.nome ?? null,
-                  planoMb: a.simVinculado.planoSimcard?.planoMb ?? null,
-                }
-              : null,
-          };
+        const key = normIdent(a.identificador);
+        if (!key) continue;
+        aparelhoMap[key] = {
+          marca: a.marca,
+          modelo: a.modelo,
+          iccid: a.simVinculado?.identificador
+            ? normIdent(a.simVinculado.identificador)
+            : null,
+          sim: a.simVinculado
+            ? {
+                operadora: a.simVinculado.marcaSimcard?.operadora?.nome ?? null,
+                marcaNome: a.simVinculado.marcaSimcard?.nome ?? null,
+                planoMb: a.simVinculado.planoSimcard?.planoMb ?? null,
+              }
+            : null,
+        };
       }
     }
 
-    const enrichedData = data.map((os) => ({
-      ...os,
-      aparelhoEntrada: os.idAparelho
-        ? (aparelhoMap[os.idAparelho] ?? null)
-        : null,
-      aparelhoSaida: os.idEntrada ? (aparelhoMap[os.idEntrada] ?? null) : null,
-    }));
+    const enrichedData = data.map((os) => {
+      // Em REVISÃO: idAparelho é o aparelho original (sai do veículo) e
+      // idEntrada é o novo (entra no veículo).
+      // Em RETIRADA: o aparelho idAparelho sai do veículo e vai para
+      // estoque — não há aparelho entrando.
+      // Demais tipos (INSTALAÇÕES): entrada=idAparelho / saída=idEntrada.
+      const isRevisao = os.tipo === TipoOS.REVISAO;
+      const isRetirada = os.tipo === TipoOS.RETIRADA;
+      const entradaId = isRetirada
+        ? null
+        : normIdent(isRevisao ? os.idEntrada : os.idAparelho);
+      const saidaId = isRetirada
+        ? normIdent(os.idAparelho)
+        : normIdent(isRevisao ? os.idAparelho : os.idEntrada);
+      return {
+        ...os,
+        aparelhoEntrada: entradaId ? (aparelhoMap[entradaId] ?? null) : null,
+        aparelhoSaida: saidaId ? (aparelhoMap[saidaId] ?? null) : null,
+      };
+    });
 
     return { data: enrichedData, total };
   }
@@ -250,19 +278,28 @@ export class CadastroRastreamentoService {
     dto: ConcluirCadastroDto,
     userId: number,
   ) {
-    const aparelhoAntigo = os.idEntrada
+    // Em REVISÃO: idAparelho é o aparelho ANTIGO (que estava instalado e
+    // agora sai do veículo); idEntrada é o aparelho NOVO escolhido nos
+    // testes (que passa a estar instalado).
+    const aparelhoAntigo = os.idAparelho
       ? await this.prisma.aparelho.findFirst({
-          where: { identificador: os.idEntrada },
+          where: { identificador: os.idAparelho },
         })
       : null;
 
+    if (!os.idEntrada) {
+      throw new BadRequestException(
+        'OS de revisão sem IMEI de entrada informado nos testes',
+      );
+    }
+
     const aparelhoNovo = await this.prisma.aparelho.findFirst({
-      where: { identificador: os.idAparelho! },
+      where: { identificador: os.idEntrada },
     });
 
     if (!aparelhoNovo) {
       throw new NotFoundException(
-        `Aparelho com IMEI '${os.idAparelho}' não encontrado`,
+        `Aparelho com IMEI '${os.idEntrada}' não encontrado`,
       );
     }
 
@@ -277,10 +314,10 @@ export class CadastroRastreamentoService {
             observacao: 'aparelho usado',
           },
         });
-      } else if (os.idEntrada) {
+      } else if (os.idAparelho) {
         await tx.aparelho.create({
           data: {
-            identificador: os.idEntrada,
+            identificador: os.idAparelho,
             tipo: TipoAparelho.RASTREADOR,
             observacao: 'aparelho usado',
             status: StatusAparelho.EM_ESTOQUE,
@@ -319,9 +356,11 @@ export class CadastroRastreamentoService {
     dto: ConcluirCadastroDto,
     userId: number,
   ) {
-    const aparelho = os.idEntrada
+    const imeiRetirada = normIdent(os.idAparelho) ?? normIdent(os.idEntrada);
+
+    const aparelho = imeiRetirada
       ? await this.prisma.aparelho.findFirst({
-          where: { identificador: os.idEntrada },
+          where: { identificador: imeiRetirada },
         })
       : null;
 
@@ -335,10 +374,10 @@ export class CadastroRastreamentoService {
             veiculoId: null,
           },
         });
-      } else if (os.idEntrada) {
+      } else if (imeiRetirada) {
         await tx.aparelho.create({
           data: {
-            identificador: os.idEntrada,
+            identificador: imeiRetirada,
             tipo: TipoAparelho.RASTREADOR,
             observacao: 'aparelho usado',
             status: StatusAparelho.EM_ESTOQUE,

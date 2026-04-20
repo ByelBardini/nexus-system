@@ -245,6 +245,8 @@ model OrdemServico {
   localInstalacao  String?       @map("local_instalacao") @db.VarChar(200)
   posChave         String?       @map("pos_chave") @db.VarChar(10)
   idEntrada        String?       @map("id_entrada") @db.VarChar(50)
+  localInstalacaoEntrada String?  @map("local_instalacao_entrada") @db.VarChar(200)
+  posChaveEntrada        String?  @map("pos_chave_entrada") @db.VarChar(10)
   aparelhoEncontrado Boolean?    @map("aparelho_encontrado")
   subclienteSnapshotNome       String?  @map("subcliente_snapshot_nome") @db.VarChar(200)
   subclienteSnapshotLogradouro String?  @map("subcliente_snapshot_logradouro") @db.VarChar(255)
