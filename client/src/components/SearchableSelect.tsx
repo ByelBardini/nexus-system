@@ -71,8 +71,8 @@ export function SearchableSelect({
       if (dropdownRef.current?.contains(e.target as Node)) return;
       setIsOpen(false);
     }
-    // Fecha ao rolar a página
-    function handleScroll() {
+    function handleScroll(e: Event) {
+      if (dropdownRef.current?.contains(e.target as Node)) return;
       setIsOpen(false);
     }
     document.addEventListener("mousedown", handleClickOutside);
