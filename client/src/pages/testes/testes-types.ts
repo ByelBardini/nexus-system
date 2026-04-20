@@ -11,6 +11,8 @@ export interface OsTeste {
   veiculoId: number | null;
   tecnicoId: number | null;
   idAparelho: string | null;
+  /** Em REVISÃO: IMEI do aparelho novo escolhido na bancada (persistido no backend). */
+  idEntrada: string | null;
   cliente: { id: number; nome: string };
   subcliente: { id: number; nome: string } | null;
   veiculo: { id: number; placa: string; marca: string; modelo: string } | null;
