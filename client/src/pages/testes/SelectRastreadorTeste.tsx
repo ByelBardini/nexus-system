@@ -25,13 +25,11 @@ export function SelectRastreadorTeste({
   rastreadores,
   value,
   onChange,
-  osClienteId = null,
   placeholder = "Buscar IMEI, ICCID ou Serial...",
 }: {
   rastreadores: RastreadorParaTeste[];
   value: string;
   onChange: (v: string) => void;
-  osClienteId?: number | null;
   placeholder?: string;
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -184,15 +182,6 @@ export function SelectRastreadorTeste({
                   const operadoraLinha =
                     partes.length > 0 ? partes.join(" / ") : null;
 
-                  const ehDeOutroCliente =
-                    r.proprietario === "INFINITY" ||
-                    (r.proprietario === "CLIENTE" &&
-                      r.cliente?.id !== osClienteId);
-                  const nomeProprietario =
-                    r.proprietario === "INFINITY"
-                      ? "Infinity"
-                      : (r.cliente?.nome ?? "—");
-
                   return (
                     <button
                       key={r.id}
@@ -225,18 +214,6 @@ export function SelectRastreadorTeste({
                         </div>
                         <div className="text-[11px] text-slate-600">
                           <span className="font-medium">{marcaModelo}</span>
-                        </div>
-                        <div
-                          className={cn(
-                            "text-[10px] font-medium",
-                            ehDeOutroCliente
-                              ? "text-amber-600"
-                              : "text-slate-400",
-                          )}
-                        >
-                          {ehDeOutroCliente
-                            ? `Proprietário: ${nomeProprietario}`
-                            : nomeProprietario}
                         </div>
                         {operadoraLinha && (
                           <div className="text-[10px] text-slate-500">

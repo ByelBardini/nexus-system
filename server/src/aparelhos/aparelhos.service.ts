@@ -19,7 +19,6 @@ export class AparelhosService {
   private readonly selectParaTestes = {
     id: true,
     identificador: true,
-    proprietario: true,
     marca: true,
     modelo: true,
     status: true,
@@ -77,21 +76,14 @@ export class AparelhosService {
       idAparelhoVinculado = os?.idAparelho?.trim() || null;
     }
 
-    const whereOwner =
-      tecnicoId != null
-        ? { tecnicoId }
-        : {
-            OR: [
-              { proprietario: 'INFINITY' as const },
-              { proprietario: 'CLIENTE' as const, clienteId },
-            ],
-            tecnicoId: null,
-          };
-
     const where = {
       tipo: 'RASTREADOR' as const,
       status: 'COM_TECNICO' as StatusAparelho,
-      ...whereOwner,
+      OR: [
+        { proprietario: 'INFINITY' as const },
+        { proprietario: 'CLIENTE' as const, clienteId },
+      ],
+      tecnicoId: tecnicoId != null ? tecnicoId : null,
       ...(identificadoresEmUso.length > 0
         ? { identificador: { notIn: identificadoresEmUso } }
         : {}),

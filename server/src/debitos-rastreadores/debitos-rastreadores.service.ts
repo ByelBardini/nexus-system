@@ -14,7 +14,6 @@ export interface ConsolidarDebitoParams {
   pedidoId?: number | null;
   loteId?: number | null;
   aparelhoId?: number | null;
-  ordemServicoId?: number | null;
 }
 
 @Injectable()
@@ -40,7 +39,6 @@ export class DebitosRastreadoresService {
       pedidoId,
       loteId,
       aparelhoId,
-      ordemServicoId,
     } = params;
 
     // Não criar dívida de entidade consigo mesma
@@ -111,7 +109,6 @@ export class DebitosRastreadoresService {
         pedidoId: pedidoId ?? null,
         loteId: loteId ?? null,
         aparelhoId: aparelhoId ?? null,
-        ordemServicoId: ordemServicoId ?? null,
         delta: actualDelta,
       },
     });

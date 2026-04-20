@@ -229,41 +229,6 @@ describe('DebitosRastreadoresService', () => {
         }),
       );
     });
-
-    it('passa ordemServicoId ao histórico quando informado', async () => {
-      prisma.debitoRastreador.findFirst
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(null);
-      prisma.debitoRastreador.create.mockResolvedValueOnce({ id: 1 });
-      prisma.historicoDebitoRastreador.create.mockResolvedValue({});
-
-      await service.consolidarDebitoTx(tx(), {
-        ...baseParams,
-        ordemServicoId: 42,
-      });
-
-      expect(prisma.historicoDebitoRastreador.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({ ordemServicoId: 42 }),
-        }),
-      );
-    });
-
-    it('grava ordemServicoId null quando não informado', async () => {
-      prisma.debitoRastreador.findFirst
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(null);
-      prisma.debitoRastreador.create.mockResolvedValueOnce({ id: 1 });
-      prisma.historicoDebitoRastreador.create.mockResolvedValue({});
-
-      await service.consolidarDebitoTx(tx(), baseParams);
-
-      expect(prisma.historicoDebitoRastreador.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({ ordemServicoId: null }),
-        }),
-      );
-    });
   });
 
   describe('findAll', () => {
