@@ -881,6 +881,86 @@ describe('PedidosRastreadoresService', () => {
       });
     });
 
+    it('MISTO com técnico entregue em mãos (CONFIGURADO → ENTREGUE) vincula tecnicoId nos aparelhos', async () => {
+      const pedidoConfigurado = {
+        id: 1,
+        codigo: 'PED-0001',
+        status: StatusPedidoRastreador.CONFIGURADO,
+        tipoDestino: 'MISTO' as TipoDestinoPedido,
+        kitIds: [10],
+        tecnicoId: 5,
+        clienteId: null,
+        tecnico: { id: 5, nome: 'Ismael Vieira' },
+        subcliente: null,
+        historico: [],
+      };
+      const aparelhosNoKit = [
+        {
+          id: 201,
+          kitId: 10,
+          status: StatusAparelho.CONFIGURADO,
+          tipo: 'RASTREADOR',
+          simVinculadoId: null,
+          proprietario: 'INFINITY',
+          clienteId: null,
+          marca: null,
+          modelo: null,
+        },
+        {
+          id: 202,
+          kitId: 10,
+          status: StatusAparelho.CONFIGURADO,
+          tipo: 'RASTREADOR',
+          simVinculadoId: null,
+          proprietario: 'CLIENTE',
+          clienteId: 7,
+          marca: null,
+          modelo: null,
+        },
+      ];
+      prisma.pedidoRastreador.findUnique
+        .mockResolvedValueOnce(pedidoConfigurado)
+        .mockResolvedValueOnce({
+          ...pedidoConfigurado,
+          status: StatusPedidoRastreador.ENTREGUE,
+        });
+      prisma.pedidoRastreador.update.mockResolvedValue({});
+      prisma.aparelho.findMany.mockResolvedValue(aparelhosNoKit);
+      prisma.aparelhoHistorico.create.mockResolvedValue({});
+      prisma.aparelho.update.mockResolvedValue({});
+      (prisma as any).pedidoRastreadorAparelho.findMany.mockResolvedValue([
+        {
+          aparelhoId: 201,
+          destinatarioProprietario: 'INFINITY',
+          destinatarioClienteId: null,
+        },
+        {
+          aparelhoId: 202,
+          destinatarioProprietario: 'CLIENTE',
+          destinatarioClienteId: 7,
+        },
+      ]);
+
+      await service.updateStatus(1, {
+        status: StatusPedidoRastreador.ENTREGUE,
+      });
+
+      expect(prisma.aparelho.update).toHaveBeenCalledWith({
+        where: { id: 201 },
+        data: expect.objectContaining({
+          status: StatusAparelho.COM_TECNICO,
+          tecnicoId: 5,
+        }),
+      });
+      expect(prisma.aparelho.update).toHaveBeenCalledWith({
+        where: { id: 202 },
+        data: expect.objectContaining({
+          status: StatusAparelho.COM_TECNICO,
+          tecnicoId: 5,
+        }),
+      });
+    });
+
     it('MISTO ao retroceder de DESPACHADO para CONFIGURADO lança BadRequestException', async () => {
       const pedidoDespachado = {
         id: 1,
