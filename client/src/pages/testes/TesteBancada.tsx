@@ -72,6 +72,7 @@ export function TesteBancada({
               onChange={onImeiSearchChange}
               aparelhoSelecionado={aparelhoSelecionado}
               onTrocarAparelho={onTrocarAparelho}
+              osClienteId={selectedOs?.clienteId ?? null}
               tempoRastreadorEmTestesMin={tempoRastreadorEmTestesMin}
             />
             {showValidation && (
