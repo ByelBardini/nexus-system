@@ -4,7 +4,12 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { OrdensServicoService } from 'src/ordens-servico/ordens-servico.service';
 import { HtmlOrdemServicoGenerator } from 'src/ordens-servico/html-ordem-servico.generator';
 import { PdfOrdemServicoGenerator } from 'src/ordens-servico/pdf-ordem-servico.generator';
-import { StatusOS, StatusCadastro } from '@prisma/client';
+import {
+  StatusOS,
+  StatusCadastro,
+  StatusAparelho,
+  TipoOS,
+} from '@prisma/client';
 import { createPrismaMock } from '../helpers/prisma-mock';
 
 describe('OrdensServicoService', () => {
@@ -617,6 +622,560 @@ describe('OrdensServicoService', () => {
       const updateCall = prisma.ordemServico.update.mock.calls[0]?.[0];
       expect(updateCall?.data).not.toHaveProperty('statusCadastro');
     });
+
+    it('em REVISAO grava localInstalacao e posChave nos campos *Entrada e preserva originais', async () => {
+      const os = {
+        id: 1,
+        numero: 1,
+        tipo: TipoOS.REVISAO,
+        status: StatusOS.EM_TESTES,
+        localInstalacao: 'LOCAL_ORIGINAL',
+        posChave: 'SIM',
+        historico: [],
+      };
+      prisma.ordemServico.findUnique
+        .mockResolvedValueOnce(os)
+        .mockResolvedValueOnce({
+          ...os,
+          status: StatusOS.TESTES_REALIZADOS,
+          localInstalacaoEntrada: 'LOCAL_TESTES',
+          posChaveEntrada: 'NAO',
+        });
+      prisma.oSHistorico.create.mockResolvedValue({});
+      prisma.ordemServico.update.mockResolvedValue({});
+
+      await service.updateStatus(1, {
+        status: StatusOS.TESTES_REALIZADOS,
+        localInstalacao: 'LOCAL_TESTES',
+        posChave: 'NAO',
+      });
+
+      const updateCall = prisma.ordemServico.update.mock.calls[0]?.[0];
+      expect(updateCall?.data).toMatchObject({
+        localInstalacaoEntrada: 'LOCAL_TESTES',
+        posChaveEntrada: 'NAO',
+      });
+      expect(updateCall?.data).not.toHaveProperty('localInstalacao');
+      expect(updateCall?.data).not.toHaveProperty('posChave');
+    });
+
+    it('em INSTALACAO mantém comportamento antigo e sobrescreve localInstalacao/posChave', async () => {
+      const os = {
+        id: 1,
+        numero: 1,
+        tipo: TipoOS.INSTALACAO_COM_BLOQUEIO,
+        status: StatusOS.EM_TESTES,
+        historico: [],
+      };
+      prisma.ordemServico.findUnique
+        .mockResolvedValueOnce(os)
+        .mockResolvedValueOnce({
+          ...os,
+          status: StatusOS.TESTES_REALIZADOS,
+          localInstalacao: 'LOCAL_X',
+          posChave: 'SIM',
+        });
+      prisma.oSHistorico.create.mockResolvedValue({});
+      prisma.ordemServico.update.mockResolvedValue({});
+
+      await service.updateStatus(1, {
+        status: StatusOS.TESTES_REALIZADOS,
+        localInstalacao: 'LOCAL_X',
+        posChave: 'SIM',
+      });
+
+      const updateCall = prisma.ordemServico.update.mock.calls[0]?.[0];
+      expect(updateCall?.data).toMatchObject({
+        localInstalacao: 'LOCAL_X',
+        posChave: 'SIM',
+      });
+      expect(updateCall?.data).not.toHaveProperty('localInstalacaoEntrada');
+      expect(updateCall?.data).not.toHaveProperty('posChaveEntrada');
+    });
+
+    it('em REVISAO ao concluir testes busca aparelho novo por idEntrada (não idAparelho)', async () => {
+      const os = {
+        id: 1,
+        numero: 1,
+        tipo: TipoOS.REVISAO,
+        status: StatusOS.EM_TESTES,
+        idAparelho: 'IMEI_SUBSTITUIDO',
+        idEntrada: 'IMEI_NOVO',
+        veiculo: { placa: 'ABC1D23' },
+        historico: [],
+      };
+      prisma.ordemServico.findUnique
+        .mockResolvedValueOnce(os)
+        .mockResolvedValueOnce({ ...os, status: StatusOS.TESTES_REALIZADOS });
+      prisma.oSHistorico.create.mockResolvedValue({});
+      prisma.ordemServico.update.mockResolvedValue({});
+      prisma.aparelho.findFirst.mockResolvedValue({
+        id: 10,
+        status: StatusAparelho.COM_TECNICO,
+        simVinculadoId: 20,
+        simVinculado: { id: 20, status: StatusAparelho.COM_TECNICO },
+      });
+      prisma.aparelhoHistorico.create.mockResolvedValue({});
+      prisma.aparelho.update.mockResolvedValue({});
+
+      await service.updateStatus(1, { status: StatusOS.TESTES_REALIZADOS });
+
+      expect(prisma.aparelho.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { identificador: 'IMEI_NOVO', tipo: 'RASTREADOR' },
+        }),
+      );
+    });
+
+    describe('desvinculação do aparelho de saída em EM_TESTES → TESTES_REALIZADOS', () => {
+      const montarOsRevisao = (overrides: Record<string, unknown> = {}) => ({
+        id: 1,
+        numero: 42,
+        tipo: TipoOS.REVISAO,
+        status: StatusOS.EM_TESTES,
+        idAparelho: 'IMEI_SAIDA',
+        idEntrada: null,
+        veiculoId: 7,
+        veiculo: { id: 7, placa: 'ABC1D23' },
+        historico: [],
+        ...overrides,
+      });
+
+      it('em REVISAO desvincula o aparelho de saída quando vinculado ao veículo da OS', async () => {
+        const os = montarOsRevisao();
+        prisma.ordemServico.findUnique
+          .mockResolvedValueOnce(os)
+          .mockResolvedValueOnce({ ...os, status: StatusOS.TESTES_REALIZADOS });
+        prisma.oSHistorico.create.mockResolvedValue({});
+        prisma.ordemServico.update.mockResolvedValue({});
+        prisma.aparelho.findFirst.mockResolvedValueOnce({
+          id: 55,
+          status: StatusAparelho.INSTALADO,
+          veiculoId: 7,
+        });
+        prisma.aparelhoHistorico.create.mockResolvedValue({});
+        prisma.aparelho.update.mockResolvedValue({});
+
+        await service.updateStatus(1, { status: StatusOS.TESTES_REALIZADOS });
+
+        expect(prisma.aparelho.findFirst).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: { identificador: 'IMEI_SAIDA' },
+          }),
+        );
+        expect(prisma.aparelho.update).toHaveBeenCalledWith({
+          where: { id: 55 },
+          data: {
+            status: StatusAparelho.COM_TECNICO,
+            veiculoId: null,
+            subclienteId: null,
+            observacao: 'Retirado do veículo ABC1D23 via OS #42',
+          },
+        });
+        expect(prisma.aparelhoHistorico.create).toHaveBeenCalledWith({
+          data: {
+            aparelhoId: 55,
+            statusAnterior: StatusAparelho.INSTALADO,
+            statusNovo: StatusAparelho.COM_TECNICO,
+            observacao: 'Retirado do veículo ABC1D23 via OS #42',
+          },
+        });
+      });
+
+      it('em RETIRADA desvincula o aparelho de saída quando vinculado ao veículo da OS', async () => {
+        const os = {
+          id: 2,
+          numero: 99,
+          tipo: TipoOS.RETIRADA,
+          status: StatusOS.EM_TESTES,
+          idAparelho: 'IMEI_RETIRAR',
+          veiculoId: 3,
+          veiculo: { id: 3, placa: 'XYZ9K88' },
+          historico: [],
+        };
+        prisma.ordemServico.findUnique
+          .mockResolvedValueOnce(os)
+          .mockResolvedValueOnce({ ...os, status: StatusOS.TESTES_REALIZADOS });
+        prisma.oSHistorico.create.mockResolvedValue({});
+        prisma.ordemServico.update.mockResolvedValue({});
+        prisma.aparelho.findFirst.mockResolvedValueOnce({
+          id: 77,
+          status: StatusAparelho.INSTALADO,
+          veiculoId: 3,
+        });
+        prisma.aparelhoHistorico.create.mockResolvedValue({});
+        prisma.aparelho.update.mockResolvedValue({});
+
+        await service.updateStatus(2, { status: StatusOS.TESTES_REALIZADOS });
+
+        expect(prisma.aparelho.update).toHaveBeenCalledWith({
+          where: { id: 77 },
+          data: {
+            status: StatusAparelho.COM_TECNICO,
+            veiculoId: null,
+            subclienteId: null,
+            observacao: 'Retirado do veículo XYZ9K88 via OS #99',
+          },
+        });
+      });
+
+      it('não desvincula quando aparelho está vinculado a OUTRO veículo', async () => {
+        const os = montarOsRevisao();
+        prisma.ordemServico.findUnique
+          .mockResolvedValueOnce(os)
+          .mockResolvedValueOnce({ ...os, status: StatusOS.TESTES_REALIZADOS });
+        prisma.oSHistorico.create.mockResolvedValue({});
+        prisma.ordemServico.update.mockResolvedValue({});
+        prisma.aparelho.findFirst.mockResolvedValueOnce({
+          id: 55,
+          status: StatusAparelho.INSTALADO,
+          veiculoId: 999,
+        });
+
+        await service.updateStatus(1, { status: StatusOS.TESTES_REALIZADOS });
+
+        expect(prisma.aparelho.update).not.toHaveBeenCalled();
+        expect(prisma.aparelhoHistorico.create).not.toHaveBeenCalled();
+      });
+
+      it('não desvincula quando IMEI de saída não está cadastrado no sistema', async () => {
+        const os = montarOsRevisao();
+        prisma.ordemServico.findUnique
+          .mockResolvedValueOnce(os)
+          .mockResolvedValueOnce({ ...os, status: StatusOS.TESTES_REALIZADOS });
+        prisma.oSHistorico.create.mockResolvedValue({});
+        prisma.ordemServico.update.mockResolvedValue({});
+        prisma.aparelho.findFirst.mockResolvedValueOnce(null);
+
+        await expect(
+          service.updateStatus(1, { status: StatusOS.TESTES_REALIZADOS }),
+        ).resolves.not.toThrow();
+
+        expect(prisma.aparelho.update).not.toHaveBeenCalled();
+        expect(prisma.aparelhoHistorico.create).not.toHaveBeenCalled();
+      });
+
+      it('não consulta aparelho quando idAparelho é nulo', async () => {
+        const os = montarOsRevisao({ idAparelho: null });
+        prisma.ordemServico.findUnique
+          .mockResolvedValueOnce(os)
+          .mockResolvedValueOnce({ ...os, status: StatusOS.TESTES_REALIZADOS });
+        prisma.oSHistorico.create.mockResolvedValue({});
+        prisma.ordemServico.update.mockResolvedValue({});
+
+        await service.updateStatus(1, { status: StatusOS.TESTES_REALIZADOS });
+
+        expect(prisma.aparelho.findFirst).not.toHaveBeenCalled();
+        expect(prisma.aparelho.update).not.toHaveBeenCalled();
+      });
+
+      it('não consulta aparelho quando idAparelho é só espaços em branco (trim vazio)', async () => {
+        const os = montarOsRevisao({ idAparelho: '   \t  ' });
+        prisma.ordemServico.findUnique
+          .mockResolvedValueOnce(os)
+          .mockResolvedValueOnce({ ...os, status: StatusOS.TESTES_REALIZADOS });
+        prisma.oSHistorico.create.mockResolvedValue({});
+        prisma.ordemServico.update.mockResolvedValue({});
+
+        await service.updateStatus(1, { status: StatusOS.TESTES_REALIZADOS });
+
+        expect(prisma.aparelho.findFirst).not.toHaveBeenCalled();
+        expect(prisma.aparelho.update).not.toHaveBeenCalled();
+      });
+
+      it('usa placa "-" na observação quando veículo da OS não veio no include (fallback)', async () => {
+        const os = montarOsRevisao({
+          veiculo: null,
+        });
+        prisma.ordemServico.findUnique
+          .mockResolvedValueOnce(os)
+          .mockResolvedValueOnce({ ...os, status: StatusOS.TESTES_REALIZADOS });
+        prisma.oSHistorico.create.mockResolvedValue({});
+        prisma.ordemServico.update.mockResolvedValue({});
+        prisma.aparelho.findFirst.mockResolvedValueOnce({
+          id: 55,
+          status: StatusAparelho.INSTALADO,
+          veiculoId: 7,
+        });
+        prisma.aparelhoHistorico.create.mockResolvedValue({});
+        prisma.aparelho.update.mockResolvedValue({});
+
+        await service.updateStatus(1, { status: StatusOS.TESTES_REALIZADOS });
+
+        expect(prisma.aparelho.update).toHaveBeenCalledWith(
+          expect.objectContaining({
+            data: expect.objectContaining({
+              observacao: 'Retirado do veículo - via OS #42',
+            }),
+          }),
+        );
+      });
+
+      it('em REVISAO com idEntrada: desvincula aparelho de saída e só depois marca o novo como INSTALADO', async () => {
+        const os = {
+          ...montarOsRevisao(),
+          idEntrada: 'IMEI_NOVO',
+        };
+        prisma.ordemServico.findUnique
+          .mockResolvedValueOnce(os)
+          .mockResolvedValueOnce({ ...os, status: StatusOS.TESTES_REALIZADOS });
+        prisma.oSHistorico.create.mockResolvedValue({});
+        prisma.ordemServico.update.mockResolvedValue({});
+        prisma.aparelho.findFirst
+          .mockResolvedValueOnce({
+            id: 55,
+            status: StatusAparelho.INSTALADO,
+            veiculoId: 7,
+          })
+          .mockResolvedValueOnce({
+            id: 10,
+            status: StatusAparelho.COM_TECNICO,
+            simVinculadoId: null,
+            simVinculado: null,
+          });
+        prisma.aparelhoHistorico.create.mockResolvedValue({});
+        prisma.aparelho.update.mockResolvedValue({});
+
+        await service.updateStatus(1, { status: StatusOS.TESTES_REALIZADOS });
+
+        expect(prisma.aparelho.findFirst).toHaveBeenNthCalledWith(
+          1,
+          expect.objectContaining({
+            where: { identificador: 'IMEI_SAIDA' },
+          }),
+        );
+        expect(prisma.aparelho.findFirst).toHaveBeenNthCalledWith(
+          2,
+          expect.objectContaining({
+            where: { identificador: 'IMEI_NOVO', tipo: 'RASTREADOR' },
+          }),
+        );
+        const updates = prisma.aparelho.update.mock.calls.map((c) => c[0]);
+        expect(updates[0]).toMatchObject({
+          where: { id: 55 },
+          data: {
+            status: StatusAparelho.COM_TECNICO,
+            veiculoId: null,
+            subclienteId: null,
+          },
+        });
+        expect(updates[1]).toMatchObject({
+          where: { id: 10 },
+          data: { status: StatusAparelho.INSTALADO },
+        });
+      });
+
+      it('em RETIRADA não busca idAparelho com filtro tipo RASTREADOR (não reinstala o aparelho retirado)', async () => {
+        const os = {
+          id: 2,
+          numero: 99,
+          tipo: TipoOS.RETIRADA,
+          status: StatusOS.EM_TESTES,
+          idAparelho: 'IMEI_RETIRAR',
+          veiculoId: 3,
+          veiculo: { id: 3, placa: 'XYZ9K88' },
+          historico: [],
+        };
+        prisma.ordemServico.findUnique
+          .mockResolvedValueOnce(os)
+          .mockResolvedValueOnce({ ...os, status: StatusOS.TESTES_REALIZADOS });
+        prisma.oSHistorico.create.mockResolvedValue({});
+        prisma.ordemServico.update.mockResolvedValue({});
+        prisma.aparelho.findFirst.mockResolvedValueOnce({
+          id: 77,
+          status: StatusAparelho.INSTALADO,
+          veiculoId: 3,
+        });
+        prisma.aparelhoHistorico.create.mockResolvedValue({});
+        prisma.aparelho.update.mockResolvedValue({});
+
+        await service.updateStatus(2, { status: StatusOS.TESTES_REALIZADOS });
+
+        const buscaInstalacaoComImeiSaida =
+          prisma.aparelho.findFirst.mock.calls.filter((args) => {
+            const arg = args[0] as
+              | {
+                  where?: { identificador?: string; tipo?: string };
+                }
+              | undefined;
+            return (
+              arg?.where?.identificador === 'IMEI_RETIRAR' &&
+              arg?.where?.tipo === 'RASTREADOR'
+            );
+          });
+        expect(buscaInstalacaoComImeiSaida).toHaveLength(0);
+        expect(prisma.aparelho.update).toHaveBeenCalledTimes(1);
+        expect(prisma.aparelho.update).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: { id: 77 },
+            data: expect.objectContaining({
+              status: StatusAparelho.COM_TECNICO,
+            }),
+          }),
+        );
+      });
+
+      it('não desvincula quando RETIRADA aponta idAparelho cadastrado mas em OUTRO veículo', async () => {
+        const os = {
+          id: 2,
+          numero: 12,
+          tipo: TipoOS.RETIRADA,
+          status: StatusOS.EM_TESTES,
+          idAparelho: 'IMEI_X',
+          veiculoId: 100,
+          veiculo: { id: 100, placa: 'RET1R00' },
+          historico: [],
+        };
+        prisma.ordemServico.findUnique
+          .mockResolvedValueOnce(os)
+          .mockResolvedValueOnce({ ...os, status: StatusOS.TESTES_REALIZADOS });
+        prisma.oSHistorico.create.mockResolvedValue({});
+        prisma.ordemServico.update.mockResolvedValue({});
+        prisma.aparelho.findFirst.mockResolvedValueOnce({
+          id: 1,
+          status: StatusAparelho.INSTALADO,
+          veiculoId: 200,
+        });
+
+        await service.updateStatus(2, { status: StatusOS.TESTES_REALIZADOS });
+
+        expect(prisma.aparelho.update).not.toHaveBeenCalled();
+      });
+
+      it('não consulta aparelho quando veiculoId da OS é nulo', async () => {
+        const os = montarOsRevisao({ veiculoId: null, veiculo: null });
+        prisma.ordemServico.findUnique
+          .mockResolvedValueOnce(os)
+          .mockResolvedValueOnce({ ...os, status: StatusOS.TESTES_REALIZADOS });
+        prisma.oSHistorico.create.mockResolvedValue({});
+        prisma.ordemServico.update.mockResolvedValue({});
+
+        await service.updateStatus(1, { status: StatusOS.TESTES_REALIZADOS });
+
+        expect(prisma.aparelho.findFirst).not.toHaveBeenCalled();
+      });
+
+      it('não desvincula em INSTALACAO_COM_BLOQUEIO mesmo na transição EM_TESTES → TESTES_REALIZADOS', async () => {
+        const os = {
+          id: 1,
+          numero: 1,
+          tipo: TipoOS.INSTALACAO_COM_BLOQUEIO,
+          status: StatusOS.EM_TESTES,
+          idAparelho: 'IMEI_INST',
+          veiculoId: 7,
+          veiculo: { id: 7, placa: 'ABC1D23' },
+          historico: [],
+        };
+        prisma.ordemServico.findUnique
+          .mockResolvedValueOnce(os)
+          .mockResolvedValueOnce({ ...os, status: StatusOS.TESTES_REALIZADOS });
+        prisma.oSHistorico.create.mockResolvedValue({});
+        prisma.ordemServico.update.mockResolvedValue({});
+        prisma.aparelho.findFirst.mockResolvedValueOnce(null);
+        prisma.aparelho.update.mockResolvedValue({});
+
+        await service.updateStatus(1, { status: StatusOS.TESTES_REALIZADOS });
+
+        const chamadasParaDesvinculo =
+          prisma.aparelho.findFirst.mock.calls.filter((args) => {
+            const arg = args[0] as
+              | { where?: { identificador?: string; tipo?: string } }
+              | undefined;
+            return (
+              arg?.where?.identificador === 'IMEI_INST' && !arg?.where?.tipo
+            );
+          });
+        expect(chamadasParaDesvinculo).toHaveLength(0);
+      });
+
+      it('não desvincula em INSTALACAO_SEM_BLOQUEIO', async () => {
+        const os = {
+          id: 1,
+          numero: 1,
+          tipo: TipoOS.INSTALACAO_SEM_BLOQUEIO,
+          status: StatusOS.EM_TESTES,
+          idAparelho: 'IMEI_INST',
+          veiculoId: 7,
+          veiculo: { id: 7, placa: 'ABC1D23' },
+          historico: [],
+        };
+        prisma.ordemServico.findUnique
+          .mockResolvedValueOnce(os)
+          .mockResolvedValueOnce({ ...os, status: StatusOS.TESTES_REALIZADOS });
+        prisma.oSHistorico.create.mockResolvedValue({});
+        prisma.ordemServico.update.mockResolvedValue({});
+        prisma.aparelho.findFirst.mockResolvedValueOnce(null);
+        prisma.aparelho.update.mockResolvedValue({});
+
+        await service.updateStatus(1, { status: StatusOS.TESTES_REALIZADOS });
+
+        const chamadasParaDesvinculo =
+          prisma.aparelho.findFirst.mock.calls.filter((args) => {
+            const arg = args[0] as
+              | { where?: { identificador?: string; tipo?: string } }
+              | undefined;
+            return (
+              arg?.where?.identificador === 'IMEI_INST' && !arg?.where?.tipo
+            );
+          });
+        expect(chamadasParaDesvinculo).toHaveLength(0);
+      });
+
+      it('não desvincula em REVISAO em transição diferente (EM_TESTES → AGENDADO)', async () => {
+        const os = montarOsRevisao();
+        prisma.ordemServico.findUnique
+          .mockResolvedValueOnce(os)
+          .mockResolvedValueOnce({ ...os, status: StatusOS.AGENDADO });
+        prisma.oSHistorico.create.mockResolvedValue({});
+        prisma.ordemServico.update.mockResolvedValue({});
+
+        await service.updateStatus(1, { status: StatusOS.AGENDADO });
+
+        expect(prisma.aparelho.findFirst).not.toHaveBeenCalled();
+        expect(prisma.aparelho.update).not.toHaveBeenCalled();
+      });
+
+      it('desvincula na mesma transação que grava localInstalacaoEntrada/posChaveEntrada', async () => {
+        const os = montarOsRevisao();
+        prisma.ordemServico.findUnique
+          .mockResolvedValueOnce(os)
+          .mockResolvedValueOnce({ ...os, status: StatusOS.TESTES_REALIZADOS });
+        prisma.oSHistorico.create.mockResolvedValue({});
+        prisma.ordemServico.update.mockResolvedValue({});
+        prisma.aparelho.findFirst.mockResolvedValueOnce({
+          id: 55,
+          status: StatusAparelho.INSTALADO,
+          veiculoId: 7,
+        });
+        prisma.aparelhoHistorico.create.mockResolvedValue({});
+        prisma.aparelho.update.mockResolvedValue({});
+
+        await service.updateStatus(1, {
+          status: StatusOS.TESTES_REALIZADOS,
+          localInstalacao: 'LOCAL_NOVO',
+          posChave: 'SIM',
+        });
+
+        expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+        expect(prisma.ordemServico.update).toHaveBeenCalledWith(
+          expect.objectContaining({
+            data: expect.objectContaining({
+              status: StatusOS.TESTES_REALIZADOS,
+              localInstalacaoEntrada: 'LOCAL_NOVO',
+              posChaveEntrada: 'SIM',
+            }),
+          }),
+        );
+        expect(prisma.aparelho.update).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: { id: 55 },
+            data: expect.objectContaining({
+              status: StatusAparelho.COM_TECNICO,
+            }),
+          }),
+        );
+      });
+    });
   });
 
   describe('update', () => {
@@ -771,6 +1330,117 @@ describe('OrdensServicoService', () => {
       await expect(promise).rejects.toThrow(NotFoundException);
       await expect(promise).rejects.toThrow('Ordem de serviço não encontrada');
       expect(prisma.ordemServico.update).not.toHaveBeenCalled();
+    });
+
+    it('em REVISAO grava IMEI novo em idEntrada e preserva idAparelho original', async () => {
+      const os = {
+        id: 1,
+        numero: 1,
+        tipo: TipoOS.REVISAO,
+        idAparelho: 'IMEI_ORIGINAL',
+        idEntrada: null,
+        iccidAparelho: '8955011110000000001',
+        iccidEntrada: null,
+        historico: [],
+      };
+      const updated = {
+        ...os,
+        idEntrada: 'IMEI_NOVO',
+        iccidEntrada: '8955022220000000002',
+      };
+      prisma.ordemServico.findUnique
+        .mockResolvedValueOnce(os)
+        .mockResolvedValueOnce(updated);
+      prisma.aparelho.findFirst.mockResolvedValueOnce({
+        simVinculado: { identificador: '8955022220000000002' },
+      });
+      prisma.ordemServico.update.mockResolvedValue({});
+
+      const result = await service.updateIdAparelho(1, 'IMEI_NOVO');
+
+      expect(prisma.ordemServico.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: {
+          idEntrada: 'IMEI_NOVO',
+          iccidEntrada: '8955022220000000002',
+        },
+      });
+      expect(prisma.ordemServico.update).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ idAparelho: expect.anything() }),
+        }),
+      );
+      expect(result).toMatchObject(updated);
+    });
+
+    it('em REVISAO quando aparelho novo não tem SIM vinculado grava iccidEntrada null', async () => {
+      const os = {
+        id: 1,
+        numero: 1,
+        tipo: TipoOS.REVISAO,
+        idAparelho: 'IMEI_ORIGINAL',
+        idEntrada: null,
+        historico: [],
+      };
+      prisma.ordemServico.findUnique
+        .mockResolvedValueOnce(os)
+        .mockResolvedValueOnce({ ...os, idEntrada: 'IMEI_NOVO' });
+      prisma.aparelho.findFirst.mockResolvedValueOnce({ simVinculado: null });
+      prisma.ordemServico.update.mockResolvedValue({});
+
+      await service.updateIdAparelho(1, 'IMEI_NOVO');
+
+      expect(prisma.ordemServico.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { idEntrada: 'IMEI_NOVO', iccidEntrada: null },
+      });
+    });
+
+    it('em REVISAO ao limpar valor grava idEntrada=null e iccidEntrada=null sem mexer em idAparelho', async () => {
+      const os = {
+        id: 1,
+        numero: 1,
+        tipo: TipoOS.REVISAO,
+        idAparelho: 'IMEI_ORIGINAL',
+        idEntrada: 'IMEI_QUE_SAI',
+        iccidEntrada: '8955022220000000002',
+        historico: [],
+      };
+      prisma.ordemServico.findUnique
+        .mockResolvedValueOnce(os)
+        .mockResolvedValueOnce({ ...os, idEntrada: null, iccidEntrada: null });
+      prisma.ordemServico.update.mockResolvedValue({});
+
+      await service.updateIdAparelho(1, '');
+
+      expect(prisma.ordemServico.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { idEntrada: null, iccidEntrada: null },
+      });
+      expect(prisma.aparelho.findFirst).not.toHaveBeenCalled();
+    });
+
+    it('em RETIRADA grava IMEI em idAparelho (fluxo distinto de REVISAO)', async () => {
+      const os = {
+        id: 1,
+        numero: 1,
+        tipo: TipoOS.RETIRADA,
+        idAparelho: 'RET_ANT',
+        idEntrada: null,
+        historico: [],
+      };
+      prisma.ordemServico.findUnique
+        .mockResolvedValueOnce(os)
+        .mockResolvedValueOnce({ ...os, idAparelho: 'RET_NOVO' });
+      prisma.ordemServico.update.mockResolvedValue({});
+
+      await service.updateIdAparelho(1, 'RET_NOVO');
+
+      expect(prisma.ordemServico.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { idAparelho: 'RET_NOVO' },
+      });
+      expect(prisma.aparelho.findFirst).not.toHaveBeenCalled();
     });
   });
 
