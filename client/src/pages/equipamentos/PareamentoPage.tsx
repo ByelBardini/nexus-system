@@ -1156,7 +1156,10 @@ export function PareamentoPage() {
                                   </SelectTrigger>
                                   <SelectContent>
                                     {marcasSimcardPorOperadora.map((m) => (
-                                      <SelectItem key={m.id} value={String(m.id)}>
+                                      <SelectItem
+                                        key={m.id}
+                                        value={String(m.id)}
+                                      >
                                         {m.nome}
                                       </SelectItem>
                                     ))}
@@ -1165,12 +1168,13 @@ export function PareamentoPage() {
                               </div>
                               {marcaSimcardIdSim &&
                                 (() => {
-                                  const marcaSel = marcasSimcardPorOperadora.find(
-                                    (m) => String(m.id) === marcaSimcardIdSim,
-                                  );
-                                  const planos = (marcaSel?.planos ?? []).filter(
-                                    (p) => p.ativo,
-                                  );
+                                  const marcaSel =
+                                    marcasSimcardPorOperadora.find(
+                                      (m) => String(m.id) === marcaSimcardIdSim,
+                                    );
+                                  const planos = (
+                                    marcaSel?.planos ?? []
+                                  ).filter((p) => p.ativo);
                                   return marcaSel?.temPlanos &&
                                     planos.length > 0 ? (
                                     <div>
@@ -1881,11 +1885,16 @@ export function PareamentoPage() {
                                       />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      {marcasSimcardPorOperadoraMassa.map((m) => (
-                                        <SelectItem key={m.id} value={String(m.id)}>
-                                          {m.nome}
-                                        </SelectItem>
-                                      ))}
+                                      {marcasSimcardPorOperadoraMassa.map(
+                                        (m) => (
+                                          <SelectItem
+                                            key={m.id}
+                                            value={String(m.id)}
+                                          >
+                                            {m.nome}
+                                          </SelectItem>
+                                        ),
+                                      )}
                                     </SelectContent>
                                   </Select>
                                 </div>
@@ -1894,11 +1903,12 @@ export function PareamentoPage() {
                                     const marcaSel =
                                       marcasSimcardPorOperadoraMassa.find(
                                         (m) =>
-                                          String(m.id) === marcaSimcardIdSimMassa,
+                                          String(m.id) ===
+                                          marcaSimcardIdSimMassa,
                                       );
-                                    const planos = (marcaSel?.planos ?? []).filter(
-                                      (p) => p.ativo,
-                                    );
+                                    const planos = (
+                                      marcaSel?.planos ?? []
+                                    ).filter((p) => p.ativo);
                                     return marcaSel?.temPlanos &&
                                       planos.length > 0 ? (
                                       <div>
@@ -1907,7 +1917,9 @@ export function PareamentoPage() {
                                         </Label>
                                         <Select
                                           value={planoSimcardIdSimMassa}
-                                          onValueChange={setPlanoSimcardIdSimMassa}
+                                          onValueChange={
+                                            setPlanoSimcardIdSimMassa
+                                          }
                                         >
                                           <SelectTrigger className="h-9">
                                             <SelectValue placeholder="Selecione o plano..." />
