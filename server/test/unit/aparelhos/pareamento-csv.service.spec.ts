@@ -147,7 +147,9 @@ describe('PareamentoService (CSV)', () => {
       });
 
       expect(result.linhas[0].tracker_acao).toBe('ERRO');
-      expect(result.linhas[0].erros).toContain('LOTE_RASTREADOR_NAO_ENCONTRADO');
+      expect(result.linhas[0].erros).toContain(
+        'LOTE_RASTREADOR_NAO_ENCONTRADO',
+      );
       expect(result.contadores.erros).toBe(1);
     });
 
@@ -408,9 +410,7 @@ describe('PareamentoService (CSV)', () => {
         });
 
       const result = await service.pareamentoCsvPreview({
-        linhas: [
-          { imei: '123456789012345', iccid: '89550012340000000001' },
-        ],
+        linhas: [{ imei: '123456789012345', iccid: '89550012340000000001' }],
       });
 
       expect(result.linhas[0].sim_acao).toBe('ERRO');
@@ -1091,7 +1091,9 @@ describe('PareamentoService (CSV)', () => {
       expect(prisma.aparelho.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 70 },
-          data: expect.objectContaining({ identificador: '89550012340000000001' }),
+          data: expect.objectContaining({
+            identificador: '89550012340000000001',
+          }),
         }),
       );
       expect(result.criados).toBe(1);
