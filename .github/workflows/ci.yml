@@ -169,11 +169,16 @@ jobs:
       issues: write
       pull-requests: write
     steps:
+      - name: Checar repository secret GH_TOKEN
+        run: |
+          test -n "${{ secrets.GH_TOKEN }}" || { echo "::error::Defina o secret GH_TOKEN em Settings → Secrets and variables → Actions."; exit 1; }
+
       - name: Checkout (histórico completo e tags)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: true
+          token: ${{ secrets.GH_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
