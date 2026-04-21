@@ -5,6 +5,8 @@ on:
     branches: [main]
   push:
     branches: [main]
+    tags:
+      - 'v*'
 
 jobs:
   backend-tests:
@@ -151,3 +153,39 @@ jobs:
       - name: Verificar formatação do cliente
         working-directory: client
         run: npm run format:check
+
+  semantic-release:
+    name: Versionamento (semantic-release)
+    runs-on: ubuntu-latest
+    needs:
+      - backend-tests
+      - frontend-tests
+      - lint
+      - lint-frontend
+      - formatacao
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Checkout (histórico completo e tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Instalar dependências da raiz
+        run: npm ci
+
+      - name: Analisar commits e publicar versão
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release
