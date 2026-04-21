@@ -20,6 +20,7 @@ import { CreateIndividualDto } from './dto/create-individual.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { PareamentoPreviewDto } from './dto/pareamento-preview.dto';
 import { PareamentoDto } from './dto/pareamento.dto';
+import { PareamentoCsvDto } from './dto/pareamento-csv.dto';
 import { UpdateAparelhoKitDto } from './dto/update-aparelho-kit.dto';
 import { CreateKitDto } from './dto/create-kit.dto';
 
@@ -134,6 +135,23 @@ export class AparelhosController {
       clienteId: dto.clienteId,
       tecnicoId: dto.tecnicoId,
     });
+  }
+
+  @Post('pareamento/csv/preview')
+  @RequirePermissions('CONFIGURACAO.APARELHO.LISTAR')
+  @ApiOperation({
+    summary:
+      'Preview de pareamento via CSV (resolve lotes/marcas por linha e retorna ações)',
+  })
+  pareamentoCsvPreview(@Body() dto: PareamentoCsvDto) {
+    return this.pareamentoService.pareamentoCsvPreview(dto);
+  }
+
+  @Post('pareamento/csv')
+  @RequirePermissions('CONFIGURACAO.APARELHO.CRIAR')
+  @ApiOperation({ summary: 'Executar pareamento via CSV (importação em lote)' })
+  pareamentoCsv(@Body() dto: PareamentoCsvDto) {
+    return this.pareamentoService.pareamentoCsv(dto);
   }
 
   @Get('pareamento/kits/detalhes')
