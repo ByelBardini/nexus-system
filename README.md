@@ -1,5 +1,17 @@
 # Nexus System
 
+[![CI](https://github.com/ByelBardini/nexus-system/actions/workflows/ci.yml/badge.svg)](https://github.com/ByelBardini/nexus-system/actions/workflows/ci.yml)
+[![versão](https://img.shields.io/github/package-json/v/ByelBardini/nexus-system?label=alpha&color=orange)](https://github.com/ByelBardini/nexus-system/releases)
+[![semantic-release](https://img.shields.io/badge/semantic--release-conventionalcommits-e10079?logo=semantic-release)](https://github.com/semantic-release/semantic-release)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen?logo=node.js&logoColor=white)](https://nodejs.org)
+[![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?logo=nestjs&logoColor=white)](https://nestjs.com)
+[![React](https://img.shields.io/badge/React-Vite-61DAFB?logo=react&logoColor=white)](https://react.dev)
+[![Prisma](https://img.shields.io/badge/Prisma-7-2D3748?logo=prisma&logoColor=white)](https://www.prisma.io)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+
+> **Alpha** — projeto em desenvolvimento ativo. A API e as interfaces podem mudar sem aviso entre versões.
+
 Stack: **Server** (NestJS 11 + Prisma 7 + MySQL/MariaDB) e **Client** (React + Vite + TypeScript + Tailwind + shadcn/ui)
 
 ## Funcionalidade
