@@ -29,9 +29,77 @@ import {
   TRACKER_STATUS_LABELS,
   type PreviewResult,
 } from "./PreviewPareamentoTable";
+import {
+  PreviewCsvTable,
+  type CsvPreviewResult,
+} from "./PreviewCsvTable";
 import { SelectClienteSearch } from "@/components/SelectClienteSearch";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import Papa from "papaparse";
+
+interface CsvLinhaInput {
+  imei: string;
+  iccid: string;
+  marcaRastreador?: string;
+  modeloRastreador?: string;
+  marcaSimcard?: string;
+  operadora?: string;
+  plano?: string;
+  loteRastreador?: string;
+  loteSimcard?: string;
+}
+
+const CSV_HEADER = [
+  "marca_rastreador",
+  "modelo",
+  "imei",
+  "operadora",
+  "marca_simcard",
+  "plano",
+  "iccid",
+  "lote_rastreador",
+  "lote_simcard",
+] as const;
+
+const CSV_HEADER_ALIASES: Record<string, keyof CsvLinhaInput> = {
+  marca_rastreador: "marcaRastreador",
+  marcarastreador: "marcaRastreador",
+  "marca(rastreador)": "marcaRastreador",
+  modelo: "modeloRastreador",
+  modelo_rastreador: "modeloRastreador",
+  imei: "imei",
+  marca_simcard: "marcaSimcard",
+  marcasimcard: "marcaSimcard",
+  "marca(simcard)": "marcaSimcard",
+  operadora: "operadora",
+  plano: "plano",
+  iccid: "iccid",
+  lote_rastreador: "loteRastreador",
+  loterastreador: "loteRastreador",
+  "lote(rastreador)": "loteRastreador",
+  lote_simcard: "loteSimcard",
+  lotesimcard: "loteSimcard",
+  lote_sim: "loteSimcard",
+  "lote(simcard)": "loteSimcard",
+};
+
+function normalizarCabecalho(h: string): string {
+  return h
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(/["']/g, "");
+}
+
+function gerarTemplateCsv(): string {
+  const header = CSV_HEADER.join(";");
+  const exemplo1 =
+    "Suntech;ST-901;358942109982341;Claro;Claro SIMCard;10MB;8955101234567890123;;";
+  const exemplo2 =
+    ";;358942109982342;;;;8955101234567890124;LOTE-RAST-001;LOTE-SIM-001";
+  return [header, exemplo1, exemplo2].join("\n");
+}
 
 type ModoPareamento = "individual" | "massa" | "csv";
 type ProprietarioTipo = "INFINITY" | "CLIENTE";
@@ -106,6 +174,16 @@ export function PareamentoPage() {
   const [criarNovoRastreadorMassa, setCriarNovoRastreadorMassa] =
     useState(false);
   const [criarNovoSimMassa, setCriarNovoSimMassa] = useState(false);
+
+  // CSV
+  const [csvFileName, setCsvFileName] = useState<string>("");
+  const [csvLinhas, setCsvLinhas] = useState<CsvLinhaInput[]>([]);
+  const [csvParseErro, setCsvParseErro] = useState<string>("");
+  const [csvPreview, setCsvPreview] = useState<CsvPreviewResult | null>(null);
+  const [proprietarioCsv, setProprietarioCsv] =
+    useState<ProprietarioTipo>("INFINITY");
+  const [clienteIdCsv, setClienteIdCsv] = useState<number | null>(null);
+  const csvFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const imeis = useMemo(() => parseIds(textImeis), [textImeis]);
   const iccids = useMemo(() => parseIds(textIccids), [textIccids]);
@@ -201,7 +279,9 @@ export function PareamentoPage() {
     queryKey: ["clientes-lista"],
     queryFn: () => api("/clientes"),
     enabled:
-      proprietarioIndividual === "CLIENTE" || proprietarioMassa === "CLIENTE",
+      proprietarioIndividual === "CLIENTE" ||
+      proprietarioMassa === "CLIENTE" ||
+      proprietarioCsv === "CLIENTE",
   });
 
   const lotesRastreadoresFiltrados = useMemo(() => {
@@ -709,6 +789,129 @@ export function PareamentoPage() {
     setClienteIdMassa(null);
   };
 
+  const limparCsv = () => {
+    setCsvFileName("");
+    setCsvLinhas([]);
+    setCsvParseErro("");
+    setCsvPreview(null);
+    setProprietarioCsv("INFINITY");
+    setClienteIdCsv(null);
+    if (csvFileInputRef.current) csvFileInputRef.current.value = "";
+  };
+
+  const handleBaixarTemplateCsv = () => {
+    const conteudo = gerarTemplateCsv();
+    const blob = new Blob([`\uFEFF${conteudo}`], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "template-pareamento.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleUploadCsv = (file: File) => {
+    setCsvParseErro("");
+    setCsvPreview(null);
+    setCsvLinhas([]);
+    setCsvFileName(file.name);
+
+    Papa.parse<Record<string, string>>(file, {
+      header: true,
+      skipEmptyLines: true,
+      transformHeader: (h) => normalizarCabecalho(h),
+      complete: (result) => {
+        if (result.errors && result.errors.length > 0) {
+          setCsvParseErro(
+            `Erro ao ler CSV: ${result.errors[0].message}`,
+          );
+          return;
+        }
+        const camposValidos = new Set(Object.values(CSV_HEADER_ALIASES));
+        const linhasParsed: CsvLinhaInput[] = [];
+        for (const row of result.data) {
+          const linha: CsvLinhaInput = { imei: "", iccid: "" };
+          for (const [k, v] of Object.entries(row)) {
+            const campo = CSV_HEADER_ALIASES[normalizarCabecalho(k)];
+            if (campo && camposValidos.has(campo)) {
+              (linha as unknown as Record<string, string>)[campo] = String(
+                v ?? "",
+              ).trim();
+            }
+          }
+          if (!linha.imei && !linha.iccid) continue;
+          linhasParsed.push(linha);
+        }
+        if (linhasParsed.length === 0) {
+          setCsvParseErro(
+            "Nenhuma linha válida encontrada. Verifique o cabeçalho do CSV.",
+          );
+          return;
+        }
+        setCsvLinhas(linhasParsed);
+      },
+      error: (err) => {
+        setCsvParseErro(`Erro ao ler CSV: ${err.message}`);
+      },
+    });
+  };
+
+  const csvPreviewMutation = useMutation({
+    mutationFn: async () => {
+      return api<CsvPreviewResult>("/aparelhos/pareamento/csv/preview", {
+        method: "POST",
+        body: JSON.stringify({
+          linhas: csvLinhas,
+          proprietario: proprietarioCsv,
+          clienteId: clienteIdCsv ?? undefined,
+        }),
+      });
+    },
+    onSuccess: (data) => setCsvPreview(data),
+    onError: (err) =>
+      toast.error(err instanceof Error ? err.message : "Erro ao gerar preview"),
+  });
+
+  const csvImportarMutation = useMutation({
+    mutationFn: async () => {
+      return api<{ criados: number }>("/aparelhos/pareamento/csv", {
+        method: "POST",
+        body: JSON.stringify({
+          linhas: csvLinhas,
+          proprietario: proprietarioCsv,
+          clienteId: clienteIdCsv ?? undefined,
+        }),
+      });
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["aparelhos"] });
+      queryClient.invalidateQueries({ queryKey: ["lotes-rastreadores"] });
+      queryClient.invalidateQueries({ queryKey: ["lotes-sims"] });
+      toast.success(
+        `${data?.criados ?? 0} equipamento(s) importado(s) com sucesso!`,
+      );
+      limparCsv();
+    },
+    onError: (err) =>
+      toast.error(
+        err instanceof Error ? err.message : "Erro ao importar CSV",
+      ),
+  });
+
+  const csvTemErros = useMemo(
+    () => (csvPreview?.contadores.erros ?? 0) > 0,
+    [csvPreview],
+  );
+  const csvPodeImportar =
+    csvLinhas.length > 0 &&
+    csvPreview !== null &&
+    !csvTemErros &&
+    (proprietarioCsv === "INFINITY" || clienteIdCsv !== null);
+
   const subtituloPorModo: Record<ModoPareamento, string> = {
     individual: "Pareamento individual (rastreador + SIM)",
     massa: "Cadastro em massa (colagem de IMEIs e ICCIDs)",
@@ -765,10 +968,11 @@ export function PareamentoPage() {
             type="button"
             onClick={() => setModo("csv")}
             className={cn(
-              "px-4 py-2 text-[11px] font-bold uppercase rounded-sm border transition-all opacity-50 cursor-not-allowed",
-              "bg-white text-slate-500 border-slate-200",
+              "px-4 py-2 text-[11px] font-bold uppercase rounded-sm border transition-all",
+              modo === "csv"
+                ? "bg-slate-800 text-white border-slate-800"
+                : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50",
             )}
-            title="Em breve"
           >
             Importação CSV
           </button>
@@ -2082,6 +2286,196 @@ export function PareamentoPage() {
               </div>
             </div>
           )}
+
+          {modo === "csv" && (
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-8 space-y-6">
+                <div className="rounded-sm border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="mb-4 flex items-center justify-between border-b border-slate-100 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100">
+                        <MaterialIcon
+                          name="upload_file"
+                          className="text-slate-600 text-xl"
+                        />
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-bold uppercase tracking-wide text-slate-800">
+                          Importar arquivo CSV
+                        </h3>
+                        <p className="mt-0.5 text-[10px] font-medium text-slate-500">
+                          Cada linha vira um rastreador. Separador{" "}
+                          <span className="font-mono">;</span> ou{" "}
+                          <span className="font-mono">,</span>
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleBaixarTemplateCsv}
+                      className="h-9 gap-2 px-4 text-[11px] font-bold uppercase"
+                    >
+                      <MaterialIcon name="download" className="text-base" />
+                      Baixar modelo
+                    </Button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="mb-2 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        Arquivo CSV
+                      </Label>
+                      <div className="rounded-sm border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+                        <input
+                          ref={csvFileInputRef}
+                          type="file"
+                          accept=".csv,text/csv"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleUploadCsv(file);
+                          }}
+                          className="hidden"
+                          data-testid="csv-file-input"
+                        />
+                        <MaterialIcon
+                          name="cloud_upload"
+                          className="text-4xl text-slate-400"
+                        />
+                        <p className="mt-2 text-xs text-slate-600">
+                          {csvFileName
+                            ? csvFileName
+                            : "Selecione o arquivo .csv a importar"}
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => csvFileInputRef.current?.click()}
+                          className="mt-3 h-9 px-4 text-[11px] font-bold uppercase"
+                        >
+                          Escolher arquivo
+                        </Button>
+                        {csvLinhas.length > 0 && (
+                          <p className="mt-3 text-[11px] text-emerald-600">
+                            {csvLinhas.length} linha(s) carregada(s)
+                          </p>
+                        )}
+                        {csvParseErro && (
+                          <p className="mt-3 flex items-center justify-center gap-1 text-[11px] text-red-600">
+                            <AlertCircle className="h-3.5 w-3.5" />
+                            {csvParseErro}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="rounded-sm border border-slate-200 bg-slate-50 p-4">
+                      <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        Colunas esperadas
+                      </p>
+                      <ul className="space-y-1 text-[11px] text-slate-600">
+                        <li>
+                          <span className="font-mono">imei</span>,{" "}
+                          <span className="font-mono">iccid</span> —
+                          obrigatórios
+                        </li>
+                        <li>
+                          <span className="font-mono">marca_rastreador</span>,{" "}
+                          <span className="font-mono">modelo</span> — se
+                          rastreador novo sem lote
+                        </li>
+                        <li>
+                          <span className="font-mono">operadora</span>,{" "}
+                          <span className="font-mono">marca_simcard</span>,{" "}
+                          <span className="font-mono">plano</span> — se SIM
+                          novo sem lote (ex.: <span className="font-mono">10MB</span> ou apenas{" "}
+                          <span className="font-mono">10</span>)
+                        </li>
+                        <li>
+                          <span className="font-mono">lote_rastreador</span>,{" "}
+                          <span className="font-mono">lote_simcard</span> —
+                          referência ou ID (opcional)
+                        </li>
+                      </ul>
+                    </div>
+
+                    {csvPreview && (
+                      <PreviewCsvTable preview={csvPreview} />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-span-4 space-y-6">
+                <div className="rounded-sm border border-slate-200 bg-white p-6 shadow-sm">
+                  <h3 className="mb-4 text-xs font-bold uppercase tracking-wide text-slate-800">
+                    Proprietário
+                  </h3>
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        Tipo
+                      </Label>
+                      <Select
+                        value={proprietarioCsv}
+                        onValueChange={(v) => {
+                          setProprietarioCsv(v as ProprietarioTipo);
+                          if (v === "INFINITY") setClienteIdCsv(null);
+                        }}
+                      >
+                        <SelectTrigger className="h-9 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="INFINITY">Infinity</SelectItem>
+                          <SelectItem value="CLIENTE">Cliente</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {proprietarioCsv === "CLIENTE" && (
+                      <div>
+                        <Label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                          Cliente
+                        </Label>
+                        <SelectClienteSearch
+                          clientes={clientes}
+                          value={clienteIdCsv ?? undefined}
+                          onChange={(id) => setClienteIdCsv(id ?? null)}
+                        />
+                      </div>
+                    )}
+                    <p className="text-[11px] text-slate-500">
+                      Estes valores serão aplicados a todas as linhas
+                      importadas.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-sm border border-blue-200 bg-blue-50/60 p-4">
+                  <div className="flex items-start gap-2">
+                    <Info className="h-4 w-4 shrink-0 text-blue-600" />
+                    <div className="text-[11px] leading-relaxed text-blue-800">
+                      <p className="mb-1 font-bold uppercase">Como funciona</p>
+                      <ul className="list-disc space-y-0.5 pl-4">
+                        <li>
+                          Se IMEI/ICCID já existem livres no sistema, serão
+                          reaproveitados.
+                        </li>
+                        <li>
+                          Se não existem e há um lote, o aparelho é puxado do
+                          lote.
+                        </li>
+                        <li>
+                          Se não existem e não há lote, são criados com os
+                          dados informados.
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -2125,6 +2519,45 @@ export function PareamentoPage() {
                 <MaterialIcon name="link" className="text-lg" />
               )}
               Confirmar Pareamento
+            </Button>
+          </>
+        ) : modo === "csv" ? (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={limparCsv}
+              className="h-11 px-6 text-[11px] font-bold uppercase text-slate-500"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={() => csvPreviewMutation.mutate()}
+              disabled={
+                csvLinhas.length === 0 || csvPreviewMutation.isPending
+              }
+              variant="outline"
+              className="h-11 px-6 text-[11px] font-bold uppercase"
+            >
+              {csvPreviewMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Validar CSV"
+              )}
+            </Button>
+            <Button
+              type="button"
+              onClick={() => csvImportarMutation.mutate()}
+              disabled={!csvPodeImportar || csvImportarMutation.isPending}
+              className="h-11 gap-2 px-8 bg-erp-blue text-[11px] font-bold uppercase shadow-lg shadow-blue-500/20 hover:bg-blue-700"
+            >
+              {csvImportarMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <MaterialIcon name="upload" className="text-lg" />
+              )}
+              Confirmar Importação
             </Button>
           </>
         ) : (
