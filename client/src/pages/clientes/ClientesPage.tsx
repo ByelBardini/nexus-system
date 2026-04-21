@@ -55,6 +55,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { formatarTelefone, formatarCNPJ, formatarCEP } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { InputCor } from "@/components/InputCor";
 
 const contatoSchema = z.object({
   id: z.number().optional(),
@@ -63,6 +64,7 @@ const contatoSchema = z.object({
   email: z.string().email("E-mail inválido").optional().or(z.literal("")),
 });
 
+
 const schema = z.object({
   nome: z.string().min(1, "Razão social obrigatória"),
   nomeFantasia: z.string().optional(),
@@ -70,6 +72,7 @@ const schema = z.object({
   tipoContrato: z.enum(["COMODATO", "AQUISICAO"]),
   estoqueProprio: z.boolean(),
   status: z.enum(["ATIVO", "PENDENTE", "INATIVO"]),
+  cor: z.string().optional(),
   cep: z.string().optional(),
   logradouro: z.string().optional(),
   numero: z.string().optional(),
@@ -97,6 +100,7 @@ interface Cliente {
   tipoContrato: "COMODATO" | "AQUISICAO";
   estoqueProprio: boolean;
   status: "ATIVO" | "PENDENTE" | "INATIVO";
+  cor?: string | null;
   cep?: string | null;
   logradouro?: string | null;
   numero?: string | null;
@@ -165,6 +169,7 @@ export function ClientesPage() {
       tipoContrato: "COMODATO",
       estoqueProprio: false,
       status: "ATIVO",
+      cor: undefined,
       cep: "",
       logradouro: "",
       numero: "",
@@ -203,6 +208,7 @@ export function ClientesPage() {
         method: "POST",
         body: JSON.stringify({
           ...data,
+          cor: data.cor || undefined,
           cep: data.cep || undefined,
           logradouro: data.logradouro || undefined,
           numero: data.numero || undefined,
@@ -232,6 +238,7 @@ export function ClientesPage() {
         method: "PATCH",
         body: JSON.stringify({
           ...data,
+          cor: data.cor || undefined,
           cep: data.cep || undefined,
           logradouro: data.logradouro || undefined,
           numero: data.numero || undefined,
@@ -267,6 +274,7 @@ export function ClientesPage() {
       tipoContrato: "COMODATO",
       estoqueProprio: false,
       status: "ATIVO",
+      cor: undefined,
       cep: "",
       logradouro: "",
       numero: "",
@@ -288,6 +296,7 @@ export function ClientesPage() {
       tipoContrato: c.tipoContrato,
       estoqueProprio: c.estoqueProprio,
       status: c.status,
+      cor: c.cor ?? undefined,
       cep: c.cep ?? "",
       logradouro: c.logradouro ?? "",
       numero: c.numero ?? "",
@@ -881,6 +890,35 @@ export function ClientesPage() {
                           </>
                         )}
                       />
+                    </div>
+                  </div>
+                  <div className="col-span-4">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                      Cor do Badge
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <Controller
+                        name="cor"
+                        control={form.control}
+                        render={({ field }) => (
+                          <InputCor
+                            value={field.value}
+                            onChange={field.onChange}
+                          />
+                        )}
+                      />
+                      {form.watch("cor") && (
+                        <span
+                          className="inline-flex items-center rounded-sm border px-2 py-0.5 text-[10px] font-bold"
+                          style={{
+                            backgroundColor: `${form.watch("cor")}22`,
+                            color: form.watch("cor"),
+                            borderColor: `${form.watch("cor")}55`,
+                          }}
+                        >
+                          {form.watch("nome") || "Preview"}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
