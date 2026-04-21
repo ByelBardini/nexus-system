@@ -161,7 +161,7 @@ describe('AparelhosService', () => {
 
       await service.findAll();
 
-      const call = prisma.aparelho.findMany.mock.calls[0][0] as any;
+      const call = prisma.aparelho.findMany.mock.calls[0][0];
       expect(call.include.cliente.select).toMatchObject({ cor: true });
     });
   });

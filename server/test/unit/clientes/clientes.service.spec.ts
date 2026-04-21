@@ -72,7 +72,7 @@ describe('ClientesService', () => {
 
       await service.findAll({ includeSubclientes: false });
 
-      const call = prisma.cliente.findMany.mock.calls[0][0] as any;
+      const call = prisma.cliente.findMany.mock.calls[0][0];
       expect(call.include).not.toHaveProperty('subclientes');
     });
 
@@ -206,7 +206,11 @@ describe('ClientesService', () => {
 
     it('não chama create de contatos quando contatos é array vazio', async () => {
       const dto = { nome: 'Cliente', contatos: [] };
-      prisma.cliente.create.mockResolvedValue({ id: 2, nome: 'Cliente', contatos: [] });
+      prisma.cliente.create.mockResolvedValue({
+        id: 2,
+        nome: 'Cliente',
+        contatos: [],
+      });
 
       await service.create(dto as any);
 
@@ -248,7 +252,12 @@ describe('ClientesService', () => {
         contatos: [],
         subclientes: [],
       });
-      const updated = { id: 2, nome: 'Cliente A', cor: '#ef4444', contatos: [] };
+      const updated = {
+        id: 2,
+        nome: 'Cliente A',
+        cor: '#ef4444',
+        contatos: [],
+      };
       prisma.cliente.update.mockResolvedValue(updated);
 
       const result = await service.update(2, { cor: '#ef4444' });
@@ -386,7 +395,11 @@ describe('ClientesService', () => {
         contatos: [],
         subclientes: [],
       });
-      prisma.cliente.update.mockResolvedValue({ id: 2, nome: 'New', contatos: [] });
+      prisma.cliente.update.mockResolvedValue({
+        id: 2,
+        nome: 'New',
+        contatos: [],
+      });
 
       await service.update(2, {
         nome: 'New',
