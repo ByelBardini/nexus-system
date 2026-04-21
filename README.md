@@ -1,5 +1,7 @@
 # Nexus System
 
+> **Alpha** — projeto em desenvolvimento ativo. A API e as interfaces podem mudar sem aviso entre versões.
+
 Stack: **Server** (NestJS 11 + Prisma 7 + MySQL/MariaDB) e **Client** (React + Vite + TypeScript + Tailwind + shadcn/ui)
 
 ## Funcionalidade
