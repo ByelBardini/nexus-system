@@ -1,4 +1,11 @@
-import { useState, useMemo, Fragment, useCallback } from "react";
+import {
+  useState,
+  useMemo,
+  Fragment,
+  useCallback,
+  Suspense,
+  lazy,
+} from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller, useWatch, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -47,6 +54,13 @@ import {
 } from "@/lib/format";
 import { InputCPFCNPJ } from "@/components/InputCPFCNPJ";
 import { cn } from "@/lib/utils";
+import {
+  nextMapState,
+  tecnicoPrecoToNum,
+  type MapState,
+} from "@/lib/tecnicos-page";
+
+const TecnicosMap = lazy(() => import("@/components/TecnicosMap"));
 
 const schema = z.object({
   nome: z.string().min(1, "Nome obrigatório"),
@@ -85,6 +99,9 @@ interface Tecnico {
   bairro: string | null;
   cidadeEndereco: string | null;
   estadoEndereco: string | null;
+  latitude: number | string | null;
+  longitude: number | string | null;
+  geocodingPrecision: "EXATO" | "CIDADE" | null;
   ativo: boolean;
   precos?: {
     instalacaoComBloqueio: number | string;
@@ -93,11 +110,6 @@ interface Tecnico {
     retirada: number | string;
     deslocamento: number | string;
   };
-}
-
-function toNum(v: number | string | undefined): number {
-  if (v === undefined) return 0;
-  return typeof v === "string" ? parseFloat(v) || 0 : v;
 }
 
 const PAGE_SIZE = 10;
@@ -114,6 +126,7 @@ export function TecnicosPage() {
     "todos" | "ativo" | "inativo"
   >("todos");
   const [page, setPage] = useState(0);
+  const [mapState, setMapState] = useState<MapState>("collapsed");
   const canCreate = hasPermission("AGENDAMENTO.TECNICO.CRIAR");
   const canEdit = hasPermission("AGENDAMENTO.TECNICO.EDITAR");
 
@@ -304,14 +317,14 @@ export function TecnicosPage() {
       estadoEndereco: t.estadoEndereco ?? "",
       ativo: t.ativo,
       instalacaoComBloqueio: Math.round(
-        toNum(t.precos?.instalacaoComBloqueio) * 100,
+        tecnicoPrecoToNum(t.precos?.instalacaoComBloqueio) * 100,
       ),
       instalacaoSemBloqueio: Math.round(
-        toNum(t.precos?.instalacaoSemBloqueio) * 100,
+        tecnicoPrecoToNum(t.precos?.instalacaoSemBloqueio) * 100,
       ),
-      revisao: Math.round(toNum(t.precos?.revisao) * 100),
-      retirada: Math.round(toNum(t.precos?.retirada) * 100),
-      deslocamento: Math.round(toNum(t.precos?.deslocamento) * 100),
+      revisao: Math.round(tecnicoPrecoToNum(t.precos?.revisao) * 100),
+      retirada: Math.round(tecnicoPrecoToNum(t.precos?.retirada) * 100),
+      deslocamento: Math.round(tecnicoPrecoToNum(t.precos?.deslocamento) * 100),
     });
     setModalOpen(true);
   }
@@ -484,9 +497,64 @@ export function TecnicosPage() {
       </header>
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
-        <section className="w-[40%] shrink-0 border-r border-slate-200 bg-slate-200" />
+        <section
+          className={cn(
+            "relative z-0 isolate shrink-0 border-r border-slate-200 bg-slate-100 transition-[width] duration-300",
+            mapState === "collapsed" && "w-[40%]",
+            mapState === "expanded" && "w-[75%]",
+            mapState === "fullscreen" && "fixed inset-0 z-40 w-full border-r-0",
+          )}
+        >
+          <Suspense
+            fallback={
+              <div className="flex h-full items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+              </div>
+            }
+          >
+            <TecnicosMap tecnicos={filtered} containerSize={mapState} />
+          </Suspense>
+          <div className="absolute right-3 top-3 z-[400] flex flex-row-reverse gap-2">
+            <button
+              type="button"
+              onClick={() => setMapState((s) => nextMapState(s))}
+              title={
+                mapState === "collapsed"
+                  ? "Expandir mapa"
+                  : mapState === "expanded"
+                    ? "Tela cheia"
+                    : "Recolher mapa"
+              }
+              className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-md transition-colors hover:bg-slate-50 hover:text-slate-900"
+            >
+              <MaterialIcon
+                name={
+                  mapState === "fullscreen"
+                    ? "close_fullscreen"
+                    : "open_in_full"
+                }
+                className="text-base"
+              />
+            </button>
+            {mapState === "expanded" && (
+              <button
+                type="button"
+                onClick={() => setMapState("collapsed")}
+                title="Recolher mapa"
+                className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-md transition-colors hover:bg-slate-50 hover:text-slate-900"
+              >
+                <MaterialIcon name="unfold_less" className="text-base" />
+              </button>
+            )}
+          </div>
+        </section>
 
-        <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-white">
+        <section
+          className={cn(
+            "flex min-w-0 flex-1 flex-col overflow-hidden bg-white",
+            mapState === "fullscreen" && "hidden",
+          )}
+        >
           <div className="flex-1 overflow-y-auto">
             <Table>
               <TableHeader>
@@ -512,7 +580,9 @@ export function TecnicosPage() {
               <TableBody>
                 {paginated.map((t) => {
                   const isExpanded = expandedId === t.id;
-                  const valorBase = toNum(t.precos?.instalacaoSemBloqueio);
+                  const valorBase = tecnicoPrecoToNum(
+                    t.precos?.instalacaoSemBloqueio,
+                  );
                   return (
                     <Fragment key={t.id}>
                       <TableRow
@@ -614,7 +684,9 @@ export function TecnicosPage() {
                                     </span>
                                     <span className="text-sm font-bold text-slate-800">
                                       {formatarMoeda(
-                                        toNum(t.precos?.instalacaoComBloqueio),
+                                        tecnicoPrecoToNum(
+                                          t.precos?.instalacaoComBloqueio,
+                                        ),
                                       )}
                                     </span>
                                   </div>
@@ -624,7 +696,9 @@ export function TecnicosPage() {
                                     </span>
                                     <span className="text-sm font-bold text-slate-800">
                                       {formatarMoeda(
-                                        toNum(t.precos?.instalacaoSemBloqueio),
+                                        tecnicoPrecoToNum(
+                                          t.precos?.instalacaoSemBloqueio,
+                                        ),
                                       )}
                                     </span>
                                   </div>
@@ -633,7 +707,9 @@ export function TecnicosPage() {
                                       Revisão
                                     </span>
                                     <span className="text-sm font-bold text-slate-800">
-                                      {formatarMoeda(toNum(t.precos?.revisao))}
+                                      {formatarMoeda(
+                                        tecnicoPrecoToNum(t.precos?.revisao),
+                                      )}
                                     </span>
                                   </div>
                                   <div className="rounded border border-slate-200 bg-white p-3">
@@ -641,7 +717,9 @@ export function TecnicosPage() {
                                       Retirada
                                     </span>
                                     <span className="text-sm font-bold text-slate-800">
-                                      {formatarMoeda(toNum(t.precos?.retirada))}
+                                      {formatarMoeda(
+                                        tecnicoPrecoToNum(t.precos?.retirada),
+                                      )}
                                     </span>
                                   </div>
                                   <div className="rounded border border-slate-200 bg-white p-3">
@@ -650,7 +728,9 @@ export function TecnicosPage() {
                                     </span>
                                     <span className="text-sm font-bold text-slate-800">
                                       {formatarMoeda(
-                                        toNum(t.precos?.deslocamento),
+                                        tecnicoPrecoToNum(
+                                          t.precos?.deslocamento,
+                                        ),
                                       )}
                                     </span>
                                   </div>

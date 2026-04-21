@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
 import { TecnicosController } from 'src/tecnicos/tecnicos.controller';
 import { TecnicosService } from 'src/tecnicos/tecnicos.service';
 import { PermissionsGuard } from 'src/auth/guards/permissions.guard';
@@ -50,6 +51,19 @@ describe('TecnicosController', () => {
       expect(service.findOne).toHaveBeenCalledWith(5);
       expect(result).toEqual(tecnico);
     });
+
+    it('propaga NotFoundException do service', async () => {
+      (service.findOne as jest.Mock).mockRejectedValue(
+        new NotFoundException('Técnico não encontrado'),
+      );
+
+      await expect(controller.findOne('999')).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(controller.findOne('999')).rejects.toThrow(
+        'Técnico não encontrado',
+      );
+    });
   });
 
   describe('create', () => {
@@ -76,6 +90,19 @@ describe('TecnicosController', () => {
       await controller.update('3', dto as any);
 
       expect(service.update).toHaveBeenCalledWith(3, dto);
+    });
+
+    it('passa NaN para service quando id não é numérico', async () => {
+      const dto = { nome: 'X' };
+      (service.update as jest.Mock).mockRejectedValue(
+        new NotFoundException('Técnico não encontrado'),
+      );
+
+      await expect(controller.update('abc', dto as any)).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(service.update).toHaveBeenCalledWith(NaN, dto);
     });
   });
 });
