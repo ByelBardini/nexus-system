@@ -1,0 +1,113 @@
+﻿# Context — Nexus System
+
+Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
+
+### Domínio: `pedidos-rastreadores`
+
+**Arquivos do módulo (`server/src/pedidos-rastreadores/`):**
+
+| Arquivo | Responsabilidade |
+|---------|-----------------|
+| `pedidos-rastreadores.module.ts` | Registra controller + service; importa `PrismaModule`, `UsersModule`, `DebitosRastreadoresModule`; **não** exporta o service |
+| `pedidos-rastreadores.controller.ts` | Rotas em `/pedidos-rastreadores`; `@UseGuards(PermissionsGuard)` no controller; `@ApiTags('pedidos-rastreadores')` |
+| `pedidos-rastreadores.service.ts` | Criação, listagem, atualização de status, gestão de kits, destinatários MISTO, remoção |
+| `dto/create-pedido-rastreador.dto.ts` | Body de criação; valida destino e itens MISTO |
+| `dto/create-pedido-rastreador-item.dto.ts` | Item de pedido MISTO (proprietário, quantidade, marca/modelo/operadora) |
+| `dto/update-status-pedido.dto.ts` | `status`, `observacao?`, `kitIds?`, `deClienteId?` |
+| `dto/update-kit-ids.dto.ts` | `kitIds: number[]` |
+| `dto/bulk-aparelho-destinatario.dto.ts` | `aparelhoIds`, `destinatarioProprietario`, `destinatarioClienteId?` |
+
+**Endpoints e permissões:**
+
+| Método | Path | Permissão | Código |
+|--------|------|-----------|--------|
+| GET | `/pedidos-rastreadores` | `AGENDAMENTO.PEDIDO_RASTREADOR.LISTAR` | 200 |
+| GET | `/pedidos-rastreadores/:id` | `AGENDAMENTO.PEDIDO_RASTREADOR.LISTAR` | 200 |
+| POST | `/pedidos-rastreadores` | `AGENDAMENTO.PEDIDO_RASTREADOR.CRIAR` | 201 |
+| PATCH | `/pedidos-rastreadores/:id/status` | `AGENDAMENTO.PEDIDO_RASTREADOR.EDITAR` | 200 |
+| PATCH | `/pedidos-rastreadores/:id/kits` | `AGENDAMENTO.PEDIDO_RASTREADOR.EDITAR` | 200 |
+| POST | `/pedidos-rastreadores/:id/aparelhos-destinatarios` | `AGENDAMENTO.PEDIDO_RASTREADOR.EDITAR` | **204** |
+| GET | `/pedidos-rastreadores/:id/aparelhos-destinatarios` | `AGENDAMENTO.PEDIDO_RASTREADOR.LISTAR` | 200 |
+| DELETE | `/pedidos-rastreadores/:id/aparelhos-destinatarios/:aparelhoId` | `AGENDAMENTO.PEDIDO_RASTREADOR.EDITAR` | **204** |
+| DELETE | `/pedidos-rastreadores/:id` | `AGENDAMENTO.PEDIDO_RASTREADOR.EXCLUIR` | 200 |
+
+**Query params `GET /pedidos-rastreadores`:**
+
+| Param | Tipo | Comportamento |
+|-------|------|--------------|
+| `page` | `string?` (convertido com `+`) | Paginação |
+| `limit` | `string?` | **`maxLimit: 500`, `defaultLimit: 500`** — listagem pode retornar até 500 itens por padrão |
+| `status` | `StatusPedidoRastreador?` | Filtro exato |
+| `search` | `string?` | Busca insensitive em: `codigo`, `tecnico.nome`, `cliente.nome`, `subcliente.nome`, `subcliente.cliente.nome`, `itens[].cliente.nome` |
+
+**Enums Prisma usados:**
+
+- `TipoDestinoPedido`: `TECNICO` | `CLIENTE` | `MISTO`
+- `StatusPedidoRastreador`: `SOLICITADO` | `EM_CONFIGURACAO` | `CONFIGURADO` | `DESPACHADO` | `ENTREGUE`
+- `UrgenciaPedido`: `BAIXA` | `MEDIA` | `ALTA` | `URGENTE`
+- `ProprietarioTipo`: `INFINITY` | `CLIENTE`
+
+**Modelos Prisma (campos-chave):**
+
+- `PedidoRastreador`: `id`, `codigo` (formato `PED-0001`, gerado via `MAX+1` com até 5 retries em race P2002), `tipoDestino` (`TipoDestinoPedido`), `status` (`StatusPedidoRastreador`), `urgencia` (`UrgenciaPedido`, default `MEDIA`), `dataSolicitacao`, `quantidade`, `tecnicoId?`, `clienteId?`, `subclienteId?`, `deClienteId?`, `marcaEquipamentoId?`, `modeloEquipamentoId?`, `operadoraId?`, `kitIds` (`Json?`), `observacao?`, `entregueEm?`, `criadoPorId?`, `criadoEm`, `atualizadoEm`.
+- `PedidoRastreadorHistorico`: `id`, `pedidoId`, `statusAnterior`, `statusNovo`, `observacao?`, `criadoEm`.
+- `PedidoRastreadorItem`: `id`, `pedidoId`, `proprietario` (`ProprietarioTipo`), `clienteId?`, `quantidade`, `marcaEquipamentoId?`, `modeloEquipamentoId?`, `operadoraId?`.
+- `PedidoRastreadorAparelho`: vínculo aparelho ↔ pedido com destinatário; campos `aparelhoId`, `pedidoId`, `proprietario`, `clienteId?`.
+
+**Regras de negócio críticas:**
+
+**Criação (`create` / `createOnce`):**
+- `codigo` = `PED-XXXX` (4 dígitos); derivado do último registro por `id desc`; até 5 retries em `P2002`.
+- `tipoDestino = MISTO`: `quantidade` = soma de `itens[].quantidade`; cria `PedidoRastreadorItem` aninhados; `tecnicoId` obrigatório mesmo em MISTO.
+- `tipoDestino = TECNICO` ou `CLIENTE`: usa `quantidade` do DTO; sem itens.
+- `dataSolicitacao`: default `new Date()` se omitido; `urgencia`: default `MEDIA`.
+- Validação custom `DestinatarioClienteConstraint`: se `CLIENTE`, exige `clienteId || subclienteId`.
+
+**`bulkSetDestinatarios`:**
+- Encontra o `PedidoRastreadorItem` correspondente ao destinatário: match por `proprietario` e (se CLIENTE) `clienteId = destinatarioClienteId`.
+- Controla **cota**: conta assignments existentes fora dos `aparelhoIds` enviados; `jaAtribuidos + aparelhoIds.length` não pode exceder `item.quantidade`.
+- `upsert` em `PedidoRastreadorAparelho` (sem erro silencioso — lança se cota ultrapassada).
+
+**`getAparelhosDestinatarios`:**
+- Retorna `{ assignments, quotaUsage }`.
+- `quotaUsage`: por item, conta linhas com mesmo `proprietario` + `clienteId`; exibe `'Infinity'` para INFINITY.
+
+**`removeAparelhoDestinatario`:**
+- `deleteMany` silencioso (não lança se zero linhas removidas; não valida pedido).
+
+**`updateStatus` — máquina de estados e efeitos:**
+1. **Idempotência:** se `dto.status === statusAtual`, retorna `findOne` sem transação.
+2. **Fluxo linear:** `SOLICITADO → EM_CONFIGURACAO → CONFIGURADO → DESPACHADO → ENTREGUE`. Retroagir de `DESPACHADO` é bloqueado explicitamente. `ENTREGUE → CONFIGURADO` é permitido e **reseta** aparelhos.
+3. **`entregueEm`:** setado em `new Date()` ao ir para `ENTREGUE`; zerado (`null`) ao voltar para `CONFIGURADO`.
+4. **`kitIds`:** pode vir no DTO ou ser lido de `pedido.kitIds` (campo `Json?`, parseado por `extrairKitIds`). Persistido se não vazio; **preserva** kits existentes se DTO não trouxer novos.
+5. **Kits (`Kit.kitConcluido`):**
+   - Status `CONFIGURADO`, `DESPACHADO`, `ENTREGUE` + `kitIds` → `kit.updateMany { kitConcluido: true }`.
+   - Regressão para `SOLICITADO`/`EM_CONFIGURACAO` → para cada kitId antigo não presente em outros pedidos restritivos, `kit.kitConcluido = false`.
+6. **Mapeamento status pedido → status aparelho:**
+   - `DESPACHADO` → `StatusAparelho.DESPACHADO`
+   - `ENTREGUE` → `StatusAparelho.COM_TECNICO`
+   - `CONFIGURADO` (vindo de ENTREGUE) → `StatusAparelho.CONFIGURADO`
+   - Outros → sem atualização de aparelhos.
+7. **MISTO + ENTREGUE/DESPACHADO com COM_TECNICO/DESPACHADO:** exige que **todos** os rastreadores dos kits tenham entrada em `PedidoRastreadorAparelho`; caso contrário lança `BadRequestException` com contagem faltante.
+8. **Débitos:** chama `debitosService.consolidarDebitoTx` quando proprietário/cliente de origem e destino diferem — resolve marca/modelo pelo nome via `MarcaEquipamento` + `ModeloEquipamento`; rastreios de `pedidoId` passados ao histórico.
+9. **SIM vinculado:** replica o mesmo `novoStatusAparelho` no SIM vinculado (`simVinculadoId`).
+10. Toda lógica de aparelhos, kits e débitos ocorre **dentro de `prisma.$transaction`**.
+
+**`updateKitIds`:**
+- `findOne` → `prisma.pedidoRastreador.update({ data: { kitIds } })`.
+
+**`remove`:**
+- `findOne` + `prisma.pedidoRastreador.delete`; filhos com `onDelete: Cascade` no schema são removidos automaticamente (histórico, itens, vínculos aparelho).
+
+**Constante `includeBase`:**
+- Shape de includes padrão: `tecnico`, `cliente`, `subcliente`, `deCliente`, `marcaEquipamento`, `modeloEquipamento`, `operadora`, `criadoPor`, `itens` (com `cliente`, `marcaEquipamento`, `modeloEquipamento`, `operadora`), `aparelhosDestinatarios`.
+- `findOne` adiciona `historico` (50 registros, desc).
+
+**Integrações com outros domínios:**
+
+- **`DebitosRastreadoresService`:** `consolidarDebitoTx` chamado dentro de transação Prisma em `updateStatus`.
+- **`Kit`:** `kitConcluido` sincronizado em `updateStatus` nos dois sentidos.
+- **`Aparelho` / `AparelhoHistorico`:** status de rastreadores e SIMs nos kits atualizados em `updateStatus`.
+
+**Testes unitários:** não há pasta `server/test/unit/pedidos-rastreadores/` — domínio **sem cobertura unitária** atualmente.
+
