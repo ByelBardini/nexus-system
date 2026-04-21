@@ -74,24 +74,22 @@ describe("spreadDuplicateMapCoordinates", () => {
       48,
     );
     expect(r).toHaveLength(3);
-    const dists = r.map((p) =>
-      Math.hypot(p.displayLat - 0, p.displayLng - 0),
-    );
+    const dists = r.map((p) => Math.hypot(p.displayLat - 0, p.displayLng - 0));
     expect(Math.abs(dists[0] - dists[1])).toBeLessThan(1e-10);
     expect(Math.abs(dists[1] - dists[2])).toBeLessThan(1e-10);
   });
 
   it("escala deslocamento com radiusMeters maior", () => {
     const base = { id: 1, lat: -10, lng: -20 };
-    const [a48] = spreadDuplicateMapCoordinates(
-      [base, { ...base, id: 2 }],
-      48,
-    );
+    const [a48] = spreadDuplicateMapCoordinates([base, { ...base, id: 2 }], 48);
     const [a100] = spreadDuplicateMapCoordinates(
       [base, { ...base, id: 2 }],
       100,
     );
-    const d48 = Math.hypot(a48.displayLat - base.lat, a48.displayLng - base.lng);
+    const d48 = Math.hypot(
+      a48.displayLat - base.lat,
+      a48.displayLng - base.lng,
+    );
     const d100 = Math.hypot(
       a100.displayLat - base.lat,
       a100.displayLng - base.lng,

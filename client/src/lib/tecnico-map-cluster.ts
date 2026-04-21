@@ -38,9 +38,7 @@ export function buildTecnicoSupercluster(plots: TecnicoPlotClusterInput[]) {
   );
 }
 
-export function isClusterFeature(
-  f: GeoJSON.Feature,
-): f is GeoJSON.Feature<
+export function isClusterFeature(f: GeoJSON.Feature): f is GeoJSON.Feature<
   GeoJSON.Point,
   TecnicoPlotClusterProps & {
     cluster: true;

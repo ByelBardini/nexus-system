@@ -1,12 +1,6 @@
 import { memo, useEffect, useMemo, useState } from "react";
 import L from "leaflet";
-import {
-  MapContainer,
-  Marker,
-  Popup,
-  TileLayer,
-  useMap,
-} from "react-leaflet";
+import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import {
   buildTecnicoSupercluster,
@@ -53,8 +47,7 @@ function toPlot(t: TecnicoMapItem): TecnicoPlot | null {
   const lng = t.longitude == null ? NaN : Number(t.longitude);
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
   if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
-  const precision =
-    t.geocodingPrecision === "CIDADE" ? "CIDADE" : "EXATO";
+  const precision = t.geocodingPrecision === "CIDADE" ? "CIDADE" : "EXATO";
   return {
     id: t.id,
     nome: t.nome,
@@ -164,7 +157,7 @@ function TecnicoMarker({
 }) {
   const icon = useMemo(
     () => createTecnicoDivIcon(plot.nome, plot.precision),
-    [plot.id, plot.nome, plot.precision],
+    [plot.nome, plot.precision],
   );
 
   return (
@@ -172,9 +165,7 @@ function TecnicoMarker({
       position={[plot.displayLat, plot.displayLng]}
       icon={icon}
       eventHandlers={
-        onMarkerClick
-          ? { click: () => onMarkerClick(plot.id) }
-          : undefined
+        onMarkerClick ? { click: () => onMarkerClick(plot.id) } : undefined
       }
     >
       <Popup>
@@ -220,7 +211,10 @@ function ClusterMarker({
           </p>
           <ul className="space-y-2 border-t border-slate-200 pt-2">
             {group.map((g) => (
-              <li key={g.id} className="border-b border-slate-100 pb-2 last:border-0 last:pb-0">
+              <li
+                key={g.id}
+                className="border-b border-slate-100 pb-2 last:border-0 last:pb-0"
+              >
                 <p className="text-sm font-bold text-slate-800">{g.nome}</p>
                 <p className="text-xs text-slate-600">
                   {g.cidadeEndereco && g.estadoEndereco
@@ -266,10 +260,7 @@ function MapClusterMarkers({
     zoom: number;
   } | null>(null);
 
-  const index = useMemo(
-    () => buildTecnicoSupercluster(plotsRaw),
-    [plotsRaw],
-  );
+  const index = useMemo(() => buildTecnicoSupercluster(plotsRaw), [plotsRaw]);
 
   useEffect(() => {
     const update = () => {
@@ -347,11 +338,7 @@ function MapClusterMarkers({
         />
       ))}
       {spreadPlots.map((p) => (
-        <TecnicoMarker
-          key={p.id}
-          plot={p}
-          onMarkerClick={onMarkerClick}
-        />
+        <TecnicoMarker key={p.id} plot={p} onMarkerClick={onMarkerClick} />
       ))}
     </>
   );
@@ -363,10 +350,7 @@ function TecnicosMapImpl({
   onMarkerClick,
 }: TecnicosMapProps) {
   const plotsRaw = useMemo(
-    () =>
-      tecnicos
-        .map(toPlot)
-        .filter((p): p is TecnicoPlot => p !== null),
+    () => tecnicos.map(toPlot).filter((p): p is TecnicoPlot => p !== null),
     [tecnicos],
   );
 
@@ -388,10 +372,7 @@ function TecnicosMapImpl({
       />
       <FitToMarkers boundsPoints={boundsPoints} />
       <InvalidateOnResize size={containerSize} />
-      <MapClusterMarkers
-        plotsRaw={plotsRaw}
-        onMarkerClick={onMarkerClick}
-      />
+      <MapClusterMarkers plotsRaw={plotsRaw} onMarkerClick={onMarkerClick} />
     </MapContainer>
   );
 }

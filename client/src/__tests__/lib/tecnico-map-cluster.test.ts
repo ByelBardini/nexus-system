@@ -95,7 +95,10 @@ describe("buildTecnicoSupercluster", () => {
     const clusterId = (c.properties as { cluster_id: number }).cluster_id;
     const leaves = index.getLeaves(clusterId, Infinity, 0);
     expect(leaves.length).toBe(2);
-    const props = leaves.map((leaf) => leaf.properties as { id: number; nome: string; precision: string });
+    const props = leaves.map(
+      (leaf) =>
+        leaf.properties as { id: number; nome: string; precision: string },
+    );
     expect(props.map((p) => p.id).sort()).toEqual([7, 8]);
     expect(props.some((p) => p.precision === "CIDADE")).toBe(true);
   });

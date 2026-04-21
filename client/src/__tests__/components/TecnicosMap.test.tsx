@@ -110,7 +110,12 @@ describe("TecnicosMap", () => {
   it("renderiza apenas técnicos com lat/lng numéricos válidos", () => {
     const tecnicos: TecnicoMapItem[] = [
       makeTecnico({ id: 1, nome: "Carlos" }),
-      makeTecnico({ id: 2, nome: "Sem coord", latitude: null, longitude: null }),
+      makeTecnico({
+        id: 2,
+        nome: "Sem coord",
+        latitude: null,
+        longitude: null,
+      }),
       makeTecnico({ id: 3, nome: "Inválido", latitude: 999, longitude: 0 }),
       makeTecnico({
         id: 4,
@@ -282,7 +287,10 @@ describe("TecnicosMap", () => {
       />,
     );
 
-    expect(leafletMapSingleton.setView).toHaveBeenCalledWith([-23.55, -46.63], 13);
+    expect(leafletMapSingleton.setView).toHaveBeenCalledWith(
+      [-23.55, -46.63],
+      13,
+    );
   });
 
   it("FitToMarkers com dois pontos distintos chama fitBounds", () => {

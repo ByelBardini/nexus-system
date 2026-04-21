@@ -502,8 +502,7 @@ export function TecnicosPage() {
             "relative z-0 isolate shrink-0 border-r border-slate-200 bg-slate-100 transition-[width] duration-300",
             mapState === "collapsed" && "w-[40%]",
             mapState === "expanded" && "w-[75%]",
-            mapState === "fullscreen" &&
-              "fixed inset-0 z-40 w-full border-r-0",
+            mapState === "fullscreen" && "fixed inset-0 z-40 w-full border-r-0",
           )}
         >
           <Suspense

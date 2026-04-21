@@ -23,7 +23,9 @@ export function groupPlotsByCoordinate<
  * Desloca levemente itens que compartilham o mesmo par lat/lng (ex.: geocoding só por cidade)
  * em um círculo, para os pins não ficarem empilhados. As coordenadas reais permanecem em `lat`/`lng`.
  */
-export function spreadDuplicateMapCoordinates<T extends { id: number; lat: number; lng: number }>(
+export function spreadDuplicateMapCoordinates<
+  T extends { id: number; lat: number; lng: number },
+>(
   items: T[],
   radiusMeters = 48,
 ): Array<T & { displayLat: number; displayLng: number }> {
