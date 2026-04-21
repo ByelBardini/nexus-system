@@ -149,6 +149,7 @@ export class DebitosRastreadoresService {
               pedido: { select: { id: true, codigo: true } },
               lote: { select: { id: true, referencia: true } },
               aparelho: { select: { id: true, identificador: true } },
+              ordemServico: { select: { id: true, numero: true } },
             },
           },
         },
