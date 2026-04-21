@@ -38,6 +38,8 @@ describe('AparelhosController', () => {
   const pareamentoMock = {
     pareamentoPreview: jest.fn(),
     pareamento: jest.fn(),
+    pareamentoCsvPreview: jest.fn(),
+    pareamentoCsv: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -193,6 +195,41 @@ describe('AparelhosController', () => {
         clienteId: undefined,
         tecnicoId: undefined,
       });
+    });
+  });
+
+  describe('pareamentoCsvPreview', () => {
+    it('delega para pareamentoService.pareamentoCsvPreview com o DTO', async () => {
+      const dto = {
+        linhas: [{ imei: '123', iccid: '456', marcaRastreador: 'Suntech' }],
+        proprietario: 'INFINITY',
+      };
+      (pareamentoService.pareamentoCsvPreview as jest.Mock).mockResolvedValue({
+        linhas: [],
+        contadores: { validos: 0, comAviso: 0, erros: 0 },
+      });
+
+      await controller.pareamentoCsvPreview(dto as any);
+
+      expect(pareamentoService.pareamentoCsvPreview).toHaveBeenCalledWith(dto);
+    });
+  });
+
+  describe('pareamentoCsv', () => {
+    it('delega para pareamentoService.pareamentoCsv com o DTO', async () => {
+      const dto = {
+        linhas: [{ imei: '123', iccid: '456' }],
+        proprietario: 'CLIENTE',
+        clienteId: 10,
+      };
+      (pareamentoService.pareamentoCsv as jest.Mock).mockResolvedValue({
+        criados: 1,
+        equipamentos: [],
+      });
+
+      await controller.pareamentoCsv(dto as any);
+
+      expect(pareamentoService.pareamentoCsv).toHaveBeenCalledWith(dto);
     });
   });
 

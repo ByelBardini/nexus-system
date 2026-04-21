@@ -32,6 +32,8 @@ Ver índice em `AGENTS.md`.
 | sonner | Toast notifications |
 | lucide-react | Ícones SVG |
 | next-themes | Presente no package; uso indireto |
+| papaparse (+ `@types/papaparse`) | Parse de CSV (importação de pareamento em `PareamentoPage`) |
+| react-colorful | Color picker usado em `InputCor` (Clientes) |
 
 **Dev**: Vite 7, Vitest 4, Testing Library, TypeScript 5.9, ESLint 9 flat config.
 

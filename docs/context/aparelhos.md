@@ -19,6 +19,7 @@ Ver índice em `AGENTS.md`.
 | `dto/update-status.dto.ts` | PATCH de status |
 | `dto/pareamento-preview.dto.ts` | Preview (`ParDto`: imei + iccid) |
 | `dto/pareamento.dto.ts` | Execução pareamento (pares + lotes/manual + proprietário) |
+| `dto/pareamento-csv.dto.ts` | Importação via CSV (`PareamentoCsvDto`, `PareamentoCsvLinhaDto`) |
 | `dto/update-aparelho-kit.dto.ts` | `kitId` opcional/null (`@ValidateIf` para `@IsNumber` só quando não null) |
 | `dto/create-kit.dto.ts` | `nome` string |
 
@@ -60,6 +61,8 @@ Ver índice em `AGENTS.md`.
 | PATCH | `/aparelhos/:id/status` | `CONFIGURACAO.APARELHO.EDITAR` |
 | POST | `/aparelhos/pareamento/preview` | `CONFIGURACAO.APARELHO.LISTAR` |
 | POST | `/aparelhos/pareamento` | `CONFIGURACAO.APARELHO.CRIAR` |
+| POST | `/aparelhos/pareamento/csv/preview` | `CONFIGURACAO.APARELHO.LISTAR` |
+| POST | `/aparelhos/pareamento/csv` | `CONFIGURACAO.APARELHO.CRIAR` |
 | GET | `/aparelhos/pareamento/kits/detalhes` | `CONFIGURACAO.APARELHO.LISTAR` |
 | GET | `/aparelhos/pareamento/kits/:id` | `CONFIGURACAO.APARELHO.LISTAR` |
 | PATCH | `/aparelhos/pareamento/aparelho/:id/kit` | `CONFIGURACAO.APARELHO.EDITAR` |
@@ -88,6 +91,14 @@ Ver índice em `AGENTS.md`.
 - `identificador` deve ser único (validado via `findFirst` antes de criar avulso).
 - `updateStatus` em rastreador com `simVinculadoId` **replica** status e histórico no SIM vinculado (mesma transação).
 - Pareamento: IMEI/ICCID normalizados (só dígitos, 1–50 chars); após pareamento SIM permanece `INFINITY`; mudança de proprietário do rastreador pode gerar `consolidarDebitoTx` se marca/modelo existirem no catálogo.
+- **Pareamento CSV (`pareamentoCsvPreview` / `pareamentoCsv`):**
+  - Input: `{ linhas: PareamentoCsvLinha[], proprietario?, clienteId?, tecnicoId? }`. Cada linha aceita `imei`, `iccid`, `marcaRastreador?`, `modeloRastreador?`, `operadora?`, `marcaSimcard?` (nome ou ID), `plano?` (MB numérico, `"10MB"` ou ID), `loteRastreador?` (referência ou ID), `loteSimcard?` (referência ou ID).
+  - Resolução por linha: para cada `imei`/`iccid` chama `resolveRastreador` / `resolveSim` (mesma lógica do modo manual: `FOUND_AVAILABLE` | `FOUND_ALREADY_LINKED` | `NEEDS_CREATE` | `INVALID_FORMAT`). Decide `tracker_acao`/`sim_acao`: `VINCULAR_EXISTENTE` | `CRIAR_VIA_LOTE` | `CRIAR_MANUAL` | `ERRO`.
+  - Helpers privados: `parseIdOuString` (detecta dígitos → ID, caso contrário texto); `resolveLoteCsv` (busca `LoteAparelho` por `id` ou `referencia` + `tipo`); `resolveMarcaSimcardCsv`; `resolvePlanoSimcardCsv` (aceita `"10MB"` → extrai dígitos → `planoMb`, respeita `marcaSimcardId` quando informado).
+  - Códigos de erro emitidos em `linha.erros[]`: `IMEI_INVALIDO`, `ICCID_INVALIDO`, `IMEI_JA_VINCULADO`, `ICCID_JA_VINCULADO`, `FALTA_DADOS_RASTREADOR`, `FALTA_DADOS_SIM`, `LOTE_RASTREADOR_NAO_ENCONTRADO`, `LOTE_SIMCARD_NAO_ENCONTRADO`, `MARCA_SIMCARD_NAO_ENCONTRADA`, `PLANO_SIMCARD_NAO_ENCONTRADO`.
+  - Contadores do preview: `{ validos, comAviso, erros }` (`comAviso` atualmente sempre 0 — reservado).
+  - Execução (`pareamentoCsv`): reroda o preview; **bloqueia (`BadRequestException`) se houver qualquer linha com erro**. Toda criação/vínculo ocorre em `prisma.$transaction`, reutilizando a mesma lógica do modo manual (consolidar débito se marca/modelo existem no catálogo e proprietário/cliente mudam; histórico `AparelhoHistorico` com observação `"Pareamento CSV com SIM <iccid>"`).
+  - Proprietário final default `INFINITY`; SIM sempre forçado a `INFINITY`.
 - Lote com `identificadores` preenchido: quantidade efetiva = tamanho do array; abate de débito aplica só nos primeiros N itens.
 - Kit aceita apenas `RASTREADOR`; aparelho disponível para kit: `status=CONFIGURADO`, sem `kitId`, sem `tecnicoId`.
 - `PedidoRastreador` com `kitIds` JSON pode bloquear entrada no kit (valida modelo/marca/operadora do SIM e cliente).
@@ -104,6 +115,7 @@ Ver índice em `AGENTS.md`.
 | `kits.service.spec.ts` | `getKitById`, `updateAparelhoKit`, `criarOuBuscarKitPorNome` |
 | `lotes.service.spec.ts` | `createLote` (quantidade, SIM, identificadores), `getLotesParaPareamento` |
 | `pareamento.service.spec.ts` | `pareamentoPreview`, `pareamento` (transação, débitos, SIM/lote/manual) |
+| `pareamento-csv.service.spec.ts` | `pareamentoCsvPreview` (VINCULAR_EXISTENTE, CRIAR_VIA_LOTE, CRIAR_MANUAL, erros de lote/marca/plano, contadores) e `pareamentoCsv` (execução em transação + bloqueio quando há erros) |
 
 > **Divergência conhecida:** `aparelhos.controller.spec.ts` espera `kitId`/`kitNome` no `pareamento` do controller, mas o controller atual não os envia. Teste possivelmente desatualizado.
 > **Divergência conhecida:** `AparelhosPage.tsx` e `EquipamentosPage.tsx` chamam `GET /aparelhos/pareamento/kits` — rota **inexistente** no backend (existe `/kits/detalhes`, `/kits/:id`, `POST /kits`). Pode gerar 404.
