@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ClientesService } from 'src/clientes/clientes.service';
+import { CLIENTE_INFINITY_ID } from 'src/common/constants';
 import { createPrismaMock } from '../helpers/prisma-mock';
 
 describe('ClientesService', () => {
@@ -26,7 +27,7 @@ describe('ClientesService', () => {
     it('retorna lista de clientes sem subclientes por padrão', async () => {
       const clientes = [
         {
-          id: 1,
+          id: 2,
           nome: 'Cliente A',
           contatos: [],
           _count: { ordensServico: 0 },
@@ -42,6 +43,18 @@ describe('ClientesService', () => {
       );
     });
 
+    it('exclui o cliente com CLIENTE_INFINITY_ID da listagem', async () => {
+      prisma.cliente.findMany.mockResolvedValue([]);
+
+      await service.findAll();
+
+      expect(prisma.cliente.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: { not: CLIENTE_INFINITY_ID } },
+        }),
+      );
+    });
+
     it('inclui subclientes quando includeSubclientes é true', async () => {
       prisma.cliente.findMany.mockResolvedValue([]);
 
@@ -50,6 +63,30 @@ describe('ClientesService', () => {
       expect(prisma.cliente.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           include: expect.objectContaining({ subclientes: true }),
+        }),
+      );
+    });
+
+    it('não inclui subclientes quando includeSubclientes é false', async () => {
+      prisma.cliente.findMany.mockResolvedValue([]);
+
+      await service.findAll({ includeSubclientes: false });
+
+      const call = prisma.cliente.findMany.mock.calls[0][0] as any;
+      expect(call.include).not.toHaveProperty('subclientes');
+    });
+
+    it('inclui contatos e _count de ordensServico em todos os resultados', async () => {
+      prisma.cliente.findMany.mockResolvedValue([]);
+
+      await service.findAll();
+
+      expect(prisma.cliente.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({
+            contatos: true,
+            _count: { select: { ordensServico: true } },
+          }),
         }),
       );
     });
@@ -81,12 +118,29 @@ describe('ClientesService', () => {
         include: { contatos: true, subclientes: true },
       });
     });
+
+    it('sempre inclui subclientes na busca por id', async () => {
+      prisma.cliente.findUnique.mockResolvedValue({
+        id: 2,
+        nome: 'X',
+        contatos: [],
+        subclientes: [],
+      });
+
+      await service.findOne(2);
+
+      expect(prisma.cliente.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({ subclientes: true }),
+        }),
+      );
+    });
   });
 
   describe('create', () => {
     it('cria cliente sem contatos', async () => {
       const dto = { nome: 'Novo Cliente', cnpj: '12.345.678/0001-99' };
-      const created = { id: 1, ...dto, contatos: [] };
+      const created = { id: 2, ...dto, contatos: [] };
       prisma.cliente.create.mockResolvedValue(created);
 
       const result = await service.create(dto as any);
@@ -108,7 +162,7 @@ describe('ClientesService', () => {
         ],
       };
       const created = {
-        id: 1,
+        id: 2,
         nome: 'Novo Cliente',
         contatos: [{ id: 1, nome: 'João' }],
       };
@@ -125,6 +179,40 @@ describe('ClientesService', () => {
         }),
       );
     });
+
+    it('cria cliente com campo cor preenchido', async () => {
+      const dto = { nome: 'Cliente Azul', cor: '#3b82f6' };
+      const created = { id: 2, ...dto, contatos: [] };
+      prisma.cliente.create.mockResolvedValue(created);
+
+      await service.create(dto as any);
+
+      expect(prisma.cliente.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ cor: '#3b82f6' }),
+        }),
+      );
+    });
+
+    it('cria cliente sem cor (cor undefined omitida dos dados)', async () => {
+      const dto = { nome: 'Cliente Sem Cor' };
+      prisma.cliente.create.mockResolvedValue({ id: 2, ...dto, contatos: [] });
+
+      await service.create(dto as any);
+
+      const callData = prisma.cliente.create.mock.calls[0][0].data;
+      expect(callData).not.toHaveProperty('cor');
+    });
+
+    it('não chama create de contatos quando contatos é array vazio', async () => {
+      const dto = { nome: 'Cliente', contatos: [] };
+      prisma.cliente.create.mockResolvedValue({ id: 2, nome: 'Cliente', contatos: [] });
+
+      await service.create(dto as any);
+
+      const callData = prisma.cliente.create.mock.calls[0][0].data;
+      expect(callData.contatos).toBeUndefined();
+    });
   });
 
   describe('update', () => {
@@ -138,24 +226,45 @@ describe('ClientesService', () => {
 
     it('atualiza cliente sem contatos (sem transação)', async () => {
       const cliente = {
-        id: 1,
+        id: 2,
         nome: 'Cliente A',
         contatos: [],
         subclientes: [],
       };
       prisma.cliente.findUnique.mockResolvedValue(cliente);
-      const updated = { id: 1, nome: 'Cliente Atualizado', contatos: [] };
+      const updated = { id: 2, nome: 'Cliente Atualizado', contatos: [] };
       prisma.cliente.update.mockResolvedValue(updated);
 
-      const result = await service.update(1, { nome: 'Cliente Atualizado' });
+      const result = await service.update(2, { nome: 'Cliente Atualizado' });
 
       expect(result).toEqual(updated);
       expect(prisma.$transaction).not.toHaveBeenCalled();
     });
 
+    it('atualiza campo cor sem disparar transação de contatos', async () => {
+      prisma.cliente.findUnique.mockResolvedValue({
+        id: 2,
+        nome: 'Cliente A',
+        contatos: [],
+        subclientes: [],
+      });
+      const updated = { id: 2, nome: 'Cliente A', cor: '#ef4444', contatos: [] };
+      prisma.cliente.update.mockResolvedValue(updated);
+
+      const result = await service.update(2, { cor: '#ef4444' });
+
+      expect(result.cor).toBe('#ef4444');
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+      expect(prisma.cliente.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ cor: '#ef4444' }),
+        }),
+      );
+    });
+
     it('atualiza contatos via transação quando contatos são informados', async () => {
       const cliente = {
-        id: 1,
+        id: 2,
         nome: 'Cliente A',
         contatos: [],
         subclientes: [],
@@ -164,17 +273,137 @@ describe('ClientesService', () => {
       prisma.contatoCliente.deleteMany.mockResolvedValue({ count: 0 });
       prisma.contatoCliente.create.mockResolvedValue({ id: 1, nome: 'Novo' });
       const updated = {
-        id: 1,
+        id: 2,
         nome: 'Cliente A',
         contatos: [{ id: 1, nome: 'Novo' }],
       };
       prisma.cliente.update.mockResolvedValue(updated);
 
-      await service.update(1, {
+      await service.update(2, {
         contatos: [{ nome: 'Novo', celular: '11999' }],
       } as any);
 
       expect(prisma.$transaction).toHaveBeenCalled();
+    });
+
+    it('deleteMany recebe notIn dos ids existentes enviados', async () => {
+      prisma.cliente.findUnique.mockResolvedValue({
+        id: 2,
+        nome: 'X',
+        contatos: [],
+        subclientes: [],
+      });
+      prisma.contatoCliente.deleteMany.mockResolvedValue({ count: 1 });
+      prisma.contatoCliente.update.mockResolvedValue({});
+      prisma.cliente.update.mockResolvedValue({ id: 2, contatos: [] });
+
+      await service.update(2, {
+        contatos: [
+          { id: 10, nome: 'Manter', celular: '' },
+          { nome: 'Novo', celular: '' },
+        ],
+      } as any);
+
+      expect(prisma.contatoCliente.deleteMany).toHaveBeenCalledWith({
+        where: {
+          clienteId: 2,
+          id: { notIn: [10] },
+        },
+      });
+    });
+
+    it('contato com id existente é atualizado via contatoCliente.update', async () => {
+      prisma.cliente.findUnique.mockResolvedValue({
+        id: 2,
+        nome: 'X',
+        contatos: [],
+        subclientes: [],
+      });
+      prisma.contatoCliente.deleteMany.mockResolvedValue({ count: 0 });
+      prisma.contatoCliente.update.mockResolvedValue({});
+      prisma.cliente.update.mockResolvedValue({ id: 2, contatos: [] });
+
+      await service.update(2, {
+        contatos: [{ id: 5, nome: 'Existente', celular: '11888' }],
+      } as any);
+
+      expect(prisma.contatoCliente.update).toHaveBeenCalledWith({
+        where: { id: 5 },
+        data: { nome: 'Existente', celular: '11888', email: undefined },
+      });
+      expect(prisma.contatoCliente.create).not.toHaveBeenCalled();
+    });
+
+    it('contato sem id é criado via contatoCliente.create', async () => {
+      prisma.cliente.findUnique.mockResolvedValue({
+        id: 2,
+        nome: 'X',
+        contatos: [],
+        subclientes: [],
+      });
+      prisma.contatoCliente.deleteMany.mockResolvedValue({ count: 0 });
+      prisma.contatoCliente.create.mockResolvedValue({ id: 99, nome: 'Novo' });
+      prisma.cliente.update.mockResolvedValue({ id: 2, contatos: [] });
+
+      await service.update(2, {
+        contatos: [{ nome: 'Novo Contato', email: 'novo@email.com' }],
+      } as any);
+
+      expect(prisma.contatoCliente.create).toHaveBeenCalledWith({
+        data: {
+          clienteId: 2,
+          nome: 'Novo Contato',
+          celular: undefined,
+          email: 'novo@email.com',
+        },
+      });
+    });
+
+    it('array vazio de contatos deleta todos (notIn: [])', async () => {
+      prisma.cliente.findUnique.mockResolvedValue({
+        id: 2,
+        nome: 'X',
+        contatos: [],
+        subclientes: [],
+      });
+      prisma.contatoCliente.deleteMany.mockResolvedValue({ count: 3 });
+      prisma.cliente.update.mockResolvedValue({ id: 2, contatos: [] });
+
+      await service.update(2, { contatos: [] } as any);
+
+      expect(prisma.contatoCliente.deleteMany).toHaveBeenCalledWith({
+        where: {
+          clienteId: 2,
+          id: { notIn: [] },
+        },
+      });
+    });
+
+    it('campos de dados do cliente são passados para cliente.update', async () => {
+      prisma.cliente.findUnique.mockResolvedValue({
+        id: 2,
+        nome: 'Old',
+        contatos: [],
+        subclientes: [],
+      });
+      prisma.cliente.update.mockResolvedValue({ id: 2, nome: 'New', contatos: [] });
+
+      await service.update(2, {
+        nome: 'New',
+        tipoContrato: 'AQUISICAO',
+        cor: '#10b981',
+      } as any);
+
+      expect(prisma.cliente.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 2 },
+          data: expect.objectContaining({
+            nome: 'New',
+            tipoContrato: 'AQUISICAO',
+            cor: '#10b981',
+          }),
+        }),
+      );
     });
   });
 });
