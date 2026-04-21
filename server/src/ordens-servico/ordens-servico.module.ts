@@ -5,10 +5,9 @@ import { HtmlOrdemServicoGenerator } from './html-ordem-servico.generator';
 import { PdfOrdemServicoGenerator } from './pdf-ordem-servico.generator';
 import { PrismaModule } from '../prisma/prisma.module';
 import { UsersModule } from '../users/users.module';
-import { DebitosRastreadoresModule } from '../debitos-rastreadores/debitos-rastreadores.module';
 
 @Module({
-  imports: [PrismaModule, UsersModule, DebitosRastreadoresModule],
+  imports: [PrismaModule, UsersModule],
   controllers: [OrdensServicoController],
   providers: [
     OrdensServicoService,
