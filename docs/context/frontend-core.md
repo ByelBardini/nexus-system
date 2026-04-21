@@ -239,6 +239,7 @@ Todos seguem o padrão: armazenam **dado bruto** (só dígitos ou string normali
 | `InputTelefone` | `value`, `onChange` | dígitos | `formatarTelefone` / `telefoneApenasDigitos`; maxLength=15 |
 | `InputPlaca` | `value`, `onChange` | string com máscara (`ABC-1D23`) | `formatarPlaca` de `@/lib/format`; maxLength=8; **não** remove máscara — armazena com traço |
 | `InputPreco` | `value: number` (centavos), `onChange: (centavos: number)` | centavos (inteiro) | **`value` é `number`, não `string`**; converte com `centavosParaReais` / `reaisParaCentavos`; ao enviar para a API divida por 100 |
+| `InputCor` | `value?: string`, `onChange: (cor: string \| undefined) => void` | hex com `#` (ex.: `#3b82f6`) ou `undefined` | Dropdown com `HexColorPicker` (`react-colorful`), paleta de 12 cores rápidas e input manual hex. Fechar ao clicar fora via `mousedown` listener. Botão "Remover cor" zera para `undefined`. |
 
 #### Selects com busca (dropdowns customizados)
 

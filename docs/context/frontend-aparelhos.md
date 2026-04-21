@@ -29,6 +29,8 @@ Sem hook dedicado `useAparelhos`; páginas usam `useQuery` do TanStack Query dir
 - Kit resolvido com fallback: `aparelho.kit?.nome ?? kitsPorId.get(aparelho.kitId) ?? rastreador?.kit?.nome ?? kitsPorId.get(rastreador?.kitId)` — precisa do map de kits para SIM sem kit direto.
 - Botões de criação condicionais: `hasPermission("CONFIGURACAO.APARELHO.CRIAR")` → links para `/aparelhos/lote` e `/aparelhos/individual`.
 - Tipo local `Aparelho` define shape completo incluindo `simVinculado`, `aparelhosVinculados[]`, `ordemServicoVinculada`, `historico[]` — verificar se backend inclui esses campos no `GET /aparelhos`.
+- Campo `cor` do cliente incluído no select do backend (`cliente: { select: { id, nome, cor } }`); todos os blocos `findMany`/`findUnique` de `aparelhos.service.ts` já retornam `cor`.
+- **Badge de proprietário/cliente na tabela:** se `proprietario === "CLIENTE"` e `aparelho.cliente` existe, exibe badge com o nome do cliente usando a cor personalizada do cliente (`cor`): `backgroundColor: ${cor}22`, `color: cor`, `borderColor: ${cor}55`. Se o cliente não tem `cor`, usa fallback amber. Para outros proprietários, exibe badge estático via `propConfig.className`.
 
 **`CadastroIndividualPage.tsx` — detalhes:**
 
