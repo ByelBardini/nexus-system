@@ -195,6 +195,10 @@ model Tecnico {
   bairro          String?        @db.VarChar(100)
   cidadeEndereco  String?        @map("cidade_endereco") @db.VarChar(100)
   estadoEndereco  String?        @map("estado_endereco") @db.VarChar(2)
+  latitude           Decimal?            @db.Decimal(10, 7)
+  longitude          Decimal?            @db.Decimal(10, 7)
+  geocodedAt         DateTime?           @map("geocoded_at")
+  geocodingPrecision GeocodingPrecision? @map("geocoding_precision")
   ativo           Boolean        @default(true)
   ordensServico      OrdemServico[]
   precos             PrecoTecnico?
@@ -202,6 +206,11 @@ model Tecnico {
   pedidosRastreadores PedidoRastreador[]
 
   @@map("tecnicos")
+}
+
+enum GeocodingPrecision {
+  EXATO
+  CIDADE
 }
 
 model PrecoTecnico {

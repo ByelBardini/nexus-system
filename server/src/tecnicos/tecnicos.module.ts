@@ -3,9 +3,10 @@ import { TecnicosController } from './tecnicos.controller';
 import { TecnicosService } from './tecnicos.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { UsersModule } from '../users/users.module';
+import { GeocodingModule } from '../common/geocoding/geocoding.module';
 
 @Module({
-  imports: [PrismaModule, UsersModule],
+  imports: [PrismaModule, UsersModule, GeocodingModule],
   controllers: [TecnicosController],
   providers: [TecnicosService],
 })
