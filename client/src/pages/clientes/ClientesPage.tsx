@@ -64,7 +64,6 @@ const contatoSchema = z.object({
   email: z.string().email("E-mail inválido").optional().or(z.literal("")),
 });
 
-
 const schema = z.object({
   nome: z.string().min(1, "Razão social obrigatória"),
   nomeFantasia: z.string().optional(),

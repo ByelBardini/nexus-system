@@ -137,8 +137,6 @@ describe("Login — fluxo de sucesso", () => {
       expect(screen.getByText("Modal Troca Senha")).toBeInTheDocument();
     });
   });
-
-
 });
 
 describe("Login — fluxo de erro", () => {

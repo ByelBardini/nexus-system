@@ -72,7 +72,9 @@ describe("InputCor — renderização com valor", () => {
 describe("InputCor — abrir/fechar picker", () => {
   it("abre picker ao clicar no botão", async () => {
     render(<InputCor value={undefined} onChange={vi.fn()} />);
-    await userEvent.click(screen.getByRole("button", { name: /escolher cor/i }));
+    await userEvent.click(
+      screen.getByRole("button", { name: /escolher cor/i }),
+    );
     expect(screen.getByTestId("hex-color-picker")).toBeInTheDocument();
   });
 
@@ -91,7 +93,9 @@ describe("InputCor — abrir/fechar picker", () => {
         <button>Fora</button>
       </div>,
     );
-    await userEvent.click(screen.getByRole("button", { name: /escolher cor/i }));
+    await userEvent.click(
+      screen.getByRole("button", { name: /escolher cor/i }),
+    );
     expect(screen.getByTestId("hex-color-picker")).toBeInTheDocument();
 
     fireEvent.mouseDown(screen.getByRole("button", { name: "Fora" }));
@@ -104,14 +108,18 @@ describe("InputCor — abrir/fechar picker", () => {
 describe("InputCor — seleção via HexColorPicker", () => {
   it("chama onChange ao interagir com o picker", async () => {
     render(<Controlled />);
-    await userEvent.click(screen.getByRole("button", { name: /escolher cor/i }));
+    await userEvent.click(
+      screen.getByRole("button", { name: /escolher cor/i }),
+    );
     await userEvent.click(screen.getByTestId("hex-color-picker"));
     expect(screen.getByTestId("current-value").textContent).toBe("#ff0000");
   });
 
   it("atualiza o hex input ao selecionar cor no picker", async () => {
     render(<Controlled />);
-    await userEvent.click(screen.getByRole("button", { name: /escolher cor/i }));
+    await userEvent.click(
+      screen.getByRole("button", { name: /escolher cor/i }),
+    );
     await userEvent.click(screen.getByTestId("hex-color-picker"));
     const hexInput = screen.getByPlaceholderText("3b82f6");
     expect((hexInput as HTMLInputElement).value).toBe("ff0000");
@@ -122,7 +130,9 @@ describe("InputCor — paleta rápida", () => {
   it("chama onChange com a cor clicada na paleta", async () => {
     const onChange = vi.fn();
     render(<InputCor value={undefined} onChange={onChange} />);
-    await userEvent.click(screen.getByRole("button", { name: /escolher cor/i }));
+    await userEvent.click(
+      screen.getByRole("button", { name: /escolher cor/i }),
+    );
 
     const paletteBtn = screen.getByTitle("#ef4444");
     await userEvent.click(paletteBtn);
@@ -140,7 +150,9 @@ describe("InputCor — paleta rápida", () => {
 
   it("exibe os doze swatches da paleta", async () => {
     render(<InputCor value={undefined} onChange={vi.fn()} />);
-    await userEvent.click(screen.getByRole("button", { name: /escolher cor/i }));
+    await userEvent.click(
+      screen.getByRole("button", { name: /escolher cor/i }),
+    );
 
     const paletteButtons = screen
       .getAllByRole("button")
@@ -170,7 +182,9 @@ describe("InputCor — input hex manual", () => {
   it("aceita hex de 6 chars sem # e chama onChange com # prefixado", async () => {
     const onChange = vi.fn();
     render(<InputCor value={undefined} onChange={onChange} />);
-    await userEvent.click(screen.getByRole("button", { name: /escolher cor/i }));
+    await userEvent.click(
+      screen.getByRole("button", { name: /escolher cor/i }),
+    );
 
     const hexInput = screen.getByPlaceholderText("3b82f6");
     await userEvent.clear(hexInput);
@@ -183,7 +197,9 @@ describe("InputCor — input hex manual", () => {
   it("aceita hex que já começa com # e normaliza", async () => {
     const onChange = vi.fn();
     render(<InputCor value={undefined} onChange={onChange} />);
-    await userEvent.click(screen.getByRole("button", { name: /escolher cor/i }));
+    await userEvent.click(
+      screen.getByRole("button", { name: /escolher cor/i }),
+    );
 
     const hexInput = screen.getByPlaceholderText("3b82f6");
     await userEvent.clear(hexInput);
@@ -196,7 +212,9 @@ describe("InputCor — input hex manual", () => {
   it("não chama onChange para hex incompleto (menos de 6 chars)", async () => {
     const onChange = vi.fn();
     render(<InputCor value={undefined} onChange={onChange} />);
-    await userEvent.click(screen.getByRole("button", { name: /escolher cor/i }));
+    await userEvent.click(
+      screen.getByRole("button", { name: /escolher cor/i }),
+    );
 
     const hexInput = screen.getByPlaceholderText("3b82f6");
     await userEvent.clear(hexInput);
@@ -209,7 +227,9 @@ describe("InputCor — input hex manual", () => {
   it("não chama onChange para hex com caracteres inválidos", async () => {
     const onChange = vi.fn();
     render(<InputCor value={undefined} onChange={onChange} />);
-    await userEvent.click(screen.getByRole("button", { name: /escolher cor/i }));
+    await userEvent.click(
+      screen.getByRole("button", { name: /escolher cor/i }),
+    );
 
     const hexInput = screen.getByPlaceholderText("3b82f6");
     await userEvent.clear(hexInput);
@@ -222,7 +242,9 @@ describe("InputCor — input hex manual", () => {
   it("pressionar Enter confirma o hex input", async () => {
     const onChange = vi.fn();
     render(<InputCor value={undefined} onChange={onChange} />);
-    await userEvent.click(screen.getByRole("button", { name: /escolher cor/i }));
+    await userEvent.click(
+      screen.getByRole("button", { name: /escolher cor/i }),
+    );
 
     const hexInput = screen.getByPlaceholderText("3b82f6");
     await userEvent.clear(hexInput);
@@ -239,13 +261,13 @@ describe("InputCor — sincronização value → hexInput", () => {
       <InputCor value="#aabbcc" onChange={vi.fn()} />,
     );
     await userEvent.click(screen.getByRole("button", { name: /#aabbcc/i }));
-    expect((screen.getByPlaceholderText("3b82f6") as HTMLInputElement).value).toBe(
-      "aabbcc",
-    );
+    expect(
+      (screen.getByPlaceholderText("3b82f6") as HTMLInputElement).value,
+    ).toBe("aabbcc");
 
     rerender(<InputCor value="#112233" onChange={vi.fn()} />);
-    expect((screen.getByPlaceholderText("3b82f6") as HTMLInputElement).value).toBe(
-      "112233",
-    );
+    expect(
+      (screen.getByPlaceholderText("3b82f6") as HTMLInputElement).value,
+    ).toBe("112233");
   });
 });

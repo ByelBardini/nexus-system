@@ -144,7 +144,9 @@ export function InputCor({ value, onChange }: InputCorProps) {
                   }}
                   className={cn(
                     "h-5 w-5 rounded-full border-2 transition-transform hover:scale-110",
-                    value === hex ? "border-slate-700 scale-110" : "border-transparent",
+                    value === hex
+                      ? "border-slate-700 scale-110"
+                      : "border-transparent",
                   )}
                   style={{ backgroundColor: hex }}
                 />
