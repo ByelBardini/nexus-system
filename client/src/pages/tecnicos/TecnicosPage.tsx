@@ -54,16 +54,13 @@ import {
 } from "@/lib/format";
 import { InputCPFCNPJ } from "@/components/InputCPFCNPJ";
 import { cn } from "@/lib/utils";
+import {
+  nextMapState,
+  tecnicoPrecoToNum,
+  type MapState,
+} from "@/lib/tecnicos-page";
 
 const TecnicosMap = lazy(() => import("@/components/TecnicosMap"));
-
-type MapState = "collapsed" | "expanded" | "fullscreen";
-
-function nextMapState(s: MapState): MapState {
-  if (s === "collapsed") return "expanded";
-  if (s === "expanded") return "fullscreen";
-  return "collapsed";
-}
 
 const schema = z.object({
   nome: z.string().min(1, "Nome obrigatório"),
@@ -113,11 +110,6 @@ interface Tecnico {
     retirada: number | string;
     deslocamento: number | string;
   };
-}
-
-function toNum(v: number | string | undefined): number {
-  if (v === undefined) return 0;
-  return typeof v === "string" ? parseFloat(v) || 0 : v;
 }
 
 const PAGE_SIZE = 10;
@@ -325,14 +317,14 @@ export function TecnicosPage() {
       estadoEndereco: t.estadoEndereco ?? "",
       ativo: t.ativo,
       instalacaoComBloqueio: Math.round(
-        toNum(t.precos?.instalacaoComBloqueio) * 100,
+        tecnicoPrecoToNum(t.precos?.instalacaoComBloqueio) * 100,
       ),
       instalacaoSemBloqueio: Math.round(
-        toNum(t.precos?.instalacaoSemBloqueio) * 100,
+        tecnicoPrecoToNum(t.precos?.instalacaoSemBloqueio) * 100,
       ),
-      revisao: Math.round(toNum(t.precos?.revisao) * 100),
-      retirada: Math.round(toNum(t.precos?.retirada) * 100),
-      deslocamento: Math.round(toNum(t.precos?.deslocamento) * 100),
+      revisao: Math.round(tecnicoPrecoToNum(t.precos?.revisao) * 100),
+      retirada: Math.round(tecnicoPrecoToNum(t.precos?.retirada) * 100),
+      deslocamento: Math.round(tecnicoPrecoToNum(t.precos?.deslocamento) * 100),
     });
     setModalOpen(true);
   }
@@ -589,7 +581,9 @@ export function TecnicosPage() {
               <TableBody>
                 {paginated.map((t) => {
                   const isExpanded = expandedId === t.id;
-                  const valorBase = toNum(t.precos?.instalacaoSemBloqueio);
+                  const valorBase = tecnicoPrecoToNum(
+                    t.precos?.instalacaoSemBloqueio,
+                  );
                   return (
                     <Fragment key={t.id}>
                       <TableRow
@@ -691,7 +685,9 @@ export function TecnicosPage() {
                                     </span>
                                     <span className="text-sm font-bold text-slate-800">
                                       {formatarMoeda(
-                                        toNum(t.precos?.instalacaoComBloqueio),
+                                        tecnicoPrecoToNum(
+                                          t.precos?.instalacaoComBloqueio,
+                                        ),
                                       )}
                                     </span>
                                   </div>
@@ -701,7 +697,9 @@ export function TecnicosPage() {
                                     </span>
                                     <span className="text-sm font-bold text-slate-800">
                                       {formatarMoeda(
-                                        toNum(t.precos?.instalacaoSemBloqueio),
+                                        tecnicoPrecoToNum(
+                                          t.precos?.instalacaoSemBloqueio,
+                                        ),
                                       )}
                                     </span>
                                   </div>
@@ -710,7 +708,9 @@ export function TecnicosPage() {
                                       Revisão
                                     </span>
                                     <span className="text-sm font-bold text-slate-800">
-                                      {formatarMoeda(toNum(t.precos?.revisao))}
+                                      {formatarMoeda(
+                                        tecnicoPrecoToNum(t.precos?.revisao),
+                                      )}
                                     </span>
                                   </div>
                                   <div className="rounded border border-slate-200 bg-white p-3">
@@ -718,7 +718,9 @@ export function TecnicosPage() {
                                       Retirada
                                     </span>
                                     <span className="text-sm font-bold text-slate-800">
-                                      {formatarMoeda(toNum(t.precos?.retirada))}
+                                      {formatarMoeda(
+                                        tecnicoPrecoToNum(t.precos?.retirada),
+                                      )}
                                     </span>
                                   </div>
                                   <div className="rounded border border-slate-200 bg-white p-3">
@@ -727,7 +729,9 @@ export function TecnicosPage() {
                                     </span>
                                     <span className="text-sm font-bold text-slate-800">
                                       {formatarMoeda(
-                                        toNum(t.precos?.deslocamento),
+                                        tecnicoPrecoToNum(
+                                          t.precos?.deslocamento,
+                                        ),
                                       )}
                                     </span>
                                   </div>

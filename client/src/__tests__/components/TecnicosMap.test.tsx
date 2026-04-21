@@ -1,7 +1,15 @@
 import { render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mockLeafletMap = vi.hoisted(() => ({ zoom: 17 }));
+
+const leafletDivIcon = vi.hoisted(() =>
+  vi.fn((opts: { html?: string }) => ({
+    _type: "divIcon",
+    html: opts.html ?? "",
+  })),
+);
 
 const leafletMapSingleton = vi.hoisted(() => ({
   setView: vi.fn(),
@@ -25,7 +33,7 @@ vi.mock("leaflet/dist/leaflet.css", () => ({}));
 
 vi.mock("leaflet", () => ({
   default: {
-    divIcon: vi.fn(() => ({ _type: "divIcon" })),
+    divIcon: leafletDivIcon,
     latLngBounds: vi.fn(() => ({})),
   },
 }));
@@ -39,10 +47,12 @@ vi.mock("react-leaflet", () => ({
     children,
     position,
     icon,
+    eventHandlers,
   }: {
     children?: React.ReactNode;
     position: [number, number];
     icon: unknown;
+    eventHandlers?: { click?: () => void };
   }) => (
     <div
       data-testid="marker"
@@ -52,6 +62,13 @@ vi.mock("react-leaflet", () => ({
           ? (icon as { _type: string })._type
           : "unknown"
       }
+      data-html-snippet={
+        icon && typeof icon === "object" && "html" in icon
+          ? String((icon as { html: string }).html).slice(0, 200)
+          : ""
+      }
+      role={eventHandlers?.click ? "button" : undefined}
+      onClick={() => eventHandlers?.click?.()}
     >
       {children}
     </div>
@@ -78,8 +95,16 @@ function makeTecnico(overrides: Partial<TecnicoMapItem>): TecnicoMapItem {
 }
 
 describe("TecnicosMap", () => {
+  beforeEach(() => {
+    leafletDivIcon.mockClear();
+    leafletMapSingleton.setView.mockClear();
+    leafletMapSingleton.fitBounds.mockClear();
+    leafletMapSingleton.invalidateSize.mockClear();
+  });
+
   afterEach(() => {
     mockLeafletMap.zoom = 17;
+    vi.useRealTimers();
   });
 
   it("renderiza apenas técnicos com lat/lng numéricos válidos", () => {
@@ -154,5 +179,142 @@ describe("TecnicosMap", () => {
     render(<TecnicosMap tecnicos={tecnicos} containerSize="collapsed" />);
 
     expect(screen.getAllByTestId("marker")).toHaveLength(1);
+  });
+
+  it("chama onMarkerClick ao clicar em marcador individual", async () => {
+    const user = userEvent.setup();
+    const onMarkerClick = vi.fn();
+    mockLeafletMap.zoom = 17;
+    render(
+      <TecnicosMap
+        tecnicos={[makeTecnico({ id: 42, nome: "Zé" })]}
+        containerSize="collapsed"
+        onMarkerClick={onMarkerClick}
+      />,
+    );
+
+    const [marker] = screen.getAllByTestId("marker");
+    await user.click(marker);
+
+    expect(onMarkerClick).toHaveBeenCalledWith(42);
+  });
+
+  it("popup de cluster lista técnicos e Ver na lista chama onMarkerClick", async () => {
+    const user = userEvent.setup();
+    const onMarkerClick = vi.fn();
+    mockLeafletMap.zoom = 4;
+    const tecnicos: TecnicoMapItem[] = [
+      makeTecnico({ id: 1, nome: "Ana" }),
+      makeTecnico({
+        id: 2,
+        nome: "Bruno",
+        latitude: -23.55,
+        longitude: -46.63,
+      }),
+    ];
+
+    render(
+      <TecnicosMap
+        tecnicos={tecnicos}
+        containerSize="collapsed"
+        onMarkerClick={onMarkerClick}
+      />,
+    );
+
+    expect(screen.getByText("Ana")).toBeInTheDocument();
+    expect(screen.getByText("Bruno")).toBeInTheDocument();
+    const verNaLista = screen.getAllByRole("button", { name: /Ver na lista/i });
+    await user.click(verNaLista[0]!);
+
+    expect(onMarkerClick).toHaveBeenCalledWith(1);
+  });
+
+  it("cluster misto EXATO+CIDADE usa cor mixed no html do ícone", () => {
+    mockLeafletMap.zoom = 4;
+    const tecnicos: TecnicoMapItem[] = [
+      makeTecnico({ id: 1, nome: "A", geocodingPrecision: "EXATO" }),
+      makeTecnico({
+        id: 2,
+        nome: "B",
+        geocodingPrecision: "CIDADE",
+        latitude: -23.55,
+        longitude: -46.63,
+      }),
+    ];
+
+    render(<TecnicosMap tecnicos={tecnicos} containerSize="collapsed" />);
+
+    const clusterHtml = leafletDivIcon.mock.calls
+      .map((c) => String(c[0]?.html ?? ""))
+      .find((h) => h.includes("#475569"));
+    expect(clusterHtml).toBeDefined();
+  });
+
+  it("geocodingPrecision null trata como EXATO no pin individual", () => {
+    mockLeafletMap.zoom = 17;
+    render(
+      <TecnicosMap
+        tecnicos={[makeTecnico({ id: 1, geocodingPrecision: null })]}
+        containerSize="collapsed"
+      />,
+    );
+
+    const pinHtml = leafletDivIcon.mock.calls
+      .map((c) => String(c[0]?.html ?? ""))
+      .find((h) => h.includes("#2563eb"));
+    expect(pinHtml).toBeDefined();
+  });
+
+  it("FitToMarkers com zero pontos centraliza Brasil", () => {
+    render(<TecnicosMap tecnicos={[]} containerSize="collapsed" />);
+
+    expect(leafletMapSingleton.setView).toHaveBeenCalledWith(
+      [-14.235, -51.9253],
+      4,
+    );
+  });
+
+  it("FitToMarkers com um ponto usa zoom 13", () => {
+    render(
+      <TecnicosMap
+        tecnicos={[makeTecnico({ id: 1 })]}
+        containerSize="collapsed"
+      />,
+    );
+
+    expect(leafletMapSingleton.setView).toHaveBeenCalledWith([-23.55, -46.63], 13);
+  });
+
+  it("FitToMarkers com dois pontos distintos chama fitBounds", () => {
+    mockLeafletMap.zoom = 17;
+    render(
+      <TecnicosMap
+        tecnicos={[
+          makeTecnico({ id: 1, latitude: -23.55, longitude: -46.63 }),
+          makeTecnico({
+            id: 2,
+            nome: "B",
+            latitude: -22.9,
+            longitude: -43.2,
+          }),
+        ]}
+        containerSize="collapsed"
+      />,
+    );
+
+    expect(leafletMapSingleton.fitBounds).toHaveBeenCalled();
+  });
+
+  it("InvalidateOnResize agenda invalidateSize após mudar containerSize", () => {
+    vi.useFakeTimers();
+    const { rerender } = render(
+      <TecnicosMap tecnicos={[]} containerSize="collapsed" />,
+    );
+
+    rerender(<TecnicosMap tecnicos={[]} containerSize="fullscreen" />);
+
+    expect(leafletMapSingleton.invalidateSize).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(320);
+    expect(leafletMapSingleton.invalidateSize).toHaveBeenCalledTimes(1);
   });
 });

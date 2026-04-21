@@ -8,6 +8,19 @@ describe("escapeHtmlForMarker", () => {
   it("escapa caracteres especiais", () => {
     expect(escapeHtmlForMarker(`a<b>"c"`)).toBe("a&lt;b&gt;&quot;c&quot;");
   });
+
+  it("retorna string vazia para entrada vazia", () => {
+    expect(escapeHtmlForMarker("")).toBe("");
+  });
+
+  it("escapa ampersand simples e em sequência", () => {
+    expect(escapeHtmlForMarker("&")).toBe("&amp;");
+    expect(escapeHtmlForMarker("a&&b")).toBe("a&amp;&amp;b");
+  });
+
+  it("não escapa apóstrofo", () => {
+    expect(escapeHtmlForMarker("O'Brien")).toBe("O'Brien");
+  });
 });
 
 describe("initialFromNome", () => {
@@ -23,5 +36,17 @@ describe("initialFromNome", () => {
     expect(initialFromNome("")).toBe("?");
     expect(initialFromNome("   ")).toBe("?");
     expect(initialFromNome("123")).toBe("?");
+  });
+
+  it("preserva letra acentuada inicial", () => {
+    expect(initialFromNome("Ícaro")).toBe("Í");
+  });
+
+  it("aceita nome de um caractere alfabético", () => {
+    expect(initialFromNome("A")).toBe("A");
+  });
+
+  it("retorna ? quando primeiro caractere não é letra", () => {
+    expect(initialFromNome("🚀foo")).toBe("?");
   });
 });
