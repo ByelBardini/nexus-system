@@ -10,7 +10,7 @@ function mockFetchResponse(body: unknown, ok = true, status = 200) {
   return {
     ok,
     status,
-    json: async () => body,
+    json: () => Promise.resolve(body),
   };
 }
 
@@ -96,7 +96,7 @@ describe('GeocodingService', () => {
         precision: 'CIDADE',
       });
       expect(fetchMock).toHaveBeenCalledTimes(2);
-      const secondQuery = fetchMock.mock.calls[1][0] as string;
+      const secondQuery = fetchMock.mock.calls[1][0];
       expect(secondQuery).toContain(encodeURIComponent('São Paulo'));
       expect(secondQuery).toContain('SP');
       expect(secondQuery).not.toContain(encodeURIComponent('Rua das Flores'));
@@ -170,9 +170,7 @@ describe('GeocodingService', () => {
 
   describe('tratamento de erros', () => {
     it('retorna null em HTTP 429 sem lançar', async () => {
-      fetchMock.mockResolvedValueOnce(
-        mockFetchResponse([], false, 429),
-      );
+      fetchMock.mockResolvedValueOnce(mockFetchResponse([], false, 429));
 
       const result = await service.geocode({ cidade: 'São Paulo', uf: 'SP' });
 
@@ -180,9 +178,7 @@ describe('GeocodingService', () => {
     });
 
     it('retorna null em HTTP 500 sem lançar', async () => {
-      fetchMock.mockResolvedValueOnce(
-        mockFetchResponse([], false, 500),
-      );
+      fetchMock.mockResolvedValueOnce(mockFetchResponse([], false, 500));
 
       const result = await service.geocode({ cidade: 'São Paulo', uf: 'SP' });
 
@@ -214,7 +210,7 @@ describe('GeocodingService', () => {
       });
 
       const [url] = fetchMock.mock.calls[0];
-      const qMatch = (url as string).match(/[?&]q=([^&]+)/);
+      const qMatch = url.match(/[?&]q=([^&]+)/);
       expect(qMatch).not.toBeNull();
       const decoded = decodeURIComponent(qMatch![1]);
       expect(decoded).toBe(
@@ -300,9 +296,7 @@ describe('GeocodingService', () => {
     it('rejeição na primeira requisição não impede a segunda', async () => {
       fetchMock
         .mockRejectedValueOnce(new Error('fail'))
-        .mockResolvedValueOnce(
-          mockFetchResponse([{ lat: '-10', lon: '-20' }]),
-        );
+        .mockResolvedValueOnce(mockFetchResponse([{ lat: '-10', lon: '-20' }]));
 
       const r1 = await service.geocode({ cidade: 'X', uf: 'SP' });
       const r2 = await service.geocode({ cidade: 'Y', uf: 'RJ' });
