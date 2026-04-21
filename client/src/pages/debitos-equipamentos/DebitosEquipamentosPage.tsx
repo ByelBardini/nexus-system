@@ -59,6 +59,7 @@ interface DebitoRastreadorApi {
     pedido?: { id: number; codigo: string } | null;
     lote?: { id: number; referencia: string } | null;
     aparelho?: { id: number; identificador: string | null } | null;
+    ordemServico?: { id: number; numero: number } | null;
   }>;
 }
 
@@ -98,6 +99,8 @@ function mapDebitoApiToView(d: DebitoRastreadorApi): DebitoEquipamento {
       else if (h.lote) descricao = `Lote ${h.lote.referencia}`;
       else if (h.aparelho)
         descricao = `Individual — ${h.aparelho.identificador ?? `ID ${h.aparelho.id}`}`;
+      if (h.ordemServico)
+        descricao = `${descricao} · OS nº ${h.ordemServico.numero}`;
       return {
         descricao,
         data: h.criadoEm,

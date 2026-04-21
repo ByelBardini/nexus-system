@@ -229,6 +229,41 @@ describe('DebitosRastreadoresService', () => {
         }),
       );
     });
+
+    it('passa ordemServicoId ao histórico quando informado', async () => {
+      prisma.debitoRastreador.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+      prisma.debitoRastreador.create.mockResolvedValueOnce({ id: 1 });
+      prisma.historicoDebitoRastreador.create.mockResolvedValue({});
+
+      await service.consolidarDebitoTx(tx(), {
+        ...baseParams,
+        ordemServicoId: 42,
+      });
+
+      expect(prisma.historicoDebitoRastreador.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ ordemServicoId: 42 }),
+        }),
+      );
+    });
+
+    it('grava ordemServicoId null quando não informado', async () => {
+      prisma.debitoRastreador.findFirst
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(null);
+      prisma.debitoRastreador.create.mockResolvedValueOnce({ id: 1 });
+      prisma.historicoDebitoRastreador.create.mockResolvedValue({});
+
+      await service.consolidarDebitoTx(tx(), baseParams);
+
+      expect(prisma.historicoDebitoRastreador.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ ordemServicoId: null }),
+        }),
+      );
+    });
   });
 
   describe('findAll', () => {
@@ -323,6 +358,25 @@ describe('DebitosRastreadoresService', () => {
 
       expect(prisma.debitoRastreador.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ take: 500 }),
+      );
+    });
+
+    it('inclui ordemServico nos históricos para exibir a OS na listagem', async () => {
+      prisma.debitoRastreador.findMany.mockResolvedValue([]);
+      prisma.debitoRastreador.count.mockResolvedValue(0);
+
+      await service.findAll({});
+
+      expect(prisma.debitoRastreador.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({
+            historicos: expect.objectContaining({
+              include: expect.objectContaining({
+                ordemServico: { select: { id: true, numero: true } },
+              }),
+            }),
+          }),
+        }),
       );
     });
   });

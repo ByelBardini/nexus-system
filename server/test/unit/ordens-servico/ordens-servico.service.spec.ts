@@ -4,6 +4,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { OrdensServicoService } from 'src/ordens-servico/ordens-servico.service';
 import { HtmlOrdemServicoGenerator } from 'src/ordens-servico/html-ordem-servico.generator';
 import { PdfOrdemServicoGenerator } from 'src/ordens-servico/pdf-ordem-servico.generator';
+import { DebitosRastreadoresService } from 'src/debitos-rastreadores/debitos-rastreadores.service';
 import {
   StatusOS,
   StatusCadastro,
@@ -17,6 +18,7 @@ describe('OrdensServicoService', () => {
   let prisma: ReturnType<typeof createPrismaMock>;
   let htmlGenerator: jest.Mocked<HtmlOrdemServicoGenerator>;
   let pdfGenerator: jest.Mocked<PdfOrdemServicoGenerator>;
+  let debitosService: jest.Mocked<DebitosRastreadoresService>;
 
   beforeEach(async () => {
     prisma = createPrismaMock();
@@ -26,6 +28,9 @@ describe('OrdensServicoService', () => {
     pdfGenerator = {
       gerar: jest.fn(),
     } as unknown as jest.Mocked<PdfOrdemServicoGenerator>;
+    debitosService = {
+      consolidarDebitoTx: jest.fn(),
+    } as unknown as jest.Mocked<DebitosRastreadoresService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -33,6 +38,7 @@ describe('OrdensServicoService', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: HtmlOrdemServicoGenerator, useValue: htmlGenerator },
         { provide: PdfOrdemServicoGenerator, useValue: pdfGenerator },
+        { provide: DebitosRastreadoresService, useValue: debitosService },
       ],
     }).compile();
 
@@ -1175,6 +1181,157 @@ describe('OrdensServicoService', () => {
           }),
         );
       });
+    });
+  });
+
+  describe('criação de débito ao concluir testes (TESTES_REALIZADOS)', () => {
+    const osInstalacao = {
+      id: 5,
+      numero: 10,
+      tipo: TipoOS.INSTALACAO_COM_BLOQUEIO,
+      status: StatusOS.EM_TESTES,
+      clienteId: 2,
+      idAparelho: 'IMEI_TESTE',
+      veiculo: null,
+      veiculoId: null,
+      historico: [],
+    };
+
+    function mockOsEAparelho(
+      aparelho: Record<string, unknown>,
+      os = osInstalacao,
+    ) {
+      prisma.ordemServico.findUnique
+        .mockResolvedValueOnce(os)
+        .mockResolvedValueOnce({ ...os, status: StatusOS.TESTES_REALIZADOS });
+      prisma.oSHistorico.create.mockResolvedValue({});
+      prisma.ordemServico.update.mockResolvedValue({});
+      prisma.aparelho.findFirst.mockResolvedValueOnce(aparelho);
+      prisma.aparelhoHistorico.create.mockResolvedValue({});
+      prisma.aparelho.update.mockResolvedValue({});
+    }
+
+    it('cria débito CLIENTE→INFINITY quando aparelho instalado pertence à Infinity', async () => {
+      const aparelho = {
+        id: 20,
+        status: StatusAparelho.COM_TECNICO,
+        proprietario: 'INFINITY',
+        clienteId: null,
+        marca: 'Suntech',
+        modelo: 'ST310U',
+        simVinculadoId: null,
+        simVinculado: null,
+      };
+      mockOsEAparelho(aparelho);
+      prisma.marcaEquipamento.findFirst.mockResolvedValueOnce({ id: 3 });
+      prisma.modeloEquipamento.findFirst.mockResolvedValueOnce({ id: 7 });
+      debitosService.consolidarDebitoTx.mockResolvedValue(undefined);
+
+      await service.updateStatus(5, { status: StatusOS.TESTES_REALIZADOS });
+
+      expect(debitosService.consolidarDebitoTx).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          devedorTipo: 'CLIENTE',
+          devedorClienteId: 2,
+          credorTipo: 'INFINITY',
+          credorClienteId: null,
+          marcaId: 3,
+          modeloId: 7,
+          delta: 1,
+          aparelhoId: 20,
+          ordemServicoId: 5,
+        }),
+      );
+    });
+
+    it('cria débito CLIENTE_OS→CLIENTE_APARELHO quando aparelho pertence a outro cliente', async () => {
+      const aparelho = {
+        id: 30,
+        status: StatusAparelho.COM_TECNICO,
+        proprietario: 'CLIENTE',
+        clienteId: 99,
+        marca: 'Teltonika',
+        modelo: 'FMB920',
+        simVinculadoId: null,
+        simVinculado: null,
+      };
+      mockOsEAparelho(aparelho);
+      prisma.marcaEquipamento.findFirst.mockResolvedValueOnce({ id: 5 });
+      prisma.modeloEquipamento.findFirst.mockResolvedValueOnce({ id: 12 });
+      debitosService.consolidarDebitoTx.mockResolvedValue(undefined);
+
+      await service.updateStatus(5, { status: StatusOS.TESTES_REALIZADOS });
+
+      expect(debitosService.consolidarDebitoTx).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          devedorTipo: 'CLIENTE',
+          devedorClienteId: 2,
+          credorTipo: 'CLIENTE',
+          credorClienteId: 99,
+        }),
+      );
+    });
+
+    it('não cria débito quando aparelho pertence ao próprio cliente da OS', async () => {
+      const aparelho = {
+        id: 40,
+        status: StatusAparelho.COM_TECNICO,
+        proprietario: 'CLIENTE',
+        clienteId: 2,
+        marca: 'Suntech',
+        modelo: 'ST310U',
+        simVinculadoId: null,
+        simVinculado: null,
+      };
+      mockOsEAparelho(aparelho);
+
+      await service.updateStatus(5, { status: StatusOS.TESTES_REALIZADOS });
+
+      expect(debitosService.consolidarDebitoTx).not.toHaveBeenCalled();
+      expect(prisma.marcaEquipamento.findFirst).not.toHaveBeenCalled();
+    });
+
+    it('lança BadRequestException quando marca do aparelho não existe no catálogo', async () => {
+      const aparelho = {
+        id: 20,
+        status: StatusAparelho.COM_TECNICO,
+        proprietario: 'INFINITY',
+        clienteId: null,
+        marca: 'MarcaDesconhecida',
+        modelo: 'ModeloX',
+        simVinculadoId: null,
+        simVinculado: null,
+      };
+      mockOsEAparelho(aparelho);
+      prisma.marcaEquipamento.findFirst.mockResolvedValueOnce(null);
+
+      await expect(
+        service.updateStatus(5, { status: StatusOS.TESTES_REALIZADOS }),
+      ).rejects.toThrow(BadRequestException);
+      expect(debitosService.consolidarDebitoTx).not.toHaveBeenCalled();
+    });
+
+    it('lança BadRequestException quando modelo do aparelho não existe no catálogo', async () => {
+      const aparelho = {
+        id: 20,
+        status: StatusAparelho.COM_TECNICO,
+        proprietario: 'INFINITY',
+        clienteId: null,
+        marca: 'Suntech',
+        modelo: 'ModeloInexistente',
+        simVinculadoId: null,
+        simVinculado: null,
+      };
+      mockOsEAparelho(aparelho);
+      prisma.marcaEquipamento.findFirst.mockResolvedValueOnce({ id: 3 });
+      prisma.modeloEquipamento.findFirst.mockResolvedValueOnce(null);
+
+      await expect(
+        service.updateStatus(5, { status: StatusOS.TESTES_REALIZADOS }),
+      ).rejects.toThrow(BadRequestException);
+      expect(debitosService.consolidarDebitoTx).not.toHaveBeenCalled();
     });
   });
 
