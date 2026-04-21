@@ -78,8 +78,8 @@ export class GeocodingService {
   private hasFullAddress(endereco: EnderecoGeocoding): boolean {
     return Boolean(
       endereco.logradouro?.trim() &&
-        endereco.cidade?.trim() &&
-        endereco.uf?.trim(),
+      endereco.cidade?.trim() &&
+      endereco.uf?.trim(),
     );
   }
 
