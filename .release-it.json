@@ -1,0 +1,25 @@
+{
+  "hooks": {
+    "after:bump": "node scripts/sync-package-versions.mjs"
+  },
+  "plugins": {
+    "@release-it/conventional-changelog": {
+      "infile": "CHANGELOG.md",
+      "preset": {
+        "name": "conventionalcommits"
+      }
+    }
+  },
+  "git": {
+    "commitMessage": "chore: release v${version}",
+    "tagName": "v${version}",
+    "tagAnnotation": "Release v${version}",
+    "requireCleanWorkingDir": true
+  },
+  "github": {
+    "release": false
+  },
+  "npm": {
+    "publish": false
+  }
+}

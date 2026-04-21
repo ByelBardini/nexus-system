@@ -1,0 +1,6 @@
+---
+description: Nexus System — use AGENTS.md and CLAUDE.md as project instructions
+alwaysApply: true
+---
+
+Before exploring or changing code, follow the project root files `AGENTS.md` (stack, layout, `docs/context/` routing, checklist) and `CLAUDE.md` (style, tests, agent behavior). If either is missing from context, read it from disk.
