@@ -105,6 +105,11 @@ export class CreateClienteDto {
   @IsString()
   estado?: string;
 
+  @ApiPropertyOptional({ example: '#3b82f6' })
+  @IsOptional()
+  @IsString()
+  cor?: string;
+
   @ApiPropertyOptional({ type: [ContatoDto] })
   @IsOptional()
   @IsArray()

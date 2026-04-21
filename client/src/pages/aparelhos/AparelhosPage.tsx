@@ -51,7 +51,7 @@ interface Aparelho {
   planoSimcard?: { id: number; planoMb: number } | null;
   status: StatusAparelho;
   proprietario: ProprietarioTipo;
-  cliente?: { id: number; nome: string } | null;
+  cliente?: { id: number; nome: string; cor?: string | null } | null;
   simVinculado?: {
     id: number;
     identificador: string;
@@ -66,7 +66,7 @@ interface Aparelho {
     tecnicoId?: number | null;
     tecnico?: { id: number; nome: string } | null;
     clienteId?: number | null;
-    cliente?: { id: number; nome: string } | null;
+    cliente?: { id: number; nome: string; cor?: string | null } | null;
   }[];
   kitId?: number | null;
   kit?: { id: number; nome: string } | null;
@@ -548,18 +548,35 @@ export function AparelhosPage() {
                               .join(" · ") || "-"}
                       </TableCell>
                       <TableCell className="px-4 py-3">
-                        <span
-                          className={cn(
-                            "inline-flex items-center rounded-sm border px-2 py-0.5 text-[10px] font-bold uppercase",
-                            propConfig.className,
-                          )}
-                        >
-                          {propConfig.label}
-                        </span>
-                        {aparelho.cliente && (
-                          <p className="mt-0.5 text-[10px] text-slate-500 truncate max-w-[120px]">
+                        {aparelho.proprietario === "CLIENTE" &&
+                        aparelho.cliente ? (
+                          <span
+                            className={cn(
+                              "inline-flex items-center rounded-sm border px-2 py-0.5 text-[10px] font-bold truncate max-w-[120px]",
+                              !aparelho.cliente.cor &&
+                                "bg-amber-50 text-amber-700 border-amber-200",
+                            )}
+                            style={
+                              aparelho.cliente.cor
+                                ? {
+                                    backgroundColor: `${aparelho.cliente.cor}22`,
+                                    color: aparelho.cliente.cor,
+                                    borderColor: `${aparelho.cliente.cor}55`,
+                                  }
+                                : undefined
+                            }
+                          >
                             {aparelho.cliente.nome}
-                          </p>
+                          </span>
+                        ) : (
+                          <span
+                            className={cn(
+                              "inline-flex items-center rounded-sm border px-2 py-0.5 text-[10px] font-bold uppercase",
+                              propConfig.className,
+                            )}
+                          >
+                            {propConfig.label}
+                          </span>
                         )}
                       </TableCell>
                       <TableCell className="px-4 py-3">

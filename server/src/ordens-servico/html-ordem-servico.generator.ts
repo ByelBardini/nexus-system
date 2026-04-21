@@ -259,7 +259,7 @@ export class HtmlOrdemServicoGenerator {
 <body class="py-0">
   <main class="a4-container flex flex-col">
     <header class="flex justify-between items-start mb-3">
-      <div class="flex-1 flex items-start gap-4">
+      <div class="flex-1 flex items-center gap-4">
         ${logoImg ? `<div class="flex-shrink-0">${logoImg}</div>` : ''}
         <div>
           <h1 class="text-2xl font-bold text-blue-800 tracking-tight">Infinity System</h1>

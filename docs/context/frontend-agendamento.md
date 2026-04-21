@@ -274,6 +274,14 @@ ICCID (Saída): <iccidSaida>  (se existir)
 - **API**: indireto via `AuthContext`. Modal chama `POST /auth/trocar-senha` com `{ senhaAtual, novaSenha }`.
 - **`ModalTrocaSenha`**: quando `obrigatorio = true`, ESC, clique fora e botão X são bloqueados.
 
+**Layout (split-panel industrial):**
+
+- `flex min-h-screen overflow-hidden` na raiz; dois painéis lado a lado.
+- **Painel esquerdo** (`hidden lg:flex lg:w-[55%]`): branding `bg-slate-900` com padrão SVG inline (`INDUSTRIAL_PATTERN`), gradiente overlay, logo + nome do sistema, headline e 3 pilares de feature (`PILLARS` — ícones `MaterialIcon` + label + descrição). Borda colorida esquerda `border-l-2 border-erp-blue/40` por pilar.
+- **Painel direito** (`w-full lg:w-[45%]`): `bg-white`; logo mobile-only; formulário em `max-w-md`; card `border border-slate-200 rounded-sm shadow-sm p-8`; campos com ícones `MaterialIcon` prefixados (account_circle, lock); botão de submit com `ArrowRight` (animação `group-hover:translate-x-0.5`) e `Loader2` durante loading; footer "© Evolutiva Sistemas".
+- Inputs com `h-10 pl-9`; labels `text-[10px] font-bold uppercase text-slate-500`.
+- **Sem `Card`/`CardHeader`/`CardContent`** do shadcn — layout manual.
+
 ---
 
 ## Página: `OrdensServicoPage` (`client/src/pages/OrdensServicoPage.tsx`)

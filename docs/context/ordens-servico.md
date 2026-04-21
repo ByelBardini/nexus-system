@@ -104,6 +104,7 @@ CANCELADO         → AGENDADO
 
 - `/impressao`: retorna HTML com `Content-Type: text/html; charset=utf-8`.
 - `/pdf`: retorna `StreamableFile` com `Content-Type: application/pdf`; filename `ordem-servico-{numero}.pdf`; gerado via Puppeteer (singleton de browser no processo NestJS).
+- **Header do PDF (`html-ordem-servico.generator.ts`):** logo e título são centralizados verticalmente com `items-center` (era `items-start`).
 
 **`GET /cliente-infinity`:**
 

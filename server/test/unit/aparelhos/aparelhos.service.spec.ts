@@ -154,6 +154,18 @@ describe('AparelhosService', () => {
     });
   });
 
+  describe('findAll — cliente.cor', () => {
+    it('inclui cor no select do cliente em findAll', async () => {
+      prisma.aparelho.findMany.mockResolvedValue([]);
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+
+      await service.findAll();
+
+      const call = prisma.aparelho.findMany.mock.calls[0][0];
+      expect(call.include.cliente.select).toMatchObject({ cor: true });
+    });
+  });
+
   describe('findAll', () => {
     it('retorna lista de aparelhos com includes e ordemServicoVinculada', async () => {
       const aparelhos = [

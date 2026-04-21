@@ -31,7 +31,7 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 
 **Modelos Prisma (campos-chave):**
 
-- `Cliente`: `id`, `nome`, `nomeFantasia`, `cnpj`, `tipoContrato` (`TipoContrato`), `estoqueProprio` (boolean, default `false`), `status` (`StatusCliente`), `cep`, `logradouro`, `numero`, `complemento`, `bairro`, `cidade`, `estado`, `criadoEm`, `atualizadoEm`.
+- `Cliente`: `id`, `nome`, `nomeFantasia`, `cnpj`, `tipoContrato` (`TipoContrato`), `estoqueProprio` (boolean, default `false`), `status` (`StatusCliente`), `cor` (`String? @db.VarChar(7)` — hex de 7 chars, ex.: `#3b82f6`), `cep`, `logradouro`, `numero`, `complemento`, `bairro`, `cidade`, `estado`, `criadoEm`, `atualizadoEm`.
 - `ContatoCliente`: `id`, `clienteId`, `nome`, `celular?`, `email?`.
 - `Subcliente`: relação N de `Cliente` — incluída opcionalmente no `findAll` e sempre no `findOne`.
 
@@ -70,7 +70,7 @@ Sem hook dedicado `useClientes`; página usa TanStack Query diretamente com `que
 **Formulário (react-hook-form + Zod):**
 
 Três seções no modal:
-1. **Dados do Cliente** — `nome` (obrigatório), `nomeFantasia`, `cnpj` (via `InputCNPJ`), `tipoContrato` (Select), `status` (Select), `estoqueProprio` (toggle switch customizado)
+1. **Dados do Cliente** — `nome` (obrigatório), `nomeFantasia`, `cnpj` (via `InputCNPJ`), `tipoContrato` (Select), `status` (Select), `estoqueProprio` (toggle switch customizado), `cor` (via `InputCor` — color picker; opcional)
 2. **Endereço (opcional)** — `cep` via `InputCEP` com `onAddressFound` que auto-preenche `logradouro`, `bairro`, `cidade`, `estado` via BrasilAPI; `estado` usa `SelectUF` (hook `useUFs`); `cidade` usa `SelectCidade` (hook `useMunicipios(estado)`)
 3. **Contatos** — array gerenciado por `useFieldArray`; cada item tem `nome` (obrigatório), `celular` (`InputTelefone`), `email`; botão Trash2 remove inline
 
@@ -87,6 +87,12 @@ Três seções no modal:
 - Status: ponto colorido — `ATIVO` emerald, `PENDENTE` amber, `INATIVO` slate
 - `estoqueProprio`: ícone CheckCircle (emerald) ou X (slate)
 - Linha expandida: cards de contatos em grid responsivo + bloco de endereço com `MapPin`
+
+**Campo `cor`:**
+- Armazena hex de 7 chars (ex.: `#3b82f6`); opcional.
+- No formulário: `InputCor` (color picker com `react-colorful`, paleta rápida e input hex manual). Preview ao vivo do badge ao lado do picker.
+- Badge de cor é usado em outras páginas (ex.: `AparelhosPage`) para identificar o cliente com cor personalizada.
+- Enviado nas mutations como `cor: data.cor || undefined` (string vazia → omite campo).
 
 **Formatadores usados:** `formatarCNPJ`, `formatarTelefone`, `formatarCEP` — todos de `@/lib/format`.
 
