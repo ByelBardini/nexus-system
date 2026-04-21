@@ -2,19 +2,23 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { TecnicosService } from 'src/tecnicos/tecnicos.service';
+import { GeocodingService } from 'src/common/geocoding/geocoding.service';
 import { createPrismaMock } from '../helpers/prisma-mock';
 
 describe('TecnicosService', () => {
   let service: TecnicosService;
   let prisma: ReturnType<typeof createPrismaMock>;
+  let geocoding: { geocode: jest.Mock };
 
   beforeEach(async () => {
     prisma = createPrismaMock();
+    geocoding = { geocode: jest.fn().mockResolvedValue(null) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TecnicosService,
         { provide: PrismaService, useValue: prisma },
+        { provide: GeocodingService, useValue: geocoding },
       ],
     }).compile();
 
@@ -200,6 +204,166 @@ describe('TecnicosService', () => {
           }),
         }),
       );
+    });
+  });
+
+  describe('geocoding', () => {
+    it('chama geocoding na criação e persiste lat/lng/precision/geocodedAt', async () => {
+      geocoding.geocode.mockResolvedValueOnce({
+        lat: -23.55,
+        lng: -46.63,
+        precision: 'EXATO',
+      });
+      const dto = {
+        nome: 'Novo',
+        cep: '01001-000',
+        logradouro: 'Rua A',
+        numero: '10',
+        cidadeEndereco: 'São Paulo',
+        estadoEndereco: 'SP',
+      };
+      prisma.tecnico.create.mockResolvedValue({ id: 1 });
+      prisma.tecnico.update.mockResolvedValue({ id: 1 });
+      prisma.tecnico.findUnique.mockResolvedValue({
+        id: 1,
+        nome: 'Novo',
+        precos: null,
+      });
+
+      await service.create(dto as any);
+
+      expect(geocoding.geocode).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cep: '01001-000',
+          logradouro: 'Rua A',
+          numero: '10',
+          cidade: 'São Paulo',
+          uf: 'SP',
+        }),
+      );
+      expect(prisma.tecnico.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 1 },
+          data: expect.objectContaining({
+            latitude: -23.55,
+            longitude: -46.63,
+            geocodingPrecision: 'EXATO',
+            geocodedAt: expect.any(Date),
+          }),
+        }),
+      );
+    });
+
+    it('persiste null em lat/lng quando geocoding falha e não quebra o create', async () => {
+      geocoding.geocode.mockResolvedValueOnce(null);
+      prisma.tecnico.create.mockResolvedValue({ id: 1 });
+      prisma.tecnico.findUnique.mockResolvedValue({
+        id: 1,
+        nome: 'Sem Coord',
+        precos: null,
+      });
+
+      const result = await service.create({
+        nome: 'Sem Coord',
+        cidadeEndereco: 'Xique-Xique',
+        estadoEndereco: 'BA',
+      } as any);
+
+      expect(result).toMatchObject({ id: 1 });
+      expect(prisma.tecnico.update).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            latitude: expect.any(Number),
+          }),
+        }),
+      );
+    });
+
+    it('persiste precision CIDADE vindo do fallback', async () => {
+      geocoding.geocode.mockResolvedValueOnce({
+        lat: -12.97,
+        lng: -38.5,
+        precision: 'CIDADE',
+      });
+      prisma.tecnico.create.mockResolvedValue({ id: 5 });
+      prisma.tecnico.update.mockResolvedValue({ id: 5 });
+      prisma.tecnico.findUnique.mockResolvedValue({
+        id: 5,
+        nome: 'Bahiano',
+        precos: null,
+      });
+
+      await service.create({
+        nome: 'Bahiano',
+        cidadeEndereco: 'Salvador',
+        estadoEndereco: 'BA',
+      } as any);
+
+      expect(prisma.tecnico.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            latitude: -12.97,
+            longitude: -38.5,
+            geocodingPrecision: 'CIDADE',
+          }),
+        }),
+      );
+    });
+
+    it('não chama geocoding no update quando endereço não mudou', async () => {
+      const existing = {
+        id: 1,
+        nome: 'Carlos',
+        cep: '01001-000',
+        logradouro: 'Rua A',
+        numero: '10',
+        cidadeEndereco: 'São Paulo',
+        estadoEndereco: 'SP',
+        precos: null,
+      };
+      prisma.tecnico.findUnique.mockResolvedValue(existing);
+      prisma.tecnico.update.mockResolvedValue(existing);
+
+      await service.update(1, {
+        nome: 'Carlos Silva',
+        cep: '01001-000',
+        logradouro: 'Rua A',
+        numero: '10',
+        cidadeEndereco: 'São Paulo',
+        estadoEndereco: 'SP',
+      } as any);
+
+      expect(geocoding.geocode).not.toHaveBeenCalled();
+    });
+
+    it('chama geocoding no update quando CEP mudou', async () => {
+      const existing = {
+        id: 1,
+        nome: 'Carlos',
+        cep: '01001-000',
+        logradouro: 'Rua A',
+        numero: '10',
+        cidadeEndereco: 'São Paulo',
+        estadoEndereco: 'SP',
+        precos: null,
+      };
+      prisma.tecnico.findUnique.mockResolvedValue(existing);
+      prisma.tecnico.update.mockResolvedValue(existing);
+      geocoding.geocode.mockResolvedValueOnce({
+        lat: -22.9,
+        lng: -43.2,
+        precision: 'EXATO',
+      });
+
+      await service.update(1, {
+        cep: '20040-000',
+        logradouro: 'Rua A',
+        numero: '10',
+        cidadeEndereco: 'São Paulo',
+        estadoEndereco: 'SP',
+      } as any);
+
+      expect(geocoding.geocode).toHaveBeenCalledTimes(1);
     });
   });
 });
