@@ -11,7 +11,9 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { GeocodingService } from '../src/common/geocoding/geocoding.service';
 import { PermissionsGuard } from '../src/auth/guards/permissions.guard';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { TecnicosModule } from '../src/tecnicos/tecnicos.module';
+import { cleanupE2eTecnicos } from './helpers/e2e-db-cleanup';
 
 class BlockTecnicosPostPermissionsGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
@@ -45,6 +47,10 @@ describe('Tecnicos (e2e)', () => {
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
     await app.init();
+  });
+
+  afterEach(async () => {
+    await cleanupE2eTecnicos(app.get(PrismaService));
   });
 
   afterAll(async () => {
@@ -229,6 +235,10 @@ describe('Tecnicos (e2e) — permissão POST', () => {
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
     await app.init();
+  });
+
+  afterEach(async () => {
+    await cleanupE2eTecnicos(app.get(PrismaService));
   });
 
   afterAll(async () => {
