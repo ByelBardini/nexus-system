@@ -29,10 +29,7 @@ import {
   TRACKER_STATUS_LABELS,
   type PreviewResult,
 } from "./PreviewPareamentoTable";
-import {
-  PreviewCsvTable,
-  type CsvPreviewResult,
-} from "./PreviewCsvTable";
+import { PreviewCsvTable, type CsvPreviewResult } from "./PreviewCsvTable";
 import { SelectClienteSearch } from "@/components/SelectClienteSearch";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -85,11 +82,7 @@ const CSV_HEADER_ALIASES: Record<string, keyof CsvLinhaInput> = {
 };
 
 function normalizarCabecalho(h: string): string {
-  return h
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "")
-    .replace(/["']/g, "");
+  return h.trim().toLowerCase().replace(/\s+/g, "").replace(/["']/g, "");
 }
 
 function gerarTemplateCsv(): string {
@@ -826,9 +819,7 @@ export function PareamentoPage() {
       transformHeader: (h) => normalizarCabecalho(h),
       complete: (result) => {
         if (result.errors && result.errors.length > 0) {
-          setCsvParseErro(
-            `Erro ao ler CSV: ${result.errors[0].message}`,
-          );
+          setCsvParseErro(`Erro ao ler CSV: ${result.errors[0].message}`);
           return;
         }
         const camposValidos = new Set(Object.values(CSV_HEADER_ALIASES));
@@ -897,9 +888,7 @@ export function PareamentoPage() {
       limparCsv();
     },
     onError: (err) =>
-      toast.error(
-        err instanceof Error ? err.message : "Erro ao importar CSV",
-      ),
+      toast.error(err instanceof Error ? err.message : "Erro ao importar CSV"),
   });
 
   const csvTemErros = useMemo(
@@ -2387,9 +2376,9 @@ export function PareamentoPage() {
                         <li>
                           <span className="font-mono">operadora</span>,{" "}
                           <span className="font-mono">marca_simcard</span>,{" "}
-                          <span className="font-mono">plano</span> — se SIM
-                          novo sem lote (ex.: <span className="font-mono">10MB</span> ou apenas{" "}
-                          <span className="font-mono">10</span>)
+                          <span className="font-mono">plano</span> — se SIM novo
+                          sem lote (ex.: <span className="font-mono">10MB</span>{" "}
+                          ou apenas <span className="font-mono">10</span>)
                         </li>
                         <li>
                           <span className="font-mono">lote_rastreador</span>,{" "}
@@ -2399,9 +2388,7 @@ export function PareamentoPage() {
                       </ul>
                     </div>
 
-                    {csvPreview && (
-                      <PreviewCsvTable preview={csvPreview} />
-                    )}
+                    {csvPreview && <PreviewCsvTable preview={csvPreview} />}
                   </div>
                 </div>
               </div>
@@ -2466,8 +2453,8 @@ export function PareamentoPage() {
                           lote.
                         </li>
                         <li>
-                          Se não existem e não há lote, são criados com os
-                          dados informados.
+                          Se não existem e não há lote, são criados com os dados
+                          informados.
                         </li>
                       </ul>
                     </div>
@@ -2534,9 +2521,7 @@ export function PareamentoPage() {
             <Button
               type="button"
               onClick={() => csvPreviewMutation.mutate()}
-              disabled={
-                csvLinhas.length === 0 || csvPreviewMutation.isPending
-              }
+              disabled={csvLinhas.length === 0 || csvPreviewMutation.isPending}
               variant="outline"
               className="h-11 px-6 text-[11px] font-bold uppercase"
             >

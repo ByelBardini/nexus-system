@@ -13,9 +13,12 @@ function makePreview(
   return {
     linhas,
     contadores: {
-      validos: contadores?.validos ?? linhas.filter((l) => l.erros.length === 0).length,
+      validos:
+        contadores?.validos ??
+        linhas.filter((l) => l.erros.length === 0).length,
       comAviso: contadores?.comAviso ?? 0,
-      erros: contadores?.erros ?? linhas.filter((l) => l.erros.length > 0).length,
+      erros:
+        contadores?.erros ?? linhas.filter((l) => l.erros.length > 0).length,
     },
   };
 }
@@ -58,9 +61,9 @@ describe("PreviewCsvTable — contadores e cabeçalhos", () => {
     expect(screen.getByText(/total de linhas/i)).toBeInTheDocument();
     expect(screen.getAllByText(/^erros$/i).length).toBeGreaterThanOrEqual(1);
 
-    const valores = Array.from(
-      container.querySelectorAll("p.text-2xl"),
-    ).map((p) => p.textContent);
+    const valores = Array.from(container.querySelectorAll("p.text-2xl")).map(
+      (p) => p.textContent,
+    );
     expect(valores).toEqual(["1", "3", "2"]);
   });
 
@@ -68,11 +71,21 @@ describe("PreviewCsvTable — contadores e cabeçalhos", () => {
     render(<PreviewCsvTable preview={makePreview([{ ...linhaBase }])} />);
 
     expect(screen.getByRole("columnheader", { name: "#" })).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: /imei/i })).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: /iccid/i })).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: /rastreador/i })).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: /^sim$/i })).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: /erros/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: /imei/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: /iccid/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: /rastreador/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: /^sim$/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("columnheader", { name: /erros/i }),
+    ).toBeInTheDocument();
   });
 
   it("renderiza IMEI e ICCID em cada linha", () => {

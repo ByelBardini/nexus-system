@@ -510,7 +510,9 @@ describe("PareamentoPage — modo CSV", () => {
 
     renderPage();
     await switchToCsv();
-    await userEvent.click(screen.getByRole("button", { name: /baixar modelo/i }));
+    await userEvent.click(
+      screen.getByRole("button", { name: /baixar modelo/i }),
+    );
 
     expect(createObjectURL).toHaveBeenCalled();
     expect(revokeObjectURL).toHaveBeenCalled();
@@ -528,7 +530,9 @@ describe("PareamentoPage — modo CSV", () => {
     );
     await userEvent.upload(input, file);
 
-    expect(screen.getByText(/1 linha\(s\) carregada\(s\)/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/1 linha\(s\) carregada\(s\)/i),
+    ).toBeInTheDocument();
     expect(screen.getByText(/teste\.csv/i)).toBeInTheDocument();
   });
 
@@ -554,8 +558,7 @@ describe("PareamentoPage — modo CSV", () => {
     await switchToCsv();
 
     expect(screen.getByText(/colunas esperadas/i)).toBeInTheDocument();
-    const lista = screen
-      .getByText(/colunas esperadas/i)
+    const lista = screen.getByText(/colunas esperadas/i)
       .nextElementSibling as HTMLElement;
     expect(lista.textContent).toMatch(/operadora/i);
     expect(lista.textContent).toMatch(/marca_simcard/i);
@@ -670,7 +673,9 @@ describe("PareamentoPage — modo CSV", () => {
     await uploadDefaultCsv();
 
     expect(screen.getByText(/teste\.csv/i)).toBeInTheDocument();
-    expect(screen.getByText(/1 linha\(s\) carregada\(s\)/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/1 linha\(s\) carregada\(s\)/i),
+    ).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: /^cancelar$/i }));
 

@@ -73,8 +73,7 @@ const ERROS_LABELS: Record<string, string> = {
   ICCID_INVALIDO: "ICCID inválido ou vazio",
   IMEI_JA_VINCULADO: "IMEI já está vinculado a outro SIM",
   ICCID_JA_VINCULADO: "ICCID já está vinculado a outro rastreador",
-  FALTA_DADOS_RASTREADOR:
-    "Rastreador não existe: informe lote OU marca+modelo",
+  FALTA_DADOS_RASTREADOR: "Rastreador não existe: informe lote OU marca+modelo",
   FALTA_DADOS_SIM: "SIM não existe: informe lote OU operadora/marca simcard",
   LOTE_RASTREADOR_NAO_ENCONTRADO: "Lote de rastreador não encontrado",
   LOTE_SIMCARD_NAO_ENCONTRADO: "Lote de simcard não encontrado",
