@@ -12,7 +12,8 @@ Ver índice em `AGENTS.md`. Páginas de aparelhos/equipamentos (detalhe de UI).
 | `client/src/pages/equipamentos/EquipamentosPage.tsx` | Lista equipamentos (RASTREADOR com SIM vinculado) + pipeline de status + filtros |
 | `client/src/pages/equipamentos/PareamentoPage.tsx` | Pareamento IMEI↔ICCID: modos individual, massa e CSV |
 | `client/src/pages/equipamentos/EquipamentosConfigPage.tsx` | CRUD de marcas, modelos, operadoras, marcas-simcard e planos-simcard |
-| `client/src/pages/equipamentos/PreviewPareamentoTable.tsx` | Componente de preview de associação IMEI↔ICCID (reexporta tipos) |
+| `client/src/pages/equipamentos/PreviewPareamentoTable.tsx` | Componente de preview de associação IMEI↔ICCID (modos individual/massa; reexporta tipos) |
+| `client/src/pages/equipamentos/PreviewCsvTable.tsx` | Componente de preview exclusivo do modo CSV (ações VINCULAR/CRIAR/ERRO + erros mapeados) |
 | `client/src/pages/testes/TestesPage.tsx` | `/aparelhos/para-testes` + PATCH status |
 | `client/src/lib/aparelho-status.ts` | Labels/cores por `StatusAparelho` (`STATUS_CONFIG_APARELHO`) |
 | `client/src/components/IdAparelhoSearch.tsx` | Busca de IMEI em rastreadores |
@@ -79,12 +80,29 @@ Sem hook dedicado `useAparelhos`; páginas usam `useQuery` do TanStack Query dir
 
 - Três modos controlados por `?modo=individual|massa|csv` (searchParam); fallback para `"individual"`.
 - **Modo individual:** um par IMEI + ICCID; checkboxes `pertenceLoteRastreador` / `pertenceLoteSim` determinam se o aparelho será buscado num lote existente (sem criar novo) ou criado informando marca/modelo/operadora/marcaSimcard/plano. Proprietário `INFINITY | CLIENTE`; se `CLIENTE`, exibe `SelectClienteSearch`. Payload para `POST /aparelhos/pareamento`: `{ imei, iccid, loteRastreadorId?, marcaRastreador?, modeloRastreador?, criarNovoRastreador, loteSímId?, operadoraSim?, marcaSimcardId?, planoSimcardId?, criarNovoSim, proprietario, clienteId? }`.
-- **Modo massa:** textareas separadas para IMEIs e ICCIDs (separados por vírgula, ponto-e-vírgula ou quebra de linha); `parseIds` normaliza strip de espaços e zero-width chars. Preview disparado via `POST /aparelhos/pareamento/preview` com array de pares `{ imei, iccid }[]`. Botão "Confirmar Pareamento" envia `POST /aparelhos/pareamento/massa` com os mesmos pares + configuração de lote/metadados.
-- **Modo CSV:** não implementado na versão lida (placeholder).
-- Queries disparadas (habilitadas por modo): `["lotes-rastreadores"]` → `GET /aparelhos/pareamento/lotes-rastreadores`; `["lotes-sims"]` → `GET /aparelhos/pareamento/lotes-sims`; `["marcas"]` → `GET /equipamentos/marcas`; `["modelos"]` → `GET /equipamentos/modelos`; `["operadoras"]` → `GET /equipamentos/operadoras`; `["marcas-simcard"]` → `GET /equipamentos/marcas-simcard`; `["clientes-lista"]` → `GET /clientes` (só quando proprietário=CLIENTE).
-- `modelosPorMarca` / `marcasSimcardPorOperadora`: derivados de marca/operadora selecionada — filtra por `id` do objeto ativo.
-- Validação IMEI/ICCID em tempo real: `minImeiIndividual` lido de `modelo.minCaracteresImei`; `minIccidIndividual` lido de `marcaSimcard.minCaracteresIccid`; ambos ignorados se o campo pertence a lote.
+- **Modo massa:** textareas separadas para IMEIs e ICCIDs (separados por vírgula, ponto-e-vírgula ou quebra de linha); `parseIds` normaliza strip de espaços e zero-width chars. Preview disparado via `POST /aparelhos/pareamento/preview` com array de pares `{ imei, iccid }[]`. Botão "Confirmar Pareamento" envia `POST /aparelhos/pareamento` com os mesmos pares + configuração de lote/metadados (lote/manual aplicam-se a **todas** as linhas `NEEDS_CREATE`).
+- **Modo CSV (funcional):**
+  - Upload `<input type="file" data-testid="csv-file-input" accept=".csv">`; parse com `papaparse` (`header: true`, `skipEmptyLines`, `transformHeader` via `normalizarCabecalho` — lowercase + strip de espaços/aspas).
+  - Cabeçalhos aceitos (`CSV_HEADER_ALIASES`): `marca_rastreador` (aliases `marcarastreador`, `marca(rastreador)`), `modelo` / `modelo_rastreador`, `imei`, `operadora`, `marca_simcard` (aliases `marcasimcard`, `marca(simcard)`), `plano`, `iccid`, `lote_rastreador` (+ aliases), `lote_simcard` / `lote_sim` / `lote(simcard)`. Linhas com ambos `imei` e `iccid` vazios são descartadas.
+  - Botão "Baixar modelo" gera arquivo `template-pareamento.csv` (separador `;`, BOM UTF-8) com 2 exemplos — um manual e um via lotes (`LOTE-RAST-001`/`LOTE-SIM-001`).
+  - Estado no componente: `csvFileName`, `csvLinhas: CsvLinhaInput[]`, `csvParseErro`, `csvPreview: CsvPreviewResult | null`, `proprietarioCsv`, `clienteIdCsv`, `csvFileInputRef`. `limparCsv` reseta tudo e o `<input>` real.
+  - `csvPreviewMutation` → `POST /aparelhos/pareamento/csv/preview` com `{ linhas, proprietario, clienteId }`. Botão **"Validar CSV"** desabilitado enquanto `csvLinhas.length === 0`.
+  - `csvImportarMutation` → `POST /aparelhos/pareamento/csv` (mesmo payload); no sucesso invalida `["aparelhos"]`, `["lotes-rastreadores"]`, `["lotes-sims"]` e chama `limparCsv()`. Botão **"Confirmar Importação"** habilitado apenas se `csvLinhas.length > 0 && csvPreview !== null && !csvTemErros && (proprietarioCsv === "INFINITY" || clienteIdCsv !== null)`.
+  - Queries de marcas/modelos/operadoras/marcas-simcard são **não** usadas no modo CSV (resolução é backend).
+- Queries disparadas (habilitadas por modo): `["lotes-rastreadores"]` → `GET /aparelhos/pareamento/lotes-rastreadores` (individual/massa); `["lotes-sims"]` → `GET /aparelhos/pareamento/lotes-sims` (individual/massa); `["marcas"]`, `["modelos"]`, `["operadoras"]`, `["marcas-simcard"]` (individual/massa); `["clientes-lista"]` → `GET /clientes` quando qualquer proprietário (individual/massa/csv) for `CLIENTE`.
+- `modelosPorMarca` / `marcasSimcardPorOperadora`: derivados de marca/operadora selecionada — filtra por `id` do objeto ativo (apenas individual/massa).
+- Validação IMEI/ICCID em tempo real (individual/massa): `minImeiIndividual` lido de `modelo.minCaracteresImei`; `minIccidIndividual` lido de `marcaSimcard.minCaracteresIccid`; ambos ignorados se o campo pertence a lote.
 - Quantidade criada (`quantidadeCriada`) incrementada após sucesso no individual para feedback visual.
+
+**`PreviewCsvTable.tsx` — detalhes:**
+
+Componente puro que recebe `preview: CsvPreviewResult` e renderiza:
+
+- 3 cards de contagem: **Válidos**, **Total de linhas** e **Erros** (não há "Exigem Lote" — o backend resolve tudo por linha).
+- Tabela com colunas `#`, `IMEI`, `ICCID`, `Rastreador`, `SIM`, `Erros`. Células Rastreador/SIM mostram badge da `tracker_acao`/`sim_acao` (`VINCULAR_EXISTENTE` verde, `CRIAR_VIA_LOTE` azul, `CRIAR_MANUAL` indigo, `ERRO` vermelho) + detalhe em texto (`marca / modelo`, `Lote <ref>`, operadora).
+- Linhas com `erros.length > 0` recebem `bg-red-50/50`.
+- `ERROS_LABELS`: traduz códigos do backend (`IMEI_INVALIDO`, `ICCID_INVALIDO`, `IMEI_JA_VINCULADO`, `ICCID_JA_VINCULADO`, `FALTA_DADOS_RASTREADOR`, `FALTA_DADOS_SIM`, `LOTE_RASTREADOR_NAO_ENCONTRADO`, `LOTE_SIMCARD_NAO_ENCONTRADO`, `MARCA_SIMCARD_NAO_ENCONTRADA`, `PLANO_SIMCARD_NAO_ENCONTRADO`) para mensagens em português. Códigos desconhecidos caem no fallback `e => e`.
+- Tipos exportados: `CsvPreviewLinha`, `CsvPreviewResult` (usados em `PareamentoPage.tsx`).
 
 **`PreviewPareamentoTable.tsx` — detalhes:**
 
