@@ -25,7 +25,7 @@ export class AparelhosService {
     status: true,
     operadora: true,
     criadoEm: true,
-    cliente: { select: { id: true, nome: true } },
+    cliente: { select: { id: true, nome: true, cor: true } },
     tecnico: { select: { id: true, nome: true } },
     marcaSimcard: {
       select: {
@@ -125,7 +125,7 @@ export class AparelhosService {
     const aparelhos = await this.prisma.aparelho.findMany({
       orderBy: { criadoEm: 'desc' },
       include: {
-        cliente: { select: { id: true, nome: true } },
+        cliente: { select: { id: true, nome: true, cor: true } },
         lote: { select: { id: true, referencia: true } },
         tecnico: { select: { id: true, nome: true } },
         kit: { select: { id: true, nome: true } },
@@ -156,7 +156,7 @@ export class AparelhosService {
             tecnicoId: true,
             tecnico: { select: { id: true, nome: true } },
             clienteId: true,
-            cliente: { select: { id: true, nome: true } },
+            cliente: { select: { id: true, nome: true, cor: true } },
           },
         },
         historico: {
@@ -267,7 +267,7 @@ export class AparelhosService {
     return this.prisma.aparelho.findUnique({
       where: { id },
       include: {
-        cliente: { select: { id: true, nome: true } },
+        cliente: { select: { id: true, nome: true, cor: true } },
         lote: { select: { id: true, referencia: true } },
         tecnico: { select: { id: true, nome: true } },
         simVinculado: {

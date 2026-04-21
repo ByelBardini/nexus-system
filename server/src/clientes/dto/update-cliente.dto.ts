@@ -102,6 +102,11 @@ export class UpdateClienteDto {
   @IsString()
   estado?: string;
 
+  @ApiPropertyOptional({ example: '#3b82f6' })
+  @IsOptional()
+  @IsString()
+  cor?: string;
+
   @ApiPropertyOptional({ type: [UpdateContatoDto] })
   @IsOptional()
   @IsArray()
