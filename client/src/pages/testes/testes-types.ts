@@ -25,6 +25,7 @@ export interface OsTeste {
 export interface RastreadorParaTeste {
   id: number;
   identificador: string | null;
+  proprietario: "INFINITY" | "CLIENTE";
   marca: string | null;
   modelo: string | null;
   status: string;
