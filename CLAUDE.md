@@ -1,9 +1,11 @@
 # CLAUDE.md v4
 
+**YOU MUST** load @AGENTS.md at the start of every task before exploring or editing this repository. It defines stack, layout, the `docs/context/` domain table, and where tests run. This file adds style, test commands, and agent behavior only.
+
 ## Planning
 - Plan only when asked. No code until told to proceed.
 - Interview me on non-trivial features (3+ steps) before writing code.
-- Max 5 files per refactor phase. Verify, get approval, then continue.
+- Max 5 files per refactor phase. Verify, get approval, then continue. If the user cannot reply, summarize completed work and pending steps, then stop—do not expand the phase unilaterally.
 
 ## Code Style
 - Functions: 4–20 lines. Files: under 500 lines. One responsibility each.
@@ -20,7 +22,7 @@
 - Reference issue numbers/SHAs when a line exists due to a specific bug.
 
 ## Tests
-- Tests run with a single command: `npm run test`.
+- Run tests in the affected package: `npm run test --prefix server` (Jest) or `npm run test --prefix client` (Vitest). There is no root-level `npm run test`.
 - Every new function gets a test. Bug fixes get a regression test.
 - Mock external I/O with named fake classes, not inline stubs.
 - F.I.R.S.T: fast, independent, repeatable, self-validating, timely.
@@ -36,6 +38,7 @@
 - Structured JSON for debug/observability. Plain text for CLI output.
 
 ## Agent Behavior
+- Before exploring the repo broadly, read the relevant `docs/context/<area>.md` from the table in `AGENTS.md`.
 - Re-read files before editing after 10+ messages (compaction risk).
 - Files >500 LOC: read in chunks with offset/limit.
 - On rename/signature change: grep for calls, types, imports, re-exports.
