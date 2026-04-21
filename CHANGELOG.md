@@ -1,3 +1,11 @@
+# [1.2.0](https://github.com/ByelBardini/nexus-system/compare/v1.1.0...v1.2.0) (2026-04-21)
+
+
+### Features
+
+* **aparelhos:** expor preview e execução de pareamento por CSV ([392be54](https://github.com/ByelBardini/nexus-system/commit/392be5444351024e66f1b7ea09a8077ac37dc1cf))
+* **aparelhos:** fluxo de upload e preview de CSV no pareamento ([32c58df](https://github.com/ByelBardini/nexus-system/commit/32c58dfc811f7745022ad3f92e7c102f96403f5e))
+
 # [1.1.0](https://github.com/ByelBardini/nexus-system/compare/v1.0.0...v1.1.0) (2026-04-21)
 
 
