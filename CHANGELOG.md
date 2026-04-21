@@ -1,3 +1,16 @@
+# [1.1.0](https://github.com/ByelBardini/nexus-system/compare/v1.0.0...v1.1.0) (2026-04-21)
+
+
+### Bug Fixes
+
+* **login:** adicionar htmlFor nos Labels de email e senha para acessibilidade ([707592a](https://github.com/ByelBardini/nexus-system/commit/707592af292cdacb368633261b132199737b2f65))
+
+
+### Features
+
+* **clientes:** adicionar campo cor ao modelo Cliente ([ef9c26c](https://github.com/ByelBardini/nexus-system/commit/ef9c26c950172dfee0d8d77afe4cf0ec42043536))
+* **clientes:** permitir escolha de cor personalizada com color picker ([5cccf60](https://github.com/ByelBardini/nexus-system/commit/5cccf60cfbb97656fca839134f0b475ddf316de7))
+
 # 1.0.0 (2026-04-21)
 
 
