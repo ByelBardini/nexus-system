@@ -31,7 +31,6 @@ interface TesteEquipamentoSectionProps {
   onChange: (v: string) => void;
   aparelhoSelecionado: RastreadorParaTeste | null;
   onTrocarAparelho: () => void;
-  osClienteId?: number | null;
   tempoRastreadorEmTestesMin?: number;
 }
 
@@ -41,7 +40,6 @@ export function TesteEquipamentoSection({
   onChange,
   aparelhoSelecionado,
   onTrocarAparelho,
-  osClienteId = null,
   tempoRastreadorEmTestesMin,
 }: TesteEquipamentoSectionProps) {
   const statusConfig = aparelhoSelecionado
@@ -78,7 +76,6 @@ export function TesteEquipamentoSection({
               rastreadores={rastreadores}
               value={value}
               onChange={onChange}
-              osClienteId={osClienteId}
               placeholder="Buscar IMEI, ICCID ou Serial..."
             />
           </div>

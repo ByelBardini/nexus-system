@@ -123,35 +123,6 @@ describe('AparelhosService', () => {
 
       expect(result).toEqual([]);
     });
-
-    it('com tecnicoId: não filtra por proprietário — mostra todos os aparelhos do técnico', async () => {
-      prisma.ordemServico.findMany.mockResolvedValue([]);
-      prisma.aparelho.findMany.mockResolvedValue([]);
-
-      await service.findParaTestes(1, 5);
-
-      const whereUsado = prisma.aparelho.findMany.mock.calls[0]?.[0]?.where;
-      expect(whereUsado).not.toHaveProperty('OR');
-      expect(whereUsado).not.toHaveProperty('proprietario');
-    });
-
-    it('sem tecnicoId: mantém filtro OR de proprietário (INFINITY ou cliente)', async () => {
-      prisma.ordemServico.findMany.mockResolvedValue([]);
-      prisma.aparelho.findMany.mockResolvedValue([]);
-
-      await service.findParaTestes(3);
-
-      expect(prisma.aparelho.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            OR: expect.arrayContaining([
-              { proprietario: 'INFINITY' },
-              { proprietario: 'CLIENTE', clienteId: 3 },
-            ]),
-          }),
-        }),
-      );
-    });
   });
 
   describe('findAll', () => {

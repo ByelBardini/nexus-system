@@ -274,8 +274,7 @@ model OrdemServico {
   subcliente   Subcliente?   @relation(fields: [subclienteId], references: [id])
   tecnico      Tecnico?      @relation(fields: [tecnicoId], references: [id])
   veiculo      Veiculo?      @relation(fields: [veiculoId], references: [id])
-  historico        OSHistorico[]
-  historicosDebitos HistoricoDebitoRastreador[]
+  historico    OSHistorico[]
 
   @@index([clienteId], map: "ordens_servico_cliente_id_fkey")
   @@index([criadoPorId], map: "ordens_servico_criado_por_id_fkey")
@@ -681,25 +680,22 @@ model DebitoRastreador {
 }
 
 model HistoricoDebitoRastreador {
-  id             Int      @id @default(autoincrement())
-  debitoId       Int      @map("debito_id")
-  pedidoId       Int?     @map("pedido_id")
-  loteId         Int?     @map("lote_id")
-  aparelhoId     Int?     @map("aparelho_id")
-  ordemServicoId Int?     @map("ordem_servico_id")
-  delta          Int
-  criadoEm       DateTime @default(now()) @map("criado_em")
+  id         Int      @id @default(autoincrement())
+  debitoId   Int      @map("debito_id")
+  pedidoId   Int?     @map("pedido_id")
+  loteId     Int?     @map("lote_id")
+  aparelhoId Int?     @map("aparelho_id")
+  delta      Int
+  criadoEm   DateTime @default(now()) @map("criado_em")
 
-  debito       DebitoRastreador  @relation(fields: [debitoId], references: [id])
-  pedido       PedidoRastreador? @relation(fields: [pedidoId], references: [id])
-  lote         LoteAparelho?     @relation(fields: [loteId], references: [id])
-  aparelho     Aparelho?         @relation(fields: [aparelhoId], references: [id])
-  ordemServico OrdemServico?     @relation(fields: [ordemServicoId], references: [id])
+  debito   DebitoRastreador  @relation(fields: [debitoId], references: [id])
+  pedido   PedidoRastreador? @relation(fields: [pedidoId], references: [id])
+  lote     LoteAparelho?     @relation(fields: [loteId], references: [id])
+  aparelho Aparelho?         @relation(fields: [aparelhoId], references: [id])
 
   @@index([debitoId])
   @@index([pedidoId])
   @@index([loteId])
   @@index([aparelhoId])
-  @@index([ordemServicoId])
   @@map("historico_debitos_rastreadores")
 }
