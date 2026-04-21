@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TecnicosPage } from "@/pages/tecnicos/TecnicosPage";
 
 const apiMock = vi.hoisted(() => vi.fn());
-const hasPermissionMock = vi.hoisted(() => vi.fn((_perm: string) => true));
+const hasPermissionMock = vi.hoisted(() => vi.fn(() => true));
 
 vi.mock("@/lib/api", () => ({
   api: (...args: unknown[]) => apiMock(...args),
