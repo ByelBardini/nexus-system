@@ -365,5 +365,230 @@ describe('TecnicosService', () => {
 
       expect(geocoding.geocode).toHaveBeenCalledTimes(1);
     });
+
+    it('não quebra create quando geocode lança exceção', async () => {
+      geocoding.geocode.mockRejectedValueOnce(new Error('net'));
+      prisma.tecnico.create.mockResolvedValue({ id: 1 });
+      prisma.tecnico.findUnique.mockResolvedValue({
+        id: 1,
+        nome: 'X',
+        precos: null,
+      });
+
+      const result = await service.create({
+        nome: 'X',
+        cidadeEndereco: 'SP Capital',
+        estadoEndereco: 'SP',
+      } as any);
+
+      expect(result).toMatchObject({ id: 1 });
+      expect(prisma.tecnico.update).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ latitude: expect.any(Number) }),
+        }),
+      );
+    });
+
+    it('não quebra update quando persistência de coords falha', async () => {
+      const existing = {
+        id: 1,
+        nome: 'Carlos',
+        cep: '01001-000',
+        logradouro: 'Rua A',
+        numero: '10',
+        cidadeEndereco: 'São Paulo',
+        estadoEndereco: 'SP',
+        precos: null,
+      };
+      prisma.tecnico.findUnique.mockResolvedValue(existing);
+      geocoding.geocode.mockResolvedValueOnce({
+        lat: -1,
+        lng: -2,
+        precision: 'EXATO',
+      });
+      prisma.tecnico.update
+        .mockResolvedValueOnce(existing)
+        .mockRejectedValueOnce(new Error('db coords'));
+
+      await service.update(1, { cep: '20040-020' } as any);
+
+      expect(prisma.tecnico.findUnique).toHaveBeenCalled();
+    });
+
+    it('chama geocoding quando só logradouro muda', async () => {
+      const base = {
+        id: 1,
+        cep: '01001-000',
+        logradouro: 'Rua A',
+        numero: '10',
+        cidadeEndereco: 'São Paulo',
+        estadoEndereco: 'SP',
+        precos: null,
+      };
+      prisma.tecnico.findUnique.mockResolvedValue(base);
+      geocoding.geocode.mockResolvedValue({
+        lat: 0,
+        lng: 0,
+        precision: 'EXATO',
+      });
+
+      await service.update(1, { logradouro: 'Rua B' } as any);
+
+      expect(geocoding.geocode).toHaveBeenCalled();
+    });
+
+    it('chama geocoding quando só numero muda', async () => {
+      const base = {
+        id: 1,
+        cep: '01001-000',
+        logradouro: 'Rua A',
+        numero: '10',
+        cidadeEndereco: 'São Paulo',
+        estadoEndereco: 'SP',
+        precos: null,
+      };
+      prisma.tecnico.findUnique.mockResolvedValue(base);
+      geocoding.geocode.mockResolvedValue({
+        lat: 0,
+        lng: 0,
+        precision: 'EXATO',
+      });
+
+      await service.update(1, { numero: '99' } as any);
+
+      expect(geocoding.geocode).toHaveBeenCalled();
+    });
+
+    it('chama geocoding quando só cidadeEndereco muda', async () => {
+      const base = {
+        id: 1,
+        cep: '01001-000',
+        logradouro: 'Rua A',
+        numero: '10',
+        cidadeEndereco: 'São Paulo',
+        estadoEndereco: 'SP',
+        precos: null,
+      };
+      prisma.tecnico.findUnique.mockResolvedValue(base);
+      geocoding.geocode.mockResolvedValue({
+        lat: 0,
+        lng: 0,
+        precision: 'CIDADE',
+      });
+
+      await service.update(1, { cidadeEndereco: 'Campinas' } as any);
+
+      expect(geocoding.geocode).toHaveBeenCalledWith(
+        expect.objectContaining({
+          logradouro: 'Rua A',
+          cidade: 'Campinas',
+          uf: 'SP',
+        }),
+      );
+    });
+
+    it('chama geocoding quando só estadoEndereco muda', async () => {
+      const base = {
+        id: 1,
+        cep: '01001-000',
+        logradouro: 'Rua A',
+        numero: '10',
+        cidadeEndereco: 'São Paulo',
+        estadoEndereco: 'SP',
+        precos: null,
+      };
+      prisma.tecnico.findUnique.mockResolvedValue(base);
+      geocoding.geocode.mockResolvedValue({
+        lat: 0,
+        lng: 0,
+        precision: 'EXATO',
+      });
+
+      await service.update(1, { estadoEndereco: 'RJ' } as any);
+
+      expect(geocoding.geocode).toHaveBeenCalledWith(
+        expect.objectContaining({
+          logradouro: 'Rua A',
+          cidade: 'São Paulo',
+          uf: 'RJ',
+        }),
+      );
+    });
+  });
+
+  describe('create com preços parciais', () => {
+    it('preenche campos de preço ausentes com zero', async () => {
+      prisma.tecnico.create.mockResolvedValue({ id: 1 });
+      prisma.precoTecnico.create.mockResolvedValue({});
+      prisma.tecnico.findUnique.mockResolvedValue({
+        id: 1,
+        nome: 'T',
+        precos: { revisao: 5 },
+      });
+
+      await service.create({
+        nome: 'T',
+        precos: { revisao: 5 },
+      } as any);
+
+      expect(prisma.precoTecnico.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            instalacaoComBloqueio: 0,
+            instalacaoSemBloqueio: 0,
+            revisao: 5,
+            retirada: 0,
+            deslocamento: 0,
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('update transação e preços herdados', () => {
+    it('usa prisma.$transaction uma vez por update', async () => {
+      prisma.tecnico.findUnique.mockResolvedValue({
+        id: 1,
+        nome: 'A',
+        precos: null,
+      });
+
+      await service.update(1, { nome: 'B' });
+
+      expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    });
+
+    it('herda valores numéricos de preços existentes quando string decimal', async () => {
+      prisma.tecnico.findUnique.mockResolvedValue({
+        id: 1,
+        nome: 'A',
+        precos: null,
+      });
+      prisma.precoTecnico.findUnique.mockResolvedValue({
+        tecnicoId: 1,
+        instalacaoComBloqueio: '150.00' as unknown as number,
+        instalacaoSemBloqueio: 80,
+        revisao: 10,
+        retirada: 5,
+        deslocamento: 2,
+      });
+      prisma.precoTecnico.update.mockResolvedValue({});
+
+      await service.update(1, {
+        precos: { revisao: 99 },
+      } as any);
+
+      expect(prisma.precoTecnico.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            instalacaoComBloqueio: 150,
+            instalacaoSemBloqueio: 80,
+            revisao: 99,
+            retirada: 5,
+            deslocamento: 2,
+          }),
+        }),
+      );
+    });
   });
 });
