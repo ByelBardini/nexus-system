@@ -1,4 +1,11 @@
-import { useState, useMemo, Fragment, useCallback } from "react";
+import {
+  useState,
+  useMemo,
+  Fragment,
+  useCallback,
+  Suspense,
+  lazy,
+} from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller, useWatch, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -48,6 +55,16 @@ import {
 import { InputCPFCNPJ } from "@/components/InputCPFCNPJ";
 import { cn } from "@/lib/utils";
 
+const TecnicosMap = lazy(() => import("@/components/TecnicosMap"));
+
+type MapState = "collapsed" | "expanded" | "fullscreen";
+
+function nextMapState(s: MapState): MapState {
+  if (s === "collapsed") return "expanded";
+  if (s === "expanded") return "fullscreen";
+  return "collapsed";
+}
+
 const schema = z.object({
   nome: z.string().min(1, "Nome obrigatório"),
   cpfCnpj: z.string().optional(),
@@ -85,6 +102,9 @@ interface Tecnico {
   bairro: string | null;
   cidadeEndereco: string | null;
   estadoEndereco: string | null;
+  latitude: number | string | null;
+  longitude: number | string | null;
+  geocodingPrecision: "EXATO" | "CIDADE" | null;
   ativo: boolean;
   precos?: {
     instalacaoComBloqueio: number | string;
@@ -114,6 +134,7 @@ export function TecnicosPage() {
     "todos" | "ativo" | "inativo"
   >("todos");
   const [page, setPage] = useState(0);
+  const [mapState, setMapState] = useState<MapState>("collapsed");
   const canCreate = hasPermission("AGENDAMENTO.TECNICO.CRIAR");
   const canEdit = hasPermission("AGENDAMENTO.TECNICO.EDITAR");
 
@@ -484,9 +505,65 @@ export function TecnicosPage() {
       </header>
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
-        <section className="w-[40%] shrink-0 border-r border-slate-200 bg-slate-200" />
+        <section
+          className={cn(
+            "relative z-0 isolate shrink-0 border-r border-slate-200 bg-slate-100 transition-[width] duration-300",
+            mapState === "collapsed" && "w-[40%]",
+            mapState === "expanded" && "w-[75%]",
+            mapState === "fullscreen" &&
+              "fixed inset-0 z-40 w-full border-r-0",
+          )}
+        >
+          <Suspense
+            fallback={
+              <div className="flex h-full items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+              </div>
+            }
+          >
+            <TecnicosMap tecnicos={filtered} containerSize={mapState} />
+          </Suspense>
+          <div className="absolute right-3 top-3 z-[400] flex flex-row-reverse gap-2">
+            <button
+              type="button"
+              onClick={() => setMapState((s) => nextMapState(s))}
+              title={
+                mapState === "collapsed"
+                  ? "Expandir mapa"
+                  : mapState === "expanded"
+                    ? "Tela cheia"
+                    : "Recolher mapa"
+              }
+              className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-md transition-colors hover:bg-slate-50 hover:text-slate-900"
+            >
+              <MaterialIcon
+                name={
+                  mapState === "fullscreen"
+                    ? "close_fullscreen"
+                    : "open_in_full"
+                }
+                className="text-base"
+              />
+            </button>
+            {mapState === "expanded" && (
+              <button
+                type="button"
+                onClick={() => setMapState("collapsed")}
+                title="Recolher mapa"
+                className="flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 shadow-md transition-colors hover:bg-slate-50 hover:text-slate-900"
+              >
+                <MaterialIcon name="unfold_less" className="text-base" />
+              </button>
+            )}
+          </div>
+        </section>
 
-        <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-white">
+        <section
+          className={cn(
+            "flex min-w-0 flex-1 flex-col overflow-hidden bg-white",
+            mapState === "fullscreen" && "hidden",
+          )}
+        >
           <div className="flex-1 overflow-y-auto">
             <Table>
               <TableHeader>

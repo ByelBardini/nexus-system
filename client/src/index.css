@@ -74,6 +74,12 @@
   }
 }
 
+/* Leaflet: divIcon customizado sem caixa branca padrão */
+.leaflet-div-icon.tecnico-marker-div {
+  background: transparent !important;
+  border: none !important;
+}
+
 .erp-table th {
   @apply px-3 py-2 text-[11px] font-bold border-b-2 border-slate-300 bg-slate-200 text-slate-700 uppercase;
 }
