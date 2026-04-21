@@ -360,6 +360,25 @@ describe('DebitosRastreadoresService', () => {
         expect.objectContaining({ take: 500 }),
       );
     });
+
+    it('inclui ordemServico nos históricos para exibir a OS na listagem', async () => {
+      prisma.debitoRastreador.findMany.mockResolvedValue([]);
+      prisma.debitoRastreador.count.mockResolvedValue(0);
+
+      await service.findAll({});
+
+      expect(prisma.debitoRastreador.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({
+            historicos: expect.objectContaining({
+              include: expect.objectContaining({
+                ordemServico: { select: { id: true, numero: true } },
+              }),
+            }),
+          }),
+        }),
+      );
+    });
   });
 
   describe('findOne', () => {
