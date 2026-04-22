@@ -9,7 +9,7 @@ import {
   getClientesFooterStats,
   getDefaultClienteFormValues,
   type Cliente,
-} from "@/pages/clientes/clientes-page.shared";
+} from "@/pages/clientes/shared/clientes-page.shared";
 
 function clienteStub(
   overrides: Partial<Cliente> & Pick<Cliente, "id" | "nome" | "status">,

@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ClientesPage } from "@/pages/clientes/ClientesPage";
-import type { Cliente } from "@/pages/clientes/clientes-page.shared";
+import type { Cliente } from "@/pages/clientes/shared/clientes-page.shared";
 
 const apiMock = vi.hoisted(() => vi.fn());
 const hasPermissionMock = vi.hoisted(() =>

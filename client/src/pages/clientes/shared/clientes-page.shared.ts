@@ -1,4 +1,8 @@
 import { z } from "zod";
+import { formatarCEP } from "@/lib/format";
+
+/** Tamanho da página na listagem de clientes. */
+export const CLIENTES_PAGE_SIZE = 10;
 
 export const TIPO_CONTRATO_VALUES = ["COMODATO", "AQUISICAO"] as const;
 export type TipoContrato = (typeof TIPO_CONTRATO_VALUES)[number];
@@ -242,6 +246,55 @@ export function buildClienteApiBody(
       } as Record<string, unknown>),
     ),
   }) as ClienteUpdateApiBody;
+}
+
+/** Campos de endereço usados na listagem expandida (texto único). */
+export type ClienteEnderecoExibicao = Pick<
+  Cliente,
+  | "logradouro"
+  | "numero"
+  | "complemento"
+  | "bairro"
+  | "cidade"
+  | "estado"
+  | "cep"
+>;
+
+/** Formata endereço como na linha expandida da tabela (inclui CEP). */
+export function formatClienteEnderecoLinhaLista(
+  c: Partial<ClienteEnderecoExibicao>,
+): string {
+  let s = [
+    c.logradouro,
+    c.numero != null && String(c.numero).trim() !== ""
+      ? `nº ${c.numero}`
+      : "",
+    c.complemento,
+  ]
+    .filter(Boolean)
+    .join(", ");
+  if (c.bairro) s += ` - ${c.bairro}`;
+  if (c.cidade || c.estado) {
+    s += ` - ${[c.cidade, c.estado].filter(Boolean).join("/")}`;
+  }
+  if (c.cep) s += ` - CEP ${formatarCEP(c.cep)}`;
+  return s.trim();
+}
+
+/** Resumo lateral do modal (sem CEP; número sem prefixo "nº"). */
+export function formatClienteEnderecoResumo(c: {
+  logradouro?: string | null;
+  numero?: string | null;
+  bairro?: string | null;
+  cidade?: string | null;
+  estado?: string | null;
+}): string {
+  const base = [c.logradouro, c.numero, c.bairro].filter(Boolean).join(", ");
+  const loc = [c.cidade, c.estado].filter(Boolean).join("/");
+  if (!base && !loc) return "";
+  if (!loc) return base;
+  if (!base) return `— ${loc}`;
+  return `${base} — ${loc}`;
 }
 
 export function clienteToFormValues(cliente: Cliente): ClienteFormData {
