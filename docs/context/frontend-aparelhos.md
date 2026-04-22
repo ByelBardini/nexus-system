@@ -10,6 +10,7 @@ Ver índice em `AGENTS.md`. Páginas de aparelhos/equipamentos (detalhe de UI).
 | `client/src/pages/aparelhos/CadastroLotePage.tsx` | POST `/aparelhos/lote` — entrada em massa |
 | `client/src/pages/aparelhos/CadastroIndividualPage.tsx` | POST `/aparelhos/individual` — entrada avulsa |
 | `client/src/pages/equipamentos/EquipamentosPage.tsx` | Lista equipamentos (RASTREADOR com SIM vinculado) + pipeline de status + filtros |
+| `client/src/pages/equipamentos/equipamentos-page.shared.ts` | Tipo `EquipamentoListItem`, `EquipamentoPipelineFilter` e função `equipamentoMatchesStageFilter` (regra única para pipeline, filtro de status e contagens) |
 | `client/src/pages/equipamentos/PareamentoPage.tsx` | Pareamento IMEI↔ICCID: modos individual, massa e CSV |
 | `client/src/pages/equipamentos/EquipamentosConfigPage.tsx` | CRUD de marcas, modelos, operadoras, marcas-simcard e planos-simcard |
 | `client/src/pages/equipamentos/PreviewPareamentoTable.tsx` | Componente de preview de associação IMEI↔ICCID (modos individual/massa; reexporta tipos) |
@@ -36,7 +37,7 @@ Sem hook dedicado `useAparelhos`; páginas usam `useQuery` do TanStack Query dir
 **`CadastroIndividualPage.tsx` — detalhes:**
 
 - Permissão: `CONFIGURACAO.APARELHO.CRIAR` (bloqueia botões de submit).
-- Queries disparadas: `["clientes-lista"]` → `/clientes`; `["marcas"]` → `/equipamentos/marcas`; `["modelos"]` → `/equipamentos/modelos`; `["operadoras"]` → `/equipamentos/operadoras`; `["marcas-simcard", operadoraIdParaMarca]` → `/equipamentos/marcas-simcard?operadoraId=N` (só quando `tipo=SIM`); `["debitos-rastreadores", "aberto"]` → `/debitos-rastreadores?status=aberto&limit=500` (só quando `tipo=RASTREADOR`); `["aparelhos-ids"]` → `/aparelhos` (para checagem de duplicata, `select` extrai só `identificador`).
+- Queries disparadas: `["clientes-lista"]` → `/clientes`; `["marcas"]` → `/equipamentos/marcas`; `["modelos"]` → `/equipamentos/modelos`; `["operadoras"]` → `/equipamentos/operadoras`; `["marcas-simcard", operadoraIdParaMarca]` → `/equipamentos/marcas-simcard?operadoraId=N` (só quando `tipo=SIM`); `["debitos-rastreadores", "aberto"]` → `/debitos-rastreadores?status=aberto&limit=500` (só quando `tipo=RASTREADOR` — **sem** `incluirHistoricos`; a listagem padrão da API não traz histórico, suficiente para saldo e seleção de abate); `["aparelhos-ids"]` → `/aparelhos` (para checagem de duplicata, `select` extrai só `identificador`).
 - Validação de identificador: strip de não-dígitos; compara com `minCaracteresImei` (modelo) para RASTREADOR ou `minCaracteresIccid` (marcaSimcard) para SIM. Feedback visual verde/vermelho/amarelo em tempo real.
 - Lógica de `origem` muda `statusDisponiveis` e `proprietario`:
   - `COMPRA_AVULSA` → apenas `NOVO_OK`; `notaFiscal` visível.
@@ -68,13 +69,14 @@ Sem hook dedicado `useAparelhos`; páginas usam `useQuery` do TanStack Query dir
 - `PAGE_SIZE = 12`; paginação client-side. Equipamentos = apenas aparelhos com `tipo === "RASTREADOR"` e `simVinculado != null`.
 - Pipeline no topo (cards clicáveis): **Total / Configurados / Em Kit / Despachados / Com Técnico / Instalados**. Cada card filtra `pipelineFilter` + `statusFilter` em sincronia.
   - "Em Kit": `status === "CONFIGURADO"` **e** `kitId != null` — distinto de "Configurado" que exige `kitId === null`.
+- **Regra de estágio centralizada:** `equipamentoMatchesStageFilter` em `equipamentos-page.shared.ts` — usada para contagens do pipeline, para o `useMemo` de linhas filtradas (`matchPipeline` / `matchStatus`) e evita duplicar a mesma lógica entre card e select.
 - Filtros adicionais: `busca` (IMEI, ICCID, nome do técnico, kitId string, lote.referencia), `statusFilter`, `proprietarioFilter` (`INFINITY | CLIENTE | TODOS`), `marcaFilter` (marca do rastreador), `operadoraFilter` (operadora do SIM vinculado).
 - `pipelineFilter` e `statusFilter` são mantidos em sincronia: clicar no card muda ambos; mudar o select de Status muda ambos também.
 - Linha expansível (`expandedId`): cabeçalho com status badge + IMEI + kit + técnico + proprietário; grid 2 colunas — **Equipamento** (IMEI, Modelo, ICCID, Operadora, Lote) | **Operação** (Técnico, Proprietário, Kit, Transporte, Ordem de Instalação, Subcliente/Placa); **Histórico** em largura total (timeline flat horizontal).
 - Status "Em Kit" exibido com badge roxo (`bg-purple-50 text-purple-700`) na linha e detalhe — o enum Prisma permanece `CONFIGURADO` (sem valor "EM_KIT").
 - `kitsPorId`: `Map<number, string>` construído a partir do query de kits — fallback para `aparelho.kit?.nome` quando dados inline estão disponíveis.
 - Permissão `CONFIGURACAO.APARELHO.CRIAR` controla botões "Montar Equipamento" (`/equipamentos/pareamento`) e "Cadastro em Lote" (`/equipamentos/pareamento?modo=massa`).
-- Tipo local `Aparelho` inclui `simVinculado` (com `marcaSimcard`, `planoSimcard`, `lote`), `kit`, `tecnico`, `lote`, `ordemServicoVinculada`, `historico[]`.
+- Tipo da listagem: `EquipamentoListItem` exportado de `equipamentos-page.shared.ts` (campos usados na tabela: `simVinculado` com `marcaSimcard`/`planoSimcard`/`lote`, `kit`, `tecnico`, `lote`, `ordemServicoVinculada`, `historico[]`, etc.).
 
 **`PareamentoPage.tsx` — detalhes:**
 
@@ -98,7 +100,7 @@ Sem hook dedicado `useAparelhos`; páginas usam `useQuery` do TanStack Query dir
 
 Componente puro que recebe `preview: CsvPreviewResult` e renderiza:
 
-- 3 cards de contagem: **Válidos**, **Total de linhas** e **Erros** (não há "Exigem Lote" — o backend resolve tudo por linha).
+- 4 cards de contagem em grid responsivo: **Válidos**, **Com aviso** (`preview.contadores.comAviso`), **Total de linhas** e **Erros** (não há "Exigem Lote" no resumo — o backend resolve ações por linha).
 - Tabela com colunas `#`, `IMEI`, `ICCID`, `Rastreador`, `SIM`, `Erros`. Células Rastreador/SIM mostram badge da `tracker_acao`/`sim_acao` (`VINCULAR_EXISTENTE` verde, `CRIAR_VIA_LOTE` azul, `CRIAR_MANUAL` indigo, `ERRO` vermelho) + detalhe em texto (`marca / modelo`, `Lote <ref>`, operadora).
 - Linhas com `erros.length > 0` recebem `bg-red-50/50`.
 - `ERROS_LABELS`: traduz códigos do backend (`IMEI_INVALIDO`, `ICCID_INVALIDO`, `IMEI_JA_VINCULADO`, `ICCID_JA_VINCULADO`, `FALTA_DADOS_RASTREADOR`, `FALTA_DADOS_SIM`, `LOTE_RASTREADOR_NAO_ENCONTRADO`, `LOTE_SIMCARD_NAO_ENCONTRADO`, `MARCA_SIMCARD_NAO_ENCONTRADA`, `PLANO_SIMCARD_NAO_ENCONTRADO`) para mensagens em português. Códigos desconhecidos caem no fallback `e => e`.
@@ -109,13 +111,14 @@ Componente puro que recebe `preview: CsvPreviewResult` e renderiza:
 Componente puro (sem queries) que recebe `preview: PreviewResult` e renderiza resumo + tabela.
 
 - Tipos exportados: `PreviewLinha`, `PreviewResult`, `TRACKER_STATUS_LABELS`, `ACTION_LABELS`.
+- Função exportada `countPareamentoPreviewDuplicateLinhas(linhas)`: conta quantas linhas do preview têm **IMEI** ou **ICCID** não vazio repetido dentro do mesmo lote (normalização com `trim`; duas linhas com o mesmo IMEI contam ambas).
 - `TrackerStatus`: `FOUND_AVAILABLE` | `FOUND_ALREADY_LINKED` | `NEEDS_CREATE` | `INVALID_FORMAT`.
 - `ActionNeeded`: `OK` | `SELECT_TRACKER_LOT` | `SELECT_SIM_LOT` | `FIX_ERROR`.
-- Cards de contagem: Válidos, Exigem Lote, Duplicados (fixo 0 — campo não preenchido pelo backend atual), Erros.
+- Cards de contagem: Válidos, Exigem Lote, **Duplicados** (valor = `countPareamentoPreviewDuplicateLinhas(preview.linhas)`), Erros.
 
 **`EquipamentosConfigPage.tsx` — detalhes:**
 
-- Rota: `/equipamentos/configuracoes`; link de volta para `/equipamentos`. Permissão `CONFIGURACAO.APARELHO.EDITAR` controla todos os botões de criação/edição.
+- Rota: `/equipamentos/configuracoes`; link de volta para `/equipamentos`. Permissão `CONFIGURACAO.APARELHO.EDITAR` (`canEdit`) controla **de forma uniforme**: botões **Nova Marca** e ações em dropdown na coluna de **Marcas e Modelos de Rastreador**; botão **Nova Operadora**, coluna de menu (⚙) nas linhas de operadora; botão **Nova Marca** (simcard), menu ⚙ de cada marca simcard, botões **Adicionar Plano** e menus de edição/exclusão de plano. Sem `EDITAR`, essas ações somem; listagem e busca permanecem.
 - Queries: `["marcas"]` → `GET /equipamentos/marcas`; `["modelos"]` → `GET /equipamentos/modelos`; `["operadoras"]` → `GET /equipamentos/operadoras`; `["marcas-simcard"]` → `GET /equipamentos/marcas-simcard`.
 - **Seção Marcas e Modelos (col-7):** lista acordeão — clicar na marca expande modelos. Filtro de busca debounce 300 ms que filtra por nome da marca **ou** nome de qualquer modelo da marca. Modelo deletável sem confirmação; marca deletável apenas se `_count.modelos === 0`. Desativar marca não remove modelos.
 - **Seção Operadoras (col-5):** tabela simples; ativar/desativar via toggle (PATCH `{ ativo }`); excluir sem restrição (backend pode bloquear).

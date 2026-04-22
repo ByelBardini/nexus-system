@@ -11,9 +11,11 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 | `users.module.ts` | Registra `UsersController` e `UsersService`; importa `PrismaModule`; **exporta `UsersService`** (consumido por `AuthModule`, `RolesModule` e vários outros módulos de domínio) |
 | `users.controller.ts` | Rotas em `/users`; `@UseGuards(PermissionsGuard)` no controller; `@ApiTags('users')` |
 | `users.service.ts` | CRUD de usuários, consultas internas usadas por `auth` e `roles`, gestão de senha, permissões |
-| `dto/create-user.dto.ts` | `nome` (MinLength 1), `email` (IsEmail), `password` (MinLength 4), `ativo?` (default `true`), `setor?` (`SetorUsuario \| null`) |
-| `dto/update-user.dto.ts` | Todos os campos opcionais: `nome?`, `email?`, `ativo?`, `setor?` — **`password` não é atualizável por este DTO** |
-| `dto/user-response.dto.ts` | Shape de resposta pública: `id`, `nome`, `email`, `ativo`, `createdAt`, `updatedAt` — **`senhaHash` nunca exposto** |
+| `users.prisma-include.ts` | Includes Prisma reutilizáveis: `usuarioIncludeListagem` (listagem/detalhe admin), `usuarioIncludeAuth` (login e `getPermissions`); tipos `UsuarioComListagemInclude` e `UsuarioComAuthInclude` via `Prisma.UsuarioGetPayload` |
+| `users.constants.ts` | `BCRYPT_SALT_ROUNDS` — única fonte do custo do `bcrypt.hash` em criação e reset de senha |
+| `dto/create-user.dto.ts` | `nome` (MinLength 1), `email` (IsEmail), `password` (MinLength 4), `ativo?` (default `true`), `setor?` opcional com `@IsEnum(SetorUsuario)` (enum do `@prisma/client`, alinhado ao schema) |
+| `dto/update-user.dto.ts` | Todos os campos opcionais: `nome?`, `email?`, `ativo?`, `setor?` (`@IsEnum(SetorUsuario)` quando informado) — **`password` não é atualizável por este DTO** |
+| `dto/user-response.dto.ts` | Shape documental de resposta “flat”; **não está amarrado** ao controller — respostas reais incluem `usuarioCargos` e demais campos do Prisma; **`senhaHash` nunca exposto** nas respostas sanitizadas |
 
 **Endpoints e permissões:**
 
@@ -32,31 +34,36 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 
 | Param | Tipo | Comportamento |
 |-------|------|--------------|
-| `search` | `string?` | Busca case-insensitive em `nome` **ou** `email` (OR) |
+| `search` | `string?` | Busca em `nome` **ou** `email` (OR); implementação usa `mode: 'insensitive'` no Prisma — **com MySQL/MariaDB o Prisma pode rejeitar esse filtro** (erro de validação em runtime). Em ambientes PostgreSQL costuma funcionar como case-insensitive. |
 | `ativo` | `string?` (`'true'` / `'false'`) | Filtra por `ativo`; omitido = sem filtro |
 | `page` | `string?` (convertido com `+`) | Default `1` |
 | `limit` | `string?` | Default `15`; max `100` |
 
+**Includes Prisma (DRY):**
+
+- **`usuarioIncludeListagem`** — `usuarioCargos → cargo → setor` + `cargoPermissoes` (sem nested `permissao`). Usado em `findAll`, `findAllPaginated`, `findOne`, `findById` (detalhe alinhado à listagem).
+- **`usuarioIncludeAuth`** — `usuarioCargos → cargo → cargoPermissoes → permissao`. Usado em `findByEmail`, `findByIdWithPassword` (login, guard, troca de senha).
+
 **Diferenças entre `GET /users` e `GET /users/paginated`:**
 
-- `GET /users` (`findAll`): sem paginação; inclui `usuarioCargos → cargo → setor + cargoPermissoes`; ordena por `nome asc`. Ideal para selects.
-- `GET /users/paginated` (`findAllPaginated`): paginado; inclui mesma estrutura de cargos; filtros de `search` e `ativo`. Ideal para listagens administrativas.
+- `GET /users` (`findAll`): sem paginação; include **`usuarioIncludeListagem`**; ordena por `nome asc`. Ideal para selects.
+- `GET /users/paginated` (`findAllPaginated`): paginado; mesma estrutura de cargos; filtros de `search` e `ativo`. Ideal para listagens administrativas.
 
 **Métodos públicos do `UsersService`:**
 
 | Método | Retorno | Notas |
 |--------|---------|-------|
-| `findAll()` | `Usuario[]` sem `senhaHash` | Inclui `usuarioCargos → cargo → setor + cargoPermissoes` |
-| `findAllPaginated(params)` | `PaginatedResult` sem `senhaHash` | Filtros `search`/`ativo`; `maxLimit=100` |
-| `findOne(id)` | `Usuario` sem `senhaHash` | Inclui `usuarioCargos → cargo`; lança `NotFoundException` |
-| `create(dto)` | `Usuario` sem `senhaHash` | Lança `ConflictException` se email duplicado; `senhaExpiradaEm = null` na criação |
-| `update(id, dto)` | `Usuario` sem `senhaHash` | Valida existência; lança `ConflictException` se novo email já pertence a outro usuário; **não altera senha** |
-| `resetPassword(id)` | `{ message: string }` | Seta senha padrão `'#Infinity123'`; reseta `senhaExpiradaEm = null` |
-| `findByIdWithPassword(id)` | `Usuario \| null` (com `senhaHash`) | **Uso interno** — `auth.service` usa para validação de senha em `trocarSenha` |
+| `findAll()` | `Usuario[]` sem `senhaHash` | Include **`usuarioIncludeListagem`** |
+| `findAllPaginated(params)` | `PaginatedResult` sem `senhaHash` | Filtros `search`/`ativo`; `maxLimit=100`; mesmo include de listagem |
+| `findOne(id)` | `Usuario` sem `senhaHash` | Mesmo include que a listagem; lança `NotFoundException` |
+| `create(dto)` | `Usuario` sem `senhaHash` | Lança `ConflictException` se email duplicado; `senhaExpiradaEm = null`; `setor` aplicado só se `dto.setor !== undefined` (permite `null` explícito); hash com **`BCRYPT_SALT_ROUNDS`** |
+| `update(id, dto)` | `Usuario` sem `senhaHash` | Valida existência via `findOne`; `setor` aceita `null` para limpar; **não altera senha**; resposta do `update` Prisma **sem** re-include de relações (payload pode ser mais “flat” que `findOne`) |
+| `resetPassword(id)` | `{ message: string }` | Senha padrão `'#Infinity123'`; hash com **`BCRYPT_SALT_ROUNDS`**; reseta `senhaExpiradaEm = null` |
+| `findByIdWithPassword(id)` | `Promise<UsuarioComAuthInclude \| null>` | Include **`usuarioIncludeAuth`**; **uso interno** — ex.: `trocarSenha` |
 | `updatePassword(id, senhaHash, senhaExpiradaEm)` | `void` | **Uso interno** — chamado por `auth.service` após troca de senha bem-sucedida |
-| `findByEmail(email)` | `Usuario \| null` (com `senhaHash`, cargos e permissões) | **Uso interno** — `auth.service` (`login`), `PermissionsGuard` |
-| `findById(id)` | `Usuario \| null` sem `senhaHash` | **Uso interno** — `JwtStrategy.validate` via `auth.service.validateUser` |
-| `getPermissions(user)` | `string[]` | Recebe user com `usuarioCargos → cargo → cargoPermissoes → permissao`; retorna array deduplicado de `code`; **Uso interno** — `PermissionsGuard` |
+| `findByEmail(email)` | `Promise<UsuarioComAuthInclude \| null>` | Include **`usuarioIncludeAuth`**; **uso interno** — `login`, `PermissionsGuard` |
+| `findById(id)` | `Usuario \| null` sem `senhaHash` | Include **`usuarioIncludeListagem`**; **uso interno** — `JwtStrategy.validate` / `validateUser` |
+| `getPermissions(user)` | `string[]` | Parâmetro tipado como **`UsuarioComAuthInclude`**; retorna `code` deduplicados; **uso interno** — `AuthService.login`, `PermissionsGuard` |
 | `updateLastLogin(id)` | `void` | Seta `ultimoAcesso = new Date()`; chamado após login bem-sucedido |
 
 **`sanitizeUser` (privado):**
@@ -81,7 +88,16 @@ Todos os métodos que retornam `Usuario` para o exterior passam por `sanitizeUse
 | Arquivo | Cobertura |
 |---------|-----------|
 | `users.controller.spec.ts` | Delegação controller → service; conversão `string → number` em `id`; defaults de `page`/`limit`; conversão de `ativo` string para booleano (true/false/undefined); todos os 6 endpoints |
-| `users.service.spec.ts` | `findAll` (sem senhaHash), `findAllPaginated` (paginação, search OR, filtro ativo, cálculo skip), `findOne` (NotFoundException, sanitize), `create` (ConflictException email, criação ok), `update` (NotFoundException, ConflictException email duplicado, atualização ok), `resetPassword` (NotFoundException, senha padrão, retorno de mensagem), `getPermissions` (deduplicação, lista vazia) |
+| `users.service.spec.ts` | Mock de `bcrypt`; asserts de **`BCRYPT_SALT_ROUNDS`** em `create`/`resetPassword`; includes **`usuarioIncludeListagem`** / **`usuarioIncludeAuth`** nas chamadas Prisma relevantes; `findById` / `findByEmail` / `findByIdWithPassword`; demais fluxos (paginação, conflitos, `getPermissions`, etc.) |
+| `users.prisma-include.spec.ts` | Forma dos objetos de include (listagem vs auth) |
+| `create-user.dto.spec.ts` | `class-validator` + `SetorUsuario`: valores válidos, `null`, enum inválido |
+| `update-user.dto.spec.ts` | Patch vazio, `setor` enum/`null`, enum inválido, email inválido |
+
+**Testes E2E (`server/test/users.e2e-spec.ts`):**
+
+- Módulo `UsersModule` + `PermissionsGuard` mockado; dados isolados com e-mail `*@e2e-users-nexus.test` e **`cleanupE2eUsers`** em `test/helpers/e2e-db-cleanup.ts`.
+- Cobertura: listagem e paginação (sem `senhaHash`, `usuarioCargos`), filtro **`ativo`**, CRUD parcial (POST/PATCH), enum `setor` inválido (400), senha curta (400), email duplicado (409), `setor` null (create/patch), reset de senha (hash e `bcrypt.getRounds` vs constante), 404 em rotas com usuário inexistente.
+- **`search` em paginação não é exercitado no E2E** pelo limite do provider MySQL/MariaDB com `mode: 'insensitive'` (ver tabela de query params acima).
 
 **Frontend (`client/src/pages/usuarios/UsuariosPage.tsx`):**
 

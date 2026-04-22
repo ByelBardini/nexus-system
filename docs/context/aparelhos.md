@@ -13,7 +13,7 @@ Ver índice em `AGENTS.md`.
 | `aparelhos.service.ts` | Listagem, detalhe, resumo, criação individual, atualização de status, listagem para testes |
 | `lotes.service.ts` | Criação de lote + aparelhos em massa; lotes disponíveis para pareamento |
 | `kits.service.ts` | CRUD de kits; mover aparelho para kit; aparelhos disponíveis para kit |
-| `pareamento.service.ts` | Preview e execução do pareamento rastreador+SIM |
+| `pareamento.service.ts` | Preview e execução do pareamento rastreador+SIM; núcleo transacional único por linha (ver abaixo) |
 | `dto/create-lote.dto.ts` | Criação em lote — ver campos abaixo |
 | `dto/create-individual.dto.ts` | Entrada avulsa — ver campos abaixo |
 | `dto/update-status.dto.ts` | PATCH de status |
@@ -91,13 +91,14 @@ Ver índice em `AGENTS.md`.
 - `identificador` deve ser único (validado via `findFirst` antes de criar avulso).
 - `updateStatus` em rastreador com `simVinculadoId` **replica** status e histórico no SIM vinculado (mesma transação).
 - Pareamento: IMEI/ICCID normalizados (só dígitos, 1–50 chars); após pareamento SIM permanece `INFINITY`; mudança de proprietário do rastreador pode gerar `consolidarDebitoTx` se marca/modelo existirem no catálogo.
+- **Implementação `pareamento.service.ts` (execução por linha):** `pareamento` (modo API: pares + lote/manual globais) e `pareamentoCsv` (import com plano por linha) convergem no mesmo fluxo transacional. Tipos internos (não exportados): `PlanoRastreadorPareamentoTx` / `PlanoSimPareamentoTx` (`EXISTENTE` \| `LOTE` \| `MANUAL` \| `PULAR`) e `CtxPareamentoLinhaTx` (imei, iccid, `proprietarioFinal`, cliente/técnico, texto de `AparelhoHistorico`). `mapearPlanoPareamentoSimples` traduz cada linha do `pareamentoPreview` + DTO global; `mapearPlanoPareamentoCsv` traduz cada `PareamentoCsvPreviewLinha`. `executarPareamentoLinhaTx` resolve rastreador e SIM, vincula, chama `consolidarDebitoTx` quando aplicável e grava histórico — observação `"Pareamento com SIM …"` vs `"Pareamento CSV com SIM …"` conforme o fluxo.
 - **Pareamento CSV (`pareamentoCsvPreview` / `pareamentoCsv`):**
   - Input: `{ linhas: PareamentoCsvLinha[], proprietario?, clienteId?, tecnicoId? }`. Cada linha aceita `imei`, `iccid`, `marcaRastreador?`, `modeloRastreador?`, `operadora?`, `marcaSimcard?` (nome ou ID), `plano?` (MB numérico, `"10MB"` ou ID), `loteRastreador?` (referência ou ID), `loteSimcard?` (referência ou ID).
   - Resolução por linha: para cada `imei`/`iccid` chama `resolveRastreador` / `resolveSim` (mesma lógica do modo manual: `FOUND_AVAILABLE` | `FOUND_ALREADY_LINKED` | `NEEDS_CREATE` | `INVALID_FORMAT`). Decide `tracker_acao`/`sim_acao`: `VINCULAR_EXISTENTE` | `CRIAR_VIA_LOTE` | `CRIAR_MANUAL` | `ERRO`.
   - Helpers privados: `parseIdOuString` (detecta dígitos → ID, caso contrário texto); `resolveLoteCsv` (busca `LoteAparelho` por `id` ou `referencia` + `tipo`); `resolveMarcaSimcardCsv`; `resolvePlanoSimcardCsv` (aceita `"10MB"` → extrai dígitos → `planoMb`, respeita `marcaSimcardId` quando informado).
   - Códigos de erro emitidos em `linha.erros[]`: `IMEI_INVALIDO`, `ICCID_INVALIDO`, `IMEI_JA_VINCULADO`, `ICCID_JA_VINCULADO`, `FALTA_DADOS_RASTREADOR`, `FALTA_DADOS_SIM`, `LOTE_RASTREADOR_NAO_ENCONTRADO`, `LOTE_SIMCARD_NAO_ENCONTRADO`, `MARCA_SIMCARD_NAO_ENCONTRADA`, `PLANO_SIMCARD_NAO_ENCONTRADO`.
   - Contadores do preview: `{ validos, comAviso, erros }` (`comAviso` atualmente sempre 0 — reservado).
-  - Execução (`pareamentoCsv`): reroda o preview; **bloqueia (`BadRequestException`) se houver qualquer linha com erro**. Toda criação/vínculo ocorre em `prisma.$transaction`, reutilizando a mesma lógica do modo manual (consolidar débito se marca/modelo existem no catálogo e proprietário/cliente mudam; histórico `AparelhoHistorico` com observação `"Pareamento CSV com SIM <iccid>"`).
+  - Execução (`pareamentoCsv`): reroda o preview; **bloqueia (`BadRequestException`) se houver qualquer linha com erro**. Toda criação/vínculo ocorre em `prisma.$transaction` via **`executarPareamentoLinhaTx`** (mesmo método que o `pareamento` da API simples): consolidar débito quando aplicável; histórico `AparelhoHistorico` com observação `"Pareamento CSV com SIM <iccid>"`.
   - Proprietário final default `INFINITY`; SIM sempre forçado a `INFINITY`.
 - Lote com `identificadores` preenchido: quantidade efetiva = tamanho do array; abate de débito aplica só nos primeiros N itens.
 - Kit aceita apenas `RASTREADOR`; aparelho disponível para kit: `status=CONFIGURADO`, sem `kitId`, sem `tecnicoId`.

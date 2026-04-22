@@ -11,8 +11,9 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 | `clientes.module.ts` | Registra controller + service; importa `PrismaModule`, `UsersModule` |
 | `clientes.controller.ts` | Rotas em `/clientes`; `@UseGuards(PermissionsGuard)` no controller; `@ApiTags('clientes')` |
 | `clientes.service.ts` | `findAll`, `findOne`, `create`, `update` |
-| `dto/create-cliente.dto.ts` | Criação de cliente + contatos; define enums `TipoContrato` e `StatusCliente` |
-| `dto/update-cliente.dto.ts` | Atualização parcial; `UpdateContatoDto` com `id?` opcional para upsert de contatos |
+| `clientes.contato.helpers.ts` | `toPrismaContatoWriteData` — mapeamento único de `nome` / `celular` / `email` para persistência de `ContatoCliente` (create + update) |
+| `dto/create-cliente.dto.ts` | Criação de cliente + contatos; define enums `TipoContrato` e `StatusCliente` (validação + Swagger) |
+| `dto/update-cliente.dto.ts` | `UpdateClienteDto` = `PartialType(OmitType(CreateClienteDto, ['contatos']))` + campo `contatos?: UpdateContatoDto[]` (`@nestjs/swagger`). `UpdateContatoDto` **estende** `ContatoDto` e só adiciona `id?` para upsert |
 
 **Endpoints e permissões:**
 
@@ -44,12 +45,18 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 
 - `findAll` **exclui** o cliente com `id = CLIENTE_INFINITY_ID` (= `1`, constante em `server/src/common/constants.ts`) — esse registro é reservado para aparelhos próprios da Infinity e **nunca** deve aparecer para o usuário.
 - `update` gerencia contatos via **upsert manual em transação**: contatos sem `id` são criados; com `id` são atualizados; contatos existentes cujo `id` não esteja na lista enviada são **deletados** (`deleteMany` com `notIn`).
+- **Segurança / integridade (contatos):** antes de qualquer `deleteMany` ou `update` de linhas de contato, o service valida cada `contato.id` informado com `contatoCliente.findFirst({ where: { id, clienteId } })`. Se o id não pertencer ao cliente da URL → `BadRequestException('Contato não pertence a este cliente')` e **nenhuma** alteração de contatos é aplicada (evita IDOR e evita apagar contatos legítimos ao falhar só depois do delete).
 - `findOne` lança `NotFoundException` se cliente não existe; `update` chama `findOne` internamente antes de persistir.
 - Campos de endereço são todos opcionais (`string?`) e não há geocoding neste módulo.
 
-**Frontend (`client/src/pages/clientes/ClientesPage.tsx`):**
+**Frontend (`client/src/pages/clientes/`):**
 
-Sem hook dedicado `useClientes`; página usa TanStack Query diretamente com `queryKey: ["clientes"]` e `api("/clientes")`.
+| Arquivo | Responsabilidade |
+|---------|-----------------|
+| `ClientesPage.tsx` | Listagem, filtros, paginação, modal CRUD, tabela expansível |
+| `clientes-page.shared.ts` | Schema Zod (`clienteFormSchema`), tipos, enums/labels/classes de UI (`TIPO_CONTRATO_*`, `STATUS_*`, filtros, legenda), `getDefaultClienteFormValues`, `clienteToFormValues`, `buildClienteApiBody` (create/update, omite chaves `undefined` como no JSON real), `getClientesFooterStats` (rodapé alinhado aos filtros) |
+
+Sem hook dedicado `useClientes`; a página usa TanStack Query com `queryKey: ["clientes"]` e `api("/clientes")`.
 
 **Estado e filtros (todos client-side, sem query params):**
 
@@ -63,6 +70,8 @@ Sem hook dedicado `useClientes`; página usa TanStack Query diretamente com `que
 | `modalOpen` | `boolean` | Controla Dialog de criação/edição |
 | `editingCliente` | `Cliente\|null` | `null` = modo criação; preenchido = modo edição |
 
+**Rodapé da tabela:** texto derivado de `getClientesFooterStats(clientes, filtered)` — **“Exibindo X de Y cliente(s) · Z ativo(s) na seleção”**, onde `Z` conta só `status === "ATIVO"` **entre os registros já filtrados** (coerente com a lista), não um total global enganoso.
+
 **Permissões checadas:**
 - `AGENDAMENTO.CLIENTE.CRIAR` → exibe botão "Novo Cliente"
 - `AGENDAMENTO.CLIENTE.EDITAR` → exibe botão "Editar" na linha expandida
@@ -74,17 +83,17 @@ Três seções no modal:
 2. **Endereço (opcional)** — `cep` via `InputCEP` com `onAddressFound` que auto-preenche `logradouro`, `bairro`, `cidade`, `estado` via BrasilAPI; `estado` usa `SelectUF` (hook `useUFs`); `cidade` usa `SelectCidade` (hook `useMunicipios(estado)`)
 3. **Contatos** — array gerenciado por `useFieldArray`; cada item tem `nome` (obrigatório), `celular` (`InputTelefone`), `email`; botão Trash2 remove inline
 
-**Sidebar de preview ao vivo:** `useWatch` nos campos do form alimenta `watchedObj`; painel fixo à direita do modal (w-64) mostra razão social, tipo contrato, endereço e contagem de contatos em tempo real.
+**Sidebar de preview ao vivo:** `useWatch({ control })` sobre o formulário inteiro (sem mapeamento frágil por índice de tupla); fallback `getDefaultClienteFormValues()`. Painel fixo à direita do modal (w-64) mostra razão social, tipo de contrato, endereço e contagem de contatos em tempo real. Badge de tipo no resumo usa `resumoForm.tipoContrato ?? "COMODATO"` para índice seguro.
 
 **Mutations:**
-- `createMutation` → `POST /clientes`; campos de endereço vazios convertidos para `undefined` antes do envio
-- `updateMutation` → `PATCH /clientes/:id`; contatos com `id` fazem upsert; contatos sem `id` são criados; backend deleta os não enviados
+- `createMutation` → `POST /clientes` com corpo `buildClienteApiBody(data, "create")`
+- `updateMutation` → `PATCH /clientes/:id` com corpo `buildClienteApiBody(data, "update")` — contatos com `id` para upsert; novos sem `id`; backend valida posse dos ids e deleta os não enviados
 - Ambas invalidam `["clientes"]` no `onSuccess` e fecham o modal
 
 **Exibição na tabela:**
 - ID exibido como `(c.id - 1).padStart(4, "0")` — **0-indexed, 4 dígitos** (não é o ID real do banco)
-- Badge tipoContrato: `COMODATO` = amber, `AQUISICAO` = indigo
-- Status: ponto colorido — `ATIVO` emerald, `PENDENTE` amber, `INATIVO` slate
+- Badge tipoContrato e legenda do rodapé: valores/labels/classes centralizados em `clientes-page.shared.ts` (`TIPO_CONTRATO_LABEL`, `TIPO_CONTRATO_BADGE_CLASS`, `TIPO_CONTRATO_LEGEND_SWATCH_CLASS`, etc.)
+- Status: ponto colorido — `STATUS_INDICATOR_DOT_CLASS`; label amigável `STATUS_CLIENTE_LABEL`
 - `estoqueProprio`: ícone CheckCircle (emerald) ou X (slate)
 - Linha expandida: cards de contatos em grid responsivo + bloco de endereço com `MapPin`
 
@@ -92,16 +101,20 @@ Três seções no modal:
 - Armazena hex de 7 chars (ex.: `#3b82f6`); opcional.
 - No formulário: `InputCor` (color picker com `react-colorful`, paleta rápida e input hex manual). Preview ao vivo do badge ao lado do picker.
 - Badge de cor é usado em outras páginas (ex.: `AparelhosPage`) para identificar o cliente com cor personalizada.
-- Enviado nas mutations como `cor: data.cor || undefined` (string vazia → omite campo).
+- Incluído no payload via `buildClienteApiBody` (strings vazias omitidas).
 
 **Formatadores usados:** `formatarCNPJ`, `formatarTelefone`, `formatarCEP` — todos de `@/lib/format`.
 
-**Testes unitários (`server/test/unit/clientes/`):**
+**Testes**
 
-| Arquivo | Cobertura esperada |
-|---------|-------------------|
-| `clientes.controller.spec.ts` | Delegação controller → service; parsing de id; query param `subclientes` |
-| `clientes.service.spec.ts` | `findAll` (exclusão Infinity), `findOne` (not found), `create` (com/sem contatos), `update` (upsert contatos em tx) |
+| Local | Arquivo | Cobertura |
+|-------|---------|-----------|
+| Unit (server) | `test/unit/clientes/clientes.controller.spec.ts` | Delegação ao service; parsing de id; query `subclientes`; propagação de `BadRequestException` |
+| Unit (server) | `test/unit/clientes/clientes.service.spec.ts` | `findAll` (Infinity), `findOne`, `create`/`update`, validação de posse de contatos antes do `deleteMany`, IDOR |
+| Unit (server) | `test/unit/clientes/clientes.contato.helpers.spec.ts` | `toPrismaContatoWriteData` |
+| Unit (server) | `test/unit/clientes/update-cliente.dto.spec.ts` | `class-validator` em DTOs de update |
+| E2E (server) | `test/clientes.e2e-spec.ts` | Smoke 401 em GET/POST/PATCH `/clientes` (app com `ValidationPipe`) |
+| Unit (client) | `src/__tests__/pages/clientes-page.shared.test.ts` | Schema, payloads API, defaults, `getClientesFooterStats`, constantes de filtro |
+| Unit (client) | `src/__tests__/pages/ClientesPage.test.tsx` | Rodapé coerente com filtros / busca |
 
 ---
-

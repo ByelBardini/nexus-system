@@ -8,10 +8,12 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 
 | Arquivo | Responsabilidade |
 |---------|-----------------|
-| `ordens-servico.module.ts` | Registra controller + services; importa `PrismaModule`, `UsersModule`, `DebitosRastreadoresModule`; providers: `OrdensServicoService`, `HtmlOrdemServicoGenerator`, `PdfOrdemServicoGenerator` |
+| `ordens-servico.module.ts` | Registra controller + services; importa `PrismaModule`, `UsersModule`, `DebitosRastreadoresModule`; providers: `OrdensServicoService`, `OrdemServicoStatusSideEffectsService`, `HtmlOrdemServicoGenerator`, `PdfOrdemServicoGenerator` |
 | `ordens-servico.controller.ts` | Rotas em `/ordens-servico`; `@UseGuards(PermissionsGuard)` no controller; `@ApiTags('ordens-servico')` |
-| `ordens-servico.service.ts` | CRUD, listagem, atualização de status/aparelho, geração de HTML/PDF, lógica de negócio de testes |
-| `html-ordem-servico.generator.ts` | Gera string HTML completa da OS para impressão |
+| `ordens-servico.service.ts` | CRUD, listagem, atualização de status/aparelho, geração de HTML/PDF, orquestração de testes |
+| `ordem-servico.helpers.ts` | Funções puras: `buildOrdemServicoSearchOrClauses(termo, scope)` (busca compartilhada `listagem` \| `emTestes`); `proximoNumeroOrdemServico(tx)` (próximo `numero` na transação) |
+| `ordem-servico-status-side-effects.service.ts` | Efeitos colaterais ao atingir `TESTES_REALIZADOS` dentro da transação de `updateStatus`: desvincular aparelho de saída (REVISÃO/RETIRADA), instalar rastreador novo, SIM, débito via `DebitosRastreadoresService.consolidarDebitoTx` |
+| `html-ordem-servico.generator.ts` | Gera string HTML completa da OS para impressão; ramos por tipo usam enum `TipoOS` (RETIRADA, REVISÃO, instalações explícitas) |
 | `pdf-ordem-servico.generator.ts` | Gera PDF via Puppeteer — ver detalhes abaixo |
 
 **`PdfOrdemServicoGenerator` — Puppeteer:**
@@ -62,14 +64,14 @@ CANCELADO         → AGENDADO
 | `page` | `number?` | Default 1 |
 | `limit` | `number?` | Default 15, max 100 |
 | `status` | `StatusOS?` | Filtro exato |
-| `search` | `string?` | Busca em: `numero` (se numérico), `cliente.nome`, `subcliente.nome`, `veiculo.placa`, `tecnico.nome` |
+| `search` | `string?` | Busca via `buildOrdemServicoSearchOrClauses(..., 'listagem')`: `numero` (se numérico), `cliente.nome`, `subcliente.nome`, `veiculo.placa`, `tecnico.nome`. `where` tipado como `Prisma.OrdemServicoWhereInput`. |
 
 **`GET /ordens-servico/testando` — diferenças:**
 
 - Retorna apenas OS com `status = EM_TESTES`; sem paginação.
 - Inclui campo calculado `tempoEmTestesMin` (minutos desde entrada em `EM_TESTES`, via `OSHistorico`).
-- Busca `search` adicional: `subclienteSnapshotNome`, `idAparelho`, `idEntrada`.
-- OS do tipo `RETIRADA`: os campos `veiculo`, `subcliente` e `subclienteSnapshotNome` são zerados no retorno (não há veículo/subcliente a exibir).
+- Busca `search`: mesma base que a listagem + cláusulas extras via `buildOrdemServicoSearchOrClauses(..., 'emTestes')`: `subclienteSnapshotNome`, `idAparelho`, `idEntrada`. Termo vazio após trim não monta `OR` (o helper lança se chamado com string vazia — o serviço só chama após `search?.trim()`).
+- OS do tipo `TipoOS.RETIRADA`: os campos `veiculo`, `subcliente` e `subclienteSnapshotNome` são zerados no retorno (não há veículo/subcliente a exibir).
 
 **`POST /ordens-servico` — lógica de criação (`CreateOrdemServicoDto`):**
 
@@ -80,20 +82,20 @@ CANCELADO         → AGENDADO
 | `subclienteId` (sem update) | Busca subcliente e captura snapshot atual; cria OS |
 | Nenhum dos anteriores | Cria OS sem subcliente; sem snapshot |
 
-- `numero` gerado via `MAX(numero) + 1` dentro da transação (sem sequence).
+- `numero` gerado via `proximoNumeroOrdemServico(tx)` (`aggregate` `_max.numero` + 1) dentro da transação (sem sequence).
 - Retry automático (até 5×) em caso de erro `P2002` (unique constraint race condition no `numero`).
 - `status` default: `AGENDADO`.
 - `idAparelho` e `localInstalacao` recebem `.trim()` na persistência.
 
-**`PATCH /:id/status` — efeitos colaterais em `updateStatus`:**
+**`PATCH /:id/status` — fluxo em `updateStatus`:**
 
-1. Valida transição via `TRANSICOES_VALIDAS` (lança `BadRequestException` se inválida).
+1. Valida transição via `TRANSICOES_VALIDAS` (lança `BadRequestException` se inválida). Exceção: `TipoOS.RETIRADA` em `AGENDADO` pode ir direto para `AGUARDANDO_CADASTRO`.
 2. Ao transitar para `AGUARDANDO_CADASTRO`: grava `statusCadastro = AGUARDANDO`.
 3. Campo `localInstalacao`/`posChave`: em OS do tipo `REVISAO`, vai para `localInstalacaoEntrada`/`posChaveEntrada` (não sobrescreve campos de emissão).
 4. Campo `observacao`: prefixado com `"Observações do Teste:"` e concatenado a `os.observacoes` existente.
-5. Ao transitar para `TESTES_REALIZADOS` em `REVISAO` ou `RETIRADA` — **aparelho de saída** (`idAparelho`): se existir e estiver vinculado ao mesmo `veiculoId` da OS, muda status para `COM_TECNICO`, desvincula `veiculoId` e `subclienteId`, cria `AparelhoHistorico`.
-6. Ao transitar para `TESTES_REALIZADOS` em `INSTALACAO_*` ou `REVISAO` — **aparelho novo** (rastreador `idAparelho` ou `idEntrada` em REVISAO): muda status para `INSTALADO` e replica no SIM vinculado; cria `AparelhoHistorico` para ambos.
-7. Débito: se rastreador novo tem `proprietario = INFINITY` ou `proprietario = CLIENTE` mas `clienteId ≠ os.clienteId`, chama `debitosService.consolidarDebitoTx` com `devedorClienteId = os.clienteId` e `credorClienteId` do aparelho. Lança `BadRequestException` se marca/modelo não encontrados no catálogo.
+5. Transação Prisma: grava `OSHistorico` + `update` da OS; em seguida `OrdemServicoStatusSideEffectsService.aplicarSeTestesRealizados(tx, id, novoStatus, snapshot mínimo da OS)` quando o novo status é `TESTES_REALIZADOS`:
+   - **Aparelho de saída** (`REVISAO` / `RETIRADA`, `idAparelho`, mesmo `veiculoId`): `COM_TECNICO`, desvincula veículo/subcliente, `AparelhoHistorico`.
+   - **Aparelho novo** (`INSTALACAO_*` / `REVISAO` com IMEI novo): `INSTALADO`, SIM vinculado, históricos; débito via `consolidarDebitoTx` nas mesmas regras de proprietário/catálogo (erro de catálogo → `BadRequestException`).
 
 **`PATCH /:id/aparelho` — `updateIdAparelho`:**
 
@@ -207,8 +209,10 @@ Mutação `POST /ordens-servico` invalida `["ordens-servico"]`; se `subclienteUp
 | Arquivo | Cobertura |
 |---------|-----------|
 | `ordens-servico.controller.spec.ts` | Delegação controller → service; parsing de ids; `findTestando` com/sem search; `updateIdAparelho` trim; `getPdf` retorna `StreamableFile` |
-| `ordens-servico.service.spec.ts` | `findAll` (paginação, filtros), `findOne` (NotFoundException), `create` (todos os fluxos de subcliente), `updateStatus` (máquina de estados, efeitos em aparelhos, débitos), `updateIdAparelho` (REVISAO vs demais), `getResumo`, `getClienteInfinityOuCriar`, `findTestando` |
-| `html-ordem-servico.generator.spec.ts` | Geração de HTML por tipo de OS |
+| `ordens-servico.service.spec.ts` | `findAll` / `findTestando` (paginação, filtros, OR alinhado aos helpers, RETIRADA/REVISAO no retorno), `findOne`, `create` (subcliente, `aggregate` 1× por transição), `updateStatus` (máquina de estados, exceção RETIRADA, efeitos em aparelhos, débitos), `updateIdAparelho`, `getResumo`, `getClienteInfinityOuCriar` |
+| `ordem-servico.helpers.spec.ts` | `buildOrdemServicoSearchOrClauses` (escopos, base compartilhada, edges numéricos/unicode/vazio); `proximoNumeroOrdemServico` |
+| `ordem-servico-status-side-effects.service.spec.ts` | Efeitos em `TESTES_REALIZADOS`: desvinculação, instalação, SIM, débito, catálogo |
+| `html-ordem-servico.generator.spec.ts` | Geração de HTML por tipo de OS; ramos `TipoOS` (RETIRADA, DESLOCAMENTO, instalação, tipo desconhecido) |
 
 ---
 

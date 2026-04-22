@@ -88,7 +88,7 @@ Todas as páginas são carregadas com `lazy()` + `Suspense` (exceto `Login`). Ro
 | `/cadastro-rastreamento` | `CadastroRastreamentoPage` | — |
 | `/usuarios` | `UsuariosPage` | — |
 | `/cargos` | `CargosPage` | — |
-| `/clientes` | `ClientesPage` | — |
+| `/clientes` | `ClientesPage` | Lógica compartilhada em `pages/clientes/clientes-page.shared.ts` (schema, API body, rodapé, labels) |
 | `/tecnicos` | `TecnicosPage` | — |
 | `/aparelhos` | `AparelhosPage` | — |
 | `/aparelhos/lote` | `CadastroLotePage` | — |
@@ -124,7 +124,7 @@ Helper compartilhado de testes: exporta wrapper com providers (QueryClient, Rout
 | `lib/` | `api.test.ts`, `format.test.ts`, `cadastro-rastreamento-periodo.test.ts`, `os-revisao-display.test.ts`, `aparelho-status.test.ts`, `tecnicos-page.test.ts`, `tecnico-map-cluster.test.ts`, `tecnico-map-marker-html.test.ts`, `tecnico-map-spread.test.ts` |
 | `components/` | `InputCEP`, `InputCNPJ`, `InputPlaca`, `InputTelefone`, `ProtectedRoute`, `TecnicosMap` |
 | `contexts/` | `AuthContext.test.tsx` |
-| `pages/` | `Login.test.tsx`, `PareamentoPage.test.tsx`, `TecnicosPage.test.tsx` |
+| `pages/` | `Login.test.tsx`, `PareamentoPage.test.tsx`, `TecnicosPage.test.tsx`, `tecnicos/tecnico-form.test.ts`, `ClientesPage.test.tsx`, `clientes-page.shared.test.ts` |
 
 Comando: `cd client && npm run test` (watch) ou `npm run test:ci` (CI).
 

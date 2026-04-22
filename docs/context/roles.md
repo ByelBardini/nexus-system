@@ -8,28 +8,31 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 
 | Arquivo | Responsabilidade |
 |---------|-----------------|
-| `roles.module.ts` | Registra controller + service; importa `PrismaModule`, `UsersModule`; **exporta `RolesService`** |
-| `roles.controller.ts` | Rotas em `/roles`; `@UseGuards(PermissionsGuard)` no controller; `@ApiTags('roles')` |
-| `roles.service.ts` | CRUD de cargos, listagem de setores/permissões, atribuição de permissões a cargos, atribuição de cargos a usuários |
+| `roles.module.ts` | Registra controller + service; importa apenas `PrismaModule`; **exporta `RolesService`** |
+| `roles.controller.ts` | Rotas em `/roles`; `@UseGuards(PermissionsGuard)` no controller; `@ApiTags('roles')`; parâmetros de rota numéricos (`:id`, `:userId`) usam **`ParseIntPipe`** (id inválido → **400**) |
+| `roles.service.ts` | CRUD de cargos, listagem de setores/permissões, atribuição de permissões a cargos, atribuição de cargos a usuários; reutiliza includes Prisma de `roles.cargo-include.ts` |
+| `roles.cargo-include.ts` | Constantes `Prisma.validator<CargoInclude>`: `cargoIncludeSetorEPermissoes`, `cargoIncludeSetorEPermissoesComContagemUsuarios`, `cargoIncludeSomentePermissoes` — evita drift entre `findMany` / `findUnique` / `create` / `update` / pós-`updateRolePermissions` |
+| `roles.permissions.ts` | **`ROLES_CONTROLLER_PERMISSIONS`** — única fonte dos códigos passados a `@RequirePermissions` neste controller (matriz em `test/unit/permissions/permissions-matrix.spec.ts` importa o mesmo objeto) |
 | `dto/create-role.dto.ts` | `nome` (MaxLength 100), `code` (MaxLength 50), `setorId`, `descricao?` (MaxLength 500), `categoria?` (`CategoriaCargo`), `ativo?` |
 | `dto/update-role.dto.ts` | `nome?`, `descricao?`, `categoria?`, `ativo?` — **`code` e `setorId` não são atualizáveis** |
-| `dto/assign-permissions.dto.ts` | `permissionIds: number[]` — substitui todas as permissões do cargo |
-| `dto/assign-roles.dto.ts` | `roleIds: number[]` — substitui todos os cargos do usuário |
+| `dto/is-numeric-id-array.decorator.ts` | `IsNumericIdArrayProperty()` — `ApiProperty` + `IsArray` + `IsNumber({ each: true })` compartilhado pelos DTOs de atribuição |
+| `dto/assign-permissions.dto.ts` | `permissionIds: number[]` (via decorator acima) — substitui todas as permissões do cargo |
+| `dto/assign-roles.dto.ts` | `roleIds: number[]` (via decorator acima) — substitui todos os cargos do usuário |
 
 **Endpoints e permissões:**
 
-| Método | Path | Permissão |
-|--------|------|-----------|
-| GET | `/roles` | `ADMINISTRATIVO.CARGO.LISTAR` |
-| GET | `/roles/paginated` | `ADMINISTRATIVO.CARGO.LISTAR` |
-| GET | `/roles/setores` | `ADMINISTRATIVO.CARGO.LISTAR` |
-| GET | `/roles/permissions` | `ADMINISTRATIVO.CARGO.LISTAR` |
-| GET | `/roles/:id` | `ADMINISTRATIVO.CARGO.LISTAR` |
-| POST | `/roles` | `ADMINISTRATIVO.CARGO.CRIAR` |
-| PATCH | `/roles/:id` | `ADMINISTRATIVO.CARGO.EDITAR` |
-| PATCH | `/roles/:id/permissions` | `ADMINISTRATIVO.CARGO.EDITAR` |
-| GET | `/roles/users/:userId/roles` | `ADMINISTRATIVO.USUARIO.LISTAR` |
-| PATCH | `/roles/users/:userId/roles` | `ADMINISTRATIVO.USUARIO.EDITAR` |
+| Método | Path | Permissão (constante / valor) |
+|--------|------|--------------------------------|
+| GET | `/roles` | `ROLES_CONTROLLER_PERMISSIONS.CARGO_LISTAR` → `ADMINISTRATIVO.CARGO.LISTAR` |
+| GET | `/roles/paginated` | idem |
+| GET | `/roles/setores` | idem |
+| GET | `/roles/permissions` | idem |
+| GET | `/roles/:id` | idem (`:id` inteiro) |
+| POST | `/roles` | `CARGO_CRIAR` → `ADMINISTRATIVO.CARGO.CRIAR` |
+| PATCH | `/roles/:id` | `CARGO_EDITAR` → `ADMINISTRATIVO.CARGO.EDITAR` |
+| PATCH | `/roles/:id/permissions` | idem |
+| GET | `/roles/users/:userId/roles` | `USUARIO_LISTAR` → `ADMINISTRATIVO.USUARIO.LISTAR` |
+| PATCH | `/roles/users/:userId/roles` | `USUARIO_EDITAR` → `ADMINISTRATIVO.USUARIO.EDITAR` |
 
 > Não há rota de exclusão de cargo. `ADMINISTRATIVO.CARGO.EXCLUIR` pode existir em `permission-codes.ts`, mas não há endpoint correspondente.
 
@@ -61,7 +64,7 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 
 - Unicidade de `(setorId, code)` validada via `findFirst` antes de criar — lança `ConflictException('Cargo com este código já existe no setor')`.
 - `update` **não** permite alterar `code` nem `setorId` — `UpdateRoleDto` não contém esses campos.
-- `updateRolePermissions`: **substitui** todas as permissões em transação (`deleteMany` + `createMany`). Enviar lista vazia remove todas as permissões sem criar novas.
+- `updateRolePermissions`: **substitui** todas as permissões em transação (`deleteMany` + `createMany`). Enviar lista vazia remove todas as permissões sem criar novas. **IDs duplicados** no array podem gerar violação de PK em `createMany` (erro Prisma / resposta de erro 5xx até haver tratamento explícito).
 - `updateUserRoles`: **substitui** todos os cargos do usuário em transação (`deleteMany` + `createMany`). Lança `NotFoundException` se usuário não existe.
 - `findById` e `update` retornam `usuariosVinculados` (mapeado de `_count.usuarioCargos`).
 - `RolesService` é **exportado** — pode ser injetado em outros módulos que precisem resolver permissões ou cargos.
@@ -70,8 +73,15 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 
 | Arquivo | Cobertura |
 |---------|-----------|
-| `roles.controller.spec.ts` | Delegação controller → service; conversão de ids para número; defaults de page/limit; todos os endpoints |
+| `roles.controller.spec.ts` | Delegação controller → service; ids numéricos nos métodos (alinhado a `ParseIntPipe` em runtime); defaults de page/limit; todos os endpoints |
 | `roles.service.spec.ts` | `findAllWithSectors`, `findAllPaginated` (mapeamento `usuariosVinculados`, filtro search), `findById` (NotFoundException, mapeamento), `create` (defaults categoria/ativo, ConflictException), `update` (NotFoundException), `updateRolePermissions` (transação, lista vazia não chama createMany), `getUserRoles` (NotFoundException, retorna cargos), `updateUserRoles` (NotFoundException, transação) |
+| `assign-dtos.validation.spec.ts` | `class-validator` em `AssignPermissionsDto` / `AssignRolesDto` (array válido, campo ausente, elemento não numérico) |
+
+**Testes E2E (`server/test/roles.e2e-spec.ts`):**
+
+- Módulo isolado `RolesModule` + `PermissionsGuard` mockado; `ValidationPipe` global (`whitelist`, `transform`) como no app.
+- Fluxos: listagens, paginação, CRUD de cargo, conflito `(setorId, code)`, PATCH permissões (substituir / limpar), validação de body, usuário inexistente, ids de rota inválidos (**400** com `ParseIntPipe`).
+- Limpeza de dados: `cleanupE2eRoles` + helpers `e2eRolesCargoCode` / `e2eRolesUserEmail` em `server/test/helpers/e2e-db-cleanup.ts` (usuários com e-mail `*@e2e-roles-nexus.test`, cargos com `code` prefixo `E2E_ROLES_CARGO_`). Teste unitário do cleanup em `server/test/unit/helpers/e2e-db-cleanup.spec.ts`.
 
 **Frontend — arquivos do domínio:**
 

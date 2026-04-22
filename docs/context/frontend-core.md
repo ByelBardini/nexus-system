@@ -221,6 +221,10 @@ Helpers de estado da página de técnicos.
 | `nextMapState(s)` | Função | Ciclo: `collapsed → expanded → fullscreen → collapsed` |
 | `tecnicoPrecoToNum(v)` | Função | Normaliza preço de técnico (`string \| number \| undefined`) para `number` |
 
+#### `pages/tecnicos/tecnico-form.ts`
+
+Contrato do formulário da `TecnicosPage`: schema Zod (`tecnicoFormSchema`), tipo `TecnicoFormData`, `emptyTecnicoFormValues()` e `buildTecnicoApiBody()` (payload `POST`/`PATCH` com preços ÷ 100). Ver também `docs/context/tecnicos.md`.
+
 ---
 
 ### Componentes reutilizáveis (`client/src/components/`)

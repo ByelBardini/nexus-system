@@ -10,9 +10,11 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 |---------|-----------------|
 | `tecnicos.module.ts` | Registra controller + service; importa `PrismaModule`, `UsersModule`, `GeocodingModule` |
 | `tecnicos.controller.ts` | Rotas em `/tecnicos`; `@UseGuards(PermissionsGuard)` no controller; `@ApiTags('tecnicos')` |
-| `tecnicos.service.ts` | `findAll`, `findOne`, `create`, `update`; geocoding integrado |
-| `dto/create-tecnico.dto.ts` | Criação de técnico + preços (`PrecosDto`); `ativo` default `true` |
-| `dto/update-tecnico.dto.ts` | Atualização parcial; mesma forma de `PrecosDto` |
+| `tecnicos.service.ts` | `findAll`, `findOne`, `create`, `update`; geocoding integrado; delega montagem de payloads Prisma a `tecnicos.persist-helpers.ts` |
+| `tecnicos.persist-helpers.ts` | Funções puras: `tecnicoCreateDataFromDto`, `tecnicoUpdateDataFromDto`, `precoTecnicoDataForCreate`, `precoTecnicoMergedRowForUpsert` (merge PATCH parcial de preços + flag `hadExisting` para update vs create) |
+| `dto/precos.dto.ts` | `PrecosDto` compartilhado (class-validator + Swagger); usado em create e update |
+| `dto/create-tecnico.dto.ts` | Criação de técnico; referencia `PrecosDto`; `ativo` default `true` no service |
+| `dto/update-tecnico.dto.ts` | Atualização parcial; referencia o mesmo `PrecosDto` |
 
 **Endpoints e permissões:**
 
@@ -36,21 +38,22 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 
 - `findAll`: ordenado por `nome asc`; inclui `precos`.
 - `findOne`: inclui `precos`; lança `NotFoundException('Técnico não encontrado')` se não existir.
-- `create`: cria `Tecnico` → se `precos` fornecido, cria `PrecoTecnico` (campos ausentes default `0`) → chama `persistGeocoding` sempre; retorna `findOne`.
-- `update`: chama `findOne` (valida existência) → `prisma.$transaction` com `tecnico.update` + upsert de `PrecoTecnico` (update se existente, create se não); fora da transação, verifica `addressChanged` e chama `persistGeocoding` somente se algum campo de endereço mudou.
+- `create`: monta `data` com `tecnicoCreateDataFromDto` → cria `Tecnico` → se `precos` fornecido, `precoTecnicoDataForCreate` + `precoTecnico.create` → chama `persistGeocoding` sempre; retorna `findOne`.
+- `update`: chama `findOne` (valida existência) → `prisma.$transaction` com `tecnico.update` (`tecnicoUpdateDataFromDto`) + upsert de `PrecoTecnico` via `precoTecnicoMergedRowForUpsert` (update se já existir linha, create caso contrário); fora da transação, verifica `addressChanged` e chama `persistGeocoding` somente se algum campo de endereço mudou.
 - **`addressChanged`** compara apenas: `cep`, `logradouro`, `numero`, `cidadeEndereco`, `estadoEndereco`. Mudanças em `complemento`, `bairro` ou campos de atuação **não** disparam geocoding.
 - **`persistGeocoding`**: chama `GeocodingService.geocode` com mapeamento `cidadeEndereco → cidade`, `estadoEndereco → uf`; persiste `latitude`, `longitude`, `geocodingPrecision`, `geocodedAt`; erros são logados como `warn` e **nunca** propagam exceção — `create`/`update` sempre concluem.
 - Atualização parcial de preços em `update`: usa `Number(existingPrecos?.campo ?? 0)` para herdar valores existentes (Prisma pode retornar `Decimal` como string `"150.00"`; o `Number()` normaliza).
 
 **Convenção frontend — preços em centavos:**
 
-O frontend armazena e exibe preços em centavos inteiros via `InputPreco`; ao enviar para a API **divide por 100** (`data.instalacaoComBloqueio / 100`). A API recebe e persiste em reais. Ao carregar para edição, multiplica por 100 (`tecnicoPrecoToNum(t.precos?.campo) * 100`).
+O frontend armazena e exibe preços em centavos inteiros via `InputPreco`. O corpo JSON de `POST`/`PATCH` é montado por **`buildTecnicoApiBody`** (`client/src/pages/tecnicos/tecnico-form.ts`), que divide cada campo de preço por 100. A API recebe e persiste em reais. Ao carregar para edição, multiplica por 100 (`tecnicoPrecoToNum(t.precos?.campo) * 100`).
 
 **Frontend — arquivos do domínio:**
 
 | Arquivo | Função |
 |---------|--------|
 | `client/src/pages/tecnicos/TecnicosPage.tsx` | Lista + mapa lateral + modal criar/editar; filtros por nome/estado/status; paginação client-side (`PAGE_SIZE=10`); `queryKey: ["tecnicos"]` |
+| `client/src/pages/tecnicos/tecnico-form.ts` | `tecnicoFormSchema` (Zod), tipo `TecnicoFormData`, `emptyTecnicoFormValues()` (defaults do modal + `useForm`), `buildTecnicoApiBody()` (payload único para `createMutation` e `updateMutation`) |
 | `client/src/components/TecnicosMap.tsx` | Mapa Leaflet com marcadores dos técnicos; carregado via `lazy()` |
 | `client/src/lib/tecnicos-page.ts` | `nextMapState`, `tecnicoPrecoToNum`, tipo `MapState` (`'collapsed' \| 'expanded' \| 'fullscreen'`) |
 | `client/src/lib/tecnico-map-marker-html.ts` | Gera HTML do marcador Leaflet por técnico |
@@ -83,10 +86,10 @@ Sem hook dedicado `useTecnicos`; página usa `useQuery` do TanStack Query direta
 | Mutation | Endpoint | Payload | onSuccess |
 |----------|----------|---------|-----------|
 | `updateStatusMutation` | `PATCH /tecnicos/:id` | `{ ativo: boolean }` | Invalida `["tecnicos"]`; `toast.success` |
-| `createMutation` | `POST /tecnicos` | todos os campos + preços ÷ 100 | Invalida `["tecnicos"]`; fecha modal |
-| `updateMutation` | `PATCH /tecnicos/:id` | idem `createMutation` | Invalida `["tecnicos"]`; fecha modal |
+| `createMutation` | `POST /tecnicos` | `JSON.stringify(buildTecnicoApiBody(data))` | Invalida `["tecnicos"]`; fecha modal |
+| `updateMutation` | `PATCH /tecnicos/:id` | idem (`buildTecnicoApiBody`) | Invalida `["tecnicos"]`; fecha modal |
 
-**Formulário (zod schema):** `nome` (obrigatório), `cpfCnpj?`, `telefone?`, `cidade?`, `estado?`, `cep?`, `logradouro?`, `numero?`, `complemento?`, `bairro?`, `cidadeEndereco?`, `estadoEndereco?`, `ativo: boolean`, cinco preços como `z.coerce.number().min(0)` em centavos. Resolver: `zodResolver`.
+**Formulário:** schema Zod e defaults vêm de `tecnico-form.ts` (`tecnicoFormSchema`, `emptyTecnicoFormValues`). Campos: `nome` (obrigatório ao submeter; default `""` no modal até o usuário preencher), `cpfCnpj?`, `telefone?`, `cidade?`, `estado?`, `cep?`, `logradouro?`, `numero?`, `complemento?`, `bairro?`, `cidadeEndereco?`, `estadoEndereco?`, `ativo: boolean`, cinco preços como `z.coerce.number().min(0)` em centavos. Resolver: `zodResolver(tecnicoFormSchema)`.
 
 **Comportamentos não-óbvios do formulário:**
 - Ao mudar `estado` (atuação), `cidade` é resetada para `""` via `form.setValue("cidade", "")`.
@@ -113,6 +116,11 @@ Sem hook dedicado `useTecnicos`; página usa `useQuery` do TanStack Query direta
 |---------|-----------|
 | `tecnicos.controller.spec.ts` | Delegação controller → service; conversão id para número; `NotFoundException` propagada |
 | `tecnicos.service.spec.ts` | `findAll` (ordenação + preços), `findOne` (not found/found), `create` (sem preços, com preços, `ativo` default true, preços parciais com zero), `update` (not found, sem preços, atualiza preços existentes, cria preços novos, usa transação), geocoding (persiste lat/lng/precision/geocodedAt; não persiste quando `geocode` retorna null; precision `CIDADE`; não chama em update quando endereço não mudou; chama quando qualquer campo muda: `cep`, `logradouro`, `numero`, `cidadeEndereco`, `estadoEndereco`; não quebra quando geocode lança exceção ou persistência falha) |
+| `tecnicos.persist-helpers.spec.ts` | `tecnicoCreateDataFromDto` (`ativo` default vs false), `tecnicoUpdateDataFromDto` (`ativo` undefined), `precoTecnicoDataForCreate` (zeros e zero explícito), `precoTecnicoMergedRowForUpsert` (sem linha existente, merge com Decimal/string, `null` herdado → 0) |
+
+**Testes E2E (`server/test/tecnicos.e2e-spec.ts`):** módulo `TecnicosModule` com `GeocodingService` mockado e `PermissionsGuard` relaxado (ou guard customizado no bloco de permissão POST). Inclui: lista com campos de coordenadas; `POST` com endereço persiste geocode; `POST` com geocode `null`; `PATCH` sem mudar endereço não re-chama geocode; `PATCH` mudando CEP chama geocode; **`GET /tecnicos/:id`** com preços após criação; **`GET` 404** para id inexistente; **`POST` sem `precos`** → `precos` null na resposta; **`PATCH` com `precos` parcial** preserva demais valores. Bloco separado valida **403** em `POST` quando o guard nega criação. Limpeza: `cleanupE2eTecnicos` (nomes começando com `E2E`).
+
+**Testes frontend:** `client/src/__tests__/pages/tecnicos/tecnico-form.test.ts` (schema, `buildTecnicoApiBody`, defaults); `TecnicosPage.test.tsx` também cobre POST e PATCH com corpo coerente com o payload compartilhado.
 
 ---
 
