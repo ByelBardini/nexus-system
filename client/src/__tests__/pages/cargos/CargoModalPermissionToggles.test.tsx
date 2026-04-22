@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   PermissionCheckbox,
   SectorCheckbox,
-} from "@/pages/cargos/CargoModalPermissionToggles";
+} from "@/pages/cargos/cargo-modal/CargoModalPermissionToggles";
 
 describe("PermissionCheckbox", () => {
   it("chama onChange ao clicar", async () => {

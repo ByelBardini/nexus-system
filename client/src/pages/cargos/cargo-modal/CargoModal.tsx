@@ -1,12 +1,12 @@
 import { X } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { MaterialIcon } from "@/components/MaterialIcon";
-import { CargoModalFooter } from "@/pages/cargos/CargoModalFooter";
-import { CargoModalHeaderForm } from "@/pages/cargos/CargoModalHeaderForm";
-import { CargoModalSummary } from "@/pages/cargos/CargoModalSummary";
-import { CargoPermissionMatrix } from "@/pages/cargos/CargoPermissionMatrix";
-import { useCargoModal } from "@/pages/cargos/useCargoModal";
 import type { CargoModalProps } from "@/types/cargo";
+import { CargoModalFooter } from "./CargoModalFooter";
+import { CargoModalHeaderForm } from "./CargoModalHeaderForm";
+import { CargoModalSummary } from "./CargoModalSummary";
+import { CargoPermissionMatrix } from "./CargoPermissionMatrix";
+import { useCargoModal } from "./useCargoModal";
 
 export type { CargoModalProps };
 

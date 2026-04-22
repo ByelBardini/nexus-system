@@ -15,7 +15,7 @@ import {
 import { MaterialIcon } from "@/components/MaterialIcon";
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { api } from "@/lib/api";
-import { CargoModal } from "./CargoModal";
+import { CargoModal } from "./cargo-modal";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import type { Cargo, Permission, Setor } from "@/types/cargo";

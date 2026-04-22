@@ -6,7 +6,7 @@ import type { Cargo, CategoriaCargo, Permission, Setor } from "@/types/cargo";
 import {
   agruparPermissoes,
   rotulosPermissoesAtivas,
-} from "@/pages/cargos/permissionMatrix";
+} from "./permissionMatrix";
 
 const DEFAULT_EXPANDED = ["ADMINISTRATIVO", "CONFIGURACAO", "AGENDAMENTO"];
 

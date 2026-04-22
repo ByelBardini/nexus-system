@@ -4,7 +4,7 @@ import {
   NOMES_ACAO,
   ORDEM_ACOES,
   rotulosPermissoesAtivas,
-} from "@/pages/cargos/permissionMatrix";
+} from "@/pages/cargos/cargo-modal/permissionMatrix";
 import type { Permission } from "@/types/cargo";
 
 function perm(id: number, code: string): Permission {

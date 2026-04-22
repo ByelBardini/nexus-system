@@ -6,11 +6,11 @@ import {
   ORDEM_ITENS,
   ORDEM_SETORES,
   type EstruturaPermissoes,
-} from "@/pages/cargos/permissionMatrix";
+} from "./permissionMatrix";
 import {
   PermissionCheckbox,
   SectorCheckbox,
-} from "@/pages/cargos/CargoModalPermissionToggles";
+} from "./CargoModalPermissionToggles";
 
 export function CargoPermissionMatrix({
   estrutura,
