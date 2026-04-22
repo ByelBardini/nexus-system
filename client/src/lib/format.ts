@@ -156,6 +156,17 @@ export function parseDataLocal(str: string): Date {
 }
 
 /**
+ * Formata uma data (ex.: hoje) para o resumo de telas: "21 de abr. de 2026" (padrão pt-BR com mês curto).
+ */
+export function formatarDataDeHoje(data: Date = new Date()): string {
+  return data.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+/**
  * Formata data com mês curto e ano: "12 abr. 2026"
  */
 export function formatarDataCompleta(iso: string): string {

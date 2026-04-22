@@ -82,8 +82,8 @@ describe("PreviewPareamentoTable — card Duplicados", () => {
 
     const label = screen.getByText(/^duplicados$/i);
     const card = label.closest("div.flex-1");
-    expect(card).toBeTruthy();
-    expect(within(card!).getByText("2")).toBeInTheDocument();
+    expect(card).toBeInstanceOf(HTMLElement);
+    expect(within(card as HTMLElement).getByText("2")).toBeInTheDocument();
   });
 
   it("exibe 0 no card Duplicados quando não há duplicados", () => {
@@ -96,6 +96,7 @@ describe("PreviewPareamentoTable — card Duplicados", () => {
 
     const label = screen.getByText(/^duplicados$/i);
     const card = label.closest("div.flex-1");
-    expect(within(card!).getByText("0")).toBeInTheDocument();
+    expect(card).toBeInstanceOf(HTMLElement);
+    expect(within(card as HTMLElement).getByText("0")).toBeInTheDocument();
   });
 });
