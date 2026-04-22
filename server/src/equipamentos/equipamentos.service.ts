@@ -253,19 +253,17 @@ export class EquipamentosService {
 
     const operadoraIdFinal = dto.operadoraId ?? marca.operadoraId;
     const nomeFinal = dto.nome ?? marca.nome;
-    if (dto.nome) {
-      await this.assertUnique(
-        () =>
-          this.prisma.marcaSimcard.findFirst({
-            where: {
-              operadoraId: operadoraIdFinal,
-              nome: nomeFinal,
-              id: { not: id },
-            },
-          }),
-        'Marca já existe para esta operadora',
-      );
-    }
+    await this.assertUnique(
+      () =>
+        this.prisma.marcaSimcard.findFirst({
+          where: {
+            operadoraId: operadoraIdFinal,
+            nome: nomeFinal,
+            id: { not: id },
+          },
+        }),
+      'Marca já existe para esta operadora',
+    );
     return this.prisma.marcaSimcard.update({
       where: { id },
       data: dto,

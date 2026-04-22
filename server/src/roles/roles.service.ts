@@ -8,6 +8,11 @@ import { CategoriaCargo } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
+import {
+  cargoIncludeSetorEPermissoes,
+  cargoIncludeSetorEPermissoesComContagemUsuarios,
+  cargoIncludeSomentePermissoes,
+} from './roles.cargo-include';
 
 interface FindAllParams {
   search?: string;
@@ -23,10 +28,7 @@ export class RolesService {
   async findAllWithSectors() {
     return this.prisma.cargo.findMany({
       orderBy: [{ setor: { code: 'asc' } }, { code: 'asc' }],
-      include: {
-        setor: true,
-        cargoPermissoes: { include: { permissao: true } },
-      },
+      include: cargoIncludeSetorEPermissoes,
     });
   }
 
@@ -56,13 +58,7 @@ export class RolesService {
         skip,
         take: limit,
         orderBy: [{ nome: 'asc' }],
-        include: {
-          setor: true,
-          cargoPermissoes: { include: { permissao: true } },
-          _count: {
-            select: { usuarioCargos: true },
-          },
-        },
+        include: cargoIncludeSetorEPermissoesComContagemUsuarios,
       }),
       this.prisma.cargo.count({ where }),
     ]);
@@ -82,13 +78,7 @@ export class RolesService {
   async findById(id: number) {
     const cargo = await this.prisma.cargo.findUnique({
       where: { id },
-      include: {
-        setor: true,
-        cargoPermissoes: { include: { permissao: true } },
-        _count: {
-          select: { usuarioCargos: true },
-        },
-      },
+      include: cargoIncludeSetorEPermissoesComContagemUsuarios,
     });
 
     if (!cargo) throw new NotFoundException('Cargo não encontrado');
@@ -115,10 +105,7 @@ export class RolesService {
         categoria: data.categoria ?? 'OPERACIONAL',
         ativo: data.ativo ?? true,
       },
-      include: {
-        setor: true,
-        cargoPermissoes: { include: { permissao: true } },
-      },
+      include: cargoIncludeSetorEPermissoes,
     });
   }
 
@@ -129,10 +116,7 @@ export class RolesService {
     return this.prisma.cargo.update({
       where: { id },
       data,
-      include: {
-        setor: true,
-        cargoPermissoes: { include: { permissao: true } },
-      },
+      include: cargoIncludeSetorEPermissoes,
     });
   }
 
@@ -159,7 +143,7 @@ export class RolesService {
     });
     return this.prisma.cargo.findUniqueOrThrow({
       where: { id: cargoId },
-      include: { cargoPermissoes: { include: { permissao: true } } },
+      include: cargoIncludeSomentePermissoes,
     });
   }
 

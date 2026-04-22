@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -48,8 +49,8 @@ export class EquipamentosController {
   @Get('marcas/:id')
   @RequirePermissions('CONFIGURACAO.EQUIPAMENTO.LISTAR')
   @ApiOperation({ summary: 'Buscar marca por ID' })
-  findOneMarca(@Param('id') id: string) {
-    return this.equipamentosService.findOneMarca(+id);
+  findOneMarca(@Param('id', ParseIntPipe) id: number) {
+    return this.equipamentosService.findOneMarca(id);
   }
 
   @Post('marcas')
@@ -62,15 +63,15 @@ export class EquipamentosController {
   @Patch('marcas/:id')
   @RequirePermissions('CONFIGURACAO.EQUIPAMENTO.EDITAR')
   @ApiOperation({ summary: 'Atualizar marca' })
-  updateMarca(@Param('id') id: string, @Body() dto: UpdateMarcaDto) {
-    return this.equipamentosService.updateMarca(+id, dto);
+  updateMarca(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateMarcaDto) {
+    return this.equipamentosService.updateMarca(id, dto);
   }
 
   @Delete('marcas/:id')
   @RequirePermissions('CONFIGURACAO.EQUIPAMENTO.EXCLUIR')
   @ApiOperation({ summary: 'Deletar marca' })
-  deleteMarca(@Param('id') id: string) {
-    return this.equipamentosService.deleteMarca(+id);
+  deleteMarca(@Param('id', ParseIntPipe) id: number) {
+    return this.equipamentosService.deleteMarca(id);
   }
 
   // ============= MODELOS =============
@@ -79,17 +80,17 @@ export class EquipamentosController {
   @RequirePermissions('CONFIGURACAO.EQUIPAMENTO.LISTAR')
   @ApiOperation({ summary: 'Listar modelos' })
   @ApiQuery({ name: 'marcaId', required: false, type: Number })
-  findAllModelos(@Query('marcaId') marcaId?: string) {
-    return this.equipamentosService.findAllModelos(
-      marcaId ? +marcaId : undefined,
-    );
+  findAllModelos(
+    @Query('marcaId', new ParseIntPipe({ optional: true })) marcaId?: number,
+  ) {
+    return this.equipamentosService.findAllModelos(marcaId);
   }
 
   @Get('modelos/:id')
   @RequirePermissions('CONFIGURACAO.EQUIPAMENTO.LISTAR')
   @ApiOperation({ summary: 'Buscar modelo por ID' })
-  findOneModelo(@Param('id') id: string) {
-    return this.equipamentosService.findOneModelo(+id);
+  findOneModelo(@Param('id', ParseIntPipe) id: number) {
+    return this.equipamentosService.findOneModelo(id);
   }
 
   @Post('modelos')
@@ -102,15 +103,18 @@ export class EquipamentosController {
   @Patch('modelos/:id')
   @RequirePermissions('CONFIGURACAO.EQUIPAMENTO.EDITAR')
   @ApiOperation({ summary: 'Atualizar modelo' })
-  updateModelo(@Param('id') id: string, @Body() dto: UpdateModeloDto) {
-    return this.equipamentosService.updateModelo(+id, dto);
+  updateModelo(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateModeloDto,
+  ) {
+    return this.equipamentosService.updateModelo(id, dto);
   }
 
   @Delete('modelos/:id')
   @RequirePermissions('CONFIGURACAO.EQUIPAMENTO.EXCLUIR')
   @ApiOperation({ summary: 'Deletar modelo' })
-  deleteModelo(@Param('id') id: string) {
-    return this.equipamentosService.deleteModelo(+id);
+  deleteModelo(@Param('id', ParseIntPipe) id: number) {
+    return this.equipamentosService.deleteModelo(id);
   }
 
   // ============= OPERADORAS =============
@@ -125,8 +129,8 @@ export class EquipamentosController {
   @Get('operadoras/:id')
   @RequirePermissions('CONFIGURACAO.EQUIPAMENTO.LISTAR')
   @ApiOperation({ summary: 'Buscar operadora por ID' })
-  findOneOperadora(@Param('id') id: string) {
-    return this.equipamentosService.findOneOperadora(+id);
+  findOneOperadora(@Param('id', ParseIntPipe) id: number) {
+    return this.equipamentosService.findOneOperadora(id);
   }
 
   @Post('operadoras')
@@ -139,15 +143,18 @@ export class EquipamentosController {
   @Patch('operadoras/:id')
   @RequirePermissions('CONFIGURACAO.EQUIPAMENTO.EDITAR')
   @ApiOperation({ summary: 'Atualizar operadora' })
-  updateOperadora(@Param('id') id: string, @Body() dto: UpdateOperadoraDto) {
-    return this.equipamentosService.updateOperadora(+id, dto);
+  updateOperadora(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateOperadoraDto,
+  ) {
+    return this.equipamentosService.updateOperadora(id, dto);
   }
 
   @Delete('operadoras/:id')
   @RequirePermissions('CONFIGURACAO.EQUIPAMENTO.EXCLUIR')
   @ApiOperation({ summary: 'Deletar operadora' })
-  deleteOperadora(@Param('id') id: string) {
-    return this.equipamentosService.deleteOperadora(+id);
+  deleteOperadora(@Param('id', ParseIntPipe) id: number) {
+    return this.equipamentosService.deleteOperadora(id);
   }
 
   // ============= MARCAS SIMCARD =============
@@ -156,17 +163,18 @@ export class EquipamentosController {
   @RequirePermissions('CONFIGURACAO.EQUIPAMENTO.LISTAR')
   @ApiOperation({ summary: 'Listar marcas de simcard' })
   @ApiQuery({ name: 'operadoraId', required: false, type: Number })
-  findAllMarcasSimcard(@Query('operadoraId') operadoraId?: string) {
-    return this.equipamentosService.findAllMarcasSimcard(
-      operadoraId ? +operadoraId : undefined,
-    );
+  findAllMarcasSimcard(
+    @Query('operadoraId', new ParseIntPipe({ optional: true }))
+    operadoraId?: number,
+  ) {
+    return this.equipamentosService.findAllMarcasSimcard(operadoraId);
   }
 
   @Get('marcas-simcard/:id')
   @RequirePermissions('CONFIGURACAO.EQUIPAMENTO.LISTAR')
   @ApiOperation({ summary: 'Buscar marca de simcard por ID' })
-  findOneMarcaSimcard(@Param('id') id: string) {
-    return this.equipamentosService.findOneMarcaSimcard(+id);
+  findOneMarcaSimcard(@Param('id', ParseIntPipe) id: number) {
+    return this.equipamentosService.findOneMarcaSimcard(id);
   }
 
   @Post('marcas-simcard')
@@ -180,17 +188,17 @@ export class EquipamentosController {
   @RequirePermissions('CONFIGURACAO.EQUIPAMENTO.EDITAR')
   @ApiOperation({ summary: 'Atualizar marca de simcard' })
   updateMarcaSimcard(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateMarcaSimcardDto,
   ) {
-    return this.equipamentosService.updateMarcaSimcard(+id, dto);
+    return this.equipamentosService.updateMarcaSimcard(id, dto);
   }
 
   @Delete('marcas-simcard/:id')
   @RequirePermissions('CONFIGURACAO.EQUIPAMENTO.EXCLUIR')
   @ApiOperation({ summary: 'Deletar marca de simcard' })
-  deleteMarcaSimcard(@Param('id') id: string) {
-    return this.equipamentosService.deleteMarcaSimcard(+id);
+  deleteMarcaSimcard(@Param('id', ParseIntPipe) id: number) {
+    return this.equipamentosService.deleteMarcaSimcard(id);
   }
 
   // ============= PLANOS SIMCARD =============
@@ -199,17 +207,18 @@ export class EquipamentosController {
   @RequirePermissions('CONFIGURACAO.EQUIPAMENTO.LISTAR')
   @ApiOperation({ summary: 'Listar planos de simcard' })
   @ApiQuery({ name: 'marcaSimcardId', required: false, type: Number })
-  findAllPlanosSimcard(@Query('marcaSimcardId') marcaSimcardId?: string) {
-    return this.equipamentosService.findAllPlanosSimcard(
-      marcaSimcardId ? +marcaSimcardId : undefined,
-    );
+  findAllPlanosSimcard(
+    @Query('marcaSimcardId', new ParseIntPipe({ optional: true }))
+    marcaSimcardId?: number,
+  ) {
+    return this.equipamentosService.findAllPlanosSimcard(marcaSimcardId);
   }
 
   @Get('planos-simcard/:id')
   @RequirePermissions('CONFIGURACAO.EQUIPAMENTO.LISTAR')
   @ApiOperation({ summary: 'Buscar plano de simcard por ID' })
-  findOnePlanoSimcard(@Param('id') id: string) {
-    return this.equipamentosService.findOnePlanoSimcard(+id);
+  findOnePlanoSimcard(@Param('id', ParseIntPipe) id: number) {
+    return this.equipamentosService.findOnePlanoSimcard(id);
   }
 
   @Post('planos-simcard')
@@ -223,16 +232,16 @@ export class EquipamentosController {
   @RequirePermissions('CONFIGURACAO.EQUIPAMENTO.EDITAR')
   @ApiOperation({ summary: 'Atualizar plano de simcard' })
   updatePlanoSimcard(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdatePlanoSimcardDto,
   ) {
-    return this.equipamentosService.updatePlanoSimcard(+id, dto);
+    return this.equipamentosService.updatePlanoSimcard(id, dto);
   }
 
   @Delete('planos-simcard/:id')
   @RequirePermissions('CONFIGURACAO.EQUIPAMENTO.EXCLUIR')
   @ApiOperation({ summary: 'Desativar plano de simcard' })
-  deletePlanoSimcard(@Param('id') id: string) {
-    return this.equipamentosService.deletePlanoSimcard(+id);
+  deletePlanoSimcard(@Param('id', ParseIntPipe) id: number) {
+    return this.equipamentosService.deletePlanoSimcard(id);
   }
 }

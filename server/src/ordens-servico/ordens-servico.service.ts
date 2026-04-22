@@ -7,19 +7,17 @@ import { paginateParams } from '../common/pagination.helper';
 import { CLIENTE_INFINITY_ID } from '../common/constants';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
-import {
-  StatusCadastro,
-  StatusOS,
-  StatusAparelho,
-  TipoOS,
-  ProprietarioTipo,
-} from '@prisma/client';
+import { StatusCadastro, StatusOS, TipoOS } from '@prisma/client';
 import { CreateOrdemServicoDto } from './dto/create-ordem-servico.dto';
 import { UpdateOrdemServicoDto } from './dto/update-ordem-servico.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { HtmlOrdemServicoGenerator } from './html-ordem-servico.generator';
 import { PdfOrdemServicoGenerator } from './pdf-ordem-servico.generator';
-import { DebitosRastreadoresService } from '../debitos-rastreadores/debitos-rastreadores.service';
+import { OrdemServicoStatusSideEffectsService } from './ordem-servico-status-side-effects.service';
+import {
+  buildOrdemServicoSearchOrClauses,
+  proximoNumeroOrdemServico,
+} from './ordem-servico.helpers';
 
 @Injectable()
 export class OrdensServicoService {
@@ -27,7 +25,7 @@ export class OrdensServicoService {
     private readonly prisma: PrismaService,
     private readonly htmlOrdemServicoGenerator: HtmlOrdemServicoGenerator,
     private readonly pdfOrdemServicoGenerator: PdfOrdemServicoGenerator,
-    private readonly debitosService: DebitosRastreadoresService,
+    private readonly statusSideEffects: OrdemServicoStatusSideEffectsService,
   ) {}
 
   private static readonly INFINITY_NOME = 'Infinity';
@@ -100,18 +98,10 @@ export class OrdensServicoService {
   async findTestando(search?: string) {
     const where: Prisma.OrdemServicoWhereInput = { status: StatusOS.EM_TESTES };
     if (search?.trim()) {
-      const s = search.trim();
-      const isNum = !isNaN(Number(s));
-      where.OR = [
-        ...(isNum ? [{ numero: Number(s) }] : []),
-        { cliente: { nome: { contains: s } } },
-        { subcliente: { nome: { contains: s } } },
-        { subclienteSnapshotNome: { contains: s } },
-        { veiculo: { placa: { contains: s } } },
-        { tecnico: { nome: { contains: s } } },
-        { idAparelho: { contains: s } },
-        { idEntrada: { contains: s } },
-      ];
+      where.OR = buildOrdemServicoSearchOrClauses(
+        search.trim(),
+        'emTestes',
+      );
     }
 
     const items = await this.prisma.ordemServico.findMany({
@@ -141,7 +131,7 @@ export class OrdensServicoService {
       const { historico: _historico, ...rest } = os;
       const result = { ...rest, tempoEmTestesMin };
       // Retiradas: zerar dados do rastreador/veículo vinculado ao exibir em testes
-      if (os.tipo === 'RETIRADA') {
+      if (os.tipo === TipoOS.RETIRADA) {
         result.veiculo = null;
         result.subcliente = null;
         result.subclienteSnapshotNome = null;
@@ -189,18 +179,13 @@ export class OrdensServicoService {
       defaultLimit: 15,
     });
 
-    const where: Record<string, unknown> = {};
+    const where: Prisma.OrdemServicoWhereInput = {};
     if (params.status) where.status = params.status;
     if (params.search?.trim()) {
-      const s = params.search.trim();
-      const isNum = !isNaN(Number(s));
-      where.OR = [
-        ...(isNum ? [{ numero: Number(s) }] : []),
-        { cliente: { nome: { contains: s } } },
-        { subcliente: { nome: { contains: s } } },
-        { veiculo: { placa: { contains: s } } },
-        { tecnico: { nome: { contains: s } } },
-      ];
+      where.OR = buildOrdemServicoSearchOrClauses(
+        params.search.trim(),
+        'listagem',
+      );
     }
 
     const [items, total] = await Promise.all([
@@ -350,8 +335,7 @@ export class OrdensServicoService {
             cobrancaTipo: dto.subclienteCreate!.cobrancaTipo ?? null,
           },
         });
-        const max = await tx.ordemServico.aggregate({ _max: { numero: true } });
-        const numero = (max._max.numero ?? 0) + 1;
+        const numero = await proximoNumeroOrdemServico(tx);
         const snapshot = OrdensServicoService.snapshotFromSubclienteData(
           dto.subclienteCreate!,
         );
@@ -389,8 +373,7 @@ export class OrdensServicoService {
             cobrancaTipo: subclienteUpdate.cobrancaTipo ?? null,
           },
         });
-        const max = await tx.ordemServico.aggregate({ _max: { numero: true } });
-        const numero = (max._max.numero ?? 0) + 1;
+        const numero = await proximoNumeroOrdemServico(tx);
         const snapshot =
           OrdensServicoService.snapshotFromSubclienteData(subclienteUpdate);
         return tx.ordemServico.create({
@@ -414,8 +397,7 @@ export class OrdensServicoService {
         const snapshot = sub
           ? OrdensServicoService.snapshotFromSubclienteData(sub)
           : {};
-        const max = await tx.ordemServico.aggregate({ _max: { numero: true } });
-        const numero = (max._max.numero ?? 0) + 1;
+        const numero = await proximoNumeroOrdemServico(tx);
         return tx.ordemServico.create({
           data: OrdensServicoService.buildOrdemServicoData(
             dto,
@@ -430,8 +412,7 @@ export class OrdensServicoService {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      const max = await tx.ordemServico.aggregate({ _max: { numero: true } });
-      const numero = (max._max.numero ?? 0) + 1;
+      const numero = await proximoNumeroOrdemServico(tx);
       return tx.ordemServico.create({
         data: OrdensServicoService.buildOrdemServicoData(
           dto,
@@ -453,7 +434,7 @@ export class OrdensServicoService {
     const permitidos = OrdensServicoService.TRANSICOES_VALIDAS[statusAnterior];
     const transicaoPermitida =
       permitidos?.includes(dto.status) ||
-      (os.tipo === 'RETIRADA' &&
+      (os.tipo === TipoOS.RETIRADA &&
         statusAnterior === StatusOS.AGENDADO &&
         dto.status === StatusOS.AGUARDANDO_CADASTRO);
 
@@ -516,142 +497,20 @@ export class OrdensServicoService {
         data: updateData,
       });
 
-      // Ao finalizar testes em REVISÃO/RETIRADA: se o aparelho de saída
-      // (idAparelho) existir e estiver vinculado ao veículo da OS,
-      // desvincula dele (status = COM_TECNICO, zera veículo/subcliente).
-      // IMEI desconhecido ou vinculado a outro veículo = ignora silenciosamente.
-      if (
-        dto.status === StatusOS.TESTES_REALIZADOS &&
-        (os.tipo === TipoOS.REVISAO || os.tipo === TipoOS.RETIRADA) &&
-        os.idAparelho &&
-        os.veiculoId
-      ) {
-        const identificadorSaida = os.idAparelho.trim();
-        if (identificadorSaida) {
-          const aparelhoSaida = await tx.aparelho.findFirst({
-            where: { identificador: identificadorSaida },
-            select: { id: true, status: true, veiculoId: true },
-          });
-          if (aparelhoSaida && aparelhoSaida.veiculoId === os.veiculoId) {
-            const placa = os.veiculo?.placa ?? '-';
-            const obsSaida = `Retirado do veículo ${placa} via OS #${os.numero}`;
-            await tx.aparelhoHistorico.create({
-              data: {
-                aparelhoId: aparelhoSaida.id,
-                statusAnterior: aparelhoSaida.status,
-                statusNovo: StatusAparelho.COM_TECNICO,
-                observacao: obsSaida,
-              },
-            });
-            await tx.aparelho.update({
-              where: { id: aparelhoSaida.id },
-              data: {
-                status: StatusAparelho.COM_TECNICO,
-                veiculoId: null,
-                subclienteId: null,
-                observacao: obsSaida,
-              },
-            });
-          }
-        }
-      }
-
-      // Só INSTALAÇÃO e REVISÃO possuem aparelho novo sendo instalado no
-      // veículo ao final dos testes. RETIRADA não instala nada.
-      const tipoInstalaNovoAparelho =
-        os.tipo === TipoOS.REVISAO ||
-        os.tipo === TipoOS.INSTALACAO_COM_BLOQUEIO ||
-        os.tipo === TipoOS.INSTALACAO_SEM_BLOQUEIO;
-      const identificadorRastreadorNovo =
-        os.tipo === TipoOS.REVISAO
-          ? os.idEntrada?.trim()
-          : os.idAparelho?.trim();
-      if (
-        dto.status === StatusOS.TESTES_REALIZADOS &&
-        tipoInstalaNovoAparelho &&
-        identificadorRastreadorNovo
-      ) {
-        const aparelho = await tx.aparelho.findFirst({
-          where: {
-            identificador: identificadorRastreadorNovo,
-            tipo: 'RASTREADOR',
-          },
-          include: { simVinculado: { select: { id: true, status: true } } },
-        });
-        if (aparelho) {
-          const obsInstalacao = [
-            `Instalado via OS #${os.numero}`,
-            os.veiculo ? `Placa: ${os.veiculo.placa}` : null,
-          ]
-            .filter(Boolean)
-            .join(' | ');
-
-          await tx.aparelhoHistorico.create({
-            data: {
-              aparelhoId: aparelho.id,
-              statusAnterior: aparelho.status,
-              statusNovo: StatusAparelho.INSTALADO,
-              observacao: obsInstalacao,
-            },
-          });
-          await tx.aparelho.update({
-            where: { id: aparelho.id },
-            data: { status: StatusAparelho.INSTALADO },
-          });
-
-          if (aparelho.simVinculadoId && aparelho.simVinculado) {
-            await tx.aparelhoHistorico.create({
-              data: {
-                aparelhoId: aparelho.simVinculadoId,
-                statusAnterior: aparelho.simVinculado.status,
-                statusNovo: StatusAparelho.INSTALADO,
-                observacao: obsInstalacao,
-              },
-            });
-            await tx.aparelho.update({
-              where: { id: aparelho.simVinculadoId },
-              data: { status: StatusAparelho.INSTALADO },
-            });
-          }
-
-          const precisaDebito =
-            aparelho.proprietario === ProprietarioTipo.INFINITY ||
-            (aparelho.proprietario === ProprietarioTipo.CLIENTE &&
-              aparelho.clienteId !== os.clienteId);
-
-          if (precisaDebito && aparelho.marca && aparelho.modelo) {
-            const marcaEq = await tx.marcaEquipamento.findFirst({
-              where: { nome: aparelho.marca },
-            });
-            const modeloEq = marcaEq
-              ? await tx.modeloEquipamento.findFirst({
-                  where: { marcaId: marcaEq.id, nome: aparelho.modelo },
-                })
-              : null;
-
-            if (!marcaEq || !modeloEq) {
-              throw new BadRequestException(
-                `Débito não pode ser registrado: modelo "${aparelho.modelo}" da marca "${aparelho.marca}" não encontrado no catálogo.`,
-              );
-            }
-
-            await this.debitosService.consolidarDebitoTx(tx, {
-              devedorTipo: ProprietarioTipo.CLIENTE,
-              devedorClienteId: os.clienteId,
-              credorTipo: aparelho.proprietario,
-              credorClienteId:
-                aparelho.proprietario === ProprietarioTipo.INFINITY
-                  ? null
-                  : aparelho.clienteId,
-              marcaId: marcaEq.id,
-              modeloId: modeloEq.id,
-              delta: 1,
-              aparelhoId: aparelho.id,
-              ordemServicoId: id,
-            });
-          }
-        }
-      }
+      await this.statusSideEffects.aplicarSeTestesRealizados(
+        tx,
+        id,
+        dto.status,
+        {
+          tipo: os.tipo,
+          numero: os.numero,
+          clienteId: os.clienteId,
+          idAparelho: os.idAparelho,
+          idEntrada: os.idEntrada,
+          veiculoId: os.veiculoId,
+          veiculo: os.veiculo,
+        },
+      );
     });
 
     return this.findOne(id);

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { TipoOS } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -194,9 +195,11 @@ export class HtmlOrdemServicoGenerator {
     const v = d.veiculo;
     const marcaModelo = v ? `${v.marca} ${v.modelo}`.trim() : '-';
     const tipoLabel = TIPO_LABELS[d.tipo] || d.tipo;
-    const isRetirada = d.tipo === 'RETIRADA';
-    const isRevisao = d.tipo === 'REVISAO';
-    const isInstalacao = d.tipo.startsWith('INSTALACAO_');
+    const isRetirada = d.tipo === TipoOS.RETIRADA;
+    const isRevisao = d.tipo === TipoOS.REVISAO;
+    const isInstalacao =
+      d.tipo === TipoOS.INSTALACAO_COM_BLOQUEIO ||
+      d.tipo === TipoOS.INSTALACAO_SEM_BLOQUEIO;
     const isRevisaoOuRetirada = isRetirada || isRevisao;
     const isFinalizado = d.status === 'FINALIZADO';
     const statusAntesTestes = ['AGENDADO', 'EM_TESTES'].includes(d.status);

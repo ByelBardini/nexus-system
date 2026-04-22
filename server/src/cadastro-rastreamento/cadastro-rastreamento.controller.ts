@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
   Query,
   UseGuards,
@@ -40,8 +41,8 @@ export class CadastroRastreamentoController {
   @ApiOperation({
     summary: 'Inicia o cadastro de uma OS (AGUARDANDO → EM_CADASTRO)',
   })
-  iniciarCadastro(@Param('id') id: string) {
-    return this.service.iniciarCadastro(+id);
+  iniciarCadastro(@Param('id', ParseIntPipe) id: number) {
+    return this.service.iniciarCadastro(id);
   }
 
   @Patch(':id/concluir')
@@ -50,10 +51,10 @@ export class CadastroRastreamentoController {
     summary: 'Conclui o cadastro de uma OS (EM_CADASTRO → CONCLUIDO)',
   })
   concluirCadastro(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() dto: ConcluirCadastroDto,
     @CurrentUser('id') userId: number,
   ) {
-    return this.service.concluirCadastro(+id, dto, userId);
+    return this.service.concluirCadastro(id, dto, userId);
   }
 }

@@ -7,7 +7,15 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreatePedidoRastreadorDto } from './dto/create-pedido-rastreador.dto';
 import { UpdateStatusPedidoDto } from './dto/update-status-pedido.dto';
 import { BulkAparelhoDestinatarioDto } from './dto/bulk-aparelho-destinatario.dto';
-import { DebitosRastreadoresService } from '../debitos-rastreadores/debitos-rastreadores.service';
+import { ORDEM_STATUS_PEDIDO_RASTREADOR } from './pedidos-rastreadores.constants';
+import { PEDIDO_RASTREADOR_INCLUDE_BASE } from './pedidos-rastreadores-include';
+import { extrairKitIds } from './pedidos-rastreadores-kit-ids.helper';
+import {
+  resolveNonMistoClienteDestino,
+  resolveNonMistoTecnicoDestino,
+  resolveTargetClienteId,
+} from './pedidos-rastreadores-destino.helpers';
+import { PedidosRastreadoresProprietarioDebitoHelper } from './pedidos-rastreadores-proprietario-debito.helper';
 import {
   Prisma,
   StatusPedidoRastreador,
@@ -18,30 +26,11 @@ import {
 } from '@prisma/client';
 import { paginateParams } from '../common/pagination.helper';
 
-const includeBase = {
-  tecnico: true,
-  cliente: true,
-  subcliente: { include: { cliente: true } },
-  deCliente: true,
-  marcaEquipamento: true,
-  modeloEquipamento: { include: { marca: true } },
-  operadora: true,
-  criadoPor: true,
-  itens: {
-    include: {
-      cliente: { select: { id: true, nome: true } },
-      marcaEquipamento: true,
-      modeloEquipamento: { include: { marca: true } },
-      operadora: true,
-    },
-  },
-};
-
 @Injectable()
 export class PedidosRastreadoresService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly debitosService: DebitosRastreadoresService,
+    private readonly proprietarioDebitoHelper: PedidosRastreadoresProprietarioDebitoHelper,
   ) {}
 
   async findAll(params: {
@@ -89,7 +78,7 @@ export class PedidosRastreadoresService {
         skip,
         take: limit,
         orderBy: { criadoEm: 'desc' },
-        include: includeBase,
+        include: PEDIDO_RASTREADOR_INCLUDE_BASE,
       }),
       this.prisma.pedidoRastreador.count({ where }),
     ]);
@@ -107,7 +96,7 @@ export class PedidosRastreadoresService {
     const pedido = await this.prisma.pedidoRastreador.findUnique({
       where: { id },
       include: {
-        ...includeBase,
+        ...PEDIDO_RASTREADOR_INCLUDE_BASE,
         historico: { orderBy: { criadoEm: 'desc' }, take: 50 },
       },
     });
@@ -115,23 +104,6 @@ export class PedidosRastreadoresService {
       throw new NotFoundException('Pedido de rastreador não encontrado');
     }
     return pedido;
-  }
-
-  private extrairKitIds(val: unknown): number[] {
-    if (val == null) return [];
-    let arr: unknown;
-    if (typeof val === 'string') {
-      try {
-        arr = JSON.parse(val) as unknown;
-      } catch {
-        return [];
-      }
-    } else {
-      arr = val;
-    }
-    return Array.isArray(arr)
-      ? arr.filter((x): x is number => typeof x === 'number')
-      : [];
   }
 
   private static isUniqueConstraintError(e: unknown): boolean {
@@ -230,7 +202,7 @@ export class PedidosRastreadoresService {
             },
           }),
       },
-      include: includeBase,
+      include: PEDIDO_RASTREADOR_INCLUDE_BASE,
     });
   }
 
@@ -345,15 +317,8 @@ export class PedidosRastreadoresService {
     const statusAnterior = pedido.status;
     if (statusAnterior === dto.status) return this.findOne(id);
 
-    const ordemStatus = [
-      StatusPedidoRastreador.SOLICITADO,
-      StatusPedidoRastreador.EM_CONFIGURACAO,
-      StatusPedidoRastreador.CONFIGURADO,
-      StatusPedidoRastreador.DESPACHADO,
-      StatusPedidoRastreador.ENTREGUE,
-    ];
-    const indiceAnterior = ordemStatus.indexOf(statusAnterior);
-    const indiceNovo = ordemStatus.indexOf(dto.status);
+    const indiceAnterior = ORDEM_STATUS_PEDIDO_RASTREADOR.indexOf(statusAnterior);
+    const indiceNovo = ORDEM_STATUS_PEDIDO_RASTREADOR.indexOf(dto.status);
     if (
       statusAnterior === StatusPedidoRastreador.DESPACHADO &&
       indiceNovo < indiceAnterior
@@ -392,7 +357,7 @@ export class PedidosRastreadoresService {
         : [];
 
     if (kitIds.length === 0 && novoStatusAparelho !== null) {
-      kitIds = this.extrairKitIds(pedido.kitIds);
+      kitIds = extrairKitIds(pedido.kitIds);
     }
 
     // Salva kitIds em qualquer status quando fornecido (permite filtrar kits no pareamento independentemente do status)
@@ -407,7 +372,7 @@ export class PedidosRastreadoresService {
       StatusPedidoRastreador.ENTREGUE,
     ];
 
-    const kitIdsAntigos = this.extrairKitIds(pedido.kitIds);
+    const kitIdsAntigos = extrairKitIds(pedido.kitIds);
 
     await this.prisma.$transaction(async (tx) => {
       await tx.pedidoRastreadorHistorico.create({
@@ -451,7 +416,7 @@ export class PedidosRastreadoresService {
           select: { kitIds: true },
         });
         const kitIdsAindaEmUso = new Set(
-          outrosPedidos.flatMap((p) => this.extrairKitIds(p.kitIds)),
+          outrosPedidos.flatMap((p) => extrairKitIds(p.kitIds)),
         );
         for (const kitId of kitIdsAntigos) {
           if (!kitIdsAindaEmUso.has(kitId)) {
@@ -528,26 +493,12 @@ export class PedidosRastreadoresService {
             novoStatusAparelho === StatusAparelho.COM_TECNICO)
         ) {
           if (pedido.tipoDestino === TipoDestinoPedido.CLIENTE) {
-            const targetClienteId =
-              pedido.clienteId ??
-              (pedido.subclienteId && pedido.subcliente
-                ? pedido.subcliente.clienteId
-                : null) ??
-              null;
-            nonMistoDestino = {
-              proprietario: targetClienteId
-                ? ProprietarioTipo.CLIENTE
-                : ProprietarioTipo.INFINITY,
-              clienteId: targetClienteId,
-            };
+            nonMistoDestino = resolveNonMistoClienteDestino(pedido);
           } else if (pedido.tipoDestino === TipoDestinoPedido.TECNICO) {
-            const empresaId = dto.deClienteId ?? pedido.deClienteId ?? null;
-            nonMistoDestino = {
-              proprietario: empresaId
-                ? ProprietarioTipo.CLIENTE
-                : ProprietarioTipo.INFINITY,
-              clienteId: empresaId,
-            };
+            nonMistoDestino = resolveNonMistoTecnicoDestino(
+              dto.deClienteId,
+              pedido.deClienteId,
+            );
           }
         }
 
@@ -564,23 +515,20 @@ export class PedidosRastreadoresService {
           !mistoAssignmentsMap
         ) {
           if (pedido.tipoDestino === TipoDestinoPedido.CLIENTE) {
-            const targetClienteId =
-              pedido.clienteId ??
-              (pedido.subclienteId && pedido.subcliente
-                ? pedido.subcliente.clienteId
-                : null);
+            const targetClienteId = resolveTargetClienteId(pedido);
             sharedDataAparelho.clienteId = targetClienteId ?? null;
             sharedDataAparelho.tecnicoId = null;
             sharedDataAparelho.proprietario = targetClienteId
               ? ProprietarioTipo.CLIENTE
               : ProprietarioTipo.INFINITY;
           } else {
-            const empresaId = dto.deClienteId ?? pedido.deClienteId ?? null;
+            const tev = resolveNonMistoTecnicoDestino(
+              dto.deClienteId,
+              pedido.deClienteId,
+            );
             sharedDataAparelho.tecnicoId = pedido.tecnicoId ?? null;
-            sharedDataAparelho.clienteId = empresaId;
-            sharedDataAparelho.proprietario = empresaId
-              ? ProprietarioTipo.CLIENTE
-              : ProprietarioTipo.INFINITY;
+            sharedDataAparelho.clienteId = tev.clienteId;
+            sharedDataAparelho.proprietario = tev.proprietario;
           }
         } else if (
           novoStatusAparelho === StatusAparelho.CONFIGURADO ||
@@ -590,6 +538,11 @@ export class PedidosRastreadoresService {
           sharedDataAparelho.clienteId = null;
         }
 
+        const marcaModeloCache = new Map<
+          string,
+          { marcaId: number; modeloId: number } | null
+        >();
+
         for (const ap of aparelhos) {
           let dataAparelho = sharedDataAparelho;
 
@@ -598,35 +551,21 @@ export class PedidosRastreadoresService {
             const destProprietario = assignment.destinatarioProprietario;
             const destClienteId = assignment.destinatarioClienteId;
 
-            // Criar débito se o proprietário de origem difere do destino
-            const srcProprietario = ap.proprietario;
-            const srcClienteId = ap.clienteId;
-            const proprietarioMudou =
-              srcProprietario !== destProprietario ||
-              srcClienteId !== destClienteId;
-
-            if (proprietarioMudou && ap.marca && ap.modelo) {
-              const marcaRecord = await tx.marcaEquipamento.findFirst({
-                where: { nome: ap.marca },
-              });
-              const modeloRecord = marcaRecord
-                ? await tx.modeloEquipamento.findFirst({
-                    where: { nome: ap.modelo, marcaId: marcaRecord.id },
-                  })
-                : null;
-              if (marcaRecord && modeloRecord) {
-                await this.debitosService.consolidarDebitoTx(tx, {
-                  devedorTipo: destProprietario,
-                  devedorClienteId: destClienteId,
-                  credorTipo: srcProprietario,
-                  credorClienteId: srcClienteId,
-                  marcaId: marcaRecord.id,
-                  modeloId: modeloRecord.id,
-                  delta: 1,
-                  pedidoId: pedido.id,
-                });
-              }
-            }
+            await this.proprietarioDebitoHelper.consolidarDebitoSeProprietarioMudou(
+              tx,
+              marcaModeloCache,
+              {
+                ap: {
+                  marca: ap.marca,
+                  modelo: ap.modelo,
+                  proprietario: ap.proprietario,
+                  clienteId: ap.clienteId,
+                },
+                destProprietario,
+                destClienteId,
+                pedidoId: pedido.id,
+              },
+            );
 
             dataAparelho = {
               status: novoStatusAparelho,
@@ -646,36 +585,34 @@ export class PedidosRastreadoresService {
               srcProprietario !== destProprietario ||
               srcClienteId !== destClienteId;
 
-            if (proprietarioMudou && ap.marca && ap.modelo) {
-              const marcaRecord = await tx.marcaEquipamento.findFirst({
-                where: { nome: ap.marca },
-              });
-              const modeloRecord = marcaRecord
-                ? await tx.modeloEquipamento.findFirst({
-                    where: { nome: ap.modelo, marcaId: marcaRecord.id },
-                  })
-                : null;
-              if (marcaRecord && modeloRecord) {
-                await this.debitosService.consolidarDebitoTx(tx, {
-                  devedorTipo: destProprietario,
-                  devedorClienteId: destClienteId,
-                  credorTipo: srcProprietario,
-                  credorClienteId: srcClienteId,
-                  marcaId: marcaRecord.id,
-                  modeloId: modeloRecord.id,
-                  delta: 1,
-                  pedidoId: pedido.id,
-                });
-              }
-              // DESPACHADO: transfere ownership imediatamente (para COM_TECNICO, sharedDataAparelho já inclui proprietario)
-              if (novoStatusAparelho === StatusAparelho.DESPACHADO) {
-                dataAparelho = {
-                  status: novoStatusAparelho,
-                  proprietario: destProprietario,
-                  clienteId: destClienteId,
-                  tecnicoId: null,
-                };
-              }
+            await this.proprietarioDebitoHelper.consolidarDebitoSeProprietarioMudou(
+              tx,
+              marcaModeloCache,
+              {
+                ap: {
+                  marca: ap.marca,
+                  modelo: ap.modelo,
+                  proprietario: ap.proprietario,
+                  clienteId: ap.clienteId,
+                },
+                destProprietario,
+                destClienteId,
+                pedidoId: pedido.id,
+              },
+            );
+            // DESPACHADO: transfere ownership (mesma condição de antes: exige marca/modelo no aparelho)
+            if (
+              proprietarioMudou &&
+              ap.marca &&
+              ap.modelo &&
+              novoStatusAparelho === StatusAparelho.DESPACHADO
+            ) {
+              dataAparelho = {
+                status: novoStatusAparelho,
+                proprietario: destProprietario,
+                clienteId: destClienteId,
+                tecnicoId: null,
+              };
             }
           }
 
@@ -718,7 +655,7 @@ export class PedidosRastreadoresService {
     return this.prisma.pedidoRastreador.update({
       where: { id },
       data: { kitIds },
-      include: includeBase,
+      include: PEDIDO_RASTREADOR_INCLUDE_BASE,
     });
   }
 
