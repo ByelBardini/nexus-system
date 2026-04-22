@@ -38,6 +38,29 @@ export interface PreviewResult {
   contadores: { validos: number; exigemLote: number; erros: number };
 }
 
+/** Linhas cuja IMEI ou ICCID (não vazios) se repetem no mesmo preview. */
+export function countPareamentoPreviewDuplicateLinhas(
+  linhas: PreviewLinha[],
+): number {
+  const imeiCounts = new Map<string, number>();
+  const iccidCounts = new Map<string, number>();
+  for (const l of linhas) {
+    const imei = l.imei?.trim();
+    const iccid = l.iccid?.trim();
+    if (imei) imeiCounts.set(imei, (imeiCounts.get(imei) ?? 0) + 1);
+    if (iccid) iccidCounts.set(iccid, (iccidCounts.get(iccid) ?? 0) + 1);
+  }
+  let n = 0;
+  for (const l of linhas) {
+    const imei = l.imei?.trim();
+    const iccid = l.iccid?.trim();
+    const imeiDup = imei ? (imeiCounts.get(imei) ?? 0) > 1 : false;
+    const iccidDup = iccid ? (iccidCounts.get(iccid) ?? 0) > 1 : false;
+    if (imeiDup || iccidDup) n += 1;
+  }
+  return n;
+}
+
 export const TRACKER_STATUS_LABELS: Record<
   TrackerStatus,
   { label: string; className: string }
@@ -86,6 +109,8 @@ interface PreviewPareamentoTableProps {
 export function PreviewPareamentoTable({
   preview,
 }: PreviewPareamentoTableProps) {
+  const duplicados = countPareamentoPreviewDuplicateLinhas(preview.linhas);
+
   return (
     <>
       <div className="grid grid-cols-4 gap-4">
@@ -109,7 +134,7 @@ export function PreviewPareamentoTable({
           <Label className="block text-[10px] font-bold uppercase text-slate-400">
             Duplicados
           </Label>
-          <p className="text-2xl font-bold text-slate-800">0</p>
+          <p className="text-2xl font-bold text-slate-800">{duplicados}</p>
         </div>
         <div className="flex-1 rounded-sm border-l-4 border-red-500 bg-white p-4 shadow-sm">
           <Label className="block text-[10px] font-bold uppercase text-slate-400">

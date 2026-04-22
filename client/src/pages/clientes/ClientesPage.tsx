@@ -2,7 +2,6 @@ import { useState, useMemo, Fragment, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import {
   Plus,
   Pencil,
@@ -56,60 +55,25 @@ import { toast } from "sonner";
 import { formatarTelefone, formatarCNPJ, formatarCEP } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { InputCor } from "@/components/InputCor";
-
-const contatoSchema = z.object({
-  id: z.number().optional(),
-  nome: z.string().min(1, "Nome obrigatório"),
-  celular: z.string().optional(),
-  email: z.string().email("E-mail inválido").optional().or(z.literal("")),
-});
-
-const schema = z.object({
-  nome: z.string().min(1, "Razão social obrigatória"),
-  nomeFantasia: z.string().optional(),
-  cnpj: z.string().optional(),
-  tipoContrato: z.enum(["COMODATO", "AQUISICAO"]),
-  estoqueProprio: z.boolean(),
-  status: z.enum(["ATIVO", "PENDENTE", "INATIVO"]),
-  cor: z.string().optional(),
-  cep: z.string().optional(),
-  logradouro: z.string().optional(),
-  numero: z.string().optional(),
-  complemento: z.string().optional(),
-  bairro: z.string().optional(),
-  cidade: z.string().optional(),
-  estado: z.string().optional(),
-  contatos: z.array(contatoSchema),
-});
-
-type FormData = z.infer<typeof schema>;
-
-interface Contato {
-  id: number;
-  nome: string;
-  celular: string | null;
-  email: string | null;
-}
-
-interface Cliente {
-  id: number;
-  nome: string;
-  nomeFantasia: string | null;
-  cnpj: string | null;
-  tipoContrato: "COMODATO" | "AQUISICAO";
-  estoqueProprio: boolean;
-  status: "ATIVO" | "PENDENTE" | "INATIVO";
-  cor?: string | null;
-  cep?: string | null;
-  logradouro?: string | null;
-  numero?: string | null;
-  complemento?: string | null;
-  bairro?: string | null;
-  cidade?: string | null;
-  estado?: string | null;
-  contatos: Contato[];
-  _count?: { ordensServico: number };
-}
+import {
+  FILTRO_ESTOQUE_OPTIONS,
+  FILTRO_TIPO_CONTRATO_OPTIONS,
+  STATUS_CLIENTE_LABEL,
+  STATUS_FORM_OPTIONS,
+  STATUS_INDICATOR_DOT_CLASS,
+  TIPO_CONTRATO_BADGE_CLASS,
+  TIPO_CONTRATO_LABEL,
+  TIPO_CONTRATO_LEGEND_SWATCH_CLASS,
+  TIPO_CONTRATO_SELECT_OPTIONS,
+  TIPO_CONTRATO_VALUES,
+  buildClienteApiBody,
+  clienteFormSchema,
+  clienteToFormValues,
+  getClientesFooterStats,
+  getDefaultClienteFormValues,
+  type Cliente,
+  type ClienteFormData,
+} from "./clientes-page.shared";
 
 const PAGE_SIZE = 10;
 
@@ -159,25 +123,14 @@ export function ClientesPage() {
     return filtered.slice(start, start + PAGE_SIZE);
   }, [filtered, page]);
 
-  const form = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      nome: "",
-      nomeFantasia: "",
-      cnpj: "",
-      tipoContrato: "COMODATO",
-      estoqueProprio: false,
-      status: "ATIVO",
-      cor: undefined,
-      cep: "",
-      logradouro: "",
-      numero: "",
-      complemento: "",
-      bairro: "",
-      cidade: "",
-      estado: "",
-      contatos: [],
-    },
+  const footerStats = useMemo(
+    () => getClientesFooterStats(clientes, filtered),
+    [clientes, filtered],
+  );
+
+  const form = useForm<ClienteFormData>({
+    resolver: zodResolver(clienteFormSchema),
+    defaultValues: getDefaultClienteFormValues(),
   });
 
   const estadoEndereco = form.watch("estado");
@@ -202,25 +155,10 @@ export function ClientesPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: FormData) =>
+    mutationFn: (data: ClienteFormData) =>
       api("/clientes", {
         method: "POST",
-        body: JSON.stringify({
-          ...data,
-          cor: data.cor || undefined,
-          cep: data.cep || undefined,
-          logradouro: data.logradouro || undefined,
-          numero: data.numero || undefined,
-          complemento: data.complemento || undefined,
-          bairro: data.bairro || undefined,
-          cidade: data.cidade || undefined,
-          estado: data.estado || undefined,
-          contatos: data.contatos.map((c) => ({
-            nome: c.nome,
-            celular: c.celular || undefined,
-            email: c.email || undefined,
-          })),
-        }),
+        body: JSON.stringify(buildClienteApiBody(data, "create")),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clientes"] });
@@ -232,26 +170,10 @@ export function ClientesPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: FormData }) =>
+    mutationFn: ({ id, data }: { id: number; data: ClienteFormData }) =>
       api(`/clientes/${id}`, {
         method: "PATCH",
-        body: JSON.stringify({
-          ...data,
-          cor: data.cor || undefined,
-          cep: data.cep || undefined,
-          logradouro: data.logradouro || undefined,
-          numero: data.numero || undefined,
-          complemento: data.complemento || undefined,
-          bairro: data.bairro || undefined,
-          cidade: data.cidade || undefined,
-          estado: data.estado || undefined,
-          contatos: data.contatos.map((c) => ({
-            id: c.id,
-            nome: c.nome,
-            celular: c.celular || undefined,
-            email: c.email || undefined,
-          })),
-        }),
+        body: JSON.stringify(buildClienteApiBody(data, "update")),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clientes"] });
@@ -266,50 +188,13 @@ export function ClientesPage() {
 
   function openCreateModal() {
     setEditingCliente(null);
-    form.reset({
-      nome: "",
-      nomeFantasia: "",
-      cnpj: "",
-      tipoContrato: "COMODATO",
-      estoqueProprio: false,
-      status: "ATIVO",
-      cor: undefined,
-      cep: "",
-      logradouro: "",
-      numero: "",
-      complemento: "",
-      bairro: "",
-      cidade: "",
-      estado: "",
-      contatos: [],
-    });
+    form.reset(getDefaultClienteFormValues());
     setModalOpen(true);
   }
 
   function openEditModal(c: Cliente) {
     setEditingCliente(c);
-    form.reset({
-      nome: c.nome,
-      nomeFantasia: c.nomeFantasia ?? "",
-      cnpj: c.cnpj ?? "",
-      tipoContrato: c.tipoContrato,
-      estoqueProprio: c.estoqueProprio,
-      status: c.status,
-      cor: c.cor ?? undefined,
-      cep: c.cep ?? "",
-      logradouro: c.logradouro ?? "",
-      numero: c.numero ?? "",
-      complemento: c.complemento ?? "",
-      bairro: c.bairro ?? "",
-      cidade: c.cidade ?? "",
-      estado: c.estado ?? "",
-      contatos: c.contatos.map((ct) => ({
-        id: ct.id,
-        nome: ct.nome,
-        celular: ct.celular ?? "",
-        email: ct.email ?? "",
-      })),
-    });
+    form.reset(clienteToFormValues(c));
     setModalOpen(true);
   }
 
@@ -318,7 +203,7 @@ export function ClientesPage() {
     setEditingCliente(null);
   }
 
-  function handleSubmit(data: FormData) {
+  function handleSubmit(data: ClienteFormData) {
     if (editingCliente) {
       updateMutation.mutate({ id: editingCliente.id, data });
     } else {
@@ -330,33 +215,9 @@ export function ClientesPage() {
     append({ nome: "", celular: "", email: "" });
   }
 
-  const watchedValues = useWatch({
-    control: form.control,
-    name: [
-      "nome",
-      "nomeFantasia",
-      "tipoContrato",
-      "cep",
-      "logradouro",
-      "numero",
-      "bairro",
-      "cidade",
-      "estado",
-      "contatos",
-    ],
-  });
-  const watchedObj = {
-    nome: watchedValues[0],
-    nomeFantasia: watchedValues[1],
-    tipoContrato: watchedValues[2],
-    cep: watchedValues[3],
-    logradouro: watchedValues[4],
-    numero: watchedValues[5],
-    bairro: watchedValues[6],
-    cidade: watchedValues[7],
-    estado: watchedValues[8],
-    contatos: watchedValues[9] ?? [],
-  };
+  const resumoForm =
+    useWatch({ control: form.control }) ?? getDefaultClienteFormValues();
+  const resumoTipoContrato = resumoForm.tipoContrato ?? "COMODATO";
 
   if (isLoading) {
     return (
@@ -380,7 +241,6 @@ export function ClientesPage() {
   }
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
-  const activeCount = clientes.filter((c) => c.status === "ATIVO").length;
 
   return (
     <div className="-m-4 flex min-h-[100dvh] flex-col bg-slate-100">
@@ -431,11 +291,7 @@ export function ClientesPage() {
                 setFiltroTipoContrato(v);
                 setPage(0);
               }}
-              options={[
-                { value: "todos", label: "Todos" },
-                { value: "COMODATO", label: "Comodato" },
-                { value: "AQUISICAO", label: "Aquisição" },
-              ]}
+              options={FILTRO_TIPO_CONTRATO_OPTIONS}
             />
           </div>
           <div className="flex flex-col">
@@ -449,11 +305,7 @@ export function ClientesPage() {
                 setFiltroEstoque(v);
                 setPage(0);
               }}
-              options={[
-                { value: "todos", label: "Todos" },
-                { value: "proprio", label: "Próprio" },
-                { value: "terceiro", label: "Terceiro" },
-              ]}
+              options={[...FILTRO_ESTOQUE_OPTIONS]}
             />
           </div>
           {canCreate && (
@@ -531,14 +383,10 @@ export function ClientesPage() {
                           <span
                             className={cn(
                               "px-2 py-0.5 rounded text-[10px] font-bold uppercase border",
-                              c.tipoContrato === "COMODATO"
-                                ? "bg-amber-100 text-amber-700 border-amber-200"
-                                : "bg-indigo-100 text-indigo-700 border-indigo-200",
+                              TIPO_CONTRATO_BADGE_CLASS[c.tipoContrato],
                             )}
                           >
-                            {c.tipoContrato === "COMODATO"
-                              ? "Comodato"
-                              : "Aquisição"}
+                            {TIPO_CONTRATO_LABEL[c.tipoContrato]}
                           </span>
                         </TableCell>
                         <TableCell className="px-4 py-4 text-center">
@@ -553,13 +401,11 @@ export function ClientesPage() {
                             <div
                               className={cn(
                                 "w-2 h-2 rounded-full",
-                                c.status === "ATIVO" && "bg-emerald-500",
-                                c.status === "PENDENTE" && "bg-amber-400",
-                                c.status === "INATIVO" && "bg-slate-300",
+                                STATUS_INDICATOR_DOT_CLASS[c.status],
                               )}
                             />
                             <span className="text-[10px] font-bold uppercase text-slate-600">
-                              {c.status}
+                              {STATUS_CLIENTE_LABEL[c.status]}
                             </span>
                           </div>
                         </TableCell>
@@ -687,13 +533,22 @@ export function ClientesPage() {
           <div className="h-12 border-t border-slate-200 bg-slate-50 flex items-center justify-between px-6 shrink-0">
             <div className="flex items-center gap-6">
               <span className="text-[11px] text-slate-500 font-bold uppercase tracking-tight">
-                Total de {activeCount} registros ativos
+                Exibindo {footerStats.exibindo} de {footerStats.totalCadastro}{" "}
+                cliente(s) · {footerStats.ativosNaSelecao} ativo(s) na seleção
               </span>
               <div className="flex items-center gap-2 text-[11px] text-slate-400 uppercase font-bold">
-                <span className="w-3 h-3 bg-amber-100 border border-amber-300 rounded-sm"></span>{" "}
-                Comodato
-                <span className="w-3 h-3 bg-indigo-100 border border-indigo-300 rounded-sm ml-2"></span>{" "}
-                Aquisição
+                {TIPO_CONTRATO_VALUES.map((v, i) => (
+                  <Fragment key={v}>
+                    {i > 0 && <span className="ml-2" />}
+                    <span
+                      className={cn(
+                        "w-3 h-3 border rounded-sm",
+                        TIPO_CONTRATO_LEGEND_SWATCH_CLASS[v],
+                      )}
+                    />
+                    {TIPO_CONTRATO_LABEL[v]}
+                  </Fragment>
+                ))}
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -818,8 +673,11 @@ export function ClientesPage() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="COMODATO">Comodato</SelectItem>
-                            <SelectItem value="AQUISICAO">Aquisição</SelectItem>
+                            {TIPO_CONTRATO_SELECT_OPTIONS.map((o) => (
+                              <SelectItem key={o.value} value={o.value}>
+                                {o.label}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       )}
@@ -841,9 +699,11 @@ export function ClientesPage() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="ATIVO">Ativo</SelectItem>
-                            <SelectItem value="PENDENTE">Pendente</SelectItem>
-                            <SelectItem value="INATIVO">Inativo</SelectItem>
+                            {STATUS_FORM_OPTIONS.map((o) => (
+                              <SelectItem key={o.value} value={o.value}>
+                                {o.label}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       )}
@@ -1140,16 +1000,16 @@ export function ClientesPage() {
                     Razão Social
                   </label>
                   <p className="text-sm font-bold text-slate-800 break-words">
-                    {watchedObj.nome || "—"}
+                    {resumoForm.nome || "—"}
                   </p>
                 </div>
-                {watchedObj.nomeFantasia && (
+                {resumoForm.nomeFantasia && (
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
                       Nome Fantasia
                     </label>
                     <p className="text-sm text-slate-700">
-                      {watchedObj.nomeFantasia}
+                      {resumoForm.nomeFantasia}
                     </p>
                   </div>
                 )}
@@ -1160,36 +1020,32 @@ export function ClientesPage() {
                   <span
                     className={cn(
                       "inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase border",
-                      watchedObj.tipoContrato === "COMODATO"
-                        ? "bg-amber-100 text-amber-700 border-amber-200"
-                        : "bg-indigo-100 text-indigo-700 border-indigo-200",
+                      TIPO_CONTRATO_BADGE_CLASS[resumoTipoContrato],
                     )}
                   >
-                    {watchedObj.tipoContrato === "COMODATO"
-                      ? "Comodato"
-                      : "Aquisição"}
+                    {TIPO_CONTRATO_LABEL[resumoTipoContrato]}
                   </span>
                 </div>
-                {(watchedObj.cep ||
-                  watchedObj.logradouro ||
-                  watchedObj.cidade) && (
+                {(resumoForm.cep ||
+                  resumoForm.logradouro ||
+                  resumoForm.cidade) && (
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
                       Endereço
                     </label>
                     <p className="text-sm text-slate-700">
                       {[
-                        watchedObj.logradouro,
-                        watchedObj.numero,
-                        watchedObj.bairro,
+                        resumoForm.logradouro,
+                        resumoForm.numero,
+                        resumoForm.bairro,
                       ]
                         .filter(Boolean)
                         .join(", ")}
-                      {(watchedObj.cidade || watchedObj.estado) && (
+                      {(resumoForm.cidade || resumoForm.estado) && (
                         <>
                           {" "}
                           —{" "}
-                          {[watchedObj.cidade, watchedObj.estado]
+                          {[resumoForm.cidade, resumoForm.estado]
                             .filter(Boolean)
                             .join("/")}
                         </>
@@ -1202,7 +1058,7 @@ export function ClientesPage() {
                     Contatos
                   </label>
                   <p className="text-sm font-bold text-slate-700">
-                    {watchedObj.contatos?.length || 0} contato(s)
+                    {resumoForm.contatos?.length || 0} contato(s)
                   </p>
                 </div>
                 <div className="mt-8 p-3 bg-blue-50 border border-blue-100 rounded-sm">

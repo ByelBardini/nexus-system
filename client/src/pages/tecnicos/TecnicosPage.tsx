@@ -9,7 +9,6 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm, Controller, useWatch, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import {
   Plus,
   Pencil,
@@ -59,31 +58,14 @@ import {
   tecnicoPrecoToNum,
   type MapState,
 } from "@/lib/tecnicos-page";
+import {
+  buildTecnicoApiBody,
+  emptyTecnicoFormValues,
+  tecnicoFormSchema,
+  type TecnicoFormData,
+} from "./tecnico-form";
 
 const TecnicosMap = lazy(() => import("@/components/TecnicosMap"));
-
-const schema = z.object({
-  nome: z.string().min(1, "Nome obrigatório"),
-  cpfCnpj: z.string().optional(),
-  telefone: z.string().optional(),
-  cidade: z.string().optional(),
-  estado: z.string().optional(),
-  cep: z.string().optional(),
-  logradouro: z.string().optional(),
-  numero: z.string().optional(),
-  complemento: z.string().optional(),
-  bairro: z.string().optional(),
-  cidadeEndereco: z.string().optional(),
-  estadoEndereco: z.string().optional(),
-  ativo: z.boolean(),
-  instalacaoComBloqueio: z.coerce.number().min(0),
-  instalacaoSemBloqueio: z.coerce.number().min(0),
-  revisao: z.coerce.number().min(0),
-  retirada: z.coerce.number().min(0),
-  deslocamento: z.coerce.number().min(0),
-});
-
-type FormData = z.infer<typeof schema>;
 
 interface Tecnico {
   id: number;
@@ -173,28 +155,9 @@ export function TecnicosPage() {
     onError: (err) => toast.error(err instanceof Error ? err.message : "Erro"),
   });
 
-  const form = useForm<FormData>({
-    resolver: zodResolver(schema) as Resolver<FormData>,
-    defaultValues: {
-      nome: "",
-      cpfCnpj: "",
-      telefone: "",
-      cidade: "",
-      estado: "",
-      cep: "",
-      logradouro: "",
-      numero: "",
-      complemento: "",
-      bairro: "",
-      cidadeEndereco: "",
-      estadoEndereco: "",
-      ativo: true,
-      instalacaoComBloqueio: 0,
-      instalacaoSemBloqueio: 0,
-      revisao: 0,
-      retirada: 0,
-      deslocamento: 0,
-    },
+  const form = useForm<TecnicoFormData>({
+    resolver: zodResolver(tecnicoFormSchema) as Resolver<TecnicoFormData>,
+    defaultValues: emptyTecnicoFormValues(),
   });
 
   const estadoAtuacao = form.watch("estado");
@@ -202,31 +165,10 @@ export function TecnicosPage() {
   const { data: municipios = [] } = useMunicipios(estadoAtuacao || null);
 
   const createMutation = useMutation({
-    mutationFn: (data: FormData) =>
+    mutationFn: (data: TecnicoFormData) =>
       api("/tecnicos", {
         method: "POST",
-        body: JSON.stringify({
-          nome: data.nome,
-          cpfCnpj: data.cpfCnpj || undefined,
-          telefone: data.telefone || undefined,
-          cidade: data.cidade || undefined,
-          estado: data.estado || undefined,
-          cep: data.cep || undefined,
-          logradouro: data.logradouro || undefined,
-          numero: data.numero || undefined,
-          complemento: data.complemento || undefined,
-          bairro: data.bairro || undefined,
-          cidadeEndereco: data.cidadeEndereco || undefined,
-          estadoEndereco: data.estadoEndereco || undefined,
-          ativo: data.ativo,
-          precos: {
-            instalacaoComBloqueio: data.instalacaoComBloqueio / 100,
-            instalacaoSemBloqueio: data.instalacaoSemBloqueio / 100,
-            revisao: data.revisao / 100,
-            retirada: data.retirada / 100,
-            deslocamento: data.deslocamento / 100,
-          },
-        }),
+        body: JSON.stringify(buildTecnicoApiBody(data)),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tecnicos"] });
@@ -238,31 +180,10 @@ export function TecnicosPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: FormData }) =>
+    mutationFn: ({ id, data }: { id: number; data: TecnicoFormData }) =>
       api(`/tecnicos/${id}`, {
         method: "PATCH",
-        body: JSON.stringify({
-          nome: data.nome,
-          cpfCnpj: data.cpfCnpj || undefined,
-          telefone: data.telefone || undefined,
-          cidade: data.cidade || undefined,
-          estado: data.estado || undefined,
-          cep: data.cep || undefined,
-          logradouro: data.logradouro || undefined,
-          numero: data.numero || undefined,
-          complemento: data.complemento || undefined,
-          bairro: data.bairro || undefined,
-          cidadeEndereco: data.cidadeEndereco || undefined,
-          estadoEndereco: data.estadoEndereco || undefined,
-          ativo: data.ativo,
-          precos: {
-            instalacaoComBloqueio: data.instalacaoComBloqueio / 100,
-            instalacaoSemBloqueio: data.instalacaoSemBloqueio / 100,
-            revisao: data.revisao / 100,
-            retirada: data.retirada / 100,
-            deslocamento: data.deslocamento / 100,
-          },
-        }),
+        body: JSON.stringify(buildTecnicoApiBody(data)),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tecnicos"] });
@@ -277,26 +198,7 @@ export function TecnicosPage() {
 
   function openCreateModal() {
     setEditingTecnico(null);
-    form.reset({
-      nome: "",
-      cpfCnpj: "",
-      telefone: "",
-      cidade: "",
-      estado: "",
-      cep: "",
-      logradouro: "",
-      numero: "",
-      complemento: "",
-      bairro: "",
-      cidadeEndereco: "",
-      estadoEndereco: "",
-      ativo: true,
-      instalacaoComBloqueio: 0,
-      instalacaoSemBloqueio: 0,
-      revisao: 0,
-      retirada: 0,
-      deslocamento: 0,
-    });
+    form.reset(emptyTecnicoFormValues());
     setModalOpen(true);
   }
 
@@ -334,7 +236,7 @@ export function TecnicosPage() {
     setEditingTecnico(null);
   }
 
-  function handleSubmit(data: FormData) {
+  function handleSubmit(data: TecnicoFormData) {
     if (editingTecnico) {
       updateMutation.mutate({ id: editingTecnico.id, data });
     } else {

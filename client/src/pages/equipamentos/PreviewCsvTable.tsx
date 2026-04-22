@@ -115,13 +115,21 @@ interface Props {
 export function PreviewCsvTable({ preview }: Props) {
   return (
     <>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <div className="flex-1 rounded-sm border-l-4 border-emerald-500 bg-white p-4 shadow-sm">
           <Label className="block text-[10px] font-bold uppercase text-slate-400">
             Válidos
           </Label>
           <p className="text-2xl font-bold text-slate-800">
             {preview.contadores.validos}
+          </p>
+        </div>
+        <div className="flex-1 rounded-sm border-l-4 border-amber-500 bg-white p-4 shadow-sm">
+          <Label className="block text-[10px] font-bold uppercase text-slate-400">
+            Com aviso
+          </Label>
+          <p className="text-2xl font-bold text-slate-800">
+            {preview.contadores.comAviso}
           </p>
         </div>
         <div className="flex-1 rounded-sm border-l-4 border-slate-400 bg-white p-4 shadow-sm">

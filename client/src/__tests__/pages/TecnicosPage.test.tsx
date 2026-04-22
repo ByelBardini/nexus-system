@@ -409,4 +409,53 @@ describe("TecnicosPage", () => {
     expect(body.nome).toBe("Novo E2E");
     expect(body.precos.instalacaoComBloqueio).toBe(0);
   });
+
+  it("envia PATCH ao salvar edição com payload alinhado ao buildTecnicoApiBody", async () => {
+    const user = userEvent.setup();
+    apiMock.mockResolvedValueOnce([
+      makeTecnico({
+        id: 42,
+        nome: "Edit Me",
+        precos: {
+          instalacaoComBloqueio: 1,
+          instalacaoSemBloqueio: 2,
+          revisao: 3,
+          retirada: 4,
+          deslocamento: 5,
+        },
+      }),
+    ]);
+    renderPage();
+    await screen.findByText("Edit Me");
+    await user.click(screen.getByText("Edit Me"));
+    await user.click(screen.getByRole("button", { name: /Editar Perfil/i }));
+    const nomeInput = screen.getByPlaceholderText(/Ricardo Silva/i);
+    await user.clear(nomeInput);
+    await user.type(nomeInput, "Editado API");
+    await user.click(screen.getByRole("button", { name: /Salvar Técnico/i }));
+    await waitFor(() => {
+      const patchCall = apiMock.mock.calls.find(
+        (c) =>
+          c[0] === "/tecnicos/42" &&
+          c[1] &&
+          (c[1] as { method?: string }).method === "PATCH",
+      );
+      expect(patchCall).toBeDefined();
+    });
+    const patchCall = apiMock.mock.calls.find(
+      (c) =>
+        c[0] === "/tecnicos/42" &&
+        c[1] &&
+        (c[1] as { method?: string }).method === "PATCH",
+    );
+    const body = JSON.parse(
+      (patchCall![1] as { body: string }).body,
+    ) as {
+      nome: string;
+      precos: Record<string, number>;
+    };
+    expect(body.nome).toBe("Editado API");
+    expect(body.precos.revisao).toBe(3);
+    expect(body.precos.instalacaoComBloqueio).toBe(1);
+  });
 });

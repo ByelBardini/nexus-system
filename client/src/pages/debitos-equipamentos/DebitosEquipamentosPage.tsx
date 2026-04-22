@@ -163,7 +163,8 @@ export function DebitosEquipamentosPage() {
 
   const { data: apiResponse } = useQuery<DebitosApiResponse>({
     queryKey: ["debitos-rastreadores"],
-    queryFn: () => api("/debitos-rastreadores?limit=500"),
+    queryFn: () =>
+      api("/debitos-rastreadores?limit=500&incluirHistoricos=true"),
   });
 
   const debitos = useMemo(

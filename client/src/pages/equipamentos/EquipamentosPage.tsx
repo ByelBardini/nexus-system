@@ -15,58 +15,15 @@ import {
 import { MaterialIcon } from "@/components/MaterialIcon";
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { api } from "@/lib/api";
-import {
-  STATUS_CONFIG_APARELHO,
-  type StatusAparelho,
-} from "@/lib/aparelho-status";
+import { STATUS_CONFIG_APARELHO, type StatusAparelho } from "@/lib/aparelho-status";
 import { formatarDataHora, formatId } from "@/lib/format";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
-
-interface Aparelho {
-  id: number;
-  identificador?: string | null;
-  tipo: "RASTREADOR" | "SIM";
-  marca?: string | null;
-  modelo?: string | null;
-  operadora?: string | null;
-  status: StatusAparelho;
-  proprietario: "INFINITY" | "CLIENTE";
-  cliente?: { id: number; nome: string } | null;
-  ordemServicoVinculada?: {
-    numero: number;
-    subclienteNome: string | null;
-    veiculoPlaca: string | null;
-  } | null;
-  simVinculado?: {
-    id: number;
-    identificador: string;
-    operadora?: string | null;
-    marcaSimcard?: { id: number; nome: string } | null;
-    planoSimcard?: { id: number; planoMb: number } | null;
-    lote?: { id: number; referencia: string } | null;
-  } | null;
-  kitId?: number | null;
-  kit?: { id: number; nome: string } | null;
-  tecnico?: { id: number; nome: string } | null;
-  lote?: { id: number; referencia: string } | null;
-  criadoEm: string;
-  atualizadoEm: string;
-  historico?: {
-    statusAnterior: string;
-    statusNovo: string;
-    observacao?: string | null;
-    criadoEm: string;
-  }[];
-}
-
-type PipelineFilter =
-  | "TODOS"
-  | "CONFIGURADO"
-  | "EM_KIT"
-  | "DESPACHADO"
-  | "COM_TECNICO"
-  | "INSTALADO";
+import {
+  type EquipamentoListItem,
+  type EquipamentoPipelineFilter,
+  equipamentoMatchesStageFilter,
+} from "@/pages/equipamentos/equipamentos-page.shared";
 
 const PAGE_SIZE = 12;
 
@@ -75,7 +32,8 @@ export function EquipamentosPage() {
   const canCreate = hasPermission("CONFIGURACAO.APARELHO.CRIAR");
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [busca, setBusca] = useState("");
-  const [pipelineFilter, setPipelineFilter] = useState<PipelineFilter>("TODOS");
+  const [pipelineFilter, setPipelineFilter] =
+    useState<EquipamentoPipelineFilter>("TODOS");
   const [statusFilter, setStatusFilter] = useState<string>("TODOS");
   const [proprietarioFilter, setProprietarioFilter] = useState<
     "TODOS" | "INFINITY" | "CLIENTE"
@@ -84,7 +42,7 @@ export function EquipamentosPage() {
   const [operadoraFilter, setOperadoraFilter] = useState<string>("TODOS");
   const [page, setPage] = useState(0);
 
-  const { data: aparelhos = [], isLoading } = useQuery<Aparelho[]>({
+  const { data: aparelhos = [], isLoading } = useQuery<EquipamentoListItem[]>({
     queryKey: ["aparelhos"],
     queryFn: () => api("/aparelhos"),
   });
@@ -124,20 +82,20 @@ export function EquipamentosPage() {
 
   const pipelineCounts = useMemo(() => {
     const total = equipamentos.length;
-    const configurados = equipamentos.filter(
-      (e) => e.status === "CONFIGURADO" && !e.kitId,
+    const configurados = equipamentos.filter((e) =>
+      equipamentoMatchesStageFilter(e, "CONFIGURADO"),
     ).length;
-    const emKit = equipamentos.filter(
-      (e) => e.status === "CONFIGURADO" && e.kitId,
+    const emKit = equipamentos.filter((e) =>
+      equipamentoMatchesStageFilter(e, "EM_KIT"),
     ).length;
-    const despachados = equipamentos.filter(
-      (e) => e.status === "DESPACHADO",
+    const despachados = equipamentos.filter((e) =>
+      equipamentoMatchesStageFilter(e, "DESPACHADO"),
     ).length;
-    const comTecnico = equipamentos.filter(
-      (e) => e.status === "COM_TECNICO",
+    const comTecnico = equipamentos.filter((e) =>
+      equipamentoMatchesStageFilter(e, "COM_TECNICO"),
     ).length;
-    const instalados = equipamentos.filter(
-      (e) => e.status === "INSTALADO",
+    const instalados = equipamentos.filter((e) =>
+      equipamentoMatchesStageFilter(e, "INSTALADO"),
     ).length;
     return { total, configurados, emKit, despachados, comTecnico, instalados };
   }, [equipamentos]);
@@ -154,29 +112,8 @@ export function EquipamentosPage() {
         e.kitId?.toString().includes(busca) ||
         e.lote?.referencia?.toLowerCase().includes(busca.toLowerCase());
 
-      const matchPipeline =
-        pipelineFilter === "TODOS" ||
-        (pipelineFilter === "CONFIGURADO" &&
-          e.status === "CONFIGURADO" &&
-          !e.kitId) ||
-        (pipelineFilter === "EM_KIT" &&
-          e.status === "CONFIGURADO" &&
-          e.kitId) ||
-        (pipelineFilter === "DESPACHADO" && e.status === "DESPACHADO") ||
-        (pipelineFilter === "COM_TECNICO" && e.status === "COM_TECNICO") ||
-        (pipelineFilter === "INSTALADO" && e.status === "INSTALADO");
-
-      const matchStatus =
-        statusFilter === "TODOS" ||
-        (statusFilter === "CONFIGURADO" &&
-          e.status === "CONFIGURADO" &&
-          !e.kitId) ||
-        (statusFilter === "EM_KIT" &&
-          e.status === "CONFIGURADO" &&
-          !!e.kitId) ||
-        (statusFilter === "DESPACHADO" && e.status === "DESPACHADO") ||
-        (statusFilter === "COM_TECNICO" && e.status === "COM_TECNICO") ||
-        (statusFilter === "INSTALADO" && e.status === "INSTALADO");
+      const matchPipeline = equipamentoMatchesStageFilter(e, pipelineFilter);
+      const matchStatus = equipamentoMatchesStageFilter(e, statusFilter);
 
       const matchProprietario =
         proprietarioFilter === "TODOS" || e.proprietario === proprietarioFilter;
@@ -210,7 +147,7 @@ export function EquipamentosPage() {
     return filtered.slice(start, start + PAGE_SIZE);
   }, [filtered, page]);
 
-  function handlePipelineClick(filter: PipelineFilter) {
+  function handlePipelineClick(filter: EquipamentoPipelineFilter) {
     setPipelineFilter(filter);
     setStatusFilter(filter === "TODOS" ? "TODOS" : filter);
     setPage(0);
@@ -364,7 +301,7 @@ export function EquipamentosPage() {
               value={statusFilter}
               onChange={(v) => {
                 setStatusFilter(v);
-                setPipelineFilter(v as PipelineFilter);
+                setPipelineFilter(v as EquipamentoPipelineFilter);
                 setPage(0);
               }}
               options={[

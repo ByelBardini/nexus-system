@@ -1047,13 +1047,15 @@ export function EquipamentosConfigPage() {
                     />
                     Operadoras
                   </h2>
-                  <Button
-                    className="bg-slate-800 hover:bg-slate-900 text-white text-[10px] font-bold h-8 px-3 rounded-sm flex items-center gap-1.5 uppercase"
-                    onClick={openCreateOperadora}
-                  >
-                    <MaterialIcon name="add" className="text-base" />
-                    Nova Operadora
-                  </Button>
+                  {canEdit && (
+                    <Button
+                      className="bg-slate-800 hover:bg-slate-900 text-white text-[10px] font-bold h-8 px-3 rounded-sm flex items-center gap-1.5 uppercase"
+                      onClick={openCreateOperadora}
+                    >
+                      <MaterialIcon name="add" className="text-base" />
+                      Nova Operadora
+                    </Button>
+                  )}
                 </div>
                 <div className="relative">
                   <MaterialIcon
@@ -1078,7 +1080,9 @@ export function EquipamentosConfigPage() {
                       <th className="px-4 py-2.5 text-left text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100">
                         Status
                       </th>
-                      <th className="px-4 py-2.5 w-10 border-b border-slate-100" />
+                      {canEdit && (
+                        <th className="px-4 py-2.5 w-10 border-b border-slate-100" />
+                      )}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -1124,60 +1128,67 @@ export function EquipamentosConfigPage() {
                             </span>
                           </div>
                         </td>
-                        <td className="px-4 py-4 text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button className="text-slate-400 hover:text-slate-600">
-                                <MaterialIcon
-                                  name="settings"
-                                  className="text-lg"
-                                />
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => openEditOperadora(operadora)}
-                              >
-                                <MaterialIcon
-                                  name="edit"
-                                  className="mr-2 text-base"
-                                />
-                                Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => toggleAtivoOperadora(operadora)}
-                              >
-                                <MaterialIcon
-                                  name={
-                                    operadora.ativo
-                                      ? "visibility_off"
-                                      : "visibility"
+                        {canEdit && (
+                          <td className="px-4 py-4 text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  type="button"
+                                  className="text-slate-400 hover:text-slate-600"
+                                >
+                                  <MaterialIcon
+                                    name="settings"
+                                    className="text-lg"
+                                  />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => openEditOperadora(operadora)}
+                                >
+                                  <MaterialIcon
+                                    name="edit"
+                                    className="mr-2 text-base"
+                                  />
+                                  Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    toggleAtivoOperadora(operadora)
                                   }
-                                  className="mr-2 text-base"
-                                />
-                                {operadora.ativo ? "Desativar" : "Ativar"}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  deleteOperadoraMutation.mutate(operadora.id)
-                                }
-                                className="text-red-600"
-                              >
-                                <MaterialIcon
-                                  name="delete"
-                                  className="mr-2 text-base"
-                                />
-                                Excluir
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
+                                >
+                                  <MaterialIcon
+                                    name={
+                                      operadora.ativo
+                                        ? "visibility_off"
+                                        : "visibility"
+                                    }
+                                    className="mr-2 text-base"
+                                  />
+                                  {operadora.ativo ? "Desativar" : "Ativar"}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    deleteOperadoraMutation.mutate(operadora.id)
+                                  }
+                                  className="text-red-600"
+                                >
+                                  <MaterialIcon
+                                    name="delete"
+                                    className="mr-2 text-base"
+                                  />
+                                  Excluir
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </td>
+                        )}
                       </tr>
                     ))}
                     {filteredOperadoras.length === 0 && (
                       <tr>
                         <td
-                          colSpan={3}
+                          colSpan={canEdit ? 3 : 2}
                           className="px-4 py-12 text-center text-sm text-slate-500"
                         >
                           Nenhuma operadora encontrada
@@ -1204,13 +1215,15 @@ export function EquipamentosConfigPage() {
                     <MaterialIcon name="sim_card" className="text-blue-600" />
                     Marcas de Simcard
                   </h2>
-                  <Button
-                    className="bg-erp-blue hover:bg-blue-700 text-white text-[10px] font-bold h-8 px-3 rounded-sm flex items-center gap-1.5 uppercase"
-                    onClick={openCreateMarcaSimcard}
-                  >
-                    <MaterialIcon name="add" className="text-base" />
-                    Nova Marca
-                  </Button>
+                  {canEdit && (
+                    <Button
+                      className="bg-erp-blue hover:bg-blue-700 text-white text-[10px] font-bold h-8 px-3 rounded-sm flex items-center gap-1.5 uppercase"
+                      onClick={openCreateMarcaSimcard}
+                    >
+                      <MaterialIcon name="add" className="text-base" />
+                      Nova Marca
+                    </Button>
+                  )}
                 </div>
                 <div className="relative">
                   <MaterialIcon
@@ -1279,54 +1292,59 @@ export function EquipamentosConfigPage() {
                             {m.ativo ? "Ativo" : "Inativo"}
                           </span>
                         </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
+                        {canEdit && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                type="button"
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-slate-400 hover:text-slate-600"
+                              >
+                                <MaterialIcon
+                                  name="settings"
+                                  className="text-lg"
+                                />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="end"
                               onClick={(e) => e.stopPropagation()}
-                              className="text-slate-400 hover:text-slate-600"
                             >
-                              <MaterialIcon
-                                name="settings"
-                                className="text-lg"
-                              />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent
-                            align="end"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <DropdownMenuItem
-                              onClick={() => openEditMarcaSimcard(m)}
-                            >
-                              <MaterialIcon
-                                name="edit"
-                                className="mr-2 text-base"
-                              />
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => toggleAtivoMarcaSimcard(m)}
-                            >
-                              <MaterialIcon
-                                name={m.ativo ? "visibility_off" : "visibility"}
-                                className="mr-2 text-base"
-                              />
-                              {m.ativo ? "Desativar" : "Ativar"}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                deleteMarcaSimcardMutation.mutate(m.id)
-                              }
-                              className="text-red-600"
-                            >
-                              <MaterialIcon
-                                name="delete"
-                                className="mr-2 text-base"
-                              />
-                              Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                              <DropdownMenuItem
+                                onClick={() => openEditMarcaSimcard(m)}
+                              >
+                                <MaterialIcon
+                                  name="edit"
+                                  className="mr-2 text-base"
+                                />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => toggleAtivoMarcaSimcard(m)}
+                              >
+                                <MaterialIcon
+                                  name={
+                                    m.ativo ? "visibility_off" : "visibility"
+                                  }
+                                  className="mr-2 text-base"
+                                />
+                                {m.ativo ? "Desativar" : "Ativar"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  deleteMarcaSimcardMutation.mutate(m.id)
+                                }
+                                className="text-red-600"
+                              >
+                                <MaterialIcon
+                                  name="delete"
+                                  className="mr-2 text-base"
+                                />
+                                Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
                       </div>
                       {isExpanded && (
                         <div className="bg-white">
@@ -1334,76 +1352,11 @@ export function EquipamentosConfigPage() {
                             planosDaMarca.length === 0 ? (
                               <div className="py-4 pl-10 pr-4 text-xs text-slate-500 flex items-center justify-between">
                                 <span>Nenhum plano cadastrado</span>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-[10px] h-7"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    openCreatePlanoSimcard(m.id);
-                                  }}
-                                >
-                                  <MaterialIcon
-                                    name="add"
-                                    className="text-sm mr-1"
-                                  />
-                                  Adicionar Plano
-                                </Button>
-                              </div>
-                            ) : (
-                              <>
-                                {planosDaMarca.map((plano) => (
-                                  <div
-                                    key={plano.id}
-                                    className="flex items-center justify-between py-3 pl-10 pr-4 hover:bg-blue-50/30 border-l-2 border-transparent hover:border-blue-400 transition-all"
-                                  >
-                                    <span className="text-xs font-medium text-slate-600">
-                                      {plano.planoMb} MB
-                                    </span>
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <button
-                                          onClick={(e) => e.stopPropagation()}
-                                          className="text-slate-300 hover:text-slate-500"
-                                        >
-                                          <MoreVertical className="h-5 w-5" />
-                                        </button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent align="end">
-                                        <DropdownMenuItem
-                                          onClick={() =>
-                                            openEditPlanoSimcard(plano)
-                                          }
-                                        >
-                                          <MaterialIcon
-                                            name="edit"
-                                            className="mr-2 text-base"
-                                          />
-                                          Editar
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                          onClick={() =>
-                                            deletePlanoSimcardMutation.mutate(
-                                              plano.id,
-                                            )
-                                          }
-                                          className="text-red-600"
-                                        >
-                                          <MaterialIcon
-                                            name="delete"
-                                            className="mr-2 text-base"
-                                          />
-                                          Excluir
-                                        </DropdownMenuItem>
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
-                                  </div>
-                                ))}
-                                <div className="py-2 pl-10 pr-4">
+                                {canEdit && (
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="text-[10px] h-7 text-blue-600"
+                                    className="text-[10px] h-7"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       openCreatePlanoSimcard(m.id);
@@ -1415,7 +1368,79 @@ export function EquipamentosConfigPage() {
                                     />
                                     Adicionar Plano
                                   </Button>
-                                </div>
+                                )}
+                              </div>
+                            ) : (
+                              <>
+                                {planosDaMarca.map((plano) => (
+                                  <div
+                                    key={plano.id}
+                                    className="flex items-center justify-between py-3 pl-10 pr-4 hover:bg-blue-50/30 border-l-2 border-transparent hover:border-blue-400 transition-all"
+                                  >
+                                    <span className="text-xs font-medium text-slate-600">
+                                      {plano.planoMb} MB
+                                    </span>
+                                    {canEdit && (
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <button
+                                            type="button"
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="text-slate-300 hover:text-slate-500"
+                                          >
+                                            <MoreVertical className="h-5 w-5" />
+                                          </button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                          <DropdownMenuItem
+                                            onClick={() =>
+                                              openEditPlanoSimcard(plano)
+                                            }
+                                          >
+                                            <MaterialIcon
+                                              name="edit"
+                                              className="mr-2 text-base"
+                                            />
+                                            Editar
+                                          </DropdownMenuItem>
+                                          <DropdownMenuItem
+                                            onClick={() =>
+                                              deletePlanoSimcardMutation.mutate(
+                                                plano.id,
+                                              )
+                                            }
+                                            className="text-red-600"
+                                          >
+                                            <MaterialIcon
+                                              name="delete"
+                                              className="mr-2 text-base"
+                                            />
+                                            Excluir
+                                          </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    )}
+                                  </div>
+                                ))}
+                                {canEdit && (
+                                  <div className="py-2 pl-10 pr-4">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-[10px] h-7 text-blue-600"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openCreatePlanoSimcard(m.id);
+                                      }}
+                                    >
+                                      <MaterialIcon
+                                        name="add"
+                                        className="text-sm mr-1"
+                                      />
+                                      Adicionar Plano
+                                    </Button>
+                                  </div>
+                                )}
                               </>
                             )
                           ) : (

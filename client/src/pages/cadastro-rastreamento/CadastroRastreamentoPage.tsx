@@ -2,6 +2,12 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { buildCadastroRastreamentoPeriodoQuery } from "@/lib/cadastro-rastreamento-periodo";
+import {
+  cadastroRastreamentoAcaoLabels,
+  labelTipoServico,
+  mapTipoOsParaRegistro,
+  type CadastroRastreamentoTipoRegistro,
+} from "@/lib/cadastro-rastreamento-tipo-mappers";
 import { getCadastroMapDeviceFields } from "@/lib/os-revisao-display";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -29,7 +35,7 @@ import { toast } from "sonner";
 
 type StatusCadastro = "AGUARDANDO" | "EM_CADASTRO" | "CONCLUIDO";
 type Plataforma = "GETRAK" | "GEOMAPS" | "SELSYN";
-type TipoRegistro = "CADASTRO" | "REVISAO" | "RETIRADA";
+type TipoRegistro = CadastroRastreamentoTipoRegistro;
 
 interface OrdemCadastro {
   id: number;
@@ -145,13 +151,7 @@ function formatModelo(
 }
 
 function mapOS(os: OSResponse): OrdemCadastro {
-  const tipoRegistro: TipoRegistro =
-    os.tipo === "INSTALACAO_COM_BLOQUEIO" ||
-    os.tipo === "INSTALACAO_SEM_BLOQUEIO"
-      ? "CADASTRO"
-      : os.tipo === "REVISAO"
-        ? "REVISAO"
-        : "RETIRADA";
+  const tipoRegistro = mapTipoOsParaRegistro(os.tipo);
 
   const instalacaoComBloqueio =
     os.tipo === "INSTALACAO_COM_BLOQUEIO"
@@ -160,14 +160,7 @@ function mapOS(os: OSResponse): OrdemCadastro {
         ? false
         : null;
 
-  const tipoServico =
-    os.tipo === "INSTALACAO_COM_BLOQUEIO"
-      ? "Instalação c/ bloqueio"
-      : os.tipo === "INSTALACAO_SEM_BLOQUEIO"
-        ? "Instalação s/ bloqueio"
-        : os.tipo === "REVISAO"
-          ? "Troca de Equipamento"
-          : "Retirada de Equipamento";
+  const tipoServico = labelTipoServico(os.tipo);
 
   const dev = getCadastroMapDeviceFields(os.tipo, {
     idAparelho: os.idAparelho,
@@ -246,6 +239,10 @@ const TIPO_REGISTRO_CONFIG: Record<
     label: "Retirada",
     className: "bg-orange-50 text-orange-800 border-orange-200",
   },
+  OUTRO: {
+    label: "Outro tipo",
+    className: "bg-slate-100 text-slate-800 border-slate-300",
+  },
 };
 
 const LABEL_INSTALACAO_COM_BLOQUEIO = "INSTALAÇÃO C/ BLOQUEIO";
@@ -268,27 +265,6 @@ function badgeServicoColuna(ordem: OrdemCadastro): {
   }
   return TIPO_REGISTRO_CONFIG[ordem.tipoRegistro];
 }
-
-const ACAO_LABELS: Record<
-  TipoRegistro,
-  { iniciar: string; concluir: string; concluido: string }
-> = {
-  CADASTRO: {
-    iniciar: "Iniciar Cadastro",
-    concluir: "Concluir Cadastro",
-    concluido: "Cadastro Concluído",
-  },
-  REVISAO: {
-    iniciar: "Iniciar Revisão",
-    concluir: "Concluir Revisão",
-    concluido: "Revisão Concluída",
-  },
-  RETIRADA: {
-    iniciar: "Iniciar Retirada",
-    concluir: "Concluir Retirada",
-    concluido: "Retirada Concluída",
-  },
-};
 
 const PLATAFORMA_LABEL: Record<Plataforma, string> = {
   GETRAK: "Getrak",
@@ -383,10 +359,10 @@ export function CadastroRastreamentoPage() {
 
   function handleAvancarStatus() {
     if (!selectedOrdem || selectedOrdem.status === "CONCLUIDO") return;
-    const acao = ACAO_LABELS[selectedOrdem.tipoRegistro];
+    const acao = cadastroRastreamentoAcaoLabels[selectedOrdem.tipoRegistro];
     if (selectedOrdem.status === "AGUARDANDO") {
       mutIniciar.mutate(selectedOrdem.id, {
-        onSuccess: () => toast.success(`${acao.iniciar}do!`),
+        onSuccess: () => toast.success(acao.toastIniciado),
         onError: (err) =>
           toast.error(err instanceof Error ? err.message : "Erro ao iniciar"),
       });
@@ -533,6 +509,7 @@ export function CadastroRastreamentoPage() {
                 <SelectItem value="CADASTRO">Instalação</SelectItem>
                 <SelectItem value="REVISAO">Revisão</SelectItem>
                 <SelectItem value="RETIRADA">Retirada</SelectItem>
+                <SelectItem value="OUTRO">Outro tipo</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -840,7 +817,8 @@ export function CadastroRastreamentoPage() {
 
               {/* Aparelho de Entrada — CADASTRO e REVISAO */}
               {(selectedOrdem.tipoRegistro === "CADASTRO" ||
-                selectedOrdem.tipoRegistro === "REVISAO") && (
+                selectedOrdem.tipoRegistro === "REVISAO" ||
+                selectedOrdem.tipoRegistro === "OUTRO") && (
                 <PanelBlock icon="router" title="Aparelho de Entrada">
                   <div>
                     <p className="text-[9px] uppercase text-slate-400">
@@ -1079,7 +1057,7 @@ export function CadastroRastreamentoPage() {
                     className="w-full h-10 bg-erp-blue hover:bg-blue-700 text-white text-xs font-bold uppercase gap-2"
                   >
                     <MaterialIcon name="play_arrow" className="text-base" />
-                    {ACAO_LABELS[selectedOrdem.tipoRegistro].iniciar}
+                    {cadastroRastreamentoAcaoLabels[selectedOrdem.tipoRegistro].iniciar}
                   </Button>
                 )}
                 {selectedOrdem.status === "EM_CADASTRO" && (
@@ -1089,7 +1067,7 @@ export function CadastroRastreamentoPage() {
                     className="w-full h-10 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase gap-2"
                   >
                     <MaterialIcon name="check_circle" className="text-base" />
-                    {ACAO_LABELS[selectedOrdem.tipoRegistro].concluir}
+                    {cadastroRastreamentoAcaoLabels[selectedOrdem.tipoRegistro].concluir}
                   </Button>
                 )}
                 {selectedOrdem.status === "CONCLUIDO" && (
@@ -1099,7 +1077,7 @@ export function CadastroRastreamentoPage() {
                     className="w-full h-10 text-xs font-bold uppercase gap-2"
                   >
                     <MaterialIcon name="verified" className="text-base" />
-                    {ACAO_LABELS[selectedOrdem.tipoRegistro].concluido}
+                    {cadastroRastreamentoAcaoLabels[selectedOrdem.tipoRegistro].concluido}
                   </Button>
                 )}
               </div>
