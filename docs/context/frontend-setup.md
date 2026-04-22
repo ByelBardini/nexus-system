@@ -88,7 +88,7 @@ Todas as páginas são carregadas com `lazy()` + `Suspense` (exceto `Login`). Ro
 | `/cadastro-rastreamento` | `CadastroRastreamentoPage` | — |
 | `/usuarios` | `UsuariosPage` | — |
 | `/cargos` | `CargosPage` | — |
-| `/clientes` | `ClientesPage` | Lógica compartilhada em `pages/clientes/clientes-page.shared.ts` (schema, API body, rodapé, labels) |
+| `/clientes` | `ClientesPage` | Módulo em `pages/clientes/`: `shared/clientes-page.shared.ts` (schema, API body, rodapé, labels, formatadores de endereço); `hooks/useClientesPageList.ts`; `components/*` (header, tabela, rodapé); `cliente-modal/` (formulário + `useClienteModal`) |
 | `/tecnicos` | `TecnicosPage` | — |
 | `/aparelhos` | `AparelhosPage` | — |
 | `/aparelhos/lote` | `CadastroLotePage` | — |
@@ -111,6 +111,7 @@ Todas as páginas são carregadas com `lazy()` + `Suspense` (exceto `Login`). Ro
 - Importa `@testing-library/jest-dom`.
 - `afterEach`: limpa `localStorage` e chama `vi.restoreAllMocks()`.
 - Mock global de `sonner`: `toast` e `Toaster` são substituídos por stubs.
+- Polyfill de `globalThis.ResizeObserver` (jsdom não define; Radix Select/Dialog em testes).
 
 ### `utils.tsx`
 
@@ -126,6 +127,7 @@ Helper compartilhado de testes: exporta wrapper com providers (QueryClient, Rout
 | `components/` | `InputCEP`, `InputCNPJ`, `InputPlaca`, `InputTelefone`, `ProtectedRoute`, `TecnicosMap` |
 | `contexts/` | `AuthContext.test.tsx` |
 | `pages/` | `Login.test.tsx`, `PareamentoPage.test.tsx`, `TecnicosPage.test.tsx`, `tecnicos/tecnico-form.test.ts`, `ClientesPage.test.tsx`, `clientes-page.shared.test.ts` |
+| `pages/clientes/` | `ClientesPage.integration.test.tsx`, `ClienteModal.integration.test.tsx`, `useClientesPageList.test.tsx`, `useClienteModal.test.tsx`, `clientes-page.shared.test.ts` (formatadores), testes dos componentes `ClientesPageHeader`, `ClientesTable`, `ClientesTableFooter`, `ClienteRowExpandedPanel` |
 
 Comando: `cd client && npm run test` (watch) ou `npm run test:ci` (CI).
 
