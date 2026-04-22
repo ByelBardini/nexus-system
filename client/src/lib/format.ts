@@ -179,6 +179,19 @@ export function formatarDataCompleta(iso: string): string {
 }
 
 /**
+ * Formata só a data numérica (dd/mm/aaaa), ex.: tabelas de movimentação.
+ */
+export function formatarDataDiaMesAno(iso: string): string {
+  if (!iso) return "-";
+  const d = parseDataLocal(iso);
+  return d.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+/**
  * Formata data/hora curta sem ano: "12/04 14:30"
  */
 export function formatarDataHoraCurta(iso: string): string {
