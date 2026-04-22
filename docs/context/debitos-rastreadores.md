@@ -112,3 +112,29 @@ interface ConsolidarDebitoParams {
 | Histórico positivo/negativo e rastreabilidade (`pedidoId`, `loteId`, `aparelhoId`, `ordemServicoId`) |
 
 ---
+
+### Frontend — página **Débitos (equipamentos)**
+
+- **Rota:** `/debitos-equipamentos` (lazy em `client/src/App.tsx`); link na sidebar em **Configuração** (`client/src/layouts/AppLayout.tsx`).
+- **Pasta:** `client/src/pages/debitos-equipamentos/`
+
+| Caminho | Responsabilidade |
+|---------|------------------|
+| `DebitosEquipamentosPage.tsx` | Compõe cards de resumo, barra de filtros, tabela e texto de contagem de registros |
+| `hooks/useDebitosEquipamentos.ts` | TanStack Query (`useQuery`) + estado local (busca, filtros, linha expandida). `queryKey`: `['debitos-rastreadores']` (constante `DEBITOS_EQUIPAMENTOS_QUERY_KEY`). Fetch: `GET` com URL em `DEBITOS_EQUIPAMENTOS_LISTA_URL` — **`limit=500`** e **`incluirHistoricos=true`** (alinhado ao backend: histórico só quando a flag vem na query) |
+| `domain/types.ts` | Tipos da view (`DebitoEquipamento`, status, etc.) e **`DebitoRastreadorListaApi`**: estende `DebitoRastreadorApi` de `client/src/pages/aparelhos/shared/debito-rastreador.ts` com `atualizadoEm`, `historicos?`, etc. |
+| `domain/mapDebitoApiToView.ts` | Converte resposta da API para o modelo da tela; **`buildHistoricoMovimentacaoDescricao`** monta o texto da movimentação (pedido, lote, aparelho, OS) |
+| `domain/debito-equipamento.constants.ts` | `STATUS_DEBITO_CONFIG`, `ENTIDADE_DEBITO_CONFIG`, query key e URL da listagem |
+| `domain/debitos-equipamentos-helpers.ts` | KPIs do topo (`computeDebitosEquipamentosStats`), opções dos selects, filtro da lista, `hasFiltrosAtivos` |
+| `components/DebitosEquipamentosSummaryCards.tsx` | Três colunas de resumo (aparelhos devidos, clientes devedores, modelos ativos) |
+| `components/DebitosEquipamentosFilters.tsx` | Busca, `SearchableSelect` de devedor/credor e modelo, botão limpar, abas de status |
+| `components/DebitosEquipamentosTable.tsx` | Cabeçalho da tabela + corpo; estado vazio |
+| `components/DebitoEquipamentoRowGroup.tsx` | Linha clicável + painel expandido (modelos, histórico, ações placeholder / toast) |
+
+**Formatação na UI:** coluna **Últ. mov.** usa `formatarDataDiaMesAno`; itens do histórico expandido usam `formatarDataHora` (`client/src/lib/format.ts` — ver `docs/context/frontend-core.md`).
+
+**Testes (cliente):** `client/src/__tests__/pages/debitos-equipamentos/` — helpers/mapper/constants, hook, componentes e teste de integração da página (Vitest + Testing Library).
+
+> **Nota:** As abas incluem status **“Parcial”**, mas o mapper atual deriva só **aberto** / **quitado** a partir de `quantidade > 0` ou `≤ 0`; filtrar “Parcial” pode não retornar linhas até existir regra de negócio explícita no backend/mapper.
+
+---
