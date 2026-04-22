@@ -119,5 +119,5 @@ Ver índice em `AGENTS.md`.
 | `pareamento-csv.service.spec.ts` | `pareamentoCsvPreview` (VINCULAR_EXISTENTE, CRIAR_VIA_LOTE, CRIAR_MANUAL, erros de lote/marca/plano, contadores) e `pareamentoCsv` (execução em transação + bloqueio quando há erros) |
 
 > **Divergência conhecida:** `aparelhos.controller.spec.ts` espera `kitId`/`kitNome` no `pareamento` do controller, mas o controller atual não os envia. Teste possivelmente desatualizado.
-> **Divergência conhecida:** a lista de aparelhos (`useAparelhosList` em `client/src/pages/aparelhos/lista/`) e `EquipamentosPage.tsx` chamam `GET /aparelhos/pareamento/kits` — rota **inexistente** no backend (existe `/kits/detalhes`, `/kits/:id`, `POST /kits`). Pode gerar 404.
+> **Divergência conhecida:** a lista de aparelhos (`useAparelhosList` em `client/src/pages/aparelhos/lista/`) e a listagem de equipamentos montados (`useEquipamentosPageList` em `client/src/pages/equipamentos/lista/`) chamam `GET /aparelhos/pareamento/kits` — rota **inexistente** no backend (existe `/kits/detalhes`, `/kits/:id`, `POST /kits`). Pode gerar 404.
 

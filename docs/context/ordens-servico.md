@@ -135,7 +135,7 @@ Todos os campos abaixo são gravados no momento da criação da OS e não se alt
 
 | Arquivo | Função |
 |---------|--------|
-| `client/src/pages/OrdensServicoPage.tsx` | Lista principal de OS; filtros por status/search; paginação |
+| `client/src/pages/ordens-servico/OrdensServicoPage.tsx` | Lista principal de OS; filtros por status/search; paginação |
 | `client/src/pages/ordens-servico/OrdensServicoCriacaoPage.tsx` | Criação de OS com seleção de subcliente/create/update inline |
 | `client/src/pages/testes/TestesPage.tsx` | Bancada de testes; ver seção **"Página: TestesPage — Bancada de Testes"** para detalhes completos |
 

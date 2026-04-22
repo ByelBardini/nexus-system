@@ -32,7 +32,7 @@ Ver índice em `AGENTS.md`.
 | sonner | Toast notifications |
 | lucide-react | Ícones SVG |
 | next-themes | Presente no package; uso indireto |
-| papaparse (+ `@types/papaparse`) | Parse de CSV (importação de pareamento em `PareamentoPage`) |
+| papaparse (+ `@types/papaparse`) | Parse de CSV no pareamento (`domain/parsing.ts` + handlers em `PareamentoPage.tsx`, painel `PareamentoCsvPanel`) |
 | react-colorful | Color picker usado em `InputCor` (Clientes) |
 
 **Dev**: Vite 7, Vitest 4, Testing Library, TypeScript 5.9, ESLint 9 flat config.
@@ -78,8 +78,8 @@ Todas as páginas são carregadas com `lazy()` + `Suspense` (exceto `Login`). Ro
 | Path | Componente | Notas |
 |------|-----------|-------|
 | `/login` | `Login` | Público; não lazy |
-| `/` | `OrdensServicoPage` | Dashboard de OS |
-| `/ordens-servico/nova` | `OrdensServicoCriacaoPage` | — |
+| `/` | `OrdensServicoPage` | Dashboard de OS; `pages/ordens-servico/OrdensServicoPage.tsx` |
+| `/ordens-servico/nova` | `OrdensServicoCriacaoPage` | `pages/ordens-servico/OrdensServicoCriacaoPage.tsx` |
 | `/pedidos-rastreadores` | `PedidosRastreadoresPage` | — |
 | `/pedidos-config` | `PedidosConfigPage` | — |
 | `/testes` | `TestesPage` | — |
@@ -93,9 +93,9 @@ Todas as páginas são carregadas com `lazy()` + `Suspense` (exceto `Login`). Ro
 | `/aparelhos` | `AparelhosPage` | — |
 | `/aparelhos/lote` | `CadastroLotePage` | — |
 | `/aparelhos/individual` | `CadastroIndividualPage` | — |
-| `/equipamentos` | `EquipamentosPage` | — |
+| `/equipamentos` | `EquipamentosPage` | Lazy: `pages/equipamentos/lista/EquipamentosPage.tsx` |
 | `/equipamentos/config` | `EquipamentosConfigPage` | — |
-| `/equipamentos/pareamento` | `PareamentoPage` | — |
+| `/equipamentos/pareamento` | `PareamentoPage` | Lazy: `pages/equipamentos/pareamento/PareamentoPage.tsx` |
 | `/equipamentos/marcas` … `/operadoras` | `Navigate` → `/equipamentos/config` | Redirects legados |
 | `*` | `Navigate` → `/` | Fallback |
 
@@ -122,11 +122,14 @@ Helper compartilhado de testes: exporta wrapper com providers (QueryClient, Rout
 | Pasta | Arquivos |
 |-------|---------|
 | `hooks/` | `useConsultaPlaca.test.tsx`, `useDebounce.test.ts`, `useBrasilAPI.test.tsx` |
-| `lib/` | `api.test.ts`, `format.test.ts`, `cadastro-rastreamento-*.test.ts` (período, tipo-mappers, mapper, UI, copy), `os-revisao-display.test.ts`, `aparelho-status.test.ts`, `tecnicos-page.test.ts`, `tecnico-map-cluster.test.ts`, `tecnico-map-marker-html.test.ts`, `tecnico-map-spread.test.ts` |
+| `lib/` | `api.test.ts`, `format.test.ts`, `query-keys/equipamentos.test.ts` (chaves de cache de catálogos compartilhadas com aparelhos/equipamentos), `cadastro-rastreamento-*.test.ts` (período, tipo-mappers, mapper, UI, copy), `os-revisao-display.test.ts`, `aparelho-status.test.ts`, `tecnicos-page.test.ts`, `tecnico-map-cluster.test.ts`, `tecnico-map-marker-html.test.ts`, `tecnico-map-spread.test.ts` |
 | `pages/cadastro-rastreamento/` | Hook, tabela, toolbar, painel, integração da página, `table-helpers` (ver `docs/context/cadastro-rastreamento.md`) |
 | `components/` | `InputCEP`, `InputCNPJ`, `InputPlaca`, `InputTelefone`, `ProtectedRoute`, `TecnicosMap` |
 | `contexts/` | `AuthContext.test.tsx` |
-| `pages/` | `Login.test.tsx`, `PareamentoPage.test.tsx`, `TecnicosPage.test.tsx`, `tecnicos/tecnico-form.test.ts`, `ClientesPage.test.tsx`, `clientes-page.shared.test.ts` |
+| `pages/` | `Login.test.tsx`, `PareamentoPage.test.tsx`, `TecnicosPage.test.tsx`, `tecnicos/tecnico-form.test.ts`, `ClientesPage.test.tsx`, `clientes-page.shared.test.ts`, `EquipamentosConfigPage.test.tsx` |
+| `pages/equipamentos/` | Listagem (`lista/` no source): helpers, hook, componentes, `EquipamentosPage.integration.test.tsx`, `EquipamentosConfigPage.integration.test.tsx`, `config/domain/`, `config/hooks/`, `config/components/`; pareamento: `pages/equipamentos/pareamento/` (domínio incl. `catalog-helpers` / `pareamento-form-reset`, hooks fatiados, preview, testes em `__tests__/pages/equipamentos/pareamento/`) |
+| `pages/` (raiz de testes) | `equipamentos-page.shared.test.ts`, `EquipamentosConfigPage.test.tsx`, `PreviewPareamentoTable.test.tsx`, `PreviewCsvTable.test.tsx`, `PareamentoPage.test.tsx` (fonte em `src/pages/equipamentos/pareamento/` — módulo com `domain/`, `preview/`, `hooks/`, `components/`, `panels/`) |
+| `components/` | `ClientSideTableFooter.test.tsx` (paginação compartilhada com lista de equipamentos e aparelhos) |
 | `pages/clientes/` | `ClientesPage.integration.test.tsx`, `ClienteModal.integration.test.tsx`, `useClientesPageList.test.tsx`, `useClienteModal.test.tsx`, `clientes-page.shared.test.ts` (formatadores), testes dos componentes `ClientesPageHeader`, `ClientesTable`, `ClientesTableFooter`, `ClienteRowExpandedPanel` |
 
 Comando: `cd client && npm run test` (watch) ou `npm run test:ci` (CI).

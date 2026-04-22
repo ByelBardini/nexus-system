@@ -110,6 +110,12 @@ Usa `useAuth()` para exibir `user.nome` e o botão de logout (navega para `/logi
 
 `API_BASE` = `VITE_API_URL` ou `http://localhost:3000`. Todas as chamadas usam `credentials: "include"`.
 
+#### `toast-api-error.ts` — toast de erro a partir de `catch`
+
+| Export | Comportamento |
+|--------|----------------|
+| `toastApiError(caught, fallbackMessage)` | Chama `toast.error` do Sonner com `caught.message` se `caught instanceof Error`, senão com `fallbackMessage`. Usado em `onError` de mutações (ex.: CRUD da tela de configuração de equipamentos). |
+
 #### `format.ts` — formatadores de exibição
 
 Todas as funções são puras, sem efeito colateral. Convenção: `formatar*` → string com máscara; `*ApenasDigitos` / `*ApenasAlfanumericos` → remove máscara.

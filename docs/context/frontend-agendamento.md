@@ -282,7 +282,7 @@ ICCID (Saída): <iccidSaida>  (se existir)
 
 ---
 
-## Página: `OrdensServicoPage` (`client/src/pages/OrdensServicoPage.tsx`)
+## Página: `OrdensServicoPage` (`client/src/pages/ordens-servico/OrdensServicoPage.tsx`)
 
 Dashboard principal de ordens de serviço. Rota: `/` (índice do `AppLayout`).
 
