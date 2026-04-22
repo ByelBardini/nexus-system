@@ -30,6 +30,10 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  categoriaCargoOuOperacional,
+  categoriaCargoParaBadge,
+} from "@/types/cargo";
 
 const SETORES_USUARIO = [
   { value: "AGENDAMENTO", label: "Agendamento" },
@@ -189,21 +193,6 @@ interface PaginatedResponse {
   page: number;
   totalPages: number;
 }
-
-const CATEGORIA_CONFIG: Record<string, { label: string; className: string }> = {
-  OPERACIONAL: {
-    label: "Operacional",
-    className: "bg-blue-50 text-blue-700 border-blue-200",
-  },
-  ADMINISTRATIVO: {
-    label: "Administrativo",
-    className: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  },
-  GESTAO: {
-    label: "Gestão",
-    className: "bg-purple-50 text-purple-700 border-purple-200",
-  },
-};
 
 function getSetorLabel(setor?: SetorUsuario | null): string {
   if (!setor) return "";
@@ -735,8 +724,7 @@ export function UsuariosPage() {
                           user.usuarioCargos.length > 0 ? (
                             user.usuarioCargos.map((uc) => {
                               const config =
-                                CATEGORIA_CONFIG[uc.cargo.categoria] ||
-                                CATEGORIA_CONFIG.OPERACIONAL;
+                                categoriaCargoOuOperacional(uc.cargo.categoria);
                               return (
                                 <span
                                   key={uc.cargo.id}
@@ -865,8 +853,7 @@ export function UsuariosPage() {
                                   user.usuarioCargos.length > 0 ? (
                                     user.usuarioCargos.map((uc) => {
                                       const config =
-                                        CATEGORIA_CONFIG[uc.cargo.categoria] ||
-                                        CATEGORIA_CONFIG.OPERACIONAL;
+                                        categoriaCargoOuOperacional(uc.cargo.categoria);
                                       return (
                                         <div
                                           key={uc.cargo.id}
@@ -1144,13 +1131,7 @@ export function UsuariosPage() {
                               (c) => c.id === roleId,
                             );
                             if (!cargo) return null;
-                            const catConfig = CATEGORIA_CONFIG[
-                              cargo.categoria
-                            ] ?? {
-                              label: cargo.categoria,
-                              className:
-                                "bg-slate-50 text-slate-700 border-slate-200",
-                            };
+                            const catConfig = categoriaCargoParaBadge(cargo.categoria);
                             return (
                               <span
                                 key={roleId}
@@ -1215,13 +1196,7 @@ export function UsuariosPage() {
                                 {setorCargos.map((cargo) => {
                                   const isSelected =
                                     selectedCreateRoleIds.includes(cargo.id);
-                                  const catConfig = CATEGORIA_CONFIG[
-                                    cargo.categoria
-                                  ] ?? {
-                                    label: cargo.categoria,
-                                    className:
-                                      "bg-slate-50 text-slate-700 border-slate-200",
-                                  };
+                                  const catConfig = categoriaCargoParaBadge(cargo.categoria);
                                   return (
                                     <button
                                       key={cargo.id}
@@ -1561,13 +1536,7 @@ export function UsuariosPage() {
                               (c) => c.id === roleId,
                             );
                             if (!cargo) return null;
-                            const catConfig = CATEGORIA_CONFIG[
-                              cargo.categoria
-                            ] ?? {
-                              label: cargo.categoria,
-                              className:
-                                "bg-slate-50 text-slate-700 border-slate-200",
-                            };
+                            const catConfig = categoriaCargoParaBadge(cargo.categoria);
                             return (
                               <span
                                 key={roleId}
@@ -1633,13 +1602,7 @@ export function UsuariosPage() {
                                   const isSelected = selectedRoleIds.includes(
                                     cargo.id,
                                   );
-                                  const catConfig = CATEGORIA_CONFIG[
-                                    cargo.categoria
-                                  ] ?? {
-                                    label: cargo.categoria,
-                                    className:
-                                      "bg-slate-50 text-slate-700 border-slate-200",
-                                  };
+                                  const catConfig = categoriaCargoParaBadge(cargo.categoria);
                                   return (
                                     <button
                                       key={cargo.id}
