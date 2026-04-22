@@ -1,7 +1,17 @@
+jest.mock('bcrypt', () => ({
+  hash: jest.fn().mockResolvedValue('mock-bcrypt-hash'),
+}));
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, ConflictException } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UsersService } from 'src/users/users.service';
+import { BCRYPT_SALT_ROUNDS } from 'src/users/users.constants';
+import {
+  usuarioIncludeAuth,
+  usuarioIncludeListagem,
+} from 'src/users/users.prisma-include';
 import { createPrismaMock } from '../helpers/prisma-mock';
 
 describe('UsersService', () => {
@@ -33,6 +43,10 @@ describe('UsersService', () => {
       expect(result[0]).not.toHaveProperty('senhaHash');
       expect(result[1]).not.toHaveProperty('senhaHash');
       expect(result[0]).toMatchObject({ id: 1, nome: 'Alice' });
+      expect(prisma.usuario.findMany).toHaveBeenCalledWith({
+        orderBy: { nome: 'asc' },
+        include: usuarioIncludeListagem,
+      });
     });
   });
 
@@ -51,6 +65,11 @@ describe('UsersService', () => {
       expect(result.total).toBe(1);
       expect(result.page).toBe(1);
       expect(result.totalPages).toBe(1);
+      expect(prisma.usuario.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: usuarioIncludeListagem,
+        }),
+      );
     });
 
     it('aplica filtro de search nos campos nome e email', async () => {
@@ -114,6 +133,57 @@ describe('UsersService', () => {
 
       expect(result).not.toHaveProperty('senhaHash');
       expect(result).toMatchObject({ id: 1, nome: 'Alice' });
+      expect(prisma.usuario.findUnique).toHaveBeenCalledWith({
+        where: { id: 1 },
+        include: usuarioIncludeListagem,
+      });
+    });
+  });
+
+  describe('findByEmail', () => {
+    it('usa include de autenticação (permissão aninhada)', async () => {
+      prisma.usuario.findUnique.mockResolvedValue(null);
+
+      await service.findByEmail('alice@test.com');
+
+      expect(prisma.usuario.findUnique).toHaveBeenCalledWith({
+        where: { email: 'alice@test.com' },
+        include: usuarioIncludeAuth,
+      });
+    });
+  });
+
+  describe('findByIdWithPassword', () => {
+    it('usa o mesmo include que findByEmail', async () => {
+      prisma.usuario.findUnique.mockResolvedValue(null);
+
+      await service.findByIdWithPassword(42);
+
+      expect(prisma.usuario.findUnique).toHaveBeenCalledWith({
+        where: { id: 42 },
+        include: usuarioIncludeAuth,
+      });
+    });
+  });
+
+  describe('findById', () => {
+    it('retorna null quando não existe', async () => {
+      prisma.usuario.findUnique.mockResolvedValue(null);
+      await expect(service.findById(99)).resolves.toBeNull();
+      expect(prisma.usuario.findUnique).toHaveBeenCalledWith({
+        where: { id: 99 },
+        include: usuarioIncludeListagem,
+      });
+    });
+
+    it('retorna usuário sanitizado quando encontrado', async () => {
+      const user = { id: 1, nome: 'A', senhaHash: 'h', usuarioCargos: [] };
+      prisma.usuario.findUnique.mockResolvedValue(user);
+
+      const result = await service.findById(1);
+
+      expect(result).not.toHaveProperty('senhaHash');
+      expect(result).toMatchObject({ id: 1, nome: 'A' });
     });
   });
 
@@ -152,11 +222,13 @@ describe('UsersService', () => {
 
       expect(result).not.toHaveProperty('senhaHash');
       expect(result).toMatchObject({ id: 1, nome: 'Alice' });
+      expect(bcrypt.hash).toHaveBeenCalledWith('senha123', BCRYPT_SALT_ROUNDS);
       expect(prisma.usuario.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             nome: 'Alice',
             email: 'alice@test.com',
+            senhaHash: 'mock-bcrypt-hash',
           }),
         }),
       );
@@ -230,10 +302,14 @@ describe('UsersService', () => {
       const result = await service.resetPassword(1);
 
       expect(result).toEqual({ message: 'Senha resetada com sucesso' });
+      expect(bcrypt.hash).toHaveBeenCalledWith(
+        '#Infinity123',
+        BCRYPT_SALT_ROUNDS,
+      );
       expect(prisma.usuario.update).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { id: 1 },
-          data: expect.objectContaining({ senhaHash: expect.any(String) }),
+          data: expect.objectContaining({ senhaHash: 'mock-bcrypt-hash' }),
         }),
       );
     });

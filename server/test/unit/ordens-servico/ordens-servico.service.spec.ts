@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { OrdensServicoService } from 'src/ordens-servico/ordens-servico.service';
+import { OrdemServicoStatusSideEffectsService } from 'src/ordens-servico/ordem-servico-status-side-effects.service';
 import { HtmlOrdemServicoGenerator } from 'src/ordens-servico/html-ordem-servico.generator';
 import { PdfOrdemServicoGenerator } from 'src/ordens-servico/pdf-ordem-servico.generator';
 import { DebitosRastreadoresService } from 'src/debitos-rastreadores/debitos-rastreadores.service';
@@ -35,6 +36,7 @@ describe('OrdensServicoService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OrdensServicoService,
+        OrdemServicoStatusSideEffectsService,
         { provide: PrismaService, useValue: prisma },
         { provide: HtmlOrdemServicoGenerator, useValue: htmlGenerator },
         { provide: PdfOrdemServicoGenerator, useValue: pdfGenerator },
@@ -201,6 +203,110 @@ describe('OrdensServicoService', () => {
         }),
       );
     });
+
+    it('não aplica OR quando search é só espaços em branco', async () => {
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+
+      await service.findTestando('  \t\n  ');
+
+      expect(prisma.ordemServico.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { status: StatusOS.EM_TESTES },
+        }),
+      );
+    });
+
+    it('aplica trim no termo de busca', async () => {
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+
+      await service.findTestando('  placa  ');
+
+      expect(prisma.ordemServico.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: expect.arrayContaining([
+              { veiculo: { placa: { contains: 'placa' } } },
+            ]),
+          }),
+        }),
+      );
+    });
+
+    it('com busca numérica monta OR com 8 cláusulas (helper emTestes)', async () => {
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+
+      await service.findTestando('55');
+
+      const arg = prisma.ordemServico.findMany.mock.calls[0][0] as {
+        where: { OR?: unknown[] };
+      };
+      expect(arg.where.OR).toHaveLength(8);
+      expect(arg.where.OR?.[0]).toEqual({ numero: 55 });
+    });
+
+    it('com busca textual monta OR com 7 cláusulas (helper emTestes)', async () => {
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+
+      await service.findTestando('sem-numero');
+
+      const arg = prisma.ordemServico.findMany.mock.calls[0][0] as {
+        where: { OR?: unknown[] };
+      };
+      expect(arg.where.OR).toHaveLength(7);
+    });
+
+    it('em RETIRADA zera veiculo, subcliente e subclienteSnapshotNome na resposta', async () => {
+      const items = [
+        {
+          id: 1,
+          numero: 100,
+          tipo: TipoOS.RETIRADA,
+          status: StatusOS.EM_TESTES,
+          atualizadoEm: new Date('2025-01-01T10:00:00Z'),
+          historico: [],
+          cliente: { id: 1, nome: 'Cliente A' },
+          subcliente: { id: 1, nome: 'Sub A' },
+          subclienteSnapshotNome: 'Nome snapshot',
+          veiculo: { id: 1, placa: 'ABC-1234', marca: null, modelo: null },
+          tecnico: { id: 1, nome: 'Técnico X' },
+        },
+      ];
+      prisma.ordemServico.findMany.mockResolvedValue(items);
+
+      const result = await service.findTestando();
+
+      expect(result[0].veiculo).toBeNull();
+      expect(result[0].subcliente).toBeNull();
+      expect(result[0].subclienteSnapshotNome).toBeNull();
+      expect(result[0].cliente).toEqual({ id: 1, nome: 'Cliente A' });
+    });
+
+    it('em REVISAO mantém veiculo, subcliente e snapshot na resposta', async () => {
+      const sub = { id: 1, nome: 'Sub A' };
+      const veiculo = { id: 1, placa: 'XYZ-9999', marca: 'Fiat', modelo: 'Uno' };
+      const items = [
+        {
+          id: 2,
+          numero: 101,
+          tipo: TipoOS.REVISAO,
+          status: StatusOS.EM_TESTES,
+          atualizadoEm: new Date('2025-01-01T10:00:00Z'),
+          historico: [],
+          cliente: { id: 1, nome: 'Cliente A' },
+          subcliente: sub,
+          subclienteSnapshotNome: 'Snap',
+          veiculo,
+          tecnico: { id: 1, nome: 'Técnico X' },
+        },
+      ];
+      prisma.ordemServico.findMany.mockResolvedValue(items);
+
+      const result = await service.findTestando();
+
+      expect(result[0].veiculo).toEqual(veiculo);
+      expect(result[0].subcliente).toEqual(sub);
+      expect(result[0].subclienteSnapshotNome).toBe('Snap');
+    });
   });
 
   describe('findAll', () => {
@@ -281,6 +387,88 @@ describe('OrdensServicoService', () => {
 
       expect(result.page).toBe(1);
     });
+
+    it('não aplica OR de search quando termo é só espaços em branco', async () => {
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+      prisma.ordemServico.count.mockResolvedValue(0);
+
+      await service.findAll({ search: '   \t  ' });
+
+      expect(prisma.ordemServico.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {},
+        }),
+      );
+      expect(prisma.ordemServico.count).toHaveBeenCalledWith({
+        where: {},
+      });
+    });
+
+    it('combina status e search no mesmo where', async () => {
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+      prisma.ordemServico.count.mockResolvedValue(0);
+
+      await service.findAll({
+        status: StatusOS.EM_TESTES,
+        search: 'Fulano',
+      });
+
+      const whereEsperado = expect.objectContaining({
+        status: StatusOS.EM_TESTES,
+        OR: expect.arrayContaining([
+          { tecnico: { nome: { contains: 'Fulano' } } },
+        ]),
+      });
+
+      expect(prisma.ordemServico.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: whereEsperado }),
+      );
+      expect(prisma.ordemServico.count).toHaveBeenCalledWith({
+        where: whereEsperado,
+      });
+    });
+
+    it('aplica trim no search textual', async () => {
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+      prisma.ordemServico.count.mockResolvedValue(0);
+
+      await service.findAll({ search: '  Maria  ' });
+
+      expect(prisma.ordemServico.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: expect.arrayContaining([
+              { cliente: { nome: { contains: 'Maria' } } },
+            ]),
+          }),
+        }),
+      );
+    });
+
+    it('busca textual listagem monta OR com 4 cláusulas (helper listagem)', async () => {
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+      prisma.ordemServico.count.mockResolvedValue(0);
+
+      await service.findAll({ search: 'x' });
+
+      const arg = prisma.ordemServico.findMany.mock.calls[0][0] as {
+        where: { OR?: unknown[] };
+      };
+      expect(arg.where.OR).toHaveLength(4);
+    });
+
+    it('busca numérica listagem monta OR com 5 cláusulas (helper listagem)', async () => {
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+      prisma.ordemServico.count.mockResolvedValue(0);
+
+      await service.findAll({ search: '3' });
+
+      const arg = prisma.ordemServico.findMany.mock.calls[0][0] as {
+        where: { OR?: unknown[] };
+      };
+      expect(arg.where.OR).toHaveLength(5);
+      expect(arg.where.OR?.[0]).toEqual({ numero: 3 });
+    });
   });
 
   describe('findOne', () => {
@@ -319,6 +507,7 @@ describe('OrdensServicoService', () => {
           data: expect.objectContaining({ numero: 42, criadoPorId: 100 }),
         }),
       );
+      expect(prisma.ordemServico.aggregate).toHaveBeenCalledTimes(1);
     });
 
     it('usa número 1 quando não há OS anteriores', async () => {
@@ -522,6 +711,51 @@ describe('OrdensServicoService', () => {
       prisma.ordemServico.findUnique.mockResolvedValue(os);
 
       const promise = service.updateStatus(1, { status: StatusOS.FINALIZADO });
+      await expect(promise).rejects.toThrow(BadRequestException);
+      await expect(promise).rejects.toThrow('Transição de status inválida');
+    });
+
+    it('permite RETIRADA em AGENDADO → AGUARDANDO_CADASTRO (exceção à matriz de transições)', async () => {
+      const os = {
+        id: 1,
+        numero: 1,
+        tipo: TipoOS.RETIRADA,
+        status: StatusOS.AGENDADO,
+        historico: [],
+      };
+      prisma.ordemServico.findUnique
+        .mockResolvedValueOnce(os)
+        .mockResolvedValueOnce({
+          ...os,
+          status: StatusOS.AGUARDANDO_CADASTRO,
+          statusCadastro: StatusCadastro.AGUARDANDO,
+        });
+      prisma.oSHistorico.create.mockResolvedValue({});
+      prisma.ordemServico.update.mockResolvedValue({});
+
+      const result = await service.updateStatus(1, {
+        status: StatusOS.AGUARDANDO_CADASTRO,
+      });
+
+      expect(result).toMatchObject({
+        status: StatusOS.AGUARDANDO_CADASTRO,
+        statusCadastro: StatusCadastro.AGUARDANDO,
+      });
+    });
+
+    it('rejeita INSTALACAO em AGENDADO → AGUARDANDO_CADASTRO (só RETIRADA tem exceção)', async () => {
+      const os = {
+        id: 1,
+        numero: 1,
+        tipo: TipoOS.INSTALACAO_COM_BLOQUEIO,
+        status: StatusOS.AGENDADO,
+        historico: [],
+      };
+      prisma.ordemServico.findUnique.mockResolvedValue(os);
+
+      const promise = service.updateStatus(1, {
+        status: StatusOS.AGUARDANDO_CADASTRO,
+      });
       await expect(promise).rejects.toThrow(BadRequestException);
       await expect(promise).rejects.toThrow('Transição de status inválida');
     });

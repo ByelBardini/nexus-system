@@ -735,6 +735,7 @@ describe('CadastroRastreamentoService', () => {
 
       await service.concluirCadastro(1, { plataforma: Plataforma.GETRAK }, 10);
 
+      expect(prisma.oSHistorico.create).toHaveBeenCalledTimes(1);
       expect(prisma.oSHistorico.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           ordemServicoId: 1,
@@ -1005,6 +1006,7 @@ describe('CadastroRastreamentoService', () => {
           }),
         }),
       );
+      expect(prisma.oSHistorico.create).toHaveBeenCalledTimes(1);
       expect(prisma.oSHistorico.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -1233,6 +1235,7 @@ describe('CadastroRastreamentoService', () => {
 
       await service.concluirCadastro(4, { plataforma: Plataforma.GETRAK }, 10);
 
+      expect(prisma.oSHistorico.create).toHaveBeenCalledTimes(1);
       expect(prisma.oSHistorico.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({

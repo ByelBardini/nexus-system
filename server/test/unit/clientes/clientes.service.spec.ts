@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ClientesService } from 'src/clientes/clientes.service';
 import { CLIENTE_INFINITY_ID } from 'src/common/constants';
@@ -302,6 +302,7 @@ describe('ClientesService', () => {
         contatos: [],
         subclientes: [],
       });
+      prisma.contatoCliente.findFirst.mockResolvedValue({ id: 10 });
       prisma.contatoCliente.deleteMany.mockResolvedValue({ count: 1 });
       prisma.contatoCliente.update.mockResolvedValue({});
       prisma.cliente.update.mockResolvedValue({ id: 2, contatos: [] });
@@ -319,6 +320,10 @@ describe('ClientesService', () => {
           id: { notIn: [10] },
         },
       });
+      expect(prisma.contatoCliente.findFirst).toHaveBeenCalledWith({
+        where: { id: 10, clienteId: 2 },
+        select: { id: true },
+      });
     });
 
     it('contato com id existente é atualizado via contatoCliente.update', async () => {
@@ -328,6 +333,7 @@ describe('ClientesService', () => {
         contatos: [],
         subclientes: [],
       });
+      prisma.contatoCliente.findFirst.mockResolvedValue({ id: 5 });
       prisma.contatoCliente.deleteMany.mockResolvedValue({ count: 0 });
       prisma.contatoCliente.update.mockResolvedValue({});
       prisma.cliente.update.mockResolvedValue({ id: 2, contatos: [] });
@@ -417,6 +423,53 @@ describe('ClientesService', () => {
           }),
         }),
       );
+    });
+
+    it('lança BadRequest quando id de contato não pertence ao cliente (IDOR)', async () => {
+      prisma.cliente.findUnique.mockResolvedValue({
+        id: 2,
+        nome: 'X',
+        contatos: [],
+        subclientes: [],
+      });
+      prisma.contatoCliente.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.update(2, {
+          contatos: [{ id: 999, nome: 'Invasão' }],
+        } as any),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.update(2, {
+          contatos: [{ id: 999, nome: 'Invasão' }],
+        } as any),
+      ).rejects.toThrow('Contato não pertence a este cliente');
+
+      expect(prisma.contatoCliente.deleteMany).not.toHaveBeenCalled();
+      expect(prisma.contatoCliente.update).not.toHaveBeenCalled();
+    });
+
+    it('falha na validação do segundo id antes de deleteMany (não apaga contatos)', async () => {
+      prisma.cliente.findUnique.mockResolvedValue({
+        id: 2,
+        nome: 'X',
+        contatos: [],
+        subclientes: [],
+      });
+      prisma.contatoCliente.findFirst
+        .mockResolvedValueOnce({ id: 10 })
+        .mockResolvedValueOnce(null);
+
+      await expect(
+        service.update(2, {
+          contatos: [
+            { id: 10, nome: 'Válido' },
+            { id: 888, nome: 'Outro cliente' },
+          ],
+        } as any),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(prisma.contatoCliente.deleteMany).not.toHaveBeenCalled();
     });
   });
 });

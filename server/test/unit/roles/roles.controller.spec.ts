@@ -88,7 +88,7 @@ describe('RolesController', () => {
       const cargo = { id: 3, nome: 'Operador', usuariosVinculados: 2 };
       (service.findById as jest.Mock).mockResolvedValue(cargo);
 
-      const result = await controller.findById('3');
+      const result = await controller.findById(3);
 
       expect(service.findById).toHaveBeenCalledWith(3);
       expect(result).toEqual(cargo);
@@ -113,7 +113,7 @@ describe('RolesController', () => {
       const body = { nome: 'Atualizado', ativo: false };
       (service.update as jest.Mock).mockResolvedValue({ id: 5, ...body });
 
-      await controller.update('5', body);
+      await controller.update(5, body);
 
       expect(service.update).toHaveBeenCalledWith(5, body);
     });
@@ -123,7 +123,7 @@ describe('RolesController', () => {
     it('converte id e chama service.updateRolePermissions', async () => {
       (service.updateRolePermissions as jest.Mock).mockResolvedValue({});
 
-      await controller.updatePermissions('2', { permissionIds: [10, 11] });
+      await controller.updatePermissions(2, { permissionIds: [10, 11] });
 
       expect(service.updateRolePermissions).toHaveBeenCalledWith(2, [10, 11]);
     });
@@ -135,7 +135,7 @@ describe('RolesController', () => {
         { id: 1, nome: 'Admin' },
       ]);
 
-      await controller.getUserRoles('10');
+      await controller.getUserRoles(10);
 
       expect(service.getUserRoles).toHaveBeenCalledWith(10);
     });
@@ -145,7 +145,7 @@ describe('RolesController', () => {
     it('converte userId e chama service.updateUserRoles', async () => {
       (service.updateUserRoles as jest.Mock).mockResolvedValue({});
 
-      await controller.updateUserRoles('8', { roleIds: [1, 2] });
+      await controller.updateUserRoles(8, { roleIds: [1, 2] });
 
       expect(service.updateUserRoles).toHaveBeenCalledWith(8, [1, 2]);
     });

@@ -122,11 +122,14 @@ describe('CadastroRastreamentoController', () => {
   // ─── iniciarCadastro ────────────────────────────────────────────────────────
 
   describe('iniciarCadastro', () => {
-    it('converte id de string para número e chama service.iniciarCadastro', async () => {
+    // O `ParseIntPipe` no controller valida a rota em requisições HTTP; em teste
+    // unitário o handler já recebe `id: number` como após o pipe.
+
+    it('repassa id numérico ao service.iniciarCadastro', async () => {
       const os = { id: 1, statusCadastro: 'EM_CADASTRO' };
       (service.iniciarCadastro as jest.Mock).mockResolvedValue(os);
 
-      const result = await controller.iniciarCadastro('1');
+      const result = await controller.iniciarCadastro(1);
 
       expect(service.iniciarCadastro).toHaveBeenCalledWith(1);
       expect(result).toEqual(os);
@@ -137,7 +140,7 @@ describe('CadastroRastreamentoController', () => {
         new NotFoundException('Ordem de serviço não encontrada'),
       );
 
-      await expect(controller.iniciarCadastro('999')).rejects.toThrow(
+      await expect(controller.iniciarCadastro(999)).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -147,7 +150,7 @@ describe('CadastroRastreamentoController', () => {
         new BadRequestException('Cadastro já iniciado'),
       );
 
-      await expect(controller.iniciarCadastro('1')).rejects.toThrow(
+      await expect(controller.iniciarCadastro(1)).rejects.toThrow(
         BadRequestException,
       );
     });
@@ -159,12 +162,12 @@ describe('CadastroRastreamentoController', () => {
     // Nota: @CurrentUser('id') extrai req.user.id via decorator HTTP.
     // Em testes unitários diretos, passamos o valor extraído (userId: number) diretamente.
 
-    it('converte id de string para número e passa dto e userId ao service', async () => {
+    it('repassa id numérico, dto e userId ao service', async () => {
       const os = { id: 1, statusCadastro: 'CONCLUIDO' };
       (service.concluirCadastro as jest.Mock).mockResolvedValue(os);
       const dto = { plataforma: Plataforma.GETRAK };
 
-      const result = await controller.concluirCadastro('1', dto, 10);
+      const result = await controller.concluirCadastro(1, dto, 10);
 
       expect(service.concluirCadastro).toHaveBeenCalledWith(1, dto, 10);
       expect(result).toEqual(os);
@@ -177,7 +180,7 @@ describe('CadastroRastreamentoController', () => {
 
       await expect(
         controller.concluirCadastro(
-          '999',
+          999,
           { plataforma: Plataforma.GETRAK },
           10,
         ),
@@ -190,7 +193,7 @@ describe('CadastroRastreamentoController', () => {
       );
 
       await expect(
-        controller.concluirCadastro('1', { plataforma: Plataforma.SELSYN }, 10),
+        controller.concluirCadastro(1, { plataforma: Plataforma.SELSYN }, 10),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -198,7 +201,7 @@ describe('CadastroRastreamentoController', () => {
       (service.concluirCadastro as jest.Mock).mockResolvedValue({});
 
       await controller.concluirCadastro(
-        '5',
+        5,
         { plataforma: Plataforma.GEOMAPS },
         42,
       );

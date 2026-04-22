@@ -9,6 +9,7 @@ import { EquipamentosController } from 'src/equipamentos/equipamentos.controller
 import { OrdensServicoController } from 'src/ordens-servico/ordens-servico.controller';
 import { PedidosRastreadoresController } from 'src/pedidos-rastreadores/pedidos-rastreadores.controller';
 import { RolesController } from 'src/roles/roles.controller';
+import { ROLES_CONTROLLER_PERMISSIONS } from 'src/roles/roles.permissions';
 import { TecnicosController } from 'src/tecnicos/tecnicos.controller';
 import { UsersController } from 'src/users/users.controller';
 import { VeiculosController } from 'src/veiculos/veiculos.controller';
@@ -81,61 +82,61 @@ describe('Matrix de Permissões', () => {
   describe('RolesController', () => {
     it('findAll exige ADMINISTRATIVO.CARGO.LISTAR', () => {
       expect(getPerms(RolesController, 'findAll')).toContain(
-        'ADMINISTRATIVO.CARGO.LISTAR',
+        ROLES_CONTROLLER_PERMISSIONS.CARGO_LISTAR,
       );
     });
 
     it('findAllPaginated exige ADMINISTRATIVO.CARGO.LISTAR', () => {
       expect(getPerms(RolesController, 'findAllPaginated')).toContain(
-        'ADMINISTRATIVO.CARGO.LISTAR',
+        ROLES_CONTROLLER_PERMISSIONS.CARGO_LISTAR,
       );
     });
 
     it('findAllSetores exige ADMINISTRATIVO.CARGO.LISTAR', () => {
       expect(getPerms(RolesController, 'findAllSetores')).toContain(
-        'ADMINISTRATIVO.CARGO.LISTAR',
+        ROLES_CONTROLLER_PERMISSIONS.CARGO_LISTAR,
       );
     });
 
     it('findAllPermissions exige ADMINISTRATIVO.CARGO.LISTAR', () => {
       expect(getPerms(RolesController, 'findAllPermissions')).toContain(
-        'ADMINISTRATIVO.CARGO.LISTAR',
+        ROLES_CONTROLLER_PERMISSIONS.CARGO_LISTAR,
       );
     });
 
     it('findById exige ADMINISTRATIVO.CARGO.LISTAR', () => {
       expect(getPerms(RolesController, 'findById')).toContain(
-        'ADMINISTRATIVO.CARGO.LISTAR',
+        ROLES_CONTROLLER_PERMISSIONS.CARGO_LISTAR,
       );
     });
 
     it('create exige ADMINISTRATIVO.CARGO.CRIAR', () => {
       expect(getPerms(RolesController, 'create')).toContain(
-        'ADMINISTRATIVO.CARGO.CRIAR',
+        ROLES_CONTROLLER_PERMISSIONS.CARGO_CRIAR,
       );
     });
 
     it('update exige ADMINISTRATIVO.CARGO.EDITAR', () => {
       expect(getPerms(RolesController, 'update')).toContain(
-        'ADMINISTRATIVO.CARGO.EDITAR',
+        ROLES_CONTROLLER_PERMISSIONS.CARGO_EDITAR,
       );
     });
 
     it('updatePermissions exige ADMINISTRATIVO.CARGO.EDITAR', () => {
       expect(getPerms(RolesController, 'updatePermissions')).toContain(
-        'ADMINISTRATIVO.CARGO.EDITAR',
+        ROLES_CONTROLLER_PERMISSIONS.CARGO_EDITAR,
       );
     });
 
     it('getUserRoles exige ADMINISTRATIVO.USUARIO.LISTAR', () => {
       expect(getPerms(RolesController, 'getUserRoles')).toContain(
-        'ADMINISTRATIVO.USUARIO.LISTAR',
+        ROLES_CONTROLLER_PERMISSIONS.USUARIO_LISTAR,
       );
     });
 
     it('updateUserRoles exige ADMINISTRATIVO.USUARIO.EDITAR', () => {
       expect(getPerms(RolesController, 'updateUserRoles')).toContain(
-        'ADMINISTRATIVO.USUARIO.EDITAR',
+        ROLES_CONTROLLER_PERMISSIONS.USUARIO_EDITAR,
       );
     });
   });

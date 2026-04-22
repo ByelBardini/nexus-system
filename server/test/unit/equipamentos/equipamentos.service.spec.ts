@@ -560,6 +560,85 @@ describe('EquipamentosService', () => {
       ).rejects.toThrow(ConflictException);
     });
 
+    it('lança ConflictException quando só operadoraId muda e o par (operadora,nome) já existe', async () => {
+      prisma.marcaSimcard.findUnique.mockResolvedValue({
+        id: 1,
+        nome: 'DupMarca',
+        operadoraId: 1,
+        operadora: {},
+      });
+      prisma.operadora.findUnique.mockResolvedValue({ id: 2, nome: 'Claro' });
+      prisma.marcaSimcard.findFirst.mockResolvedValue({
+        id: 99,
+        nome: 'DupMarca',
+        operadoraId: 2,
+      });
+
+      await expect(
+        service.updateMarcaSimcard(1, { operadoraId: 2 }),
+      ).rejects.toThrow(ConflictException);
+      await expect(
+        service.updateMarcaSimcard(1, { operadoraId: 2 }),
+      ).rejects.toThrow('Marca já existe para esta operadora');
+    });
+
+    it('atualiza só operadoraId quando não há conflito de unicidade', async () => {
+      prisma.marcaSimcard.findUnique.mockResolvedValue({
+        id: 1,
+        nome: 'Única',
+        operadoraId: 1,
+        operadora: {},
+      });
+      prisma.operadora.findUnique.mockResolvedValue({ id: 2, nome: 'Claro' });
+      prisma.marcaSimcard.findFirst.mockResolvedValue(null);
+      const updated = {
+        id: 1,
+        nome: 'Única',
+        operadoraId: 2,
+        operadora: { id: 2, nome: 'Claro' },
+      };
+      prisma.marcaSimcard.update.mockResolvedValue(updated);
+
+      const result = await service.updateMarcaSimcard(1, { operadoraId: 2 });
+
+      expect(result).toEqual(updated);
+      expect(prisma.marcaSimcard.findFirst).toHaveBeenCalledWith({
+        where: {
+          operadoraId: 2,
+          nome: 'Única',
+          id: { not: 1 },
+        },
+      });
+    });
+
+    it('valida unicidade ao alterar só ativo (par operadora+nome inalterado)', async () => {
+      prisma.marcaSimcard.findUnique.mockResolvedValue({
+        id: 1,
+        nome: 'Getrak',
+        operadoraId: 1,
+        operadora: {},
+      });
+      prisma.marcaSimcard.findFirst.mockResolvedValue(null);
+      const updated = {
+        id: 1,
+        nome: 'Getrak',
+        operadoraId: 1,
+        ativo: false,
+      };
+      prisma.marcaSimcard.update.mockResolvedValue(updated);
+
+      const result = await service.updateMarcaSimcard(1, { ativo: false });
+
+      expect(result).toEqual(updated);
+      expect(prisma.marcaSimcard.findFirst).toHaveBeenCalledWith({
+        where: {
+          operadoraId: 1,
+          nome: 'Getrak',
+          id: { not: 1 },
+        },
+      });
+    });
+
     it('atualiza marca quando não há conflito', async () => {
       prisma.marcaSimcard.findUnique.mockResolvedValue({
         id: 1,

@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ClientesController } from 'src/clientes/clientes.controller';
 import { ClientesService } from 'src/clientes/clientes.service';
@@ -96,6 +97,16 @@ describe('ClientesController', () => {
       await controller.update('4', dto as any);
 
       expect(service.update).toHaveBeenCalledWith(4, dto);
+    });
+
+    it('propaga BadRequestException do service (ex.: contato de outro cliente)', async () => {
+      (service.update as jest.Mock).mockRejectedValue(
+        new BadRequestException('Contato não pertence a este cliente'),
+      );
+
+      await expect(
+        controller.update('2', { contatos: [] } as any),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });

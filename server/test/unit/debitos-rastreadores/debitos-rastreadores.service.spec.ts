@@ -3,6 +3,7 @@ import { NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { DebitosRastreadoresService } from 'src/debitos-rastreadores/debitos-rastreadores.service';
+import { debitoRastreadorClienteMarcaModeloInclude } from 'src/debitos-rastreadores/debito-rastreador.include';
 import { createPrismaMock } from '../helpers/prisma-mock';
 
 describe('DebitosRastreadoresService', () => {
@@ -101,6 +102,7 @@ describe('DebitosRastreadoresService', () => {
         aparelhoId: 99,
       });
 
+      expect(prisma.historicoDebitoRastreador.create).toHaveBeenCalledTimes(1);
       expect(prisma.historicoDebitoRastreador.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -164,6 +166,7 @@ describe('DebitosRastreadoresService', () => {
         pedidoId: 55,
       });
 
+      expect(prisma.historicoDebitoRastreador.create).toHaveBeenCalledTimes(1);
       expect(prisma.historicoDebitoRastreador.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
@@ -171,6 +174,95 @@ describe('DebitosRastreadoresService', () => {
             delta: -1,
             pedidoId: 55,
           }),
+        }),
+      );
+    });
+
+    it('quando delta iguala saldo reverso, decrementa até zero com um único histórico', async () => {
+      prisma.debitoRastreador.findFirst.mockResolvedValueOnce({
+        id: 7,
+        quantidade: 4,
+      });
+      prisma.debitoRastreador.update.mockResolvedValue({});
+      prisma.historicoDebitoRastreador.create.mockResolvedValue({});
+
+      await service.consolidarDebitoTx(tx(), { ...baseParams, delta: 4 });
+
+      expect(prisma.debitoRastreador.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 7 },
+          data: { quantidade: { decrement: 4 } },
+        }),
+      );
+      expect(prisma.historicoDebitoRastreador.create).toHaveBeenCalledTimes(1);
+      expect(prisma.historicoDebitoRastreador.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ debitoId: 7, delta: -4 }),
+        }),
+      );
+      expect(prisma.debitoRastreador.findFirst).toHaveBeenCalledTimes(1);
+    });
+
+    it('quando delta excede saldo reverso, zera reverso, grava histórico do abatimento e cria débito direto com o restante', async () => {
+      prisma.debitoRastreador.findFirst
+        .mockResolvedValueOnce({ id: 7, quantidade: 2 })
+        .mockResolvedValueOnce(null);
+      prisma.debitoRastreador.update.mockResolvedValue({});
+      prisma.debitoRastreador.create.mockResolvedValueOnce({ id: 30 });
+      prisma.historicoDebitoRastreador.create.mockResolvedValue({});
+
+      await service.consolidarDebitoTx(tx(), { ...baseParams, delta: 5 });
+
+      expect(prisma.debitoRastreador.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 7 },
+          data: { quantidade: 0 },
+        }),
+      );
+      expect(prisma.debitoRastreador.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            quantidade: 3,
+            devedorTipo: 'CLIENTE',
+            credorTipo: 'INFINITY',
+          }),
+        }),
+      );
+      expect(prisma.historicoDebitoRastreador.create).toHaveBeenCalledTimes(2);
+      expect(prisma.historicoDebitoRastreador.create).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          data: expect.objectContaining({ debitoId: 7, delta: -2 }),
+        }),
+      );
+      expect(prisma.historicoDebitoRastreador.create).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          data: expect.objectContaining({ debitoId: 30, delta: 3 }),
+        }),
+      );
+    });
+
+    it('quando delta excede saldo reverso e já existe débito direto, incrementa o existente em vez de criar', async () => {
+      prisma.debitoRastreador.findFirst
+        .mockResolvedValueOnce({ id: 7, quantidade: 2 })
+        .mockResolvedValueOnce({ id: 11, quantidade: 1 });
+      prisma.debitoRastreador.update.mockResolvedValue({});
+      prisma.historicoDebitoRastreador.create.mockResolvedValue({});
+
+      await service.consolidarDebitoTx(tx(), { ...baseParams, delta: 5 });
+
+      expect(prisma.debitoRastreador.create).not.toHaveBeenCalled();
+      expect(prisma.debitoRastreador.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 11 },
+          data: { quantidade: { increment: 3 } },
+        }),
+      );
+      expect(prisma.historicoDebitoRastreador.create).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          data: expect.objectContaining({ debitoId: 11, delta: 3 }),
         }),
       );
     });
@@ -264,6 +356,42 @@ describe('DebitosRastreadoresService', () => {
         }),
       );
     });
+
+    it('propaga metadados do histórico em ambos os lançamentos quando delta excede saldo reverso', async () => {
+      prisma.debitoRastreador.findFirst
+        .mockResolvedValueOnce({ id: 7, quantidade: 1 })
+        .mockResolvedValueOnce(null);
+      prisma.debitoRastreador.update.mockResolvedValue({});
+      prisma.debitoRastreador.create.mockResolvedValueOnce({ id: 40 });
+      prisma.historicoDebitoRastreador.create.mockResolvedValue({});
+
+      await service.consolidarDebitoTx(tx(), {
+        ...baseParams,
+        delta: 4,
+        pedidoId: 9,
+        loteId: null,
+        aparelhoId: 88,
+      });
+
+      expect(prisma.historicoDebitoRastreador.create).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          data: expect.objectContaining({
+            pedidoId: 9,
+            aparelhoId: 88,
+          }),
+        }),
+      );
+      expect(prisma.historicoDebitoRastreador.create).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          data: expect.objectContaining({
+            pedidoId: 9,
+            aparelhoId: 88,
+          }),
+        }),
+      );
+    });
   });
 
   describe('findAll', () => {
@@ -284,6 +412,40 @@ describe('DebitosRastreadoresService', () => {
       });
       expect(prisma.debitoRastreador.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ skip: 0, take: 100 }),
+      );
+    });
+
+    it('por padrão não inclui historicos na resposta', async () => {
+      prisma.debitoRastreador.findMany.mockResolvedValue([]);
+      prisma.debitoRastreador.count.mockResolvedValue(0);
+
+      await service.findAll({});
+
+      expect(prisma.debitoRastreador.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.not.objectContaining({
+            historicos: expect.anything(),
+          }),
+        }),
+      );
+    });
+
+    it('inclui historicos quando incluirHistoricos é true', async () => {
+      prisma.debitoRastreador.findMany.mockResolvedValue([]);
+      prisma.debitoRastreador.count.mockResolvedValue(0);
+
+      await service.findAll({ incluirHistoricos: true });
+
+      expect(prisma.debitoRastreador.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({
+            historicos: expect.objectContaining({
+              include: expect.objectContaining({
+                ordemServico: { select: { id: true, numero: true } },
+              }),
+            }),
+          }),
+        }),
       );
     });
 
@@ -320,6 +482,25 @@ describe('DebitosRastreadoresService', () => {
       expect(prisma.debitoRastreador.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({ credorClienteId: 7 }),
+        }),
+      );
+    });
+
+    it('filtra por devedorTipo e credorTipo', async () => {
+      prisma.debitoRastreador.findMany.mockResolvedValue([]);
+      prisma.debitoRastreador.count.mockResolvedValue(0);
+
+      await service.findAll({
+        devedorTipo: 'INFINITY',
+        credorTipo: 'CLIENTE',
+      });
+
+      expect(prisma.debitoRastreador.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            devedorTipo: 'INFINITY',
+            credorTipo: 'CLIENTE',
+          }),
         }),
       );
     });
@@ -361,23 +542,14 @@ describe('DebitosRastreadoresService', () => {
       );
     });
 
-    it('inclui ordemServico nos históricos para exibir a OS na listagem', async () => {
+    it('totalPages usa limit válido após aplicar teto de 500', async () => {
       prisma.debitoRastreador.findMany.mockResolvedValue([]);
-      prisma.debitoRastreador.count.mockResolvedValue(0);
+      prisma.debitoRastreador.count.mockResolvedValue(1000);
 
-      await service.findAll({});
+      const result = await service.findAll({ limit: 9999 });
 
-      expect(prisma.debitoRastreador.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          include: expect.objectContaining({
-            historicos: expect.objectContaining({
-              include: expect.objectContaining({
-                ordemServico: { select: { id: true, numero: true } },
-              }),
-            }),
-          }),
-        }),
-      );
+      expect(result.limit).toBe(500);
+      expect(result.totalPages).toBe(2);
     });
   });
 
@@ -389,9 +561,10 @@ describe('DebitosRastreadoresService', () => {
       const result = await service.findOne(1);
 
       expect(result).toEqual(debito);
-      expect(prisma.debitoRastreador.findUnique).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { id: 1 } }),
-      );
+      expect(prisma.debitoRastreador.findUnique).toHaveBeenCalledWith({
+        where: { id: 1 },
+        include: debitoRastreadorClienteMarcaModeloInclude,
+      });
     });
 
     it('lança NotFoundException quando débito não existe', async () => {

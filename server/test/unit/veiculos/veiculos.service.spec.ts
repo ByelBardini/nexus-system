@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { BadGatewayException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { VeiculosService } from 'src/veiculos/veiculos.service';
 import { createPrismaMock } from '../helpers/prisma-mock';
@@ -160,12 +161,36 @@ describe('VeiculosService', () => {
         tipo: '',
       });
     });
+
+    it('lança BadGatewayException quando api-placa-fipe falha', async () => {
+      (consultarPlaca as jest.Mock).mockRejectedValue(new Error('timeout'));
+
+      await expect(service.consultaPlaca('ABC1D23')).rejects.toThrow(
+        BadGatewayException,
+      );
+      await expect(service.consultaPlaca('ABC1D23')).rejects.toThrow(
+        'Erro ao consultar API de placas',
+      );
+    });
   });
 
   describe('criarOuBuscarPorPlaca', () => {
     it('retorna null quando placa tem menos de 7 caracteres', async () => {
       const result = await service.criarOuBuscarPorPlaca({
         placa: 'ABC12',
+        marca: 'Fiat',
+        modelo: 'Uno',
+        ano: '2020',
+        cor: 'Branco',
+      });
+
+      expect(result).toBeNull();
+      expect(prisma.veiculo.upsert).not.toHaveBeenCalled();
+    });
+
+    it('retorna null quando após normalizar a placa tem menos de 7 caracteres', async () => {
+      const result = await service.criarOuBuscarPorPlaca({
+        placa: 'A-B-C-1-2',
         marca: 'Fiat',
         modelo: 'Uno',
         ano: '2020',
