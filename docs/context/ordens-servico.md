@@ -131,15 +131,49 @@ Todos os campos abaixo são gravados no momento da criação da OS e não se alt
 
 **`OSHistorico`:** `id`, `ordemServicoId`, `statusAnterior`, `statusNovo`, `observacao?`, `criadoEm`.
 
-**Frontend — páginas do domínio:**
+**Frontend — estrutura do domínio (`client/src/pages/ordens-servico/`):**
 
-| Arquivo | Função |
+| Caminho | Função |
 |---------|--------|
-| `client/src/pages/ordens-servico/OrdensServicoPage.tsx` | Lista principal de OS; filtros por status/search; paginação |
-| `client/src/pages/ordens-servico/OrdensServicoCriacaoPage.tsx` | Criação de OS com seleção de subcliente/create/update inline |
-| `client/src/pages/testes/TestesPage.tsx` | Bancada de testes; ver seção **"Página: TestesPage — Bancada de Testes"** para detalhes completos |
+| `OrdensServicoPage.tsx` | Entrada da **listagem**: compõe componentes em `lista/components/` e o hook `hooks/useOrdensServicoPage.ts` |
+| `OrdensServicoCriacaoPage.tsx` | Entrada da **criação** (`/ordens-servico/nova`): orquestra formulário; importa módulos em `criacao/*` |
+| `shared/ordens-servico.types.ts` | Tipos compartilháveis da feature: resumo, lista paginada, detalhe da OS, subcliente para exibição |
+| `shared/ordens-servico.constants.ts` | Labels/cores de status de workflow (`ORDENS_SERVICO_STATUS_*`), `totalOrdensFromResumo` |
+| `shared/ordens-servico.display.ts` | Helpers puros: `getSubclienteParaExibicao`, `formatEnderecoSubcliente`, `formatDadosVeiculo`, `getDadosTeste`, `getDadosRetirada` |
+| `hooks/useOrdensServicoPage.ts` | Estado, queries, mutation de status, PDF e handlers da listagem |
+| `lista/components/` | UI só da listagem: pipeline, toolbar, tabela, painel expandido, diálogos (confirmar testes, retirada) |
+| `criacao/` | Schema, payload, resumo, derived, hooks e componentes da tela de criação (ver tabela abaixo) |
+| `client/src/pages/testes/TestesPage.tsx` | Bancada de testes; ver `docs/context/frontend-agendamento.md` |
 
-**`OrdensServicoCriacaoPage` — detalhes de implementação:**
+**Testes de frontend (Vitest) — listagem:** `client/src/__tests__/pages/ordens-servico/` — integração da página, hook `useOrdensServicoPage`, componentes de `lista/components/`, e testes unitários de `shared/` (`ordens-servico-page.display.test.ts`, `ordens-servico-page.constants.test.ts`).
+
+**Módulo de criação de OS (`client/src/pages/ordens-servico/criacao/`):**
+
+A tela de criação foi refatorada em módulos reutilizáveis (schema, payload, cálculo de resumo, hooks e componentes de seção). A página `OrdensServicoCriacaoPage.tsx` só compõe esses blocos e define `handleSubmit` (incl. `POST /veiculos/criar-ou-buscar` antes da mutação).
+
+| Arquivo / pasta | Responsabilidade |
+|-----------------|------------------|
+| `ordens-servico-criacao.schema.ts` | `criacaoOsFormSchema`, `criacaoOsDefaultValues`, tipo `CriacaoOsFormData` (Zod + refine veículo/placa) |
+| `ordens-servico-criacao.types.ts` | Tipos: cliente/subcliente/técnico/preços, payload `CriarOrdemServicoPayload` |
+| `ordens-servico-criacao.constants.ts` | `tipoServicoConfig`, `cobrancaOptions`, `VEICULO_TIPOS`, `veiculoTipoIconMap`, `tipoToPrecoKey`, `TECNICO_PRECO_CARDS` |
+| `ordens-servico-criacao.payload.ts` | Regras puras: `precheckCriacaoOs`, `buildSubclienteCreate/Update`, `buildCriarOrdemServicoPayload`, `buscarOuCriarVeiculoId`, `trimObservacoes` |
+| `ordens-servico-criacao.resumo.ts` | `computeDeslocamentoSidebar`, `computeValorTotalAproximado`, `precoTecnicoCardDisplay`, `formatBrl` (sidebar: um único núcleo de cálculo) |
+| `ordens-servico-criacao.derived.ts` | `criacaoOsWatchFieldList`, `mapCriacaoOsWatchFields`, `computeCriacaoOsDerivedFlags` (checklist + `isFormValid`) |
+| `hooks/useOrdensServicoCriacaoCatalogs.ts` | Queries: clientes, cliente Infinity, detalhe Infinity, técnicos, aparelhos; `rastreadoresInstalados` filtrado |
+| `hooks/usePreencherVeiculoPorPlaca.ts` | `useConsultaPlaca` + efeitos que preenchem o form e toasts de sucesso/erro |
+| `hooks/useOrdensServicoCriacaoDerivedState.ts` | `useWatch` + flags derivadas; `useCriacaoOsWatchedForSidebar` para a sidebar |
+| `hooks/useCriarOrdemServicoMutation.ts` | `POST /ordens-servico`, invalidação de queries, toast, `navigate("/")` |
+| `components/OrdensServicoCriacaoHeader.tsx` | Cabeçalho: voltar, cancelar, emitir |
+| `components/OrdensServicoCriacaoClienteSection.tsx` | Infinity/Cliente + subcliente completo |
+| `components/OrdensServicoCriacaoTecnicoSection.tsx` | Técnico + cards de preço |
+| `components/OrdensServicoCriacaoVeiculoSection.tsx` | Placa e dados do veículo |
+| `components/OrdensServicoCriacaoServicoSection.tsx` | Tipo de serviço + bloco revisão/retirada |
+| `components/OrdensServicoCriacaoObservacoesSection.tsx` | Textarea de observações |
+| `components/OrdensServicoCriacaoSidebar.tsx` | Resumo, checklist, KM para deslocamento, total aproximado; **estado `kmEstimado` local ao sidebar** |
+
+**Testes de frontend (Vitest) — criação de OS:** `client/src/__tests__/pages/ordens-servico/criacao/` (schema, constants, payload, resumo, derived, hooks, componentes, integração importando `OrdensServicoCriacaoPage` de `@/pages/ordens-servico/OrdensServicoCriacaoPage`).
+
+**`OrdensServicoCriacaoPage` — detalhes de implementação (comportamento inalterado):**
 
 Permissão exigida: `AGENDAMENTO.OS.CRIAR` (via `hasPermission` de `useAuth`). Sem ela o botão "Emitir Ordem" fica desabilitado.
 
@@ -172,12 +206,12 @@ Permissão exigida: `AGENDAMENTO.OS.CRIAR` (via `hasPermission` de `useAuth`). S
 | `REVISAO` | Exibe seção "ID Instalado / Local de Instalação / Pós Chave" |
 | `RETIRADA` | Idem acima |
 
-Mapeamento `tipoToPrecoKey` converte `tipo` → chave em `PrecoTecnico` para exibir preço do técnico.
+Mapeamento `tipoToPrecoKey` (em `ordens-servico-criacao.constants.ts`) converte `tipo` → chave em `PrecoTecnico` para exibir preço do técnico.
 
 **Formulário (react-hook-form + Zod):**
 
-- Schema: `client/src/pages/ordens-servico/OrdensServicoCriacaoPage.tsx` (inline, `z.object(...).refine(...)`).
-- Validação mínima para habilitar "Emitir Ordem": `temCliente` (subcliente completo + cliente resolvido) **E** `temTipo`.
+- Schema: `criacao/ordens-servico-criacao.schema.ts` — `z.object(...).refine(...)` (veículo com placa preenchida exige marca/modelo/ano/cor).
+- Validação mínima para habilitar "Emitir Ordem": `temCliente` (subcliente completo + cliente resolvido) **E** `temTipo` — veja `computeCriacaoOsDerivedFlags` em `ordens-servico-criacao.derived.ts`.
 - `temTecnico` e `temVeiculo` contribuem apenas para o checklist visual na sidebar — não bloqueiam submissão.
 
 **Sidebar fixa (resumo + checklist):**

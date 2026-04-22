@@ -78,8 +78,8 @@ Todas as páginas são carregadas com `lazy()` + `Suspense` (exceto `Login`). Ro
 | Path | Componente | Notas |
 |------|-----------|-------|
 | `/login` | `Login` | Público; não lazy |
-| `/` | `OrdensServicoPage` | Dashboard de OS; `pages/ordens-servico/OrdensServicoPage.tsx` |
-| `/ordens-servico/nova` | `OrdensServicoCriacaoPage` | `pages/ordens-servico/OrdensServicoCriacaoPage.tsx` |
+| `/` | `OrdensServicoPage` | Dashboard de OS; `pages/ordens-servico/OrdensServicoPage.tsx` (orquestrador: `hooks/useOrdensServicoPage.ts`, `lista/components/*`, `shared/*`) — ver `docs/context/ordens-servico.md` |
+| `/ordens-servico/nova` | `OrdensServicoCriacaoPage` | Ponto de entrada: `pages/ordens-servico/OrdensServicoCriacaoPage.tsx`; módulo em `pages/ordens-servico/criacao/*` (schema, hooks, componentes) — ver `docs/context/ordens-servico.md` |
 | `/pedidos-rastreadores` | `PedidosRastreadoresPage` | — |
 | `/pedidos-config` | `PedidosConfigPage` | — |
 | `/testes` | `TestesPage` | — |

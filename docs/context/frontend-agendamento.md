@@ -286,6 +286,8 @@ ICCID (Saída): <iccidSaida>  (se existir)
 
 Dashboard principal de ordens de serviço. Rota: `/` (índice do `AppLayout`).
 
+**Organização do código:** a página é um orquestrador fino. Estado e dados vêm de `hooks/useOrdensServicoPage.ts`; UI em `lista/components/` (pipeline, toolbar, tabela, painel de detalhe expandido, diálogos); tipos, constantes de status e helpers de exibição em `shared/` (`ordens-servico.types.ts`, `ordens-servico.constants.ts`, `ordens-servico.display.ts`). Lazy load no `App.tsx`: `@/pages/ordens-servico/OrdensServicoPage`.
+
 ### Queries
 
 | QueryKey | Endpoint | Notas |
@@ -303,7 +305,7 @@ Ações mapeadas para a mutation:
 - **Retirada Realizada**: `status = "AGUARDANDO_CADASTRO"`, `observacao = "Data retirada: dd/mm/yyyy | Aparelho encontrado: Sim/Não"` (com modal de confirmação).
 - **Enviar para Cadastro**: `status = "AGUARDANDO_CADASTRO"` (direto, sem modal).
 
-### Estado
+### Estado (em `useOrdensServicoPage`)
 
 | Estado | Tipo | Descrição |
 |--------|------|-----------|
@@ -333,21 +335,18 @@ Ações mapeadas para a mutation:
   3. **Dados de Cadastro** — botão "Enviar para Cadastro" (quando `TESTES_REALIZADOS`); data de envio, plataforma, status do cadastro (quando `AGUARDANDO_CADASTRO` ou `FINALIZADO`).
 - **Download PDF**: `apiDownloadBlob(\`/ordens-servico/${id}/pdf\`, 30_000)` → cria `<a>` e dispara download.
 
-### Helpers puros locais
+### Helpers e constantes (`shared/`)
 
-| Função | Uso |
-|--------|-----|
-| `getSubclienteParaExibicao(os)` | Prioriza `subclienteSnapshot*` sobre `os.subcliente` |
-| `formatEnderecoSubcliente(sub)` | Compila endereço em string única |
-| `formatDadosVeiculo(v)` | `placa · marca modelo · ano · cor` |
-| `getDadosTeste(os)` | Extrai `entradaEmTestes`, `saidaEmTestes`, `tempoMin` do histórico |
-| `getDadosRetirada(os)` | Parseia observação `"Data retirada: ... \| Aparelho encontrado: ..."` do histórico |
+| Módulo | Conteúdo |
+|--------|----------|
+| `shared/ordens-servico.display.ts` | `getSubclienteParaExibicao`, `formatEnderecoSubcliente`, `formatDadosVeiculo`, `getDadosTeste`, `getDadosRetirada` |
+| `shared/ordens-servico.constants.ts` | `ORDENS_SERVICO_STATUS_LABELS`, `ORDENS_SERVICO_STATUS_COLORS`, `totalOrdensFromResumo` |
+| `shared/ordens-servico.types.ts` | Tipos de resumo, lista, detalhe e subcliente para exibição |
 
-### Constantes locais
+O painel expandido trata **detalhe obsoleto** durante o refetch ao trocar de linha: mostra loading enquanto `osDetalhe.id` não bate com a linha expandida.
 
-```ts
-statusLabels: Record<StatusOS, string> // "AGENDADO" → "Agendado", etc.
-statusColors: Record<StatusOS, string> // classes Tailwind para badges
-```
+## Página: `OrdensServicoCriacaoPage` (`/ordens-servico/nova`)
+
+Criação de ordem de serviço. O **ponto de entrada** é `client/src/pages/ordens-servico/OrdensServicoCriacaoPage.tsx` (lazy: `@/pages/ordens-servico/OrdensServicoCriacaoPage`); a implementação está modularizada em `client/src/pages/ordens-servico/criacao/` (schema, constantes, payload, resumo, hooks, componentes de seção e sidebar). Detalhe de ficheiros, queries, fluxo de subcliente/veículo e testes de frontend: **`docs/context/ordens-servico.md`** (secção *Módulo de criação de OS* e *OrdensServicoCriacaoPage — detalhes de implementação*).
 
 ---
