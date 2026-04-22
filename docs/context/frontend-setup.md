@@ -121,7 +121,8 @@ Helper compartilhado de testes: exporta wrapper com providers (QueryClient, Rout
 | Pasta | Arquivos |
 |-------|---------|
 | `hooks/` | `useConsultaPlaca.test.tsx`, `useDebounce.test.ts`, `useBrasilAPI.test.tsx` |
-| `lib/` | `api.test.ts`, `format.test.ts`, `cadastro-rastreamento-periodo.test.ts`, `os-revisao-display.test.ts`, `aparelho-status.test.ts`, `tecnicos-page.test.ts`, `tecnico-map-cluster.test.ts`, `tecnico-map-marker-html.test.ts`, `tecnico-map-spread.test.ts` |
+| `lib/` | `api.test.ts`, `format.test.ts`, `cadastro-rastreamento-*.test.ts` (período, tipo-mappers, mapper, UI, copy), `os-revisao-display.test.ts`, `aparelho-status.test.ts`, `tecnicos-page.test.ts`, `tecnico-map-cluster.test.ts`, `tecnico-map-marker-html.test.ts`, `tecnico-map-spread.test.ts` |
+| `pages/cadastro-rastreamento/` | Hook, tabela, toolbar, painel, integração da página, `table-helpers` (ver `docs/context/cadastro-rastreamento.md`) |
 | `components/` | `InputCEP`, `InputCNPJ`, `InputPlaca`, `InputTelefone`, `ProtectedRoute`, `TecnicosMap` |
 | `contexts/` | `AuthContext.test.tsx` |
 | `pages/` | `Login.test.tsx`, `PareamentoPage.test.tsx`, `TecnicosPage.test.tsx`, `tecnicos/tecnico-form.test.ts`, `ClientesPage.test.tsx`, `clientes-page.shared.test.ts` |

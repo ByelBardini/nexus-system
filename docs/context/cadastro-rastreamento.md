@@ -83,20 +83,40 @@ StatusCadastro: AGUARDANDO  →  EM_CADASTRO  →  CONCLUIDO
 - Se aparelho não existe no banco durante `RETIRADA` ou `REVISAO` (aparelho antigo), ele é **criado automaticamente** com `status=EM_ESTOQUE` e `observacao='aparelho usado'`.
 - A função auxiliar `normIdent` (interna ao service) normaliza strings: `trim()` + retorna `null` se vazio.
 
-### Frontend (`client/src/pages/cadastro-rastreamento/` e `client/src/lib/`)
+### Frontend
 
-| Recurso | Notas |
-|---------|--------|
-| `CadastroRastreamentoPage.tsx` | Lista OS do endpoint GET; painel de ação, filtros, cópia para área de transferência; inicia/conclui via PATCH. |
-| `lib/cadastro-rastreamento-tipo-mappers.ts` | Mapeia `os.tipo` (string da API) para categoria de UI (`CADASTRO` / `REVISAO` / `RETIRADA` / `OUTRO`). Tipos desconhecidos caem em **`OUTRO`** (não se assume retirada). Rótulos de serviço, botões e toasts de “iniciar” (`toastIniciado`) ficam centralizados aqui para testes e evitar mensagens inválidas (ex.: concatenação `…do!`). |
-| `lib/cadastro-rastreamento-periodo.ts` | Monta `dataInicio` / `dataFim` em ISO para a query (ver doc específica se existir). |
+**Pasta da feature** — `client/src/pages/cadastro-rastreamento/`:
 
-**Mapeamento `TipoOS` → UI:** apenas `INSTALACAO_COM_BLOQUEIO`, `INSTALACAO_SEM_BLOQUEIO`, `REVISAO` e `RETIRADA` têm categoria explícita; qualquer outro valor vindo do backend usa `OUTRO` com rótulo derivado do enum (ex.: `NOVO_TIPO` → texto legível) e estilo neutro na tela.
+| Caminho | Conteúdo |
+|---------|----------|
+| `CadastroRastreamentoPage.tsx` | Orquestração: compõe `useCadastroRastreamento` + blocos em `components/`. Único ficheiro na raiz da pasta. |
+| `hooks/useCadastroRastreamento.ts` | Estado (filtros, seleção, período), `useQuery` / `useMutation`, `invalidateQueries` com chave base `["cadastro-rastreamento"]`, ações de cópia e `handleAvancarStatus`. Exporta `CADASTRO_RAST_QUERY_KEY`. |
+| `components/CadastroRastreamentoStatsCards.tsx` | Cartões de resumo (Aguardando / Em cadastro / Concluídas). |
+| `components/CadastroRastreamentoToolbar.tsx` | Filtros (técnico, tipo, período), limpar, abas de status. |
+| `components/CadastroRastreamentoTable.tsx` | Tabela de ordens; clique na linha alterna seleção. |
+| `components/CadastroRastreamentoWorkPanel.tsx` | Painel “Mesa de Trabalho”, auxílio de cópia, plataforma, botões de ação. |
+| `components/CadastroRastreamentoPanelPrimitives.tsx` | `PanelBlock` / `PanelRow` reutilizados no painel. |
+| `lib/table-helpers.ts` | Página — `getColunaEquipamentoSaida` (regra da coluna “Equipamento de Saída” para `CADASTRO` sem IMEI de saída). |
+
+**Biblioteca partilhada** — `client/src/lib/` (domínio reutilizável, testes em `__tests__/lib/`):
+
+| Ficheiro | Notas |
+|----------|--------|
+| `cadastro-rastreamento.types.ts` | `OrdemCadastro`, `OSResponse`, `StatusCadastro`, `Plataforma`, etc. |
+| `cadastro-rastreamento-mapper.ts` | `mapCadastroRastreamentoOS`, `formatModeloAparelhoCadastro`; datas de exibição via `formatarDataHoraCurta` de `format.ts`. |
+| `cadastro-rastreamento-ui.ts` | `CADASTRO_RAST_STATUS_CONFIG`, `CADASTRO_RAST_TIPO_REGISTRO_CONFIG`, `badgeServicoColunaCadastroRast`, `PLATAFORMA_RAST_LABEL`, `SELECT_CADASTRO_RAST_TODOS`, `CADASTRO_RAST_STATUS_TABS`. |
+| `cadastro-rastreamento-copy.ts` | `getAuxilioCopiaItens`, `buildTextoCopiarTodosCadastroRast`. |
+| `cadastro-rastreamento-tipo-mappers.ts` | Mapeia `os.tipo` → categoria de UI (`CADASTRO` / `REVISAO` / `RETIRADA` / `OUTRO`); rótulos de serviço e `cadastroRastreamentoAcaoLabels` (botões e toasts). |
+| `cadastro-rastreamento-periodo.ts` | `buildCadastroRastreamentoPeriodoQuery` — `dataInicio` / `dataFim` para a query. |
+| `os-revisao-display.ts` | `getCadastroMapDeviceFields` — IMEI/ICCID/local por `TipoOS` (não duplicar). |
+
+**Mapeamento `TipoOS` → UI:** apenas `INSTALACAO_COM_BLOQUEIO`, `INSTALACAO_SEM_BLOQUEIO`, `REVISAO` e `RETIRADA` têm categoria explícita; qualquer outro valor vindo do backend usa `OUTRO` com rótulo derivado e estilo neutro.
 
 ### Testes
 
 - **Backend:** `server/test/unit/cadastro-rastreamento/` — service (incl. `findPendentes` enriquecido, conclusão por tipo, histórico), controller, e `cadastro-rastreamento-id-param.pipe.spec.ts` (`ParseIntPipe` / bordas de `:id`).
-- **Frontend:** `client/src/__tests__/lib/cadastro-rastreamento-tipo-mappers.test.ts` (mapeamento, rótulos, regressão de toasts).
+- **Frontend (lib):** `client/src/__tests__/lib/cadastro-rastreamento-tipo-mappers.test.ts`, `cadastro-rastreamento-mapper.test.ts`, `cadastro-rastreamento-ui.test.ts`, `cadastro-rastreamento-copy.test.ts`, `cadastro-rastreamento-periodo.test.ts`.
+- **Frontend (página e hook):** `client/src/__tests__/pages/cadastro-rastreamento/` — hook, tabela (`table-helpers` + componentes), painel, toolbar, integração da página, fixtures partilhados `cadastro-rastreamento.fixtures.ts`.
 
 ---
 

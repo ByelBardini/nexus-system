@@ -136,18 +136,17 @@ canFinalizar =
 
 ### Página: `CadastroRastreamentoPage`
 
-**Arquivo:** `client/src/pages/cadastro-rastreamento/CadastroRastreamentoPage.tsx`  
+**Entrada (rota):** `client/src/pages/cadastro-rastreamento/CadastroRastreamentoPage.tsx` — apenas compõe o hook e os componentes em `components/`.  
+**Lógica e dados:** `hooks/useCadastroRastreamento.ts`.  
 **Rota:** `/cadastro-rastreamento` (sidebar → seção Configuração)
 
-#### Tipos locais (definidos no próprio arquivo)
+#### Tipos e mapeamento (lib)
 
-| Tipo | Valores |
-|------|---------|
-| `StatusCadastro` | `"AGUARDANDO" \| "EM_CADASTRO" \| "CONCLUIDO"` |
-| `Plataforma` | `"GETRAK" \| "GEOMAPS" \| "SELSYN"` |
-| `TipoRegistro` | `"CADASTRO" \| "REVISAO" \| "RETIRADA"` |
-| `OrdemCadastro` | Tipo de domínio local (resultado de `mapOS`); campos: `id`, `status`, `tipoRegistro`, `instalacaoComBloqueio`, `cliente`, `subcliente`, `tipoServico`, `tecnico`, `veiculo`, `placa`, `cor`, `modelo`, `modeloAparelhoEntrada`, `imei`, `iccid`, `local`, `posChave`, `imeiSaida`, `iccidSaida`, `modeloSaida`, `data`, `plataforma`, `concluidoEm`, `concluidoPor` |
-| `OSResponse` | Shape bruto da API; mapeado para `OrdemCadastro` via `mapOS()` |
+| Tipo / função | Local |
+|---------------|--------|
+| `StatusCadastro`, `Plataforma`, `OrdemCadastro`, `OSResponse` | `@/lib/cadastro-rastreamento.types` |
+| `mapCadastroRastreamentoOS` (ex-`mapOS`) | `@/lib/cadastro-rastreamento-mapper` — resposta API → `OrdemCadastro`; datas com `formatarDataHoraCurta` |
+| Categoria UI + rótulos de ação | `@/lib/cadastro-rastreamento-tipo-mappers` — `TipoRegistro` inclui `OUTRO` para tipos de OS não mapeados |
 
 #### Mapeamento `TipoOS` (backend) → `TipoRegistro` (frontend)
 
@@ -158,6 +157,8 @@ canFinalizar =
 | `REVISAO` | `REVISAO` | "Troca de Equipamento" |
 | `RETIRADA` | `RETIRADA` | "Retirada de Equipamento" |
 
+Outros valores de `tipo` na API mapeiam para `OUTRO` (ver `cadastro-rastreamento-tipo-mappers`).
+
 `instalacaoComBloqueio: boolean | null` — `true` para `COM_BLOQUEIO`, `false` para `SEM_BLOQUEIO`, `null` para outros tipos.
 
 #### Dependências de lib utilizadas
@@ -167,8 +168,9 @@ canFinalizar =
 | `buildCadastroRastreamentoPeriodoQuery` | `@/lib/cadastro-rastreamento-periodo` — calcula `{ dataInicio, dataFim }` para filtro de período |
 | `getCadastroMapDeviceFields` | `@/lib/os-revisao-display` — extrai `imeiEntrada`, `imeiSaida`, `iccidEntradaOs`, `iccidSaidaOs`, `local`, `posChave` conforme `tipoOs`; **não duplicar essa lógica** |
 | `api` | `@/lib/api` — cliente HTTP central |
+| Mappers / UI / cópia | `cadastro-rastreamento-mapper`, `cadastro-rastreamento-ui`, `cadastro-rastreamento-copy` — ver `docs/context/cadastro-rastreamento.md` |
 
-#### Estado da página
+#### Estado (`useCadastroRastreamento`)
 
 | Estado | Tipo | Uso |
 |--------|------|-----|
@@ -184,8 +186,8 @@ canFinalizar =
 | Símbolo | Key / endpoint | Notas |
 |---------|---------------|-------|
 | `useQuery` | `["cadastro-rastreamento", dataInicio, dataFim]` | `GET /cadastro-rastreamento?dataInicio=&dataFim=&limit=100`; retorna `{ data: OSResponse[]; total: number }` |
-| `mutIniciar` | `PATCH /cadastro-rastreamento/:id/iniciar` | Move para `EM_CADASTRO`; invalida a query acima |
-| `mutConcluir` | `PATCH /cadastro-rastreamento/:id/concluir` | Body: `{ plataforma }`; move para `CONCLUIDO`; invalida a query acima |
+| `mutIniciar` | `PATCH /cadastro-rastreamento/:id/iniciar` | Move para `EM_CADASTRO`; `invalidateQueries` com prefixo `["cadastro-rastreamento"]` (export `CADASTRO_RAST_QUERY_KEY`) |
+| `mutConcluir` | `PATCH /cadastro-rastreamento/:id/concluir` | Body: `{ plataforma }`; idem invalidação |
 
 #### Lógica de filtros (client-side, aplicada sobre `ordens`)
 
@@ -201,24 +203,21 @@ ordensFiltradas = ordens.filter(
 
 #### Coluna "Equipamento de Saída" — lógica especial
 
-Para `tipoRegistro === "CADASTRO"` sem `imeiSaida` preenchido, a coluna exibe o mesmo aparelho de entrada (`imei` / `modeloAparelhoEntrada`). Esse comportamento está em `saidaIgualEntradaCadastro`.
+Para `tipoRegistro === "CADASTRO"` sem `imeiSaida` preenchido (após trim), a coluna replica entrada — função `getColunaEquipamentoSaida` em `pages/cadastro-rastreamento/lib/table-helpers.ts`.
 
 #### Constante de Select vazio
 
-`SELECT_FILTRO_TODOS = "__todos__"` — Radix `Select` não aceita `value=""` como item; usar esta constante e normalizar para `""` no estado.
+`SELECT_CADASTRO_RAST_TODOS` (`"__todos__"`) em `cadastro-rastreamento-ui` — Radix `Select` não aceita `value=""` como item; normalizar para `""` no estado.
 
-#### Config Maps (evitar consulta ao código)
+#### Config Maps (`cadastro-rastreamento-ui`)
 
-`STATUS_CONFIG` — badge por `StatusCadastro`:
-- `AGUARDANDO`: amber-50/800/200
-- `EM_CADASTRO`: blue-50/800/200
-- `CONCLUIDO`: emerald-50/800/200
+`CADASTRO_RAST_STATUS_CONFIG` — badge por `StatusCadastro` (ex.: `AGUARDANDO` amber, `EM_CADASTRO` blue, `CONCLUIDO` emerald).
 
-`TIPO_REGISTRO_CONFIG` — badge por `TipoRegistro`: `CADASTRO`=sky, `REVISAO`=purple, `RETIRADA`=orange.
+`CADASTRO_RAST_TIPO_REGISTRO_CONFIG` — badge base por categoria; instalação c/ s/ bloqueio usa `badgeServicoColunaCadastroRast` + rótulos longos.
 
-`ACAO_LABELS` — labels de botão por `TipoRegistro` × ação (iniciar / concluir / concluído).
+`cadastroRastreamentoAcaoLabels` (em `cadastro-rastreamento-tipo-mappers`) — rótulos de botão e toasts por `TipoRegistro` × ação.
 
-`PLATAFORMA_LABEL` — `GETRAK→"Getrak"`, `GEOMAPS→"Geomaps"`, `SELSYN→"Selsyn"`.
+`PLATAFORMA_RAST_LABEL` — `GETRAK` / `GEOMAPS` / `SELSYN` → texto legível.
 
 #### Estrutura visual
 
@@ -239,14 +238,13 @@ Para `tipoRegistro === "CADASTRO"` sem `imeiSaida` preenchido, a coluna exibe o 
   Rodapé count
 ```
 
-#### Componentes helper internos (exportados apenas dentro do arquivo)
+#### `PanelBlock` / `PanelRow`
 
-| Componente | Props | Uso |
-|------------|-------|-----|
-| `PanelBlock` | `icon: string`, `title`, `children` | Seção com header + caixa cinza `bg-slate-50` |
-| `PanelRow` | `label`, `value`, `highlight?` | Par label/valor; `highlight` usa `text-erp-blue` |
+Definidos em `components/CadastroRastreamentoPanelPrimitives.tsx` (seção com header + `bg-slate-50`; linha label/valor com `highlight` opcional).
 
-#### Função `copiarTodos`
+#### Função `copiarTodos` / texto agregado
+
+Montagem do texto em `buildTextoCopiarTodosCadastroRast` (`@/lib/cadastro-rastreamento-copy`). A UI lista botões a partir de `getAuxilioCopiaItens` (mesma lib).
 
 Copia para clipboard o bloco de texto:
 ```
