@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { render, screen, within } from "@testing-library/react";
-import { useForm, FormProvider } from "react-hook-form";
+import { useForm, FormProvider, type Resolver } from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
 import { LoteIdentificacaoSection } from "@/pages/aparelhos/cadastro-lote/LoteIdentificacaoSection";
 import { LoteIdentificadoresSection } from "@/pages/aparelhos/cadastro-lote/LoteIdentificadoresSection";
@@ -28,7 +28,7 @@ vi.mock("@/components/SelectClienteSearch", () => ({
 
 function IdentForm() {
   const f = useForm<LoteFormValues>({
-    resolver: zodResolver(loteFormSchema),
+    resolver: zodResolver(loteFormSchema) as Resolver<LoteFormValues>,
     defaultValues: { ...loteFormDefaultValues, referencia: "X" },
   });
   return (
@@ -49,7 +49,7 @@ describe("LoteIdentificacaoSection", () => {
 
 function PropSimSection() {
   const f = useForm<LoteFormValues>({
-    resolver: zodResolver(loteFormSchema),
+    resolver: zodResolver(loteFormSchema) as Resolver<LoteFormValues>,
     defaultValues: { ...loteFormDefaultValues, tipo: "SIM" },
   });
   return (
@@ -87,7 +87,7 @@ function IdSectionDup() {
   const idV = "123456789012345";
   const f = { validos: [idV], duplicados: [idV], invalidos: [], jaExistentes: [] };
   const form = useForm<LoteFormValues>({
-    resolver: zodResolver(loteFormSchema),
+    resolver: zodResolver(loteFormSchema) as Resolver<LoteFormValues>,
     defaultValues: { ...loteFormDefaultValues, idsTexto: `${idV}\n${idV}` },
   });
   return (

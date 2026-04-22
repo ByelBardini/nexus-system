@@ -4,7 +4,7 @@ import {
   PreviewCsvTable,
   type CsvPreviewResult,
   type CsvPreviewLinha,
-} from "@/pages/equipamentos/PreviewCsvTable";
+} from "@/pages/equipamentos/pareamento/preview/PreviewCsvTable";
 
 function makePreview(
   linhas: CsvPreviewLinha[],

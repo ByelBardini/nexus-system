@@ -1,5 +1,8 @@
 import type { StatusAparelho } from "@/lib/aparelho-status";
 
+/** Tamanho da página na listagem de equipamentos montados ({@link EquipamentosPage}). */
+export const EQUIPAMENTOS_LIST_PAGE_SIZE = 12;
+
 export type EquipamentoPipelineFilter =
   | "TODOS"
   | "CONFIGURADO"

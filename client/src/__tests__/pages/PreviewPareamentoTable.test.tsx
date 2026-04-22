@@ -5,7 +5,7 @@ import {
   countPareamentoPreviewDuplicateLinhas,
   type PreviewLinha,
   type PreviewResult,
-} from "@/pages/equipamentos/PreviewPareamentoTable";
+} from "@/pages/equipamentos/pareamento/preview/PreviewPareamentoTable";
 
 const linha = (overrides: Partial<PreviewLinha>): PreviewLinha => ({
   imei: "111",

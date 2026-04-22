@@ -48,7 +48,7 @@ describe("useAparelhoCadastroCatalogs", () => {
 
   it("desabilita marcas sim e débitos conforme opções (SIM + só débito em rastreador)", async () => {
     const { result, rerender } = renderHook(
-      ({ sim, rast, op }) =>
+      ({ sim, rast }) =>
         useAparelhoCadastroCatalogs({
           marcasSimcardQueryEnabled: sim,
           operadora: { value: "Op", idMode: "nome" },
@@ -56,19 +56,33 @@ describe("useAparelhoCadastroCatalogs", () => {
         }),
       {
         wrapper: createWrapper(),
-        initialProps: { sim: true, rast: true, op: "Op" } as {
-          sim: boolean;
-          rast: boolean;
-          op: string;
-        },
+        initialProps: { sim: true, rast: true },
       },
     );
     await waitFor(() => expect(result.current.marcasAtivas).toEqual([]));
     apiMock.mockClear();
-    rerender({ sim: false, rast: false, op: "Op" });
+    rerender({ sim: false, rast: false });
     await waitFor(() => {
       expect(result.current).toBeDefined();
     });
+  });
+
+  it("refatoração hooks: três catálogos + marcas sim (nome operadora) usam /marcas-simcard sem operadoraId na URL", async () => {
+    apiMock.mockClear();
+    const { result } = renderHook(
+      () =>
+        useAparelhoCadastroCatalogs({
+          marcasSimcardQueryEnabled: true,
+          operadora: { value: "Op", idMode: "nome" },
+          debitosQueryEnabled: false,
+        }),
+      { wrapper: createWrapper() },
+    );
+    await waitFor(() => expect(result.current.operadoras[0]?.nome).toBe("Op"));
+    expect(
+      apiMock.mock.calls.filter((c) => c[0] === "/equipamentos/marcas-simcard")
+        .length,
+    ).toBeGreaterThan(0);
   });
 
   it("chama /marcas-simcard com operadoraId quando idMode id", async () => {

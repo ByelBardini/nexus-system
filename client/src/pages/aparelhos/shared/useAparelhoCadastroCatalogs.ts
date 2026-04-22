@@ -1,6 +1,10 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import {
+  useEquipamentosMarcasSimcardListQuery,
+  useEquipamentosTrioCatalogQueries,
+} from "@/pages/equipamentos/hooks/useEquipamentosCatalogQueries";
 import type {
   ClienteLista,
   MarcaCatalog,
@@ -33,20 +37,12 @@ export function useAparelhoCadastroCatalogs(options: {
     queryFn: () => api("/clientes"),
   });
 
-  const { data: marcas = [] } = useQuery<MarcaCatalog[]>({
-    queryKey: ["marcas"],
-    queryFn: () => api("/equipamentos/marcas"),
-  });
-
-  const { data: modelos = [] } = useQuery<MarcaModeloCatalog[]>({
-    queryKey: ["modelos"],
-    queryFn: () => api("/equipamentos/modelos"),
-  });
-
-  const { data: operadoras = [] } = useQuery<OperadoraCatalog[]>({
-    queryKey: ["operadoras"],
-    queryFn: () => api("/equipamentos/operadoras"),
-  });
+  const { marcas, modelos, operadoras } =
+    useEquipamentosTrioCatalogQueries<
+      MarcaCatalog,
+      MarcaModeloCatalog,
+      OperadoraCatalog
+    >();
 
   const operadoraIdParaMarcasSimcard = useMemo(
     () =>
@@ -58,15 +54,9 @@ export function useAparelhoCadastroCatalogs(options: {
     [operadoras, operadora.value, operadora.idMode],
   );
 
-  const { data: marcasSimcard = [] } = useQuery<MarcaSimcardRow[]>({
-    queryKey: ["marcas-simcard", operadoraIdParaMarcasSimcard ?? "all"],
-    queryFn: () =>
-      operadoraIdParaMarcasSimcard
-        ? api(
-            `/equipamentos/marcas-simcard?operadoraId=${operadoraIdParaMarcasSimcard}`,
-          )
-        : api("/equipamentos/marcas-simcard"),
-    enabled: marcasSimcardQueryEnabled,
+  const { marcasSimcard } = useEquipamentosMarcasSimcardListQuery<MarcaSimcardRow>({
+    operadoraId: operadoraIdParaMarcasSimcard,
+    queryEnabled: marcasSimcardQueryEnabled,
   });
 
   const { data: debitosData } = useQuery<{ data: DebitoRastreadorApi[] }>({

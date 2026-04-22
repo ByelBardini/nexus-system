@@ -46,7 +46,7 @@ vi.mock("@tanstack/react-query", async () => {
   };
 });
 
-vi.mock("@/pages/equipamentos/PreviewPareamentoTable", () => ({
+vi.mock("@/pages/equipamentos/pareamento/preview/PreviewPareamentoTable", () => ({
   PreviewPareamentoTable: () => <div />,
   TRACKER_STATUS_LABELS: {
     FOUND_AVAILABLE: { label: "", className: "" },
@@ -56,7 +56,7 @@ vi.mock("@/pages/equipamentos/PreviewPareamentoTable", () => ({
   },
 }));
 
-vi.mock("@/pages/equipamentos/PreviewCsvTable", () => ({
+vi.mock("@/pages/equipamentos/pareamento/preview/PreviewCsvTable", () => ({
   PreviewCsvTable: () => <div data-testid="csv-preview-table" />,
 }));
 
@@ -136,7 +136,7 @@ vi.mock("papaparse", () => {
 });
 
 import { useSearchParams } from "react-router-dom";
-import { PareamentoPage } from "@/pages/equipamentos/PareamentoPage";
+import { PareamentoPage } from "@/pages/equipamentos/pareamento/PareamentoPage";
 
 function renderPage() {
   return render(<PareamentoPage />);

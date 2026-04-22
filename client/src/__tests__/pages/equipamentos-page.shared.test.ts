@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  EQUIPAMENTOS_LIST_PAGE_SIZE,
   equipamentoMatchesStageFilter,
   type EquipamentoListItem,
-} from "@/pages/equipamentos/equipamentos-page.shared";
+} from "@/pages/equipamentos/lista/equipamentos-page.shared";
 
 function item(
   overrides: Partial<EquipamentoListItem> &
@@ -16,6 +17,13 @@ function item(
     ...overrides,
   };
 }
+
+describe("EQUIPAMENTOS_LIST_PAGE_SIZE", () => {
+  it("é um inteiro positivo (paginação da listagem)", () => {
+    expect(EQUIPAMENTOS_LIST_PAGE_SIZE).toBeGreaterThan(0);
+    expect(Number.isInteger(EQUIPAMENTOS_LIST_PAGE_SIZE)).toBe(true);
+  });
+});
 
 describe("equipamentoMatchesStageFilter", () => {
   it('TODOS aceita qualquer registro', () => {
