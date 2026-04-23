@@ -18,9 +18,7 @@ describe('corsAllowedOriginsFromEnv', () => {
 
   it('parseia lista separada por vírgula e remove espaços', () => {
     expect(
-      corsAllowedOriginsFromEnv(
-        'https://a.com, https://b.com , https://c.com',
-      ),
+      corsAllowedOriginsFromEnv('https://a.com, https://b.com , https://c.com'),
     ).toEqual(['https://a.com', 'https://b.com', 'https://c.com']);
   });
 
