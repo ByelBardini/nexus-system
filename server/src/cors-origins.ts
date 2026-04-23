@@ -7,9 +7,7 @@ const DEFAULT_CORS_ORIGINS: readonly string[] = [
  * Lê a lista de origens CORS a partir de `CORS_ORIGINS` (vírgulas) ou usa o padrão do Vite local.
  * Ex.: `CORS_ORIGINS=https://app.exemplo.com,https://stg.exemplo.com`
  */
-export function corsAllowedOriginsFromEnv(
-  value: string | undefined,
-): string[] {
+export function corsAllowedOriginsFromEnv(value: string | undefined): string[] {
   if (value == null || value.trim() === '') {
     return [...DEFAULT_CORS_ORIGINS];
   }
