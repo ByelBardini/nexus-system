@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/ByelBardini/nexus-system/compare/v1.3.1...v1.4.0) (2026-04-23)
+
+
+### Features
+
+* **cors:** lê CORS_ORIGINS de env com fallback local ([4ae7329](https://github.com/ByelBardini/nexus-system/commit/4ae7329cce23bf56407c798e7487ddf67c249364))
+
 ## [1.3.1](https://github.com/ByelBardini/nexus-system/compare/v1.3.0...v1.3.1) (2026-04-23)
 
 
