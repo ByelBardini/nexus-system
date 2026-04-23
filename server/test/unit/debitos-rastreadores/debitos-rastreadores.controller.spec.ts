@@ -27,7 +27,13 @@ describe('DebitosRastreadoresController', () => {
 
   describe('findAll', () => {
     it('delega para o service com o DTO recebido', async () => {
-      const retorno = { data: [], total: 0, page: 1, limit: 100, totalPages: 0 };
+      const retorno = {
+        data: [],
+        total: 0,
+        page: 1,
+        limit: 100,
+        totalPages: 0,
+      };
       serviceMock.findAll.mockResolvedValue(retorno);
 
       const query = {

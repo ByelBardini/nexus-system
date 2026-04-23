@@ -17,7 +17,9 @@ import { createPrismaMock } from '../helpers/prisma-mock';
 describe('OrdemServicoStatusSideEffectsService', () => {
   let service: OrdemServicoStatusSideEffectsService;
   let prisma: ReturnType<typeof createPrismaMock>;
-  let debitosService: jest.Mocked<Pick<DebitosRastreadoresService, 'consolidarDebitoTx'>>;
+  let debitosService: jest.Mocked<
+    Pick<DebitosRastreadoresService, 'consolidarDebitoTx'>
+  >;
 
   const tx = () => prisma as unknown as Prisma.TransactionClient;
 

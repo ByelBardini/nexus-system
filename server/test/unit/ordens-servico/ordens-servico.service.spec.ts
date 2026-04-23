@@ -283,7 +283,12 @@ describe('OrdensServicoService', () => {
 
     it('em REVISAO mantém veiculo, subcliente e snapshot na resposta', async () => {
       const sub = { id: 1, nome: 'Sub A' };
-      const veiculo = { id: 1, placa: 'XYZ-9999', marca: 'Fiat', modelo: 'Uno' };
+      const veiculo = {
+        id: 1,
+        placa: 'XYZ-9999',
+        marca: 'Fiat',
+        modelo: 'Uno',
+      };
       const items = [
         {
           id: 2,

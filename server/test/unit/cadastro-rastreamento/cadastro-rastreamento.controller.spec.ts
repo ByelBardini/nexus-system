@@ -179,11 +179,7 @@ describe('CadastroRastreamentoController', () => {
       );
 
       await expect(
-        controller.concluirCadastro(
-          999,
-          { plataforma: Plataforma.GETRAK },
-          10,
-        ),
+        controller.concluirCadastro(999, { plataforma: Plataforma.GETRAK }, 10),
       ).rejects.toThrow(NotFoundException);
     });
 

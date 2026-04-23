@@ -1595,7 +1595,10 @@ describe('PedidosRastreadoresService', () => {
       expect(prisma.pedidoRastreador.update).toHaveBeenCalledWith({
         where: { id: 1 },
         data: { kitIds: [10, 11] },
-        include: expect.objectContaining({ tecnico: true, itens: expect.any(Object) }),
+        include: expect.objectContaining({
+          tecnico: true,
+          itens: expect.any(Object),
+        }),
       });
       expect(result).toEqual(atualizado);
     });

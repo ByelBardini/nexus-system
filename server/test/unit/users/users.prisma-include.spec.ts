@@ -1,4 +1,7 @@
-import { usuarioIncludeAuth, usuarioIncludeListagem } from 'src/users/users.prisma-include';
+import {
+  usuarioIncludeAuth,
+  usuarioIncludeListagem,
+} from 'src/users/users.prisma-include';
 
 describe('users.prisma-include', () => {
   it('listagem inclui setor e cargoPermissoes sem nested permissao', () => {
@@ -8,9 +11,7 @@ describe('users.prisma-include', () => {
       'include' in usuarioIncludeListagem.usuarioCargos
         ? usuarioIncludeListagem.usuarioCargos.include?.cargo
         : undefined;
-    expect(cargo && typeof cargo === 'object' && 'include' in cargo).toBe(
-      true,
-    );
+    expect(cargo && typeof cargo === 'object' && 'include' in cargo).toBe(true);
     if (cargo && typeof cargo === 'object' && 'include' in cargo) {
       expect(cargo.include).toMatchObject({
         setor: true,
@@ -26,9 +27,7 @@ describe('users.prisma-include', () => {
       'include' in usuarioIncludeAuth.usuarioCargos
         ? usuarioIncludeAuth.usuarioCargos.include?.cargo
         : undefined;
-    expect(cargo && typeof cargo === 'object' && 'include' in cargo).toBe(
-      true,
-    );
+    expect(cargo && typeof cargo === 'object' && 'include' in cargo).toBe(true);
     if (cargo && typeof cargo === 'object' && 'include' in cargo) {
       expect(cargo.include).toEqual({
         cargoPermissoes: { include: { permissao: true } },

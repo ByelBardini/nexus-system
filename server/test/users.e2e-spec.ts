@@ -1,7 +1,4 @@
-import {
-  INestApplication,
-  ValidationPipe,
-} from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { SetorUsuario } from '@prisma/client';
@@ -11,10 +8,7 @@ import { PermissionsGuard } from '../src/auth/guards/permissions.guard';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UsersModule } from '../src/users/users.module';
 import { BCRYPT_SALT_ROUNDS } from '../src/users/users.constants';
-import {
-  cleanupE2eUsers,
-  e2eUsersEmail,
-} from './helpers/e2e-db-cleanup';
+import { cleanupE2eUsers, e2eUsersEmail } from './helpers/e2e-db-cleanup';
 import * as bcrypt from 'bcrypt';
 
 describe('Users (e2e)', () => {

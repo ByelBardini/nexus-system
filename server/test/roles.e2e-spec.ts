@@ -1,7 +1,4 @@
-import {
-  INestApplication,
-  ValidationPipe,
-} from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
@@ -164,7 +161,10 @@ describe('Roles (e2e)', () => {
     expect([200, 201]).toContain(createRes.status);
     const cargoId = createRes.body.id as number;
 
-    const perms = await prisma.permissao.findMany({ take: 2, orderBy: { id: 'asc' } });
+    const perms = await prisma.permissao.findMany({
+      take: 2,
+      orderBy: { id: 'asc' },
+    });
     expect(perms.length).toBeGreaterThan(0);
     const ids = perms.map((p) => p.id);
 

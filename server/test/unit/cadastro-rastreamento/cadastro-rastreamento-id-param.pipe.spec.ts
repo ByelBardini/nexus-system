@@ -1,4 +1,8 @@
-import { ArgumentMetadata, BadRequestException, ParseIntPipe } from '@nestjs/common';
+import {
+  ArgumentMetadata,
+  BadRequestException,
+  ParseIntPipe,
+} from '@nestjs/common';
 
 /**
  * O controller `cadastro-rastreamento` usa `@Param('id', ParseIntPipe)` em iniciar/concluir.
@@ -16,7 +20,7 @@ describe('ParseIntPipe (param :id — cadastro-rastreamento)', () => {
     ['1', 1],
     ['42', 42],
     ['0', 0],
-  ])("aceita string inteira %s → %i", async (raw, expected) => {
+  ])('aceita string inteira %s → %i', async (raw, expected) => {
     await expect(pipe.transform(raw, meta)).resolves.toBe(expected);
   });
 
@@ -27,9 +31,7 @@ describe('ParseIntPipe (param :id — cadastro-rastreamento)', () => {
   });
 
   it('rejeita string vazia', async () => {
-    await expect(pipe.transform('', meta)).rejects.toThrow(
-      BadRequestException,
-    );
+    await expect(pipe.transform('', meta)).rejects.toThrow(BadRequestException);
   });
 
   it('rejeita decimal (não é string numérica inteira strict do Nest)', async () => {
