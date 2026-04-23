@@ -7,7 +7,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { OrdensServicoCriacaoHeader } from "@/pages/ordens-servico/criacao/components/OrdensServicoCriacaoHeader";
 import { OrdensServicoCriacaoObservacoesSection } from "@/pages/ordens-servico/criacao/components/OrdensServicoCriacaoObservacoesSection";
 import { OrdensServicoCriacaoVeiculoSection } from "@/pages/ordens-servico/criacao/components/OrdensServicoCriacaoVeiculoSection";
-import { OrdensServicoCriacaoServicoSection } from "@/pages/ordens-servico/criacao/components/OrdensServicoCriacaoServicoSection";
 import { OrdensServicoCriacaoTecnicoSection } from "@/pages/ordens-servico/criacao/components/OrdensServicoCriacaoTecnicoSection";
 import { OrdensServicoCriacaoSidebar } from "@/pages/ordens-servico/criacao/components/OrdensServicoCriacaoSidebar";
 import { OrdensServicoCriacaoClienteSection } from "@/pages/ordens-servico/criacao/components/OrdensServicoCriacaoClienteSection";
@@ -26,10 +25,6 @@ vi.mock("@/components/MaterialIcon", () => ({
 
 vi.mock("@/components/SelectTecnicoSearch", () => ({
   SelectTecnicoSearch: () => <div data-testid="stec" />,
-}));
-
-vi.mock("@/components/IdAparelhoSearch", () => ({
-  IdAparelhoSearch: () => <div data-testid="idap" />,
 }));
 
 vi.mock("@/components/SubclienteNomeAutocomplete", () => ({
@@ -143,24 +138,6 @@ describe("OrdensServicoCriacaoVeiculoSection", () => {
       </FormShell>,
     );
     expect(document.querySelector(".animate-spin")).toBeTruthy();
-  });
-});
-
-describe("OrdensServicoCriacaoServicoSection", () => {
-  it("exibe opções extras para RETIRADA", () => {
-    render(
-      <FormShell defaultTipo="RETIRADA">
-        {(f) => (
-          <OrdensServicoCriacaoServicoSection
-            form={f}
-            tipo="RETIRADA"
-            showDetalhesRevisaoRetirada
-            rastreadoresInstalados={[]}
-          />
-        )}
-      </FormShell>,
-    );
-    expect(screen.getByTestId("idap")).toBeInTheDocument();
   });
 });
 

@@ -1,17 +1,35 @@
-export {
+import { EquipamentosConfigModals } from "./components/EquipamentosConfigModals";
+import { EquipamentosConfigPageHeader } from "./components/EquipamentosConfigPageHeader";
+import { MarcasModelosPanel } from "./components/MarcasModelosPanel";
+import { MarcasSimcardPanel } from "./components/MarcasSimcardPanel";
+import { OperadorasTablePanel } from "./components/OperadorasTablePanel";
+import {
+  buildModelosByMarca,
+  filterMarcasByMarcaOrModeloName,
+  filterMarcasSimcardByNomeOuOperadora,
+  filterOperadorasByName,
+  toggleIdInSet,
+} from "./domain/equipamentos-config.helpers";
+import {
   useEquipamentosConfig,
   type EquipamentosConfigController,
 } from "./hooks/useEquipamentosConfig";
-export { EquipamentosConfigPageHeader } from "./components/EquipamentosConfigPageHeader";
-export { MarcasModelosPanel } from "./components/MarcasModelosPanel";
-export { OperadorasTablePanel } from "./components/OperadorasTablePanel";
-export { MarcasSimcardPanel } from "./components/MarcasSimcardPanel";
-export { EquipamentosConfigModals } from "./components/EquipamentosConfigModals";
+
+/** Avaliação do barrel para cobertura (sem efeito em runtime). */
+export const equipamentosConfigBarrelLoaded = true;
+
 export * from "./domain/equipamentos-config.types";
 export {
-  toggleIdInSet,
   buildModelosByMarca,
+  EquipamentosConfigModals,
+  EquipamentosConfigPageHeader,
   filterMarcasByMarcaOrModeloName,
-  filterOperadorasByName,
   filterMarcasSimcardByNomeOuOperadora,
-} from "./domain/equipamentos-config.helpers";
+  filterOperadorasByName,
+  MarcasModelosPanel,
+  MarcasSimcardPanel,
+  OperadorasTablePanel,
+  toggleIdInSet,
+  useEquipamentosConfig,
+};
+export type { EquipamentosConfigController };

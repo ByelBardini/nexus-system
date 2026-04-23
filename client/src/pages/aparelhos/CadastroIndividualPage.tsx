@@ -100,7 +100,7 @@ export function CadastroIndividualPage() {
       );
       return modeloSelecionado?.minCaracteresImei ?? null;
     }
-    const marcaSim = marcasSimcard.find(
+    const marcaSim = (marcasSimcard ?? []).find(
       (m) => m.id === Number(watchMarcaSimcardId),
     );
     return marcaSim?.minCaracteresIccid ?? null;

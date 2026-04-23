@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { Plus } from "lucide-react";
 import {
   Controller,
@@ -88,7 +89,7 @@ export function NovoPedidoDestinoSection({
           onClick={() => {
             setValue("tipoDestino", "TECNICO");
             setValue("tecnicoId", undefined);
-            setValue("destinoCliente", "");
+            setValue("destinoCliente", undefined);
             setValue("deCliente", false);
             setValue("deClienteId", undefined);
           }}
@@ -150,23 +151,26 @@ export function NovoPedidoDestinoSection({
           Pesquisar Destinatário
         </Label>
         {tipoDestino !== "CLIENTE" ? (
-          <Controller
-            name="tecnicoId"
-            control={control}
-            render={({ field }) => (
-              <SelectTecnicoSearch
-                tecnicos={tecnicos}
-                value={field.value}
-                onChange={field.onChange}
-                disabled={loadingTecnicos}
-              />
-            )}
-          />
+          <Fragment key="busca-destinatario-tecnico">
+            <Controller
+              name="tecnicoId"
+              control={control}
+              render={({ field }) => (
+                <SelectTecnicoSearch
+                  tecnicos={tecnicos}
+                  value={field.value}
+                  onChange={field.onChange}
+                  disabled={loadingTecnicos}
+                />
+              )}
+            />
+          </Fragment>
         ) : (
-          <Controller
-            name="destinoCliente"
-            control={control}
-            render={({ field }) => (
+          <Fragment key="busca-destinatario-cliente">
+            <Controller
+              name="destinoCliente"
+              control={control}
+              render={({ field }) => (
               <div className="relative">
                 <MaterialIcon
                   name="search"
@@ -193,7 +197,8 @@ export function NovoPedidoDestinoSection({
                 </Select>
               </div>
             )}
-          />
+            />
+          </Fragment>
         )}
         {(formState.errors.tecnicoId ??
           formState.errors.destinoCliente ??

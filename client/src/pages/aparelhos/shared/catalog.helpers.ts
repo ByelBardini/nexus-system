@@ -78,10 +78,10 @@ export function idOperadoraParaFiltroSim(
 }
 
 export function filtrarMarcasSimcardPorOperadoraId(
-  marcas: MarcaSimcardRow[],
+  marcas: MarcaSimcardRow[] | undefined,
   operadoraId: number | null,
 ) {
-  return marcas.filter(
+  return (marcas ?? []).filter(
     (m) => !operadoraId || m.operadoraId === operadoraId,
   );
 }
