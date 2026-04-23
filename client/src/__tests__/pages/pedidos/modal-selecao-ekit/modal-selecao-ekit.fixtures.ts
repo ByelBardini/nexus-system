@@ -1,5 +1,12 @@
-import type { PedidoRastreadorView, PedidoRastreadorApi } from "@/pages/pedidos/shared/pedidos-rastreador.types";
-import type { KitDetalhe, AparelhoNoKit, KitComAparelhos } from "@/pages/pedidos/shared/pedidos-config-types";
+import type {
+  PedidoRastreadorView,
+  PedidoRastreadorApi,
+} from "@/pages/pedidos/shared/pedidos-rastreador.types";
+import type {
+  KitDetalhe,
+  AparelhoNoKit,
+  KitComAparelhos,
+} from "@/pages/pedidos/shared/pedidos-config-types";
 
 export function buildKitDetalhe(partial: Partial<KitDetalhe> = {}): KitDetalhe {
   return {

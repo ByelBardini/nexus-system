@@ -55,8 +55,7 @@ function mockLista(
   api.mockImplementation((path: string) => {
     if (String(path).includes("/users/paginated"))
       return Promise.resolve(paginatedUsuariosFixture([u, ...extra]));
-    if (path === "/roles/permissions")
-      return Promise.resolve(permissoesPadrao);
+    if (path === "/roles/permissions") return Promise.resolve(permissoesPadrao);
     if (String(path).includes("/roles?includePermissions"))
       return Promise.resolve([
         cargoComPermissoesFixture(1, "Adm", [
@@ -82,7 +81,9 @@ describe("UsuariosPage E2E (cliente)", () => {
       ).toBeInTheDocument(),
     );
     expect(screen.getByText("Ana Teste")).toBeInTheDocument();
-    expect(screen.getByText(/total de 1 usuários cadastrados/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/total de 1 usuários cadastrados/i),
+    ).toBeInTheDocument();
   });
 
   it("vazio: mensagem nenhum usuário", async () => {
@@ -91,7 +92,8 @@ describe("UsuariosPage E2E (cliente)", () => {
         return Promise.resolve(
           paginatedUsuariosFixture([], { total: 0, page: 1, totalPages: 0 }),
         );
-      if (path === "/roles/permissions") return Promise.resolve(permissoesPadrao);
+      if (path === "/roles/permissions")
+        return Promise.resolve(permissoesPadrao);
       return Promise.resolve(null);
     });
     renderUsuariosPage();
@@ -123,14 +125,14 @@ describe("UsuariosPage E2E (cliente)", () => {
     const user = userEvent.setup();
     renderUsuariosPage();
     await screen.findByText("Ana Teste");
-    await user.click(
-      screen.getByRole("button", { name: /novo usuário/i }),
-    );
+    await user.click(screen.getByRole("button", { name: /novo usuário/i }));
     const dialog = await screen.findByRole("dialog");
     const nome = within(dialog).getByPlaceholderText(/ricardo cavalcanti/i);
     await user.clear(nome);
     await user.type(nome, "Novo Colab");
-    const email = within(dialog).getByPlaceholderText(/usuario@empresa\.com\.br/i);
+    const email = within(dialog).getByPlaceholderText(
+      /usuario@empresa\.com\.br/i,
+    );
     await user.clear(email);
     await user.type(email, "n@c.com");
     await user.click(
@@ -148,11 +150,12 @@ describe("UsuariosPage E2E (cliente)", () => {
       );
     });
     const postCall = api.mock.calls.find(
-      (c) => c[0] === "/users" && (c[1] as { method: string })?.method === "POST",
+      (c) =>
+        c[0] === "/users" && (c[1] as { method: string })?.method === "POST",
     );
-    expect(postCall?.[1] && JSON.parse((postCall[1] as { body: string }).body).nome).toBe(
-      "Novo Colab",
-    );
+    expect(
+      postCall?.[1] && JSON.parse((postCall[1] as { body: string }).body).nome,
+    ).toBe("Novo Colab");
   });
 
   it("fluxo: editar a partir do painel expandido (reset senha e PATCH inativar fora de escopo mínimo)", async () => {
@@ -166,7 +169,9 @@ describe("UsuariosPage E2E (cliente)", () => {
     });
     await user.click(editBtn);
     const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getAllByText(/editar usuário/i).length).toBeGreaterThan(0);
+    expect(
+      within(dialog).getAllByText(/editar usuário/i).length,
+    ).toBeGreaterThan(0);
     await user.click(
       within(dialog).getByRole("button", { name: /confirmar edição/i }),
     );

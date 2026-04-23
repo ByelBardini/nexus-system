@@ -30,11 +30,15 @@ beforeEach(() => {
       return Promise.resolve({
         subclientes: [{ id: 1, nome: "X" }],
       });
-    if (path === "/tecnicos")
-      return Promise.resolve([{ id: 3, nome: "T" }]);
+    if (path === "/tecnicos") return Promise.resolve([{ id: 3, nome: "T" }]);
     if (path === "/aparelhos")
       return Promise.resolve([
-        { id: 1, tipo: "RASTREADOR", status: "INSTALADO", identificador: "ID1" },
+        {
+          id: 1,
+          tipo: "RASTREADOR",
+          status: "INSTALADO",
+          identificador: "ID1",
+        },
         { id: 2, tipo: "RASTREADOR", status: "PENDENTE", identificador: "X" },
         { id: 3, tipo: "OUTRO", status: "INSTALADO", identificador: "Y" },
       ]);

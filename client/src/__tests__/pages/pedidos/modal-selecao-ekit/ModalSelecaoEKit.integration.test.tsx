@@ -68,7 +68,11 @@ function setupApiRouter() {
     if (path === "/aparelhos/pareamento/kits/detalhes") {
       return [
         buildKitDetalhe({ id: 1, nome: "KIT-ALPHA" }),
-        buildKitDetalhe({ id: 2, nome: "OUTRO", modelosOperadoras: "escondido" }),
+        buildKitDetalhe({
+          id: 2,
+          nome: "OUTRO",
+          modelosOperadoras: "escondido",
+        }),
       ];
     }
     if (path === "/aparelhos/pareamento/kits/1") {
@@ -133,14 +137,18 @@ describe("ModalSelecaoEKit (integração ponta a ponta)", () => {
     );
 
     await waitFor(() =>
-      expect(screen.getByRole("cell", { name: "KIT-ALPHA" })).toBeInTheDocument(),
+      expect(
+        screen.getByRole("cell", { name: "KIT-ALPHA" }),
+      ).toBeInTheDocument(),
     );
 
     await user.type(
       screen.getByPlaceholderText(/Filtrar por nome ou modelos/i),
       "ALPHA",
     );
-    expect(screen.queryByRole("cell", { name: "OUTRO" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("cell", { name: "OUTRO" }),
+    ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /Escolher/i }));
 
@@ -150,9 +158,7 @@ describe("ModalSelecaoEKit (integração ponta a ponta)", () => {
       ).toBeInTheDocument(),
     );
 
-    await waitFor(() =>
-      expect(screen.getByText("DISP-1")).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByText("DISP-1")).toBeInTheDocument());
   });
 
   it("Cancelar na seleção chama onOpenChange(false) e não vincula", async () => {
@@ -174,7 +180,9 @@ describe("ModalSelecaoEKit (integração ponta a ponta)", () => {
     );
 
     await waitFor(() =>
-      expect(screen.getByRole("cell", { name: "KIT-ALPHA" })).toBeInTheDocument(),
+      expect(
+        screen.getByRole("cell", { name: "KIT-ALPHA" }),
+      ).toBeInTheDocument(),
     );
 
     await user.click(screen.getByRole("button", { name: "Cancelar" }));
@@ -190,7 +198,11 @@ describe("ModalSelecaoEKit (integração ponta a ponta)", () => {
         return { id: 99, nome: "KIT-NOVO" };
       }
       if (path === "/aparelhos/pareamento/kits/99") {
-        return buildKitComAparelhos({ id: 99, nome: "KIT-NOVO", aparelhos: [] });
+        return buildKitComAparelhos({
+          id: 99,
+          nome: "KIT-NOVO",
+          aparelhos: [],
+        });
       }
       if (path.startsWith("/aparelhos/pareamento/aparelhos-disponiveis")) {
         return [];
@@ -242,9 +254,7 @@ describe("ModalSelecaoEKit (integração ponta a ponta)", () => {
         return { assignments: [], quotaUsage: [] };
       }
       if (path.startsWith("/aparelhos/pareamento/aparelhos-disponiveis")) {
-        return [
-          buildAparelhoNoKit({ id: 200, identificador: "DISP-MISTO" }),
-        ];
+        return [buildAparelhoNoKit({ id: 200, identificador: "DISP-MISTO" })];
       }
       throw new Error(path);
     });
@@ -300,26 +310,25 @@ describe("ModalSelecaoEKit (integração ponta a ponta)", () => {
     );
 
     await waitFor(() =>
-      expect(screen.getByRole("cell", { name: "KIT-ALPHA" })).toBeInTheDocument(),
+      expect(
+        screen.getByRole("cell", { name: "KIT-ALPHA" }),
+      ).toBeInTheDocument(),
     );
-    const alphaRow = screen.getByRole("cell", { name: "KIT-ALPHA" }).closest("tr");
+    const alphaRow = screen
+      .getByRole("cell", { name: "KIT-ALPHA" })
+      .closest("tr");
     expect(alphaRow).toBeTruthy();
     await user.click(
       within(alphaRow!).getByRole("button", { name: /Escolher/i }),
     );
 
-    await waitFor(() =>
-      expect(screen.getByText("NO-KIT")).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByText("NO-KIT")).toBeInTheDocument());
 
     await user.click(
       screen.getByRole("button", { name: /Salvar e Vincular ao Pedido/i }),
     );
 
-    expect(onVincular).toHaveBeenCalledWith(
-      { id: 1, nome: "KIT-ALPHA" },
-      1,
-    );
+    expect(onVincular).toHaveBeenCalledWith({ id: 1, nome: "KIT-ALPHA" }, 1);
     expect(toast.success).toHaveBeenCalled();
   });
 

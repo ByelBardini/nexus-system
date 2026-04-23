@@ -51,7 +51,9 @@ describe("DebitosEquipamentosPage (integração)", () => {
       </TestApp>,
     );
     await waitFor(() =>
-      expect(screen.getByText("2 registro(s) encontrado(s)")).toBeInTheDocument(),
+      expect(
+        screen.getByText("2 registro(s) encontrado(s)"),
+      ).toBeInTheDocument(),
     );
     await user.type(
       screen.getByPlaceholderText("Devedor ou credor..."),
@@ -72,7 +74,9 @@ describe("DebitosEquipamentosPage (integração)", () => {
       </TestApp>,
     );
     await waitFor(() =>
-      expect(screen.getByText("2 registro(s) encontrado(s)")).toBeInTheDocument(),
+      expect(
+        screen.getByText("2 registro(s) encontrado(s)"),
+      ).toBeInTheDocument(),
     );
     await user.click(screen.getByRole("button", { name: "Quitado" }));
     await waitFor(() =>
@@ -82,7 +86,9 @@ describe("DebitosEquipamentosPage (integração)", () => {
     );
     await user.click(screen.getByRole("button", { name: /Limpar/i }));
     await waitFor(() =>
-      expect(screen.getByText("2 registro(s) encontrado(s)")).toBeInTheDocument(),
+      expect(
+        screen.getByText("2 registro(s) encontrado(s)"),
+      ).toBeInTheDocument(),
     );
   });
 

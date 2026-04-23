@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { loteFormSchema, loteFormDefaultValues } from "@/pages/aparelhos/cadastro-lote/schema";
+import {
+  loteFormSchema,
+  loteFormDefaultValues,
+} from "@/pages/aparelhos/cadastro-lote/schema";
 
 const baseOk = {
   ...loteFormDefaultValues,

@@ -24,12 +24,11 @@ vi.mock("@/components/MaterialIcon", () => ({
  * `onChange("")` do painel, que o componente de produção não dispara pela UI.
  */
 vi.mock("@/components/SearchableSelect", async (importOriginal) => {
-  const mod = await importOriginal<typeof import("@/components/SearchableSelect")>();
+  const mod =
+    await importOriginal<typeof import("@/components/SearchableSelect")>();
   const Actual = mod.SearchableSelect;
   return {
-    SearchableSelect: (
-      props: ComponentProps<typeof Actual>,
-    ) => (
+    SearchableSelect: (props: ComponentProps<typeof Actual>) => (
       <div data-testid="searchable-select-wrap">
         <Actual {...props} />
         <button
@@ -82,10 +81,7 @@ function baseProps(): BaseOverrides & {
 function PanelWithSelecao(
   extra: BaseOverrides & { initialSelecionados?: Set<number> },
 ) {
-  const {
-    initialSelecionados = new Set<number>(),
-    ...rest
-  } = extra;
+  const { initialSelecionados = new Set<number>(), ...rest } = extra;
   const baseRef = useRef<ReturnType<typeof baseProps> | null>(null);
   if (baseRef.current === null) {
     baseRef.current = baseProps();
@@ -106,19 +102,17 @@ function PanelWithSelecao(
 function PanelMistoComEstadoDestino(
   extra: BaseOverrides & { initialSelecionados?: Set<number> },
 ) {
-  const {
-    initialSelecionados = new Set<number>(),
-    ...rest
-  } = extra;
+  const { initialSelecionados = new Set<number>(), ...rest } = extra;
   const baseRef = useRef<ReturnType<typeof baseProps> | null>(null);
   if (baseRef.current === null) {
     baseRef.current = baseProps();
   }
   const [aparelhosSelecionados, setAparelhosSelecionados] =
     useState<Set<number>>(initialSelecionados);
-  const [destinatarioLote, setDestinatarioLote] = useState<
-    ModalSelecaoEKitPanelNovosRastreadoresProps["destinatarioLote"]
-  >(null);
+  const [destinatarioLote, setDestinatarioLote] =
+    useState<ModalSelecaoEKitPanelNovosRastreadoresProps["destinatarioLote"]>(
+      null,
+    );
   return (
     <ModalSelecaoEKitPanelNovosRastreadores
       {...baseRef.current!}
@@ -200,7 +194,10 @@ describe("ModalSelecaoEKitPanelNovosRastreadores", () => {
 
   describe("banner de requisitos do pedido", () => {
     it("não renderiza o banner quando pedido não tem marca/modelo nem operadora", () => {
-      const pedido = buildPedidoView({ marcaModelo: undefined, operadora: undefined });
+      const pedido = buildPedidoView({
+        marcaModelo: undefined,
+        operadora: undefined,
+      });
       renderPanel({ pedido });
       expect(
         screen.queryByText(/Aparelhos filtrados por requisitos do pedido/i),
@@ -228,7 +225,10 @@ describe("ModalSelecaoEKitPanelNovosRastreadores", () => {
     });
 
     it("renderiza marca/modelo e operadora quando ambos existem", () => {
-      const pedido = buildPedidoView({ marcaModelo: "TK-103", operadora: "TIM" });
+      const pedido = buildPedidoView({
+        marcaModelo: "TK-103",
+        operadora: "TIM",
+      });
       renderPanel({ pedido });
       expect(
         screen.getByText(/Aparelhos filtrados por requisitos do pedido/i),
@@ -283,9 +283,7 @@ describe("ModalSelecaoEKitPanelNovosRastreadores", () => {
       const pedidoApi = buildPedidoApiMisto({ itens: [] });
       renderPanel({ isMisto: true, pedidoApi });
       expect(screen.getByText("Destino deste lote")).toBeInTheDocument();
-      expect(
-        screen.getByTestId("searchable-select-wrap"),
-      ).toBeInTheDocument();
+      expect(screen.getByTestId("searchable-select-wrap")).toBeInTheDocument();
     });
 
     it("limpar valor (onChange '') chama setDestinatarioLote(null)", async () => {
@@ -301,7 +299,9 @@ describe("ModalSelecaoEKitPanelNovosRastreadores", () => {
         },
       });
       await user.click(
-        screen.getByRole("button", { name: /Limpar destino do lote \(teste\)/i }),
+        screen.getByRole("button", {
+          name: /Limpar destino do lote \(teste\)/i,
+        }),
       );
       expect(setDestinatarioLote).toHaveBeenCalledWith(null);
     });
@@ -317,7 +317,9 @@ describe("ModalSelecaoEKitPanelNovosRastreadores", () => {
       await user.click(
         screen.getByRole("button", { name: /selecionar destino/i }),
       );
-      await user.click(await screen.findByRole("button", { name: /^Infinity$/ }));
+      await user.click(
+        await screen.findByRole("button", { name: /^Infinity$/ }),
+      );
       expect(setDestinatarioLote).toHaveBeenCalledWith({
         proprietario: "INFINITY",
         clienteId: null,
@@ -459,7 +461,9 @@ describe("ModalSelecaoEKitPanelNovosRastreadores", () => {
         onAdicionarSelecionados: onAdicionar,
         aparelhosSelecionados: new Set([10]),
       });
-      await user.click(screen.getByRole("button", { name: /Adicionar ao Kit/i }));
+      await user.click(
+        screen.getByRole("button", { name: /Adicionar ao Kit/i }),
+      );
       expect(onAdicionar).toHaveBeenCalledTimes(1);
     });
   });
@@ -489,9 +493,12 @@ describe("ModalSelecaoEKitPanelNovosRastreadores", () => {
     it("onChange do input repassa string completa em uma única alteração", () => {
       const setBuscaAparelho = vi.fn();
       renderPanel({ setBuscaAparelho, buscaAparelho: "" });
-      fireEvent.change(screen.getByPlaceholderText("Digite o identificador..."), {
-        target: { value: "IMEI-999" },
-      });
+      fireEvent.change(
+        screen.getByPlaceholderText("Digite o identificador..."),
+        {
+          target: { value: "IMEI-999" },
+        },
+      );
       expect(setBuscaAparelho).toHaveBeenCalledTimes(1);
       expect(setBuscaAparelho).toHaveBeenCalledWith("IMEI-999");
     });
@@ -532,7 +539,9 @@ describe("ModalSelecaoEKitPanelNovosRastreadores", () => {
           opcoesCliente={[]}
         />,
       );
-      expect(screen.getByText("Nenhum aparelho disponível.")).toBeInTheDocument();
+      expect(
+        screen.getByText("Nenhum aparelho disponível."),
+      ).toBeInTheDocument();
       expect(screen.queryByText("IMEI-1")).not.toBeInTheDocument();
     });
 
@@ -639,9 +648,11 @@ describe("ModalSelecaoEKitPanelNovosRastreadores", () => {
       expect(headerCb).not.toBeChecked();
       await user.click(headerCb);
       expect(headerCb).toBeChecked();
-      within(table).getAllByRole("checkbox").forEach((cb) => {
-        expect(cb).toBeChecked();
-      });
+      within(table)
+        .getAllByRole("checkbox")
+        .forEach((cb) => {
+          expect(cb).toBeChecked();
+        });
     });
 
     it("com zero linhas, marcar checkbox do cabeçalho não quebra e Adicionar segue desabilitado", async () => {
@@ -673,12 +684,16 @@ describe("ModalSelecaoEKitPanelNovosRastreadores", () => {
           opcoesCliente={["C"]}
         />,
       );
-      const adicionar = screen.getByRole("button", { name: /Adicionar ao Kit/i });
+      const adicionar = screen.getByRole("button", {
+        name: /Adicionar ao Kit/i,
+      });
       expect(adicionar).toBeDisabled();
       await user.click(
         screen.getByRole("button", { name: /selecionar destino/i }),
       );
-      await user.click(await screen.findByRole("button", { name: /^Infinity$/ }));
+      await user.click(
+        await screen.findByRole("button", { name: /^Infinity$/ }),
+      );
       expect(adicionar).toBeDisabled();
       await user.click(screen.getByText("IMEI-1").closest("tr")!);
       expect(adicionar).not.toBeDisabled();

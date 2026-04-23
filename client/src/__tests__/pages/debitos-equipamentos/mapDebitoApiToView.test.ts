@@ -79,9 +79,7 @@ describe("mapDebitoApiToView", () => {
     expect(v.devedor).toEqual({ nome: "Infinity", tipo: "infinity" });
     expect(v.credor).toEqual({ nome: "Zé", tipo: "cliente" });
     expect(v.status).toBe("aberto");
-    expect(v.modelos).toEqual([
-      { nome: "MarcaX Modelo Y", quantidade: 2 },
-    ]);
+    expect(v.modelos).toEqual([{ nome: "MarcaX Modelo Y", quantidade: 2 }]);
   });
 
   it("cliente sem nome usa fallback Cliente", () => {
@@ -133,9 +131,7 @@ describe("mapDebitoApiToView", () => {
   it("delta positivo → entrada", () => {
     const v = mapDebitoApiToView(
       buildDebitoRastreadorListaApi({
-        historicos: [
-          { id: 1, delta: 4, criadoEm: "2024-02-01T10:00:00.000Z" },
-        ],
+        historicos: [{ id: 1, delta: 4, criadoEm: "2024-02-01T10:00:00.000Z" }],
       }),
     );
     expect(v.historico[0].tipo).toBe("entrada");

@@ -27,9 +27,7 @@ export const cargoBase: Cargo = {
 
 export function createCargoModalWrapper(qc: QueryClient) {
   return function W({ children }: { children: ReactNode }) {
-    return (
-      <QueryClientProvider client={qc}>{children}</QueryClientProvider>
-    );
+    return <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
   };
 }
 

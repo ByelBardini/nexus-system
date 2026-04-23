@@ -28,7 +28,9 @@ describe("parseDestinoClienteString", () => {
 
   it("parseia cliente e subcliente", () => {
     expect(parseDestinoClienteString("cliente-7")).toEqual({ clienteId: 7 });
-    expect(parseDestinoClienteString("subcliente-8")).toEqual({ subclienteId: 8 });
+    expect(parseDestinoClienteString("subcliente-8")).toEqual({
+      subclienteId: 8,
+    });
   });
 
   it("rejeita id NaN (edge)", () => {
@@ -100,9 +102,9 @@ describe("formatCidadeEstadoDoDestinatario", () => {
   });
 
   it("só estado ausente: usa cidade ou traço (edge sem estado)", () => {
-    expect(formatCidadeEstadoDoDestinatario({ cidade: "A", estado: null })).toBe(
-      "A",
-    );
+    expect(
+      formatCidadeEstadoDoDestinatario({ cidade: "A", estado: null }),
+    ).toBe("A");
   });
 
   it("retorna null sem chaves de endereço", () => {
@@ -120,9 +122,7 @@ describe("formatFilialClienteDoSubcliente", () => {
   });
 
   it("retorna - sem cliente", () => {
-    expect(
-      formatFilialClienteDoSubcliente({ cliente: undefined }),
-    ).toBe("-");
+    expect(formatFilialClienteDoSubcliente({ cliente: undefined })).toBe("-");
   });
 });
 

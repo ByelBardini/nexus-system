@@ -22,6 +22,8 @@ describe("toastLoteFormValidationErrors", () => {
   it("usa mensagem padrão quando não há message string", () => {
     toastError.mockClear();
     toastLoteFormValidationErrors({ referencia: { type: "custom" } });
-    expect(toastError).toHaveBeenCalledWith("Verifique os campos do formulário");
+    expect(toastError).toHaveBeenCalledWith(
+      "Verifique os campos do formulário",
+    );
   });
 });

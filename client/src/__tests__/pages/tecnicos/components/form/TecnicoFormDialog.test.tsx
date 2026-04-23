@@ -275,7 +275,9 @@ describe("TecnicoFormDialog", () => {
     expect(headerHeading(dialogNovo, "Novo Técnico")).toBeInTheDocument();
 
     rerender(<DialogHarness editing onSubmit={vi.fn()} />);
-    const dialogEditar = screen.getByRole("dialog", { name: /Editar Técnico/i });
+    const dialogEditar = screen.getByRole("dialog", {
+      name: /Editar Técnico/i,
+    });
     expect(headerHeading(dialogEditar, "Editar Técnico")).toBeInTheDocument();
   });
 

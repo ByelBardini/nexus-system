@@ -3,7 +3,10 @@ import { render, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useModalSelecaoEKit } from "@/pages/pedidos/modal-selecao-ekit/hooks/useModalSelecaoEKit";
-import type { PedidoRastreadorApi, PedidoRastreadorView } from "@/pages/pedidos/shared/pedidos-rastreador.types";
+import type {
+  PedidoRastreadorApi,
+  PedidoRastreadorView,
+} from "@/pages/pedidos/shared/pedidos-rastreador.types";
 import { buildPedidoView } from "@/__tests__/pages/pedidos/modal-selecao-ekit/modal-selecao-ekit.fixtures";
 
 const apiMock = vi.hoisted(() => vi.fn());
@@ -85,15 +88,7 @@ describe("useModalSelecaoEKit + useKitComAparelhosQuery", () => {
       atualizadoEm: "",
       entregueEm: null,
     };
-    render(
-      withQc(
-        <View
-          pView={pView}
-          pApi={pApi}
-          open
-        />,
-      ),
-    );
+    render(withQc(<View pView={pView} pApi={pApi} open />));
     await waitFor(
       () => {
         const hit = apiMock.mock.calls

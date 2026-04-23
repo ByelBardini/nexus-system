@@ -17,7 +17,11 @@ vi.mock("@/components/MaterialIcon", () => ({
   ),
 }));
 
-const allStatuses: StatusAparelho[] = ["NOVO_OK", "EM_MANUTENCAO", "CANCELADO_DEFEITO"];
+const allStatuses: StatusAparelho[] = [
+  "NOVO_OK",
+  "EM_MANUTENCAO",
+  "CANCELADO_DEFEITO",
+];
 
 function DefinicaoHarness({
   defaultStatus = "EM_MANUTENCAO" as StatusAparelho,
@@ -28,7 +32,9 @@ function DefinicaoHarness({
   defaultStatus?: StatusAparelho;
   watchStatus: string;
   statusDisponiveis?: StatusAparelho[];
-  onFormReady?: (f: ReturnType<typeof useForm<FormDataCadastroIndividual>>) => void;
+  onFormReady?: (
+    f: ReturnType<typeof useForm<FormDataCadastroIndividual>>,
+  ) => void;
 }) {
   const form = useForm<FormDataCadastroIndividual>({
     defaultValues: {
@@ -68,12 +74,17 @@ describe("DefinicaoStatusSection", () => {
 
   it("atualiza o campo status no formulário ao clicar em cada opção disponível", async () => {
     const user = userEvent.setup();
-    const formRef: { current: ReturnType<typeof useForm<FormDataCadastroIndividual>> | null } = {
+    const formRef: {
+      current: ReturnType<typeof useForm<FormDataCadastroIndividual>> | null;
+    } = {
       current: null,
     };
     function H() {
       const form = useForm<FormDataCadastroIndividual>({
-        defaultValues: { ...cadastroIndividualDefaultValues, status: "EM_MANUTENCAO" },
+        defaultValues: {
+          ...cadastroIndividualDefaultValues,
+          status: "EM_MANUTENCAO",
+        },
       });
       formRef.current = form;
       return (
@@ -93,18 +104,25 @@ describe("DefinicaoStatusSection", () => {
     await user.click(screen.getByRole("button", { name: /Em Manutenção/i }));
     expect(f.getValues("status")).toBe("EM_MANUTENCAO");
 
-    await user.click(screen.getByRole("button", { name: /Cancelado.*Defeito/i }));
+    await user.click(
+      screen.getByRole("button", { name: /Cancelado.*Defeito/i }),
+    );
     expect(f.getValues("status")).toBe("CANCELADO_DEFEITO");
   });
 
   it("com status CANCELADO_DEFEITO, o botão correspondente exibe estado selecionado (anel / cor de destaque)", async () => {
     const user = userEvent.setup();
-    const formRef: { current: ReturnType<typeof useForm<FormDataCadastroIndividual>> | null } = {
+    const formRef: {
+      current: ReturnType<typeof useForm<FormDataCadastroIndividual>> | null;
+    } = {
       current: null,
     };
     function H() {
       const form = useForm<FormDataCadastroIndividual>({
-        defaultValues: { ...cadastroIndividualDefaultValues, status: "EM_MANUTENCAO" },
+        defaultValues: {
+          ...cadastroIndividualDefaultValues,
+          status: "EM_MANUTENCAO",
+        },
       });
       formRef.current = form;
       return (
@@ -116,18 +134,23 @@ describe("DefinicaoStatusSection", () => {
       );
     }
     render(<H />);
-    const cancelBefore = screen.getByRole("button", { name: /Cancelado.*Defeito/i });
+    const cancelBefore = screen.getByRole("button", {
+      name: /Cancelado.*Defeito/i,
+    });
     expect(cancelBefore.className).toMatch(/opacity-60/);
     await user.click(cancelBefore);
     expect(formRef.current!.getValues("status")).toBe("CANCELADO_DEFEITO");
-    const cancelAfter = screen.getByRole("button", { name: /Cancelado.*Defeito/i });
+    const cancelAfter = screen.getByRole("button", {
+      name: /Cancelado.*Defeito/i,
+    });
     expect(cancelAfter.className).toMatch(/ring-1/);
     expect(cancelAfter.className).toMatch(/border-red/);
   });
 
   it("persiste categoriaFalha e destinoDefeito no formulário após escolha nos selects", async () => {
     const user = userEvent.setup();
-    let api: ReturnType<typeof useForm<FormDataCadastroIndividual>> | null = null;
+    let api: ReturnType<typeof useForm<FormDataCadastroIndividual>> | null =
+      null;
     render(
       <DefinicaoHarness
         defaultStatus="CANCELADO_DEFEITO"
@@ -179,12 +202,20 @@ describe("DefinicaoStatusSection", () => {
 
   it("com watch CANCELADO_DEFEITO, mostra o bloco vermelho com rótulos dos selects", () => {
     render(
-      <DefinicaoHarness defaultStatus="CANCELADO_DEFEITO" watchStatus="CANCELADO_DEFEITO" />,
+      <DefinicaoHarness
+        defaultStatus="CANCELADO_DEFEITO"
+        watchStatus="CANCELADO_DEFEITO"
+      />,
     );
-    const panel = screen.getByText(/Detalhamento de Defeito Requerido/i).closest("div")
-      ?.parentElement;
+    const panel = screen
+      .getByText(/Detalhamento de Defeito Requerido/i)
+      .closest("div")?.parentElement;
     expect(panel).toBeTruthy();
-    expect(within(panel as HTMLElement).getByText("Categoria de Falha")).toBeInTheDocument();
-    expect(within(panel as HTMLElement).getByText("Destino Imediato")).toBeInTheDocument();
+    expect(
+      within(panel as HTMLElement).getByText("Categoria de Falha"),
+    ).toBeInTheDocument();
+    expect(
+      within(panel as HTMLElement).getByText("Destino Imediato"),
+    ).toBeInTheDocument();
   });
 });

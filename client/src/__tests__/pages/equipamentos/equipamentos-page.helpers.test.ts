@@ -94,7 +94,10 @@ describe("equipamentos-page.helpers", () => {
         }),
       ];
       expect(computeMarcasFromEquipamentos(list)).toEqual(["A", "B"]);
-      expect(computeOperadorasFromEquipamentos(list)).toEqual(["Claro", "Vivo"]);
+      expect(computeOperadorasFromEquipamentos(list)).toEqual([
+        "Claro",
+        "Vivo",
+      ]);
     });
   });
 

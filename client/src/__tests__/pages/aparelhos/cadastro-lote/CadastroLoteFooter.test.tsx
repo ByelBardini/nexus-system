@@ -7,9 +7,10 @@ import { CadastroLoteFooter } from "@/pages/aparelhos/cadastro-lote/CadastroLote
 const navigate = vi.hoisted(() => vi.fn());
 
 vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual<typeof import("react-router-dom")>(
-    "react-router-dom",
-  );
+  const actual =
+    await vi.importActual<typeof import("react-router-dom")>(
+      "react-router-dom",
+    );
   return { ...actual, useNavigate: () => navigate };
 });
 
@@ -18,11 +19,7 @@ describe("CadastroLoteFooter", () => {
     render(
       <MemoryRouter>
         <form>
-          <CadastroLoteFooter
-            canCreate={false}
-            podeSalvar
-            isPending={false}
-          />
+          <CadastroLoteFooter canCreate={false} podeSalvar isPending={false} />
         </form>
       </MemoryRouter>,
     );
@@ -37,11 +34,7 @@ describe("CadastroLoteFooter", () => {
     render(
       <MemoryRouter>
         <form>
-          <CadastroLoteFooter
-            canCreate
-            podeSalvar
-            isPending={false}
-          />
+          <CadastroLoteFooter canCreate podeSalvar isPending={false} />
         </form>
       </MemoryRouter>,
     );
@@ -58,8 +51,6 @@ describe("CadastroLoteFooter", () => {
       </MemoryRouter>,
     );
     expect(screen.getByText(/Registrando/i)).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /Registrando/i }),
-    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Registrando/i })).toBeDisabled();
   });
 });

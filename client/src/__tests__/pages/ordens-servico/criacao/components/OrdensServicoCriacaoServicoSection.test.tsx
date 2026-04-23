@@ -144,9 +144,9 @@ describe("OrdensServicoCriacaoServicoSection", () => {
     await u.click(instBtn);
     expect(formRef.current?.getValues("tipo")).toBe("INSTALACAO_COM_BLOQUEIO");
     expect(instBtn).toHaveClass("bg-erp-blue");
-    expect(
-      screen.getByRole("button", { name: /^com bloqueio$/i }),
-    ).toHaveClass("bg-erp-blue");
+    expect(screen.getByRole("button", { name: /^com bloqueio$/i })).toHaveClass(
+      "bg-erp-blue",
+    );
     expect(
       screen.getByRole("button", { name: /^sem bloqueio$/i }),
     ).not.toHaveClass("bg-erp-blue");
@@ -173,9 +173,9 @@ describe("OrdensServicoCriacaoServicoSection", () => {
 
     await u.click(within(grid).getByRole("button", { name: /revisão/i }));
     expect(formRef.current?.getValues("tipo")).toBe("REVISAO");
-    expect(
-      within(grid).getByRole("button", { name: /revisão/i }),
-    ).toHaveClass("bg-erp-blue");
+    expect(within(grid).getByRole("button", { name: /revisão/i })).toHaveClass(
+      "bg-erp-blue",
+    );
   });
 
   it("em INSTALACAO_SEM_BLOQUEIO o card Instalação permanece ativo; o subdestaque fica em 'Sem bloqueio'", () => {
@@ -210,9 +210,9 @@ describe("OrdensServicoCriacaoServicoSection", () => {
     );
     await u.click(screen.getByRole("button", { name: /^sem bloqueio$/i }));
     expect(formRef.current?.getValues("tipo")).toBe("INSTALACAO_SEM_BLOQUEIO");
-    expect(
-      screen.getByRole("button", { name: /^sem bloqueio$/i }),
-    ).toHaveClass("bg-erp-blue");
+    expect(screen.getByRole("button", { name: /^sem bloqueio$/i })).toHaveClass(
+      "bg-erp-blue",
+    );
     await u.click(screen.getByRole("button", { name: /^com bloqueio$/i }));
     expect(formRef.current?.getValues("tipo")).toBe("INSTALACAO_COM_BLOQUEIO");
     const grid = getCategoriaGrid()!;
@@ -238,32 +238,30 @@ describe("OrdensServicoCriacaoServicoSection", () => {
   });
 
   it("com tipo vazio, nenhum card fica com destaque e o sub-bloco de instalação some", () => {
-    render(
-      <ServicoSectionHarness
-        defaultValuesPatch={{ tipo: "" }}
-      />,
-    );
+    render(<ServicoSectionHarness defaultValuesPatch={{ tipo: "" }} />);
     const grid = getCategoriaGrid()!;
     for (const re of [/instalação/i, /revisão/i, /retirada/i]) {
       const btn = within(grid).getByRole("button", { name: re });
       expect(btn).not.toHaveClass("bg-erp-blue");
     }
-    expect(screen.queryByRole("button", { name: /^com bloqueio$/i })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: /^com bloqueio$/i }),
+    ).toBeNull();
   });
 
   it("com tipo inesperado (ex.: payload antigo 'DESLOCAMENTO'), nenhum card fica com destaque e não exibe sub-bloco de instalação", () => {
     render(
-      <ServicoSectionHarness
-        defaultValuesPatch={{ tipo: "DESLOCAMENTO" }}
-      />,
+      <ServicoSectionHarness defaultValuesPatch={{ tipo: "DESLOCAMENTO" }} />,
     );
     const grid = getCategoriaGrid()!;
     for (const re of [/instalação/i, /revisão/i, /retirada/i]) {
-      expect(
-        within(grid).getByRole("button", { name: re }),
-      ).not.toHaveClass("bg-erp-blue");
+      expect(within(grid).getByRole("button", { name: re })).not.toHaveClass(
+        "bg-erp-blue",
+      );
     }
-    expect(screen.queryByRole("button", { name: /^com bloqueio$/i })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: /^com bloqueio$/i }),
+    ).toBeNull();
   });
 
   it("desacoplamento: se o pai passar tipo=undefined, o destaque deixa de refletir o valor interno do RHF (regressão visível)", () => {
@@ -301,9 +299,9 @@ describe("OrdensServicoCriacaoServicoSection", () => {
     const idap = screen.getByTestId("idap");
     expect(idap).toHaveAttribute("data-rastreadores-count", "1");
     expect(idap).toHaveAttribute("data-value", "EXISTING-ID");
-    expect(
-      (screen.getByTestId("idap-mirror") as HTMLInputElement).value,
-    ).toBe("EXISTING-ID");
+    expect((screen.getByTestId("idap-mirror") as HTMLInputElement).value).toBe(
+      "EXISTING-ID",
+    );
   });
 
   it("integração: localInstalacao, idAparelho e pós-chave batem com getValues; toggle alterna vazio → SIM → NAO → …", async () => {
@@ -328,8 +326,7 @@ describe("OrdensServicoCriacaoServicoSection", () => {
     expect(formRef.current?.getValues("localInstalacao")).toBe("PAINEL-TEST");
     await u.click(screen.getByTestId("idap-apply"));
     expect(formRef.current?.getValues("idAparelho")).toBe("RAST-99");
-    const toggle = () =>
-      screen.getByRole("button", { name: /^não$|^sim$/i });
+    const toggle = () => screen.getByRole("button", { name: /^não$|^sim$/i });
     expect(toggle().textContent).toMatch(/não/i);
     await u.click(toggle());
     expect(formRef.current?.getValues("posChave")).toBe("SIM");
@@ -358,9 +355,7 @@ describe("OrdensServicoCriacaoServicoSection", () => {
   });
 
   it("erro de validação de tipo: mostra a mensagem do RHF e classe destrutiva", () => {
-    render(
-      <ServicoSectionHarness onMountSetTipoError />,
-    );
+    render(<ServicoSectionHarness onMountSetTipoError />);
     const msg = screen.getByText("Erro de validação");
     expect(msg).toHaveClass("text-destructive");
   });

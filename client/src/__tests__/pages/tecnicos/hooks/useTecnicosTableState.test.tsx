@@ -27,9 +27,7 @@ function makeList(n: number): Tecnico[] {
 
 describe("useTecnicosTableState", () => {
   it("pagina e reseta página ao mudar busca", () => {
-    const { result } = renderHook(() =>
-      useTecnicosTableState(makeList(11)),
-    );
+    const { result } = renderHook(() => useTecnicosTableState(makeList(11)));
     act(() => {
       result.current.setPage(1);
     });
@@ -42,9 +40,7 @@ describe("useTecnicosTableState", () => {
   });
 
   it("reseta página ao mudar filtro de estado ou status", () => {
-    const { result } = renderHook(() =>
-      useTecnicosTableState(makeList(5)),
-    );
+    const { result } = renderHook(() => useTecnicosTableState(makeList(5)));
     act(() => {
       result.current.setPage(1);
     });

@@ -448,9 +448,7 @@ describe("TecnicosPage", () => {
         c[1] &&
         (c[1] as { method?: string }).method === "PATCH",
     );
-    const body = JSON.parse(
-      (patchCall![1] as { body: string }).body,
-    ) as {
+    const body = JSON.parse((patchCall![1] as { body: string }).body) as {
       nome: string;
       precos: Record<string, number>;
     };

@@ -22,7 +22,10 @@ describe("useCargoModal — mutations e matriz", () => {
 
   beforeEach(() => {
     queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     apiMock.mockReset();
   });
@@ -31,9 +34,7 @@ describe("useCargoModal — mutations e matriz", () => {
     const { success: toastSuccess } = await mockToastFns();
     toastSuccess.mockClear();
 
-    apiMock
-      .mockResolvedValueOnce({ id: 55 })
-      .mockResolvedValueOnce(undefined);
+    apiMock.mockResolvedValueOnce({ id: 55 }).mockResolvedValueOnce(undefined);
 
     const onClose = vi.fn();
     const { result } = renderHook(

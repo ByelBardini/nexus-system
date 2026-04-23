@@ -24,6 +24,8 @@ describe("ordens-servico-criacao constants", () => {
   });
 
   it("tipoToPrecoKey mapeia instalação com/sem bloqueio", () => {
-    expect(tipoToPrecoKey.INSTALACAO_COM_BLOQUEIO).toBe("instalacaoComBloqueio");
+    expect(tipoToPrecoKey.INSTALACAO_COM_BLOQUEIO).toBe(
+      "instalacaoComBloqueio",
+    );
   });
 });

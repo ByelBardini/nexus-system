@@ -1,4 +1,10 @@
-import { render, screen, waitFor, fireEvent, act } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+  act,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -114,9 +120,7 @@ describe("SearchableSelect", () => {
 
     await user.click(screen.getByRole("button", { name: /selecionar/i }));
     await user.type(screen.getByPlaceholderText("Filtrar..."), "nada");
-    expect(
-      screen.getByText("Nenhuma opção encontrada"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Nenhuma opção encontrada")).toBeInTheDocument();
     await user.keyboard("{Enter}");
     expect(onChange).not.toHaveBeenCalled();
   });
@@ -146,15 +150,11 @@ describe("SearchableSelect", () => {
     expect(onChange).toHaveBeenCalledWith("c");
     onChange.mockClear();
 
-    expect(
-      screen.getByRole("button", { name: /gamma/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /gamma/i })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /gamma/i }));
     const input = screen.getByPlaceholderText("Filtrar...");
     expect(input).toHaveValue("");
-    expect(
-      screen.getByRole("button", { name: "Alpha" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Alpha" })).toBeInTheDocument();
   });
 
   it("foca o input de filtro ao abrir (regressão: setTimeout + inputRef)", async () => {
@@ -195,7 +195,9 @@ describe("SearchableSelect", () => {
 
     fireEvent.mouseDown(document.body);
     await waitFor(() => {
-      expect(screen.queryByPlaceholderText("Filtrar...")).not.toBeInTheDocument();
+      expect(
+        screen.queryByPlaceholderText("Filtrar..."),
+      ).not.toBeInTheDocument();
     });
     expect(onChange).not.toHaveBeenCalled();
   });
@@ -208,7 +210,9 @@ describe("SearchableSelect", () => {
 
     dispatchScrollOn(document.body);
     await waitFor(() => {
-      expect(screen.queryByPlaceholderText("Filtrar...")).not.toBeInTheDocument();
+      expect(
+        screen.queryByPlaceholderText("Filtrar..."),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -294,18 +298,12 @@ describe("SearchableSelect", () => {
 
   it("filtro com só espaços é tratado como vazio: mostra lista completa (trim)", async () => {
     const user = userEvent.setup();
-    render(
-      <SearchableSelect options={options} value="" onChange={vi.fn()} />,
-    );
+    render(<SearchableSelect options={options} value="" onChange={vi.fn()} />);
     await user.click(screen.getByRole("button", { name: /selecionar/i }));
     const input = screen.getByPlaceholderText("Filtrar...");
     await user.type(input, "   ");
-    expect(
-      screen.getByRole("button", { name: "Alpha" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Gamma" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Alpha" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Gamma" })).toBeInTheDocument();
   });
 
   it("pai altera o value com menu aberto: rótulo selecionado e destaque na lista batem o novo value", async () => {
@@ -338,8 +336,8 @@ describe("SearchableSelect", () => {
     await user.click(screen.getByRole("button", { name: "P" }));
     expect(screen.getByPlaceholderText("Filtrar...")).toBeInTheDocument();
     await user.click(screen.getByLabelText("definir-alpha"));
-    expect(
-      screen.getByRole("button", { name: "Alpha" }).className,
-    ).toMatch(/bg-accent|font-semibold/);
+    expect(screen.getByRole("button", { name: "Alpha" }).className).toMatch(
+      /bg-accent|font-semibold/,
+    );
   });
 });

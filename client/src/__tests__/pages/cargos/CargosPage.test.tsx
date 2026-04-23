@@ -17,8 +17,9 @@ const apiMock = vi.hoisted(() => vi.fn());
 
 /** Permissões por teste: padrão criar + editar. */
 const hasPermissionMock = vi.hoisted(() =>
-  vi.fn((p: string) =>
-    p === "ADMINISTRATIVO.CARGO.CRIAR" || p === "ADMINISTRATIVO.CARGO.EDITAR",
+  vi.fn(
+    (p: string) =>
+      p === "ADMINISTRATIVO.CARGO.CRIAR" || p === "ADMINISTRATIVO.CARGO.EDITAR",
   ),
 );
 
@@ -35,9 +36,7 @@ const cargoModalSpy = vi.hoisted(() =>
           <button type="button" onClick={props.onClose}>
             fechar-modal
           </button>
-          <span data-testid="modal-editing-id">
-            {props.cargo?.id ?? "new"}
-          </span>
+          <span data-testid="modal-editing-id">{props.cargo?.id ?? "new"}</span>
           <span data-testid="modal-is-new">{String(props.isNew)}</span>
         </div>
       ) : null,
@@ -121,7 +120,10 @@ function makeCargo(
 function paginatedCalls() {
   return apiMock.mock.calls
     .map((c) => c[0])
-    .filter((u): u is string => typeof u === "string" && u.includes("/roles/paginated"));
+    .filter(
+      (u): u is string =>
+        typeof u === "string" && u.includes("/roles/paginated"),
+    );
 }
 
 function lastPaginatedUrl() {
@@ -250,7 +252,11 @@ describe("CargosPage", () => {
     await waitFor(() => {
       const u = lastPaginatedUrl();
       expect(u).toContain("search=");
-      expect(decodeURIComponent(new URL(u, "http://x.test").searchParams.get("search") ?? "")).toBe("a&b=c");
+      expect(
+        decodeURIComponent(
+          new URL(u, "http://x.test").searchParams.get("search") ?? "",
+        ),
+      ).toBe("a&b=c");
     });
   });
 
@@ -371,7 +377,9 @@ describe("CargosPage", () => {
   });
 
   it("sem permissão de criar: não exibe Novo Cargo e não dispara setores antes de qualquer ação de modal", async () => {
-    hasPermissionMock.mockImplementation((p) => p === "ADMINISTRATIVO.CARGO.EDITAR");
+    hasPermissionMock.mockImplementation(
+      (p) => p === "ADMINISTRATIVO.CARGO.EDITAR",
+    );
 
     render(<CargosPage />, { wrapper });
 
@@ -386,15 +394,17 @@ describe("CargosPage", () => {
   });
 
   it("sem permissão de editar: não há menu de ações na linha", async () => {
-    hasPermissionMock.mockImplementation((p) => p === "ADMINISTRATIVO.CARGO.CRIAR");
+    hasPermissionMock.mockImplementation(
+      (p) => p === "ADMINISTRATIVO.CARGO.CRIAR",
+    );
 
     render(<CargosPage />, { wrapper });
 
     await screen.findByRole("table");
 
-    const menuTriggers = screen.getAllByRole("button").filter(
-      (b) => b.getAttribute("aria-haspopup") === "menu",
-    );
+    const menuTriggers = screen
+      .getAllByRole("button")
+      .filter((b) => b.getAttribute("aria-haspopup") === "menu");
     expect(menuTriggers).toHaveLength(0);
   });
 
@@ -427,7 +437,9 @@ describe("CargosPage", () => {
     render(<CargosPage />, { wrapper });
 
     await screen.findByText("Nenhum cargo encontrado");
-    expect(screen.getByText(/total de 0 cargos cadastrados/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/total de 0 cargos cadastrados/i),
+    ).toBeInTheDocument();
 
     let { prev, next } = getPaginationButtons();
     expect(prev).toBeDisabled();
@@ -453,7 +465,11 @@ describe("CargosPage", () => {
           data: [makeCargo()],
           total: 1,
           page: 1,
-        } as { data: ReturnType<typeof makeCargo>[]; total: number; page: number };
+        } as {
+          data: ReturnType<typeof makeCargo>[];
+          total: number;
+          page: number;
+        };
       }
       if (url.includes("/roles/setores")) return [];
       if (url.includes("/roles/permissions")) return [];
@@ -483,7 +499,9 @@ describe("CargosPage", () => {
     await screen.findByText("Nenhum cargo encontrado");
     expect(screen.queryByRole("table")).toBeInTheDocument();
     expect(document.querySelector(".animate-spin")).toBeNull();
-    expect(screen.getByText(/total de 0 cargos cadastrados/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/total de 0 cargos cadastrados/i),
+    ).toBeInTheDocument();
   });
 
   it("cargo inativo: nome e vínculos acinzentados, descrição ausente vira traço, status Inativo", async () => {
@@ -518,7 +536,9 @@ describe("CargosPage", () => {
     const vinculos = within(table).getByText("03");
     expect(vinculos).toHaveClass("text-slate-400");
 
-    const badge = within(table).getByText(CATEGORIA_CONFIG.GESTAO.label).closest("span");
+    const badge = within(table)
+      .getByText(CATEGORIA_CONFIG.GESTAO.label)
+      .closest("span");
     expect(badge?.className).toMatch(/grayscale/);
 
     expect(within(table).getByText("-")).toBeInTheDocument();

@@ -9,11 +9,7 @@ vi.mock("@/components/MaterialIcon", () => ({
 describe("PedidosKanbanColumnShell", () => {
   it("mostra o rótulo do status e a contagem; renderiza filhos", () => {
     render(
-      <PedidosKanbanColumnShell
-        status="solicitado"
-        count={2}
-        variant="default"
-      >
+      <PedidosKanbanColumnShell status="solicitado" count={2} variant="default">
         <p>conteúdo</p>
       </PedidosKanbanColumnShell>,
     );

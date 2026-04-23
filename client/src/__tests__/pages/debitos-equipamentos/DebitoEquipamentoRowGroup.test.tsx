@@ -43,7 +43,9 @@ describe("DebitoEquipamentoRowGroup", () => {
         </tbody>
       </table>,
     );
-    await user.click(screen.getByRole("button", { name: /Resolver Pendência/i }));
+    await user.click(
+      screen.getByRole("button", { name: /Resolver Pendência/i }),
+    );
     expect(toast).toHaveBeenCalledWith("Funcionalidade em breve");
   });
 

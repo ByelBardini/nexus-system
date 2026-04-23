@@ -157,7 +157,11 @@ describe("rastreador-format", () => {
 
   describe("rastreadorMarcaModeloLabel", () => {
     it("edge: sem marca/modelo retorna traço", () => {
-      expect(rastreadorMarcaModeloLabel(baseRastreador({ marca: null, modelo: null }))).toBe("—");
+      expect(
+        rastreadorMarcaModeloLabel(
+          baseRastreador({ marca: null, modelo: null }),
+        ),
+      ).toBe("—");
     });
   });
 });

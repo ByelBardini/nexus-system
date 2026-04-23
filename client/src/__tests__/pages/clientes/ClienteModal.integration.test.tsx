@@ -29,9 +29,7 @@ function renderModal(
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   }),
 ) {
-  return render(
-    <QueryClientProvider client={qc}>{ui}</QueryClientProvider>,
-  );
+  return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
 }
 
 function clienteEdicao(): Cliente {
@@ -59,9 +57,7 @@ describe("ClienteModal — fluxo integrado", () => {
     apiMock.mockResolvedValue({});
     const onClose = vi.fn();
 
-    renderModal(
-      <ClienteModal open editingCliente={null} onClose={onClose} />,
-    );
+    renderModal(<ClienteModal open editingCliente={null} onClose={onClose} />);
 
     expect(
       screen.getByRole("heading", { name: /novo cliente/i }),
@@ -88,9 +84,7 @@ describe("ClienteModal — fluxo integrado", () => {
     const onClose = vi.fn();
     const c = clienteEdicao();
 
-    renderModal(
-      <ClienteModal open editingCliente={c} onClose={onClose} />,
-    );
+    renderModal(<ClienteModal open editingCliente={c} onClose={onClose} />);
 
     expect(
       screen.getByRole("heading", { name: /editar cliente/i }),
@@ -113,9 +107,7 @@ describe("ClienteModal — fluxo integrado", () => {
   it("validação: razão social vazia não chama API", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
-    renderModal(
-      <ClienteModal open editingCliente={null} onClose={onClose} />,
-    );
+    renderModal(<ClienteModal open editingCliente={null} onClose={onClose} />);
 
     await user.click(screen.getByRole("button", { name: /salvar cliente/i }));
 
@@ -130,9 +122,7 @@ describe("ClienteModal — fluxo integrado", () => {
 
   it("Switch estoque próprio alterna rótulo SIM/NÃO", async () => {
     const user = userEvent.setup();
-    renderModal(
-      <ClienteModal open editingCliente={null} onClose={vi.fn()} />,
-    );
+    renderModal(<ClienteModal open editingCliente={null} onClose={vi.fn()} />);
 
     const sw = screen.getByRole("switch", { name: /estoque próprio/i });
     expect(screen.getByText("NÃO")).toBeInTheDocument();
@@ -142,9 +132,7 @@ describe("ClienteModal — fluxo integrado", () => {
 
   it("adicionar e remover contato", async () => {
     const user = userEvent.setup();
-    renderModal(
-      <ClienteModal open editingCliente={null} onClose={vi.fn()} />,
-    );
+    renderModal(<ClienteModal open editingCliente={null} onClose={vi.fn()} />);
 
     await user.click(
       screen.getByRole("button", { name: /adicionar contato/i }),
@@ -164,9 +152,7 @@ describe("ClienteModal — fluxo integrado", () => {
 
   it("resumo lateral reflete razão social digitada", async () => {
     const user = userEvent.setup();
-    renderModal(
-      <ClienteModal open editingCliente={null} onClose={vi.fn()} />,
-    );
+    renderModal(<ClienteModal open editingCliente={null} onClose={vi.fn()} />);
 
     const resumo = screen.getByText(/resumo do cliente/i).closest("div");
     expect(resumo).toBeTruthy();
@@ -182,7 +168,9 @@ describe("ClienteModal — fluxo integrado", () => {
         .closest(".overflow-y-auto");
       expect(aside).toBeTruthy();
       if (aside)
-        expect(within(aside as HTMLElement).getByText("ACME Brasil")).toBeInTheDocument();
+        expect(
+          within(aside as HTMLElement).getByText("ACME Brasil"),
+        ).toBeInTheDocument();
     });
   });
 });

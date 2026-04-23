@@ -23,10 +23,7 @@ function renderComOrdem(
     isMutating?: boolean;
   } = {},
 ) {
-  const {
-    plataforma = "GETRAK",
-    isMutating = false,
-  } = options;
+  const { plataforma = "GETRAK", isMutating = false } = options;
   const setPlataforma = vi.fn();
   const handleAvancarStatus = vi.fn();
   const copiar = vi.fn();
@@ -70,9 +67,7 @@ describe("CadastroRastreamentoWorkPanel", () => {
     expect(
       screen.queryByRole("heading", { name: "Dados da Ordem" }),
     ).not.toBeInTheDocument();
-    expect(
-      screen.queryByText(/#/),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/#/)).not.toBeInTheDocument();
   });
 
   it("cabeçalho com ordem: exibe OS #id (regressão: id visível com status)", () => {
@@ -82,9 +77,7 @@ describe("CadastroRastreamentoWorkPanel", () => {
       statusCadastro: "AGUARDANDO",
     });
     renderComOrdem(o);
-    expect(
-      screen.getByText(new RegExp(`#${o.id}`, "i")),
-    ).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`#${o.id}`, "i"))).toBeInTheDocument();
   });
 
   it("REVISAO + AGUARDANDO: rótulo do botão reflete o tipo; aciona a mutação e não o copiar", async () => {
@@ -122,9 +115,7 @@ describe("CadastroRastreamentoWorkPanel", () => {
     });
     expect(o.tipoRegistro).toBe("OUTRO");
     const { handleAvancarStatus } = renderComOrdem(o);
-    await user.click(
-      screen.getByRole("button", { name: /iniciar registro/i }),
-    );
+    await user.click(screen.getByRole("button", { name: /iniciar registro/i }));
     expect(handleAvancarStatus).toHaveBeenCalledTimes(1);
   });
 
@@ -262,9 +253,7 @@ describe("CadastroRastreamentoWorkPanel", () => {
       }),
     };
     renderComOrdem(o);
-    expect(
-      screen.getByText(PLATAFORMA_RAST_LABEL.GEOMAPS),
-    ).toBeInTheDocument();
+    expect(screen.getByText(PLATAFORMA_RAST_LABEL.GEOMAPS)).toBeInTheDocument();
   });
 
   it("subcliente ausente: painel exibe tracinho em Dados da Ordem (não vazio silencioso)", () => {
@@ -276,13 +265,11 @@ describe("CadastroRastreamentoWorkPanel", () => {
     expect(o.subcliente).toBeNull();
     renderComOrdem(o);
     const bloco = screen.getByRole("heading", { name: "Dados da Ordem" });
-    const painel = bloco
-      .closest("div")
-      ?.querySelector("div.bg-slate-50");
+    const painel = bloco.closest("div")?.querySelector("div.bg-slate-50");
     if (!painel) throw new Error("conteúdo do painel não encontrado");
     const rótulo = within(painel as HTMLElement).getByText("Subcliente");
-    expect(
-      (rótulo.nextElementSibling as HTMLElement | null)?.textContent,
-    ).toBe("—");
+    expect((rótulo.nextElementSibling as HTMLElement | null)?.textContent).toBe(
+      "—",
+    );
   });
 });

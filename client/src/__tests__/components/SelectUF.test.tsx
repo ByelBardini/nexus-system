@@ -1,4 +1,10 @@
-import { render, screen, waitFor, fireEvent, act } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+  act,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -20,7 +26,8 @@ function dispatchScrollOn(target: EventTarget) {
 }
 
 function getDropdownPanel(container: HTMLElement): HTMLElement {
-  const el = container.querySelector(".max-h-60") ?? document.querySelector(".max-h-60");
+  const el =
+    container.querySelector(".max-h-60") ?? document.querySelector(".max-h-60");
   if (!el) throw new Error("dropdown não encontrado");
   return el as HTMLElement;
 }
@@ -40,22 +47,24 @@ describe("SelectUF", () => {
         placeholder="Pesquise"
       />,
     );
-    expect(
-      screen.getByPlaceholderText("Pesquise"),
-    ).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Pesquise")).toBeInTheDocument();
     const input = screen.getByRole("textbox");
     expect(input).toHaveValue("");
   });
 
   it("modo desabilitado: placeholder ou rótulo “SIGLA - Nome”", () => {
     const { rerender } = render(
-      <SelectUF ufs={ufs} value="" onChange={vi.fn()} disabled placeholder="UF" />,
+      <SelectUF
+        ufs={ufs}
+        value=""
+        onChange={vi.fn()}
+        disabled
+        placeholder="UF"
+      />,
     );
     expect(document.querySelector("input")).toBeNull();
     expect(screen.getByText("UF")).toBeInTheDocument();
-    rerender(
-      <SelectUF ufs={ufs} value="SP" onChange={vi.fn()} disabled />,
-    );
+    rerender(<SelectUF ufs={ufs} value="SP" onChange={vi.fn()} disabled />);
     expect(
       screen.getByText("SP - São Paulo", { exact: false }),
     ).toBeInTheDocument();
@@ -84,14 +93,10 @@ describe("SelectUF", () => {
   it("nenhum UF combina: mensagem; Enter com lista vazia não chama onChange", async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
-    render(
-      <SelectUF ufs={ufs} value="" onChange={onChange} placeholder="E" />,
-    );
+    render(<SelectUF ufs={ufs} value="" onChange={onChange} placeholder="E" />);
     await user.click(screen.getByPlaceholderText("E"));
     await user.type(screen.getByDisplayValue(""), "Zzz9");
-    expect(
-      screen.getByText("Nenhum estado encontrado"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Nenhum estado encontrado")).toBeInTheDocument();
     await user.keyboard("{Enter}");
     expect(onChange).not.toHaveBeenCalled();
   });
@@ -160,9 +165,7 @@ describe("SelectUF", () => {
   it("click fora: fecha sem onChange; não duplica efeito colateral", async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
-    render(
-      <SelectUF ufs={ufs} value="" onChange={onChange} placeholder="E" />,
-    );
+    render(<SelectUF ufs={ufs} value="" onChange={onChange} placeholder="E" />);
     await user.click(screen.getByPlaceholderText("E"));
     fireEvent.mouseDown(document.body);
     await waitFor(() => {
@@ -190,9 +193,7 @@ describe("SelectUF", () => {
     await user.click(
       screen.getByRole("button", { name: /RJ - Rio de Janeiro/ }),
     );
-    expect(
-      screen.getByDisplayValue("RJ - Rio de Janeiro"),
-    ).toBeInTheDocument();
+    expect(screen.getByDisplayValue("RJ - Rio de Janeiro")).toBeInTheDocument();
   });
 
   it("em dialog: lista fica com position absolute (não vaza o modal)", async () => {
@@ -209,9 +210,7 @@ describe("SelectUF", () => {
 
   it("após fechar, novo open lista todos os UFs (não fica filtro 'Rio' colado", async () => {
     const user = userEvent.setup();
-    render(
-      <SelectUF ufs={ufs} value="" onChange={vi.fn()} placeholder="E" />,
-    );
+    render(<SelectUF ufs={ufs} value="" onChange={vi.fn()} placeholder="E" />);
     await user.click(screen.getByPlaceholderText("E"));
     await user.type(screen.getByDisplayValue(""), "Rio");
     expect(
@@ -232,20 +231,14 @@ describe("SelectUF", () => {
 
   it("disabled: não monta painel (dropdown inacessível)", async () => {
     const user = userEvent.setup();
-    render(
-      <SelectUF ufs={ufs} value="SP" onChange={vi.fn()} disabled />,
-    );
-    await user.click(
-      screen.getByText("SP - São Paulo", { exact: false }),
-    );
+    render(<SelectUF ufs={ufs} value="SP" onChange={vi.fn()} disabled />);
+    await user.click(screen.getByText("SP - São Paulo", { exact: false }));
     expect(document.querySelector(".max-h-60")).toBeNull();
   });
 
   it("filtra por sigla com capitalização mista (são paths minúsculos no código", async () => {
     const user = userEvent.setup();
-    render(
-      <SelectUF ufs={ufs} value="" onChange={vi.fn()} placeholder="E" />,
-    );
+    render(<SelectUF ufs={ufs} value="" onChange={vi.fn()} placeholder="E" />);
     await user.click(screen.getByPlaceholderText("E"));
     await user.type(screen.getByDisplayValue(""), "Rj");
     expect(

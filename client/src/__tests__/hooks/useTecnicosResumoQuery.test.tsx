@@ -19,8 +19,7 @@ function wrapper(qc: QueryClient) {
 beforeEach(() => {
   api.mockReset();
   api.mockImplementation((path: string) => {
-    if (path === "/tecnicos")
-      return Promise.resolve([{ id: 1, nome: "Tec" }]);
+    if (path === "/tecnicos") return Promise.resolve([{ id: 1, nome: "Tec" }]);
     return Promise.resolve(null);
   });
 });

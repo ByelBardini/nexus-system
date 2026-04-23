@@ -26,7 +26,9 @@ beforeEach(() => {
 describe("useTestesMutations", () => {
   it("updateStatusOs: PATCH status e invalida ordens-servico", async () => {
     api.mockResolvedValue({});
-    const qc = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { mutations: { retry: false } },
+    });
     const onOk = vi.fn();
     const { result } = renderHook(() => useTestesMutations(onOk), {
       wrapper: wrapper(qc),
@@ -47,11 +49,16 @@ describe("useTestesMutations", () => {
 
   it("edge: updateStatusOs erro chama toast.error", async () => {
     api.mockRejectedValueOnce(new Error("x"));
-    const qc = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { mutations: { retry: false } },
+    });
     const { result } = renderHook(() => useTestesMutations(vi.fn()), {
       wrapper: wrapper(qc),
     });
-    result.current.updateStatusOsMutation.mutate({ id: 2, status: "CANCELADO" });
+    result.current.updateStatusOsMutation.mutate({
+      id: 2,
+      status: "CANCELADO",
+    });
     await waitFor(() =>
       expect(vi.mocked(toast.error)).toHaveBeenCalledWith("x"),
     );
@@ -59,7 +66,9 @@ describe("useTestesMutations", () => {
 
   it("vincularAparelho: PATCH aparelho", async () => {
     api.mockResolvedValue({});
-    const qc = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { mutations: { retry: false } },
+    });
     const { result } = renderHook(() => useTestesMutations(vi.fn()), {
       wrapper: wrapper(qc),
     });
@@ -76,7 +85,9 @@ describe("useTestesMutations", () => {
 
   it("edge: vincular erro mostra toast fixo", async () => {
     api.mockRejectedValueOnce(new Error("nope"));
-    const qc = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { mutations: { retry: false } },
+    });
     const { result } = renderHook(() => useTestesMutations(vi.fn()), {
       wrapper: wrapper(qc),
     });
@@ -93,7 +104,9 @@ describe("useTestesMutations", () => {
 
   it("updateStatusAparelho: PATCH /aparelhos/:id/status", async () => {
     api.mockResolvedValue({});
-    const qc = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { mutations: { retry: false } },
+    });
     const { result } = renderHook(() => useTestesMutations(vi.fn()), {
       wrapper: wrapper(qc),
     });

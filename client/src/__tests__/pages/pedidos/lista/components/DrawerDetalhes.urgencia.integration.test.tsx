@@ -34,11 +34,7 @@ describe("DrawerDetalhes (valor de urgência + classes de texto)", () => {
     const pedido = buildPedidoView({ urgencia: "Urgente" });
     render(
       <App>
-        <DrawerDetalhes
-          pedido={pedido}
-          open
-          onOpenChange={vi.fn()}
-        />
+        <DrawerDetalhes pedido={pedido} open onOpenChange={vi.fn()} />
       </App>,
     );
     const value = screen.getByText("Urgente");

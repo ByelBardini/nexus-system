@@ -30,12 +30,17 @@ function mockDefaults() {
       return Promise.resolve([{ id: 1, nome: "Op", ativo: true }]);
     if (url === "/equipamentos/marcas-simcard")
       return Promise.resolve([
-        { id: 1, nome: "MS", operadoraId: 1, temPlanos: false, operadora: { id: 1, nome: "Op" } },
+        {
+          id: 1,
+          nome: "MS",
+          operadoraId: 1,
+          temPlanos: false,
+          operadora: { id: 1, nome: "Op" },
+        },
       ]);
     if (url.startsWith("/debitos-rastreadores"))
       return Promise.resolve({ data: [] });
-    if (url === "/aparelhos")
-      return Promise.resolve([{ identificador: "1" }]);
+    if (url === "/aparelhos") return Promise.resolve([{ identificador: "1" }]);
     return Promise.resolve(null);
   });
 }
@@ -99,7 +104,8 @@ describe("useAparelhoCadastroCatalogs", () => {
       expect(
         apiMock.mock.calls.some(
           (c) =>
-            typeof c[0] === "string" && c[0].includes("marcas-simcard?operadoraId=7"),
+            typeof c[0] === "string" &&
+            c[0].includes("marcas-simcard?operadoraId=7"),
         ),
       ).toBe(true);
     });

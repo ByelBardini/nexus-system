@@ -5,7 +5,10 @@ import {
   ENTIDADE_DEBITO_CONFIG,
   STATUS_DEBITO_CONFIG,
 } from "@/pages/debitos-equipamentos/domain/debito-equipamento.constants";
-import type { StatusDebito, TipoEntidade } from "@/pages/debitos-equipamentos/domain/types";
+import type {
+  StatusDebito,
+  TipoEntidade,
+} from "@/pages/debitos-equipamentos/domain/types";
 
 describe("debito-equipamento.constants", () => {
   it("STATUS_DEBITO_CONFIG cobre todos os StatusDebito", () => {

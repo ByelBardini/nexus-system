@@ -5,22 +5,29 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PareamentoMassaPanel } from "@/pages/equipamentos/pareamento/panels/PareamentoMassaPanel";
 import type { PreviewResult } from "@/pages/equipamentos/pareamento/preview/PreviewPareamentoTable";
 
-const lastMassaPreview = vi.hoisted(() => ({ current: null as PreviewResult | null }));
-
-vi.mock("@/pages/equipamentos/pareamento/preview/PreviewPareamentoTable", () => ({
-  PreviewPareamentoTable: ({ preview }: { preview: PreviewResult }) => {
-    lastMassaPreview.current = preview;
-    return <div data-testid="preview-pareamento-table" />;
-  },
-  TRACKER_STATUS_LABELS: {},
-  ACTION_LABELS: {},
+const lastMassaPreview = vi.hoisted(() => ({
+  current: null as PreviewResult | null,
 }));
+
+vi.mock(
+  "@/pages/equipamentos/pareamento/preview/PreviewPareamentoTable",
+  () => ({
+    PreviewPareamentoTable: ({ preview }: { preview: PreviewResult }) => {
+      lastMassaPreview.current = preview;
+      return <div data-testid="preview-pareamento-table" />;
+    },
+    TRACKER_STATUS_LABELS: {},
+    ACTION_LABELS: {},
+  }),
+);
 
 vi.mock("@/components/MaterialIcon", () => ({
   MaterialIcon: ({ name }: { name: string }) => <span data-icon={name} />,
 }));
 
-function basePreview(overrides: Partial<PreviewResult["contadores"]> = {}): PreviewResult {
+function basePreview(
+  overrides: Partial<PreviewResult["contadores"]> = {},
+): PreviewResult {
   return {
     linhas: [],
     contadores: { validos: 1, exigemLote: 0, erros: 0, ...overrides },
@@ -103,7 +110,9 @@ describe("PareamentoMassaPanel", () => {
     it("IMEI: sem o pai refletir textImeis, cada tecla chama setter só com o último caractere (armadilha de input controlado)", async () => {
       const setTextImeis = vi.fn();
       render(
-        <PareamentoMassaPanel {...baseProps({ setTextImeis, textImeis: "" })} />,
+        <PareamentoMassaPanel
+          {...baseProps({ setTextImeis, textImeis: "" })}
+        />,
       );
       const { imeiTa } = getImeiIccidTextareas();
       await userEvent.type(imeiTa, "xy");
@@ -128,7 +137,9 @@ describe("PareamentoMassaPanel", () => {
     it("IMEI: change em lote (paste) envia o valor completo de uma vez", () => {
       const setTextImeis = vi.fn();
       render(
-        <PareamentoMassaPanel {...baseProps({ setTextImeis, textImeis: "" })} />,
+        <PareamentoMassaPanel
+          {...baseProps({ setTextImeis, textImeis: "" })}
+        />,
       );
       const { imeiTa } = getImeiIccidTextareas();
       fireEvent.change(imeiTa, {
@@ -183,7 +194,11 @@ describe("PareamentoMassaPanel", () => {
     });
 
     it("não renderiza parágrafos de mínimo quando ambos são 0", () => {
-      render(<PareamentoMassaPanel {...baseProps({ minImeiMassa: 0, minIccidMassa: 0 })} />);
+      render(
+        <PareamentoMassaPanel
+          {...baseProps({ minImeiMassa: 0, minIccidMassa: 0 })}
+        />,
+      );
       expect(screen.queryByText(/mínimo \d+ dígito/i)).not.toBeInTheDocument();
     });
   });
@@ -199,7 +214,9 @@ describe("PareamentoMassaPanel", () => {
           })}
         />,
       );
-      expect(screen.queryByText(/quantidade não confere/i)).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(/quantidade não confere/i),
+      ).not.toBeInTheDocument();
 
       rerender(
         <PareamentoMassaPanel
@@ -239,7 +256,9 @@ describe("PareamentoMassaPanel", () => {
           })}
         />,
       );
-      expect(screen.queryByText(/quantidade não confere/i)).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(/quantidade não confere/i),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -247,7 +266,9 @@ describe("PareamentoMassaPanel", () => {
     it("monta PreviewPareamentoTable e repassa o mesmo objeto preview", () => {
       const preview = basePreview();
       render(<PareamentoMassaPanel {...baseProps({ preview })} />);
-      expect(screen.getByTestId("preview-pareamento-table")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("preview-pareamento-table"),
+      ).toBeInTheDocument();
       expect(lastMassaPreview.current).toBe(preview);
     });
 
@@ -263,7 +284,8 @@ describe("PareamentoMassaPanel", () => {
           })}
         />,
       );
-      const montagemRoot = screen.getByRole("heading", { name: /resumo da montagem/i })
+      const montagemRoot = screen
+        .getByRole("heading", { name: /resumo da montagem/i })
         .closest("div")?.parentElement?.parentElement;
       expect(montagemRoot).toBeTruthy();
       const scope = montagemRoot as HTMLElement;
@@ -298,9 +320,13 @@ describe("PareamentoMassaPanel", () => {
           })}
         />,
       );
-      const pertence = screen.getByText("Pertence a").closest("div")?.parentElement;
+      const pertence = screen
+        .getByText("Pertence a")
+        .closest("div")?.parentElement;
       await userEvent.click(
-        within(pertence as HTMLElement).getByRole("button", { name: /^infinity$/i }),
+        within(pertence as HTMLElement).getByRole("button", {
+          name: /^infinity$/i,
+        }),
       );
       expect(setProprietarioMassa).toHaveBeenCalledWith("INFINITY");
       expect(setClienteIdMassa).toHaveBeenCalledWith(null);
@@ -319,9 +345,13 @@ describe("PareamentoMassaPanel", () => {
           })}
         />,
       );
-      const pertence = screen.getByText("Pertence a").closest("div")?.parentElement;
+      const pertence = screen
+        .getByText("Pertence a")
+        .closest("div")?.parentElement;
       await userEvent.click(
-        within(pertence as HTMLElement).getByRole("button", { name: /^cliente$/i }),
+        within(pertence as HTMLElement).getByRole("button", {
+          name: /^cliente$/i,
+        }),
       );
       expect(setProprietarioMassa).toHaveBeenCalledWith("CLIENTE");
       expect(setClienteIdMassa).not.toHaveBeenCalled();

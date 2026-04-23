@@ -125,9 +125,7 @@ describe("CadastroRastreamentoToolbar", () => {
       tecnicos: ["Maria (matriz)"],
     });
     await user.click(comboboxNoCampo("Técnico"));
-    await user.click(
-      screen.getByRole("option", { name: "Maria (matriz)" }),
-    );
+    await user.click(screen.getByRole("option", { name: "Maria (matriz)" }));
     expect(setFiltroTecnico).toHaveBeenLastCalledWith("Maria (matriz)");
 
     rerender(

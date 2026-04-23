@@ -4,7 +4,10 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PedidosConfigPage } from "@/pages/pedidos/PedidosConfigPage";
-import type { KitVinculado, TipoDespacho } from "@/pages/pedidos/shared/pedidos-config-types";
+import type {
+  KitVinculado,
+  TipoDespacho,
+} from "@/pages/pedidos/shared/pedidos-config-types";
 import type { PedidoRastreadorApi } from "@/types/pedidos-rastreador";
 
 const apiMock = vi.hoisted(() => vi.fn());
@@ -24,7 +27,9 @@ function readPersisted(): Persisted {
   return JSON.parse(String(raw)) as Persisted;
 }
 
-function makeTecnicoEmConfig(over: Partial<PedidoRastreadorApi> = {}): PedidoRastreadorApi {
+function makeTecnicoEmConfig(
+  over: Partial<PedidoRastreadorApi> = {},
+): PedidoRastreadorApi {
   return {
     id: 99,
     codigo: "PED-COV-1",
@@ -148,9 +153,11 @@ describe("PedidosConfigPage — storage, hidratação e integração com lista",
         return Promise.resolve({ data: [makeTecnicoEmConfig()] });
       }
       if (String(path).includes("kits/detalhes")) {
-        return Promise.resolve([
-          { id: 1, nome: "Kit API", quantidade: 2 },
-        ] as { id: number; nome: string; quantidade: number }[]);
+        return Promise.resolve([{ id: 1, nome: "Kit API", quantidade: 2 }] as {
+          id: number;
+          nome: string;
+          quantidade: number;
+        }[]);
       }
       return Promise.resolve(null);
     });
@@ -215,7 +222,9 @@ describe("PedidosConfigPage — storage, hidratação e integração com lista",
         return Promise.resolve({ data: [makeTecnicoEmConfig({ kitIds: [] })] });
       }
       if (String(path).includes("kits/detalhes")) {
-        return Promise.resolve([{ id: 1, nome: "Não deve carregar", quantidade: 1 }]);
+        return Promise.resolve([
+          { id: 1, nome: "Não deve carregar", quantidade: 1 },
+        ]);
       }
       return Promise.resolve(null);
     });
@@ -226,9 +235,17 @@ describe("PedidosConfigPage — storage, hidratação e integração com lista",
     );
     const card = await screen.findByRole("button", { name: /PED-COV-1/ });
     await user.click(card);
-    await waitFor(() => expect(screen.getByTestId("side-panel")).toHaveAttribute("data-pedido-id", "99"));
+    await waitFor(() =>
+      expect(screen.getByTestId("side-panel")).toHaveAttribute(
+        "data-pedido-id",
+        "99",
+      ),
+    );
     expect(kitsDetalhesCallCount()).toBe(0);
-    expect(screen.getByTestId("side-panel")).toHaveAttribute("data-kits-json", "[]");
+    expect(screen.getByTestId("side-panel")).toHaveAttribute(
+      "data-kits-json",
+      "[]",
+    );
   });
 
   it("hidrata kits do backend quando ainda não havia nada no workspace: nome e qtd vêm de GET detalhes", async () => {
@@ -244,7 +261,9 @@ describe("PedidosConfigPage — storage, hidratação e integração com lista",
     const panel = await waitFor(
       () => screen.getByTestId("side-panel") as HTMLElement,
     );
-    const kits = JSON.parse(panel.getAttribute("data-kits-json") || "[]") as Array<{
+    const kits = JSON.parse(
+      panel.getAttribute("data-kits-json") || "[]",
+    ) as Array<{
       id: number;
       nome: string;
       quantidade: number;
@@ -323,7 +342,9 @@ describe("PedidosConfigPage — storage, hidratação e integração com lista",
       </App>,
     );
     await user.click(await screen.findByRole("button", { name: /PED-COV-1/ }));
-    await waitFor(() => expect(screen.getByTestId("sp-set-kits")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByTestId("sp-set-kits")).toBeInTheDocument(),
+    );
     await user.click(screen.getByTestId("sp-set-kits"));
     await user.click(screen.getByTestId("sp-tipo"));
     await user.click(screen.getByTestId("sp-transp"));
@@ -350,12 +371,16 @@ describe("PedidosConfigPage — storage, hidratação e integração com lista",
       </App>,
     );
     expect(document.querySelector(".animate-spin")).toBeInTheDocument();
-    expect(screen.queryByTestId("pedidos-rastreadores-busca")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("pedidos-rastreadores-busca"),
+    ).not.toBeInTheDocument();
     await act(async () => {
       release({ data: [] });
     });
     await waitFor(() => {
-      expect(screen.getByTestId("pedidos-rastreadores-busca")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("pedidos-rastreadores-busca"),
+      ).toBeInTheDocument();
     });
     expect(document.querySelector(".animate-spin")).not.toBeInTheDocument();
   });

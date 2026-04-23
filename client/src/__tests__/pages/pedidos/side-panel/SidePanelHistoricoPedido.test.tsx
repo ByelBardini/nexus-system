@@ -4,9 +4,7 @@ import { SidePanelHistoricoPedido } from "@/pages/pedidos/side-panel/components/
 
 describe("SidePanelHistoricoPedido", () => {
   it("retorna null com histórico vazio", () => {
-    const { container } = render(
-      <SidePanelHistoricoPedido historico={[]} />,
-    );
+    const { container } = render(<SidePanelHistoricoPedido historico={[]} />);
     expect(container.firstChild).toBeNull();
   });
 

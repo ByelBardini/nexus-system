@@ -23,12 +23,9 @@ describe("UsuariosTableFooter", () => {
       screen.getByText(/total de 3 usuários cadastrados/i),
     ).toBeInTheDocument();
     expect(screen.getByText("2 Ativos")).toBeInTheDocument();
-    const prev = screen
-      .getByRole("button", { name: /chevron_left/i });
+    const prev = screen.getByRole("button", { name: /chevron_left/i });
     expect(prev).toBeDisabled();
-    await user.click(
-      screen.getByRole("button", { name: /chevron_right/i }),
-    );
+    await user.click(screen.getByRole("button", { name: /chevron_right/i }));
     expect(onNext).toHaveBeenCalled();
     rerender(
       <UsuariosTableFooter

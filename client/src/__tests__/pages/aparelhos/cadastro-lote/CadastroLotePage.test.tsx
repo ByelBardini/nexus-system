@@ -42,7 +42,10 @@ function setupApi() {
       ]);
     if (url === "/equipamentos/operadoras")
       return Promise.resolve([{ id: 1, nome: "O", ativo: true }]);
-    if (url === "/equipamentos/marcas-simcard" || url.includes("marcas-simcard"))
+    if (
+      url === "/equipamentos/marcas-simcard" ||
+      url.includes("marcas-simcard")
+    )
       return Promise.resolve([
         {
           id: 1,
@@ -82,7 +85,9 @@ describe("CadastroLotePage (integrado, APIs mockadas)", () => {
     expect(
       await screen.findByText(/Entrada de Rastreador\/Simcard/i),
     ).toBeInTheDocument();
-    expect(await screen.findByText(/Identificação do Lote/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Identificação do Lote/i),
+    ).toBeInTheDocument();
     expect(await screen.findByText(/Propriedade e Tipo/i)).toBeInTheDocument();
     expect(await screen.findByText(/Resumo do Lote/i)).toBeInTheDocument();
     await waitFor(() => {

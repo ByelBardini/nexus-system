@@ -79,8 +79,9 @@ describe("EquipamentosTable", () => {
         onPageChange={vi.fn()}
       />,
     );
-    expect(screen.getByTestId("equipamentos-pagination").querySelectorAll("button").length).toBe(
-      7,
-    );
+    expect(
+      screen.getByTestId("equipamentos-pagination").querySelectorAll("button")
+        .length,
+    ).toBe(7);
   });
 });

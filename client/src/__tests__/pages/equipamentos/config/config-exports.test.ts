@@ -74,9 +74,9 @@ describe("pages/equipamentos/config (barrel) — helpers de domínio", () => {
       expect(filterMarcasByMarcaOrModeloName(marcas, modelos, "")).toEqual(
         marcas,
       );
-      expect(filterMarcasByMarcaOrModeloName(marcas, modelos, "  \t  ")).toEqual(
-        marcas,
-      );
+      expect(
+        filterMarcasByMarcaOrModeloName(marcas, modelos, "  \t  "),
+      ).toEqual(marcas);
     });
 
     it("filtra por nome da marca, insensível a maiúsculas", () => {
@@ -162,7 +162,9 @@ describe("pages/equipamentos/config (barrel) — helpers de domínio", () => {
 
     it("busca vazia ou só espaços devolve lista integral", () => {
       expect(filterMarcasSimcardByNomeOuOperadora(lista, "")).toEqual(lista);
-      expect(filterMarcasSimcardByNomeOuOperadora(lista, " \n ")).toEqual(lista);
+      expect(filterMarcasSimcardByNomeOuOperadora(lista, " \n ")).toEqual(
+        lista,
+      );
     });
 
     it("sem match retorna array vazio", () => {

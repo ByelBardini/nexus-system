@@ -16,7 +16,9 @@ vi.mock("@/lib/api", () => ({
 
 vi.mock("react-router-dom", async () => {
   const actual =
-    await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
+    await vi.importActual<typeof import("react-router-dom")>(
+      "react-router-dom",
+    );
   return {
     ...actual,
     useNavigate: () => navigate,
@@ -54,7 +56,9 @@ beforeEach(() => {
 describe("useCriarOrdemServicoMutation", () => {
   it("em sucesso invalida ordens, navega e toast com número", async () => {
     api.mockResolvedValue({ id: 1, numero: 44 });
-    const qc = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { mutations: { retry: false } },
+    });
     const { result } = renderHook(() => useCriarOrdemServicoMutation(), {
       wrapper: wrapper(qc),
     });
@@ -63,9 +67,7 @@ describe("useCriarOrdemServicoMutation", () => {
       clienteId: 1,
     });
     await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith(
-        "Ordem de serviço #44 criada",
-      );
+      expect(toast.success).toHaveBeenCalledWith("Ordem de serviço #44 criada");
     });
     expect(navigate).toHaveBeenCalledWith("/");
     expect(invalidateQueries).toHaveBeenCalled();
@@ -73,7 +75,9 @@ describe("useCriarOrdemServicoMutation", () => {
 
   it("com subclienteUpdate invalida clientes", async () => {
     api.mockResolvedValue({ id: 1, numero: 1 });
-    const qc = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { mutations: { retry: false } },
+    });
     const { result } = renderHook(() => useCriarOrdemServicoMutation(), {
       wrapper: wrapper(qc),
     });
@@ -97,7 +101,9 @@ describe("useCriarOrdemServicoMutation", () => {
 
   it("erro: toast de falha", async () => {
     api.mockRejectedValue(new Error("x"));
-    const qc = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { mutations: { retry: false } },
+    });
     const { result } = renderHook(() => useCriarOrdemServicoMutation(), {
       wrapper: wrapper(qc),
     });

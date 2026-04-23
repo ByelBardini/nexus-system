@@ -5,21 +5,29 @@ import { describe, expect, it, vi } from "vitest";
 import { PareamentoIndividualPanel } from "@/pages/equipamentos/pareamento/panels/PareamentoIndividualPanel";
 import type { PreviewResult } from "@/pages/equipamentos/pareamento/preview/PreviewPareamentoTable";
 
-vi.mock("@/pages/equipamentos/pareamento/components/PareamentoCriarRastreadorBlock", () => ({
-  PareamentoCriarRastreadorBlock: () => (
-    <div data-testid="mock-rastreador-block" />
-  ),
-}));
+vi.mock(
+  "@/pages/equipamentos/pareamento/components/PareamentoCriarRastreadorBlock",
+  () => ({
+    PareamentoCriarRastreadorBlock: () => (
+      <div data-testid="mock-rastreador-block" />
+    ),
+  }),
+);
 
-vi.mock("@/pages/equipamentos/pareamento/components/PareamentoCriarSimBlock", () => ({
-  PareamentoCriarSimBlock: () => <div data-testid="mock-sim-block" />,
-}));
+vi.mock(
+  "@/pages/equipamentos/pareamento/components/PareamentoCriarSimBlock",
+  () => ({
+    PareamentoCriarSimBlock: () => <div data-testid="mock-sim-block" />,
+  }),
+);
 
 vi.mock("@/components/MaterialIcon", () => ({
   MaterialIcon: ({ name }: { name: string }) => <span data-icon={name} />,
 }));
 
-function basePreview(overrides: Partial<PreviewResult["linhas"][0]> = {}): PreviewResult {
+function basePreview(
+  overrides: Partial<PreviewResult["linhas"][0]> = {},
+): PreviewResult {
   return {
     linhas: [
       {
@@ -93,8 +101,10 @@ function baseProps(
 }
 
 /** Card escuro "Resumo da Configuração" */
-function getResumoPanel(container: HTMLElement) {
-  const heading = screen.getByRole("heading", { name: /resumo da configuração/i });
+function getResumoPanel() {
+  const heading = screen.getByRole("heading", {
+    name: /resumo da configuração/i,
+  });
   return heading.closest("div")?.parentElement?.parentElement as HTMLElement;
 }
 
@@ -155,9 +165,13 @@ describe("PareamentoIndividualPanel", () => {
           })}
         />,
       );
-      const pertenceCard = screen.getByText("Pertence a").closest("div")?.parentElement;
+      const pertenceCard = screen
+        .getByText("Pertence a")
+        .closest("div")?.parentElement;
       await userEvent.click(
-        within(pertenceCard as HTMLElement).getByRole("button", { name: /^infinity$/i }),
+        within(pertenceCard as HTMLElement).getByRole("button", {
+          name: /^infinity$/i,
+        }),
       );
       expect(setProprietarioIndividual).toHaveBeenCalledWith("INFINITY");
       expect(setClienteIdIndividual).toHaveBeenCalledWith(null);
@@ -176,9 +190,13 @@ describe("PareamentoIndividualPanel", () => {
           })}
         />,
       );
-      const pertenceCard = screen.getByText("Pertence a").closest("div")?.parentElement;
+      const pertenceCard = screen
+        .getByText("Pertence a")
+        .closest("div")?.parentElement;
       await userEvent.click(
-        within(pertenceCard as HTMLElement).getByRole("button", { name: /^cliente$/i }),
+        within(pertenceCard as HTMLElement).getByRole("button", {
+          name: /^cliente$/i,
+        }),
       );
       expect(setProprietarioIndividual).toHaveBeenCalledWith("CLIENTE");
       expect(setClienteIdIndividual).not.toHaveBeenCalled();
@@ -278,7 +296,7 @@ describe("PareamentoIndividualPanel", () => {
           })}
         />,
       );
-      const resumo = getResumoPanel(document.body);
+      const resumo = getResumoPanel();
       expect(within(resumo).getByText("3589")).toBeInTheDocument();
       expect(within(resumo).getByText("89")).toBeInTheDocument();
     });
@@ -325,7 +343,10 @@ describe("PareamentoIndividualPanel", () => {
     it("RASCUNHO sem preview e sem confirmação", () => {
       render(
         <PareamentoIndividualPanel
-          {...baseProps({ preview: null, podeConfirmarPareamentoIndividual: false })}
+          {...baseProps({
+            preview: null,
+            podeConfirmarPareamentoIndividual: false,
+          })}
         />,
       );
       expect(screen.getByText("RASCUNHO")).toBeInTheDocument();
@@ -408,7 +429,9 @@ describe("PareamentoIndividualPanel", () => {
           })}
         />,
       );
-      expect(screen.queryByText(/imei deve ter ao menos/i)).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(/imei deve ter ao menos/i),
+      ).not.toBeInTheDocument();
       expect(screen.getByText("Verificando...")).toBeInTheDocument();
     });
 
@@ -486,7 +509,9 @@ describe("PareamentoIndividualPanel", () => {
         screen.queryByText(/equipamento\(s\) criado\(s\) nesta sessão/i),
       ).not.toBeInTheDocument();
 
-      rerender(<PareamentoIndividualPanel {...baseProps({ quantidadeCriada: 3 })} />);
+      rerender(
+        <PareamentoIndividualPanel {...baseProps({ quantidadeCriada: 3 })} />,
+      );
       expect(
         screen.getByText("3 equipamento(s) criado(s) nesta sessão"),
       ).toBeInTheDocument();

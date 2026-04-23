@@ -70,9 +70,7 @@ describe("ordens-servico-page.display", () => {
     });
 
     it("edge: só nome quando sem partes de endereço", () => {
-      expect(
-        formatEnderecoSubcliente({ nome: "Só Nome" }),
-      ).toBe("Só Nome");
+      expect(formatEnderecoSubcliente({ nome: "Só Nome" })).toBe("Só Nome");
     });
 
     it("edge: null retorna hífen", () => {
@@ -159,8 +157,7 @@ describe("ordens-servico-page.display", () => {
             statusAnterior: "AGENDADO",
             statusNovo: "AGUARDANDO_CADASTRO",
             criadoEm: "2024-01-02T10:00:00.000Z",
-            observacao:
-              "Data retirada: 15/03/2024 | Aparelho encontrado: Sim",
+            observacao: "Data retirada: 15/03/2024 | Aparelho encontrado: Sim",
           },
         ],
       });
@@ -176,8 +173,7 @@ describe("ordens-servico-page.display", () => {
             statusAnterior: "AGENDADO",
             statusNovo: "AGUARDANDO_CADASTRO",
             criadoEm: "2024-01-02T10:00:00.000Z",
-            observacao:
-              "Data retirada: 01/01/2024 | Aparelho encontrado: Não",
+            observacao: "Data retirada: 01/01/2024 | Aparelho encontrado: Não",
           },
         ],
       });

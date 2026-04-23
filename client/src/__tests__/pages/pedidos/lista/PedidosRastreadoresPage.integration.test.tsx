@@ -58,7 +58,9 @@ describe("PedidosRastreadoresPage (integração refatoração lista)", () => {
         screen.getByTestId("pedidos-rastreadores-busca"),
       ).toBeInTheDocument();
     });
-    expect(screen.getByText("Novo Pedido", { exact: false })).toBeInTheDocument();
+    expect(
+      screen.getByText("Novo Pedido", { exact: false }),
+    ).toBeInTheDocument();
   });
 
   it("edge: busca com espaços gera requisição com search trim (segunda chamada)", async () => {
@@ -75,10 +77,7 @@ describe("PedidosRastreadoresPage (integração refatoração lista)", () => {
       ).toBeInTheDocument(),
     );
     const n0 = apiMock.mock.calls.length;
-    await user.type(
-      screen.getByTestId("pedidos-rastreadores-busca"),
-      "  a",
-    );
+    await user.type(screen.getByTestId("pedidos-rastreadores-busca"), "  a");
     await waitFor(() => expect(apiMock.mock.calls.length).toBeGreaterThan(n0));
     const last = String(apiMock.mock.calls[apiMock.mock.calls.length - 1][0]);
     expect(last).toMatch(/search=a/);

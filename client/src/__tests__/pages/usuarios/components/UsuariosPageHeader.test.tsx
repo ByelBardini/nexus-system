@@ -4,10 +4,12 @@ import { describe, it, expect, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { UsuariosPageHeader } from "@/pages/usuarios/components/UsuariosPageHeader";
 
-function renderH(props: {
-  canCreate?: boolean;
-  search?: string;
-} = {}) {
+function renderH(
+  props: {
+    canCreate?: boolean;
+    search?: string;
+  } = {},
+) {
   const onSearch = vi.fn();
   const onStatus = vi.fn();
   const onCreate = vi.fn();

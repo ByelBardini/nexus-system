@@ -32,7 +32,10 @@ beforeEach(() => {
     if (url === "/equipamentos/modelos") return Promise.resolve([]);
     if (url === "/equipamentos/operadoras")
       return Promise.resolve([{ id: 1, nome: "Op" }]);
-    if (url === "/equipamentos/marcas-simcard" || url.includes("marcas-simcard"))
+    if (
+      url === "/equipamentos/marcas-simcard" ||
+      url.includes("marcas-simcard")
+    )
       return Promise.resolve([{ id: 9, nome: "Sim" }]);
     return Promise.resolve(null);
   });
@@ -40,10 +43,9 @@ beforeEach(() => {
 
 describe("useEquipamentosTrioCatalogQueries", () => {
   it("consolida as três listagens e carrega com enabled padrão true", async () => {
-    const { result } = renderHook(
-      () => useEquipamentosTrioCatalogQueries(),
-      { wrapper: wrapper() },
-    );
+    const { result } = renderHook(() => useEquipamentosTrioCatalogQueries(), {
+      wrapper: wrapper(),
+    });
     await waitFor(() =>
       expect(
         result.current.marcas.length >= 0 && result.current.loadingMarcas,
@@ -52,8 +54,7 @@ describe("useEquipamentosTrioCatalogQueries", () => {
     await waitFor(() => expect(result.current.loadingMarcas).toBe(false));
     expect(result.current.operadoras).toEqual([{ id: 1, nome: "Op" }]);
     expect(
-      apiMock.mock.calls.filter((c) => c[0] === "/equipamentos/marcas")
-        .length,
+      apiMock.mock.calls.filter((c) => c[0] === "/equipamentos/marcas").length,
     ).toBeGreaterThanOrEqual(1);
   });
 
@@ -69,12 +70,14 @@ describe("useEquipamentosTrioCatalogQueries", () => {
 
 describe("useEquipamentosFullCatalogQueries", () => {
   it("inclui marcas-simcard lista completa e isLoading fica false após sucesso", async () => {
-    const { result } = renderHook(
-      () => useEquipamentosFullCatalogQueries(),
-      { wrapper: wrapper() },
-    );
+    const { result } = renderHook(() => useEquipamentosFullCatalogQueries(), {
+      wrapper: wrapper(),
+    });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
-    expect(result.current.marcasSimcard[0]).toMatchObject({ id: 9, nome: "Sim" });
+    expect(result.current.marcasSimcard[0]).toMatchObject({
+      id: 9,
+      nome: "Sim",
+    });
   });
 
   it("edge: enabled false — queryFn de catálogos não é executada (sem dados iniciais)", () => {
@@ -102,9 +105,8 @@ describe("useEquipamentosMarcasSimcardListQuery", () => {
     );
     await waitFor(() =>
       expect(
-        apiMock.mock.calls.some(
-          (c) =>
-            String(c[0]).includes("marcas-simcard?operadoraId=7"),
+        apiMock.mock.calls.some((c) =>
+          String(c[0]).includes("marcas-simcard?operadoraId=7"),
         ),
       ).toBe(true),
     );
@@ -122,9 +124,7 @@ describe("useEquipamentosMarcasSimcardListQuery", () => {
     );
     await waitFor(() =>
       expect(
-        apiMock.mock.calls.some(
-          (c) => c[0] === "/equipamentos/marcas-simcard",
-        ),
+        apiMock.mock.calls.some((c) => c[0] === "/equipamentos/marcas-simcard"),
       ).toBe(true),
     );
     await waitFor(() =>
@@ -149,9 +149,8 @@ describe("useEquipamentosMarcasSimcardListQuery", () => {
       expect(result.current.loadingMarcasSimcard).toBe(false);
     });
     expect(
-      apiMock.mock.calls.filter((c) =>
-        String(c[0]).includes("marcas-simcard"),
-      ).length,
+      apiMock.mock.calls.filter((c) => String(c[0]).includes("marcas-simcard"))
+        .length,
     ).toBe(0);
   });
 });

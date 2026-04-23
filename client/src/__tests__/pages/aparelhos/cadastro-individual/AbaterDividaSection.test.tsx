@@ -168,14 +168,12 @@ describe("AbaterDividaSection", () => {
 
   it("quando watchAbaterDivida é falso, esconde o bloco de débito mesmo com abaterDivida true no form", () => {
     render(
-      <Harness
-        abaterDivida
-        abaterDebitoId={7}
-        watchAbaterDivida={false}
-      />,
+      <Harness abaterDivida abaterDebitoId={7} watchAbaterDivida={false} />,
     );
 
-    expect(screen.getByRole("heading", { name: /abater dívida/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /abater dívida/i }),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/Débito a Abater/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
   });
@@ -211,13 +209,7 @@ describe("AbaterDividaSection", () => {
   });
 
   it("com erro no campo débito, aplica destaque no trigger e mostra a mensagem", async () => {
-    render(
-      <Harness
-        abaterDivida
-        watchAbaterDivida
-        withAbaterDebitoError
-      />,
-    );
+    render(<Harness abaterDivida watchAbaterDivida withAbaterDebitoError />);
 
     const trigger = await screen.findByRole("combobox");
     expect(trigger.className).toMatch(/border-red-500/);
@@ -237,11 +229,7 @@ describe("AbaterDividaSection", () => {
       credorCliente: { id: 1, nome: "Credor Teste" },
     };
     render(
-      <Harness
-        abaterDivida
-        watchAbaterDivida
-        selectedDebito={comCredor}
-      />,
+      <Harness abaterDivida watchAbaterDivida selectedDebito={comCredor} />,
     );
     const notice = screen.getByText(/Este aparelho será vinculado ao credor/i);
     expect(notice).toBeInTheDocument();
@@ -249,18 +237,14 @@ describe("AbaterDividaSection", () => {
   });
 
   it("exibe Infinity no aviso quando credor é Infinity (sem credorCliente)", () => {
-    render(
-      <Harness abaterDivida watchAbaterDivida selectedDebito={debito1} />,
-    );
+    render(<Harness abaterDivida watchAbaterDivida selectedDebito={debito1} />);
     const notice = screen.getByText(/Este aparelho será vinculado ao credor/i);
     expect(within(notice).getByText("Infinity")).toBeInTheDocument();
   });
 
   it("com um único débito, o select lista exatamente uma opção", async () => {
     const user = userEvent.setup();
-    render(
-      <Harness abaterDivida watchAbaterDivida debitos={[debito1]} />,
-    );
+    render(<Harness abaterDivida watchAbaterDivida debitos={[debito1]} />);
 
     await user.click(screen.getByRole("combobox"));
     const options = screen.getAllByRole("option");

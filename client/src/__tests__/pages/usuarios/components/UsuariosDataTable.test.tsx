@@ -45,9 +45,7 @@ describe("UsuariosDataTable", () => {
     expect(
       await screen.findByText(/audit trail & segurança/i),
     ).toBeInTheDocument();
-    await user.click(
-      screen.getByRole("button", { name: /editar usuário/i }),
-    );
+    await user.click(screen.getByRole("button", { name: /editar usuário/i }));
     expect(onEdit).toHaveBeenCalledWith(
       expect.objectContaining({ id: 2, nome: "Beta" }),
     );

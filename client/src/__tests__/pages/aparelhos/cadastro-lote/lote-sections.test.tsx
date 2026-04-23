@@ -8,7 +8,12 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useEffect, type ReactNode } from "react";
-import { useForm, FormProvider, type Resolver, type UseFormReturn } from "react-hook-form";
+import {
+  useForm,
+  FormProvider,
+  type Resolver,
+  type UseFormReturn,
+} from "react-hook-form";
 import { describe, expect, it, vi } from "vitest";
 import { formatarMoeda, formatarMoedaDeCentavos } from "@/lib/format";
 import type { ClienteLista } from "@/types/aparelhos-catalog";
@@ -27,9 +32,7 @@ import {
 import type { DebitoRastreadorApi } from "@/pages/aparelhos/shared/debito-rastreador";
 
 vi.mock("@/components/MaterialIcon", () => ({
-  MaterialIcon: ({ name }: { name: string }) => (
-    <span data-icon={name} />
-  ),
+  MaterialIcon: ({ name }: { name: string }) => <span data-icon={name} />,
 }));
 
 vi.mock("@/components/SelectClienteSearch", () => ({
@@ -100,7 +103,10 @@ function IdentFormComErroRef() {
     defaultValues: { ...loteFormDefaultValues, referencia: "ok" },
   });
   useEffect(() => {
-    f.setError("referencia", { type: "manual", message: "Referência inválida" });
+    f.setError("referencia", {
+      type: "manual",
+      message: "Referência inválida",
+    });
   }, [f]);
   return (
     <FormProvider {...f}>
@@ -129,18 +135,13 @@ describe("LoteIdentificacaoSection", () => {
         )}
       </LoteTestHarness>,
     );
-    await user.type(
-      screen.getByPlaceholderText(/123456/),
-      "55",
-    );
+    await user.type(screen.getByPlaceholderText(/123456/), "55");
     expect(screen.getByTestId("st-notaFiscal")).toHaveTextContent("55");
   });
 
   it("exibe mensagem de erro de referência quando setError for aplicado", async () => {
     render(<IdentFormComErroRef />);
-    expect(
-      await screen.findByText("Referência inválida"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Referência inválida")).toBeInTheDocument();
   });
 });
 
@@ -373,7 +374,9 @@ describe("LotePropriedadeTipoSection", () => {
   it("mostra aviso de Infinity para SIM e botões de tipo", () => {
     render(<PropSimSection />);
     expect(
-      screen.getByText(/Simcards são sempre registrados no estoque da Infinity/i),
+      screen.getByText(
+        /Simcards são sempre registrados no estoque da Infinity/i,
+      ),
     ).toBeInTheDocument();
     const r = screen.getByRole("button", { name: /^Rastreador$/i });
     const s = screen.getByRole("button", { name: /^Simcard$/i });
@@ -389,7 +392,9 @@ describe("LotePropriedadeTipoSection", () => {
       />,
     );
     await user.click(screen.getByRole("button", { name: /^Cliente$/i }));
-    expect(screen.getByTestId("st-proprietarioTipo")).toHaveTextContent("CLIENTE");
+    expect(screen.getByTestId("st-proprietarioTipo")).toHaveTextContent(
+      "CLIENTE",
+    );
     expect(screen.getByTestId("st-clienteId")).toHaveTextContent("null");
     await user.click(screen.getByTestId("select-cliente-apply"));
     await waitFor(() =>
@@ -430,9 +435,7 @@ describe("LotePropriedadeTipoSection", () => {
       "INFINITY",
     );
     const marca = screen.getByTestId("st-marca").textContent;
-    expect(
-      marca === "" || marca === "null",
-    ).toBe(true);
+    expect(marca === "" || marca === "null").toBe(true);
     const combos = screen.getAllByRole("combobox");
     expect(combos).toHaveLength(2);
     expect(combos[0]).not.toBeDisabled();
@@ -485,29 +488,28 @@ describe("LotePropriedadeTipoSection", () => {
 
   it("em SIM com operadora, exibe placeholder de marca do simcard", () => {
     render(<PropSimComOperadora />);
-    expect(
-      screen.getByText(/Ex: Getrak, 1nce/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Ex: Getrak, 1nce/i)).toBeInTheDocument();
   });
 
   it("exibe mensagem de erro de marca (Controller fieldState) quando setError", async () => {
     render(<PropRastreadorComErroMarca />);
-    expect(
-      await screen.findByText("Marca custom error"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Marca custom error")).toBeInTheDocument();
   });
 
   it("exibe mensagem de erro de operadora (SIM) quando setError", async () => {
     render(<PropSimComErroOperadora />);
-    expect(
-      await screen.findByText("Operadora requerida"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Operadora requerida")).toBeInTheDocument();
   });
 });
 
 function IdSectionDup() {
   const idV = "123456789012345";
-  const f = { validos: [idV], duplicados: [idV], invalidos: [], jaExistentes: [] };
+  const f = {
+    validos: [idV],
+    duplicados: [idV],
+    invalidos: [],
+    jaExistentes: [],
+  };
   const form = useForm<LoteFormValues>({
     resolver: zodResolver(loteFormSchema) as Resolver<LoteFormValues>,
     defaultValues: { ...loteFormDefaultValues, idsTexto: `${idV}\n${idV}` },
@@ -574,7 +576,11 @@ function IdResumoFlags() {
 
 function IdToggleQuant() {
   const form = useForm<LoteFormValues>({
-    defaultValues: { ...loteFormDefaultValues, definirIds: false, quantidade: 3 },
+    defaultValues: {
+      ...loteFormDefaultValues,
+      definirIds: false,
+      quantidade: 3,
+    },
   });
   return (
     <FormProvider {...form}>
@@ -656,9 +662,7 @@ describe("LoteIdentificadoresSection", () => {
     await waitFor(() =>
       expect(screen.getByTestId("st-definirIds")).toHaveTextContent("true"),
     );
-    expect(
-      await screen.findByPlaceholderText(/IMEIs/i),
-    ).toBeInTheDocument();
+    expect(await screen.findByPlaceholderText(/IMEIs/i)).toBeInTheDocument();
     const qtd = document.querySelector('input[placeholder="0"]');
     expect(qtd).toBeInstanceOf(HTMLInputElement);
     fireEvent.change(qtd!, { target: { value: "" } });
@@ -696,9 +700,7 @@ describe("LoteIdentificadoresSection", () => {
       );
     };
     render(<ErrQtd />);
-    expect(
-      screen.getByText(/Quantidade informada \(2\)/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Quantidade informada \(2\)/i)).toBeInTheDocument();
   });
 });
 
@@ -856,7 +858,9 @@ function AbaterEmpty() {
 }
 
 function AbaterSimEdge() {
-  const form = useForm<LoteFormValues>({ defaultValues: loteFormDefaultValues });
+  const form = useForm<LoteFormValues>({
+    defaultValues: loteFormDefaultValues,
+  });
   return (
     <FormProvider {...form}>
       <LoteAbaterDividaSection
@@ -898,9 +902,7 @@ describe("LoteAbaterDividaSection", () => {
 
   it("exibe erro de validação do débito a abater", async () => {
     render(<AbaterComErroDebito />);
-    expect(
-      await screen.findByText("Escolha um débito"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Escolha um débito")).toBeInTheDocument();
   });
 
   it("exibe erro de validação da quantidade a abater", async () => {
@@ -922,8 +924,7 @@ describe("LoteAbaterDividaSection", () => {
         },
       });
       const abaterId = form.watch("abaterDebitoId");
-      const selected =
-        lista.find((d) => d.id === abaterId) ?? null;
+      const selected = lista.find((d) => d.id === abaterId) ?? null;
       return (
         <FormProvider {...form}>
           <LoteAbaterDividaSection
@@ -1016,13 +1017,13 @@ describe("LoteAbaterDividaSection", () => {
       .find((b) => b.className.includes("rounded-full"));
     expect(toggle).toBeDefined();
     await user.click(toggle!);
-    expect(
-      screen.queryByText(/Débito a Abater/i),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Débito a Abater/i)).not.toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByTestId("st-abaterDivida")).toHaveTextContent("false");
       expect(screen.getByTestId("st-abaterDebitoId")).toHaveTextContent("null");
-      expect(screen.getByTestId("st-abaterQuantidade")).toHaveTextContent("null");
+      expect(screen.getByTestId("st-abaterQuantidade")).toHaveTextContent(
+        "null",
+      );
     });
   });
 
@@ -1055,9 +1056,9 @@ describe("LoteAbaterDividaSection", () => {
       );
     }
     const { container } = render(<VinculoInfinity />);
-    const emStrong = Array.from(
-      container.querySelectorAll("strong"),
-    ).find((el) => el.textContent === "Infinity");
+    const emStrong = Array.from(container.querySelectorAll("strong")).find(
+      (el) => el.textContent === "Infinity",
+    );
     expect(emStrong).toBeInstanceOf(HTMLElement);
   });
 
@@ -1096,7 +1097,9 @@ describe("LoteAbaterDividaSection", () => {
 });
 
 function PlanoSóInativos() {
-  const form = useForm<LoteFormValues>({ defaultValues: loteFormDefaultValues });
+  const form = useForm<LoteFormValues>({
+    defaultValues: loteFormDefaultValues,
+  });
   return (
     <FormProvider {...form}>
       <LoteSimcardPlanoField
@@ -1176,7 +1179,12 @@ describe("CadastroLoteResumoPanel", () => {
         operadorasAtivas={[]}
         quantidadeFinal={0}
         valorTotal={0}
-        idValidation={{ validos: [], duplicados: [], invalidos: [], jaExistentes: [] }}
+        idValidation={{
+          validos: [],
+          duplicados: [],
+          invalidos: [],
+          jaExistentes: [],
+        }}
       />,
     );
     expect(screen.getByText("R1")).toBeInTheDocument();
@@ -1200,7 +1208,12 @@ describe("CadastroLoteResumoPanel", () => {
         operadorasAtivas={[]}
         quantidadeFinal={1}
         valorTotal={1}
-        idValidation={{ validos: [], duplicados: [], invalidos: [], jaExistentes: [] }}
+        idValidation={{
+          validos: [],
+          duplicados: [],
+          invalidos: [],
+          jaExistentes: [],
+        }}
       />,
     );
     const tracos = screen.getAllByText("—");
@@ -1226,7 +1239,12 @@ describe("CadastroLoteResumoPanel", () => {
         operadorasAtivas={[{ id: 2, nome: "Operadora B", ativo: true }]}
         quantidadeFinal={3}
         valorTotal={total}
-        idValidation={{ validos: ["a"], duplicados: [], invalidos: [], jaExistentes: [] }}
+        idValidation={{
+          validos: ["a"],
+          duplicados: [],
+          invalidos: [],
+          jaExistentes: [],
+        }}
       />,
     );
     const flat = (container.textContent ?? "").replace(/\s/g, "");

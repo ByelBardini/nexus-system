@@ -100,9 +100,8 @@ function renderPage() {
 
 /** Comboboxes só da seção Identificação (tipo, marca, modelo / SIM) — evita colidir com origem. */
 function comboboxesIdentificacaoTecnica() {
-  const card = screen
-    .getByText(/Identificação Técnica/i)
-    .parentElement?.parentElement;
+  const card = screen.getByText(/Identificação Técnica/i).parentElement
+    ?.parentElement;
   if (!card) {
     throw new Error("Card Identificação Técnica não encontrado");
   }
@@ -111,7 +110,9 @@ function comboboxesIdentificacaoTecnica() {
 
 function findLastPostIndividualBody(): unknown {
   const postCalls = apiMock.mock.calls.filter(
-    (c) => c[0] === "/aparelhos/individual" && (c[1] as RequestInit | undefined)?.method === "POST",
+    (c) =>
+      c[0] === "/aparelhos/individual" &&
+      (c[1] as RequestInit | undefined)?.method === "POST",
   );
   const last = postCalls[postCalls.length - 1];
   if (!last) throw new Error("Nenhum POST /aparelhos/individual");
@@ -145,9 +146,7 @@ describe("CadastroIndividualPage (integrado, APIs mockadas)", () => {
     await waitFor(() => {
       expect(apiMock).toHaveBeenCalled();
     });
-    expect(
-      screen.queryByText(/Abater Dívida/i),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/Abater Dívida/i)).not.toBeInTheDocument();
   });
 
   it("resumo exibe rótulo de data de entrada (formato pt-BR)", async () => {
@@ -202,10 +201,10 @@ describe("CadastroIndividualPage (integrado, APIs mockadas)", () => {
       }),
     ).toBeInTheDocument();
 
-    const origemSelect = within(
-      screen.getByText(/Origem e Rastreabilidade/i).parentElement
-        ?.parentElement!,
-    ).getAllByRole("combobox")[0]!;
+    const origemSection = screen.getByText(/Origem e Rastreabilidade/i)
+      .parentElement?.parentElement;
+    expect(origemSection).toBeTruthy();
+    const origemSelect = within(origemSection!).getAllByRole("combobox")[0]!;
     await user.click(origemSelect);
     await user.click(
       await screen.findByRole("option", { name: /Compra Avulsa/i }),
@@ -319,93 +318,83 @@ describe("CadastroIndividualPage (integrado, APIs mockadas)", () => {
     expect(navigateMock).not.toHaveBeenCalled();
   }, 15_000);
 
-  it(
-    "Finalizar com dados válidos: payload, toast de sucesso e navegação",
-    async () => {
-      const user = userEvent.setup({ delay: null });
-      renderPage();
-      await screen.findByText(/Identificação Técnica/i);
-      const imei = screen.getByPlaceholderText("Digite o identificador único...");
-      await user.type(imei, "123456789012345");
-      const combos = comboboxesIdentificacaoTecnica();
-      await user.click(combos[1]!);
-      await user.click(await screen.findByRole("option", { name: "M" }));
-      await user.click(combos[2]!);
-      await user.click(await screen.findByRole("option", { name: "X" }));
+  it("Finalizar com dados válidos: payload, toast de sucesso e navegação", async () => {
+    const user = userEvent.setup({ delay: null });
+    renderPage();
+    await screen.findByText(/Identificação Técnica/i);
+    const imei = screen.getByPlaceholderText("Digite o identificador único...");
+    await user.type(imei, "123456789012345");
+    const combos = comboboxesIdentificacaoTecnica();
+    await user.click(combos[1]!);
+    await user.click(await screen.findByRole("option", { name: "M" }));
+    await user.click(combos[2]!);
+    await user.click(await screen.findByRole("option", { name: "X" }));
 
-      const finalizar = await screen.findByRole("button", {
-        name: /Finalizar Cadastro/i,
-      });
-      await waitFor(() => expect(finalizar).not.toBeDisabled());
-      await user.click(finalizar);
+    const finalizar = await screen.findByRole("button", {
+      name: /Finalizar Cadastro/i,
+    });
+    await waitFor(() => expect(finalizar).not.toBeDisabled());
+    await user.click(finalizar);
 
-      await waitFor(() => {
-        expect(apiMock).toHaveBeenCalledWith(
-          "/aparelhos/individual",
-          expect.objectContaining({ method: "POST" }),
-        );
-      });
-      const body = findLastPostIndividualBody() as {
-        identificador: string;
-        tipo: string;
-        marca: string;
-        modelo: string;
-        origem: string;
-        proprietario: string;
-        statusEntrada: string;
-      };
-      expect(body.identificador).toBe("123456789012345");
-      expect(body.tipo).toBe("RASTREADOR");
-      expect(body.marca).toBe("M");
-      expect(body.modelo).toBe("X");
-      expect(body.origem).toBe("DEVOLUCAO_TECNICO");
-      expect(body.proprietario).toBe("INFINITY");
-      expect(body.statusEntrada).toBe("EM_MANUTENCAO");
-      expect(vi.mocked(toast.success)).toHaveBeenCalled();
-      expect(navigateMock).toHaveBeenCalledWith("/aparelhos");
-    },
-    15_000,
-  );
-
-  it(
-    "Cadastrar outro: sucesso chama API e limpa o identificador",
-    async () => {
-      const user = userEvent.setup({ delay: null });
-      renderPage();
-      await screen.findByText(/Identificação Técnica/i);
-      const imei = screen.getByPlaceholderText("Digite o identificador único...");
-      await user.type(imei, "123456789012345");
-      const combos = comboboxesIdentificacaoTecnica();
-      await user.click(combos[1]!);
-      await user.click(await screen.findByRole("option", { name: "M" }));
-      await user.click(combos[2]!);
-      await user.click(await screen.findByRole("option", { name: "X" }));
-
-      const outro = await screen.findByRole("button", {
-        name: /Cadastrar Outro Equipamento/i,
-      });
-      await waitFor(() => expect(outro).not.toBeDisabled());
-      await user.click(outro);
-
-      await waitFor(() => {
-        expect(apiMock).toHaveBeenCalledWith(
-          "/aparelhos/individual",
-          expect.objectContaining({ method: "POST" }),
-        );
-      });
-      const identInput = screen.getByPlaceholderText(
-        "Digite o identificador único...",
+    await waitFor(() => {
+      expect(apiMock).toHaveBeenCalledWith(
+        "/aparelhos/individual",
+        expect.objectContaining({ method: "POST" }),
       );
-      expect(identInput).toHaveValue("");
-      expect(
-        await screen.findByText(
-          /1 equipamento cadastrado nesta sessão/i,
-        ),
-      ).toBeInTheDocument();
-      expect(vi.mocked(toast.success)).toHaveBeenCalled();
-    },
-    15_000,
-  );
+    });
+    const body = findLastPostIndividualBody() as {
+      identificador: string;
+      tipo: string;
+      marca: string;
+      modelo: string;
+      origem: string;
+      proprietario: string;
+      statusEntrada: string;
+    };
+    expect(body.identificador).toBe("123456789012345");
+    expect(body.tipo).toBe("RASTREADOR");
+    expect(body.marca).toBe("M");
+    expect(body.modelo).toBe("X");
+    expect(body.origem).toBe("DEVOLUCAO_TECNICO");
+    expect(body.proprietario).toBe("INFINITY");
+    expect(body.statusEntrada).toBe("EM_MANUTENCAO");
+    expect(vi.mocked(toast.success)).toHaveBeenCalled();
+    expect(navigateMock).toHaveBeenCalledWith("/aparelhos");
+  }, 15_000);
+
+  it("Cadastrar outro: sucesso chama API e limpa o identificador", async () => {
+    const user = userEvent.setup({ delay: null });
+    renderPage();
+    await screen.findByText(/Identificação Técnica/i);
+    const imei = screen.getByPlaceholderText("Digite o identificador único...");
+    await user.type(imei, "123456789012345");
+    const combos = comboboxesIdentificacaoTecnica();
+    await user.click(combos[1]!);
+    await user.click(await screen.findByRole("option", { name: "M" }));
+    await user.click(combos[2]!);
+    await user.click(await screen.findByRole("option", { name: "X" }));
+
+    const outro = await screen.findByRole("button", {
+      name: /Cadastrar Outro Equipamento/i,
+    });
+    await waitFor(() => expect(outro).not.toBeDisabled());
+    await user.click(outro);
+
+    await waitFor(() => {
+      expect(apiMock).toHaveBeenCalledWith(
+        "/aparelhos/individual",
+        expect.objectContaining({ method: "POST" }),
+      );
+    });
+    const identInput = screen.getByPlaceholderText(
+      "Digite o identificador único...",
+    );
+    expect(identInput).toHaveValue("");
+    expect(
+      await screen.findByText(/1 equipamento cadastrado nesta sessão/i),
+    ).toBeInTheDocument();
+    expect(vi.mocked(toast.success)).toHaveBeenCalled();
+  }, 15_000);
 
   it("Limpar campos: zera identificador e remove marca selecionada (volta ao padrão)", async () => {
     const user = userEvent.setup({ delay: null });

@@ -53,7 +53,6 @@ function rastreadorProps(
   };
 }
 
-
 describe("PareamentoCriarRastreadorBlock", () => {
   it("com criarNovo false não renderiza o bloco interno; após ativar, passa a existir o fluxo lote/marca", () => {
     const { unmount, rerender } = render(
@@ -186,9 +185,7 @@ describe("PareamentoCriarRastreadorBlock", () => {
     );
     const comboboxes = screen.getAllByRole("combobox");
     expect(comboboxes[1]).toBeDisabled();
-    expect(
-      document.body.textContent,
-    ).toMatch(/marca primeiro/i);
+    expect(document.body.textContent).toMatch(/marca primeiro/i);
 
     rerender(
       <PareamentoCriarRastreadorBlock
@@ -233,24 +230,14 @@ describe("PareamentoCriarRastreadorBlock", () => {
       lotesFiltrados: [loteRast(1, "X")],
     };
     const { unmount } = render(
-      <PareamentoCriarRastreadorBlock
-        variant="individual"
-        {...common}
-      />,
+      <PareamentoCriarRastreadorBlock variant="individual" {...common} />,
     );
     const labelLote = screen.getByText("Lote", { exact: true });
     expect(labelLote.tagName).toBe("LABEL");
     unmount();
 
-    render(
-      <PareamentoCriarRastreadorBlock
-        variant="massa"
-        {...common}
-      />,
-    );
-    expect(
-      screen.queryByText("Lote", { exact: true }),
-    ).not.toBeInTheDocument();
+    render(<PareamentoCriarRastreadorBlock variant="massa" {...common} />);
+    expect(screen.queryByText("Lote", { exact: true })).not.toBeInTheDocument();
   });
 
   it("pertenceLote: seleciona lote, reabre e Escape chama onBuscaChange('')", async () => {
@@ -293,7 +280,10 @@ describe("PareamentoCriarRastreadorBlock", () => {
       return (
         <PareamentoCriarRastreadorBlock
           variant="individual"
-          {...rastreadorProps({ onLoteRastreadorIdChange, onLoteBuscaChange: setBusca })}
+          {...rastreadorProps({
+            onLoteRastreadorIdChange,
+            onLoteBuscaChange: setBusca,
+          })}
           criarNovo
           pertenceLote
           loteBusca={busca}

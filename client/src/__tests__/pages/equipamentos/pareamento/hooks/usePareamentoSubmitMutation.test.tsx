@@ -150,5 +150,4 @@ describe("usePareamentoSubmitMutation", () => {
     await waitFor(() => expect(onMassaSuccess).toHaveBeenCalled());
     expect(onIndividualSuccess).not.toHaveBeenCalled();
   });
-
 });

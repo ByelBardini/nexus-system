@@ -133,7 +133,9 @@ vi.mock("@/components/IdAparelhoSearch", () => ({
 const navigate = vi.hoisted(() => vi.fn());
 vi.mock("react-router-dom", async () => {
   const a =
-    await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
+    await vi.importActual<typeof import("react-router-dom")>(
+      "react-router-dom",
+    );
   return {
     ...a,
     useNavigate: () => navigate,
@@ -145,8 +147,7 @@ function createDefaultApiImplementation() {
     if (path === "/clientes?subclientes=1") return Promise.resolve([]);
     if (path === "/ordens-servico/cliente-infinity")
       return Promise.resolve({ clienteId: 1 });
-    if (path === "/clientes/1")
-      return Promise.resolve({ subclientes: [] });
+    if (path === "/clientes/1") return Promise.resolve({ subclientes: [] });
     if (path === "/tecnicos")
       return Promise.resolve([
         { id: 2, nome: "Tec", precos: { revisao: 1, deslocamento: 0 } },
@@ -250,9 +251,7 @@ describe("OrdensServicoCriacaoPage (integração)", () => {
     expect(screen.getByTestId("cep")).toHaveValue("13000000");
     expect(screen.getByTestId("cidade")).toHaveValue("Campinas");
     expect(screen.getByTestId("uf")).toHaveValue("SP");
-    expect(
-      screen.getByPlaceholderText(/rua, av/i),
-    ).toHaveValue("Rua do CEP");
+    expect(screen.getByPlaceholderText(/rua, av/i)).toHaveValue("Rua do CEP");
   });
 
   it("Revisão e Retirada exibem o bloco de aparelho/local (não exige Instalação)", async () => {
@@ -272,18 +271,20 @@ describe("OrdensServicoCriacaoPage (integração)", () => {
   });
 
   it("sem AGENDAMENTO.OS.CRIAR: emitir fica desabilitado e o POST nunca ocorre", async () => {
-    auth.hasPermission.mockImplementation(
-      (p) => p !== "AGENDAMENTO.OS.CRIAR",
-    );
+    auth.hasPermission.mockImplementation((p) => p !== "AGENDAMENTO.OS.CRIAR");
     const user = userEvent.setup({ delay: null });
     render(<App />);
-    await waitFor(() => expect(screen.getByTestId("subnome")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByTestId("subnome")).toBeInTheDocument(),
+    );
 
     await preencherSubclienteMinimoValido(user);
     await user.click(screen.getByRole("button", { name: /^instalação$/i }));
     const emitir = screen.getAllByRole("button", { name: /emitir ordem/i })[0];
     await waitFor(() => expect(emitir).toBeDisabled());
-    for (const btn of screen.getAllByRole("button", { name: /emitir ordem/i })) {
+    for (const btn of screen.getAllByRole("button", {
+      name: /emitir ordem/i,
+    })) {
       expect(btn).toBeDisabled();
     }
     expect(countPostOrdensServicoCalls()).toBe(0);
@@ -292,7 +293,9 @@ describe("OrdensServicoCriacaoPage (integração)", () => {
   it("submissão: POST com clienteId, tipo, subclienteCreate e sem observacoes vazias só com espaço", async () => {
     const user = userEvent.setup({ delay: null });
     render(<App />);
-    await waitFor(() => expect(screen.getByTestId("subnome")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByTestId("subnome")).toBeInTheDocument(),
+    );
     await waitFor(() =>
       expect(api).toHaveBeenCalledWith("/ordens-servico/cliente-infinity"),
     );
@@ -318,16 +321,16 @@ describe("OrdensServicoCriacaoPage (integração)", () => {
       clienteId: 1,
     });
     expect(body).toHaveProperty("subclienteCreate");
-    expect(
-      (body.subclienteCreate as { nome: string }).nome,
-    ).toBe("Cliente OS");
+    expect((body.subclienteCreate as { nome: string }).nome).toBe("Cliente OS");
     expect(body.observacoes).toBeUndefined();
   }, 20_000);
 
   it("placa preenchida sem marca/modelo/ano/cor: Zod bloqueia o submit (nenhum POST /ordens-servico)", async () => {
     const user = userEvent.setup({ delay: null });
     render(<App />);
-    await waitFor(() => expect(screen.getByTestId("placa")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByTestId("placa")).toBeInTheDocument(),
+    );
 
     await preencherSubclienteMinimoValido(user);
     await user.click(screen.getByRole("button", { name: /^instalação$/i }));
@@ -344,7 +347,9 @@ describe("OrdensServicoCriacaoPage (integração)", () => {
   it("dados de veículo completos: chama /veiculos/criar-ou-buscar e veiculoId no payload da OS", async () => {
     const user = userEvent.setup({ delay: null });
     render(<App />);
-    await waitFor(() => expect(screen.getByTestId("placa")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByTestId("placa")).toBeInTheDocument(),
+    );
 
     await preencherSubclienteMinimoValido(user);
     await user.click(screen.getByRole("button", { name: /^instalação$/i }));
@@ -381,7 +386,9 @@ describe("OrdensServicoCriacaoPage (integração)", () => {
     });
     const user = userEvent.setup({ delay: null });
     render(<App />);
-    await waitFor(() => expect(screen.getByTestId("subnome")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByTestId("subnome")).toBeInTheDocument(),
+    );
 
     await preencherSubclienteMinimoValido(user);
     await user.click(screen.getByRole("button", { name: /^instalação$/i }));
@@ -400,7 +407,9 @@ describe("OrdensServicoCriacaoPage (integração)", () => {
     const user = userEvent.setup();
     render(<App />);
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: /cancelar/i })).toBeInTheDocument(),
+      expect(
+        screen.getByRole("button", { name: /cancelar/i }),
+      ).toBeInTheDocument(),
     );
     await user.click(screen.getByRole("button", { name: /cancelar/i }));
     expect(navigate).toHaveBeenCalledWith("/");

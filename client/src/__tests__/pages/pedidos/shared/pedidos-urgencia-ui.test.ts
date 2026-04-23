@@ -15,7 +15,9 @@ describe("pedidos-urgencia-ui", () => {
 
     it("mapeia Baixa, Média, Alta e Urgente", () => {
       expect(getUrgenciaBadgeClass("Baixa")).toBe(URGENCIA_STYLE.Baixa.badge);
-      expect(getUrgenciaBadgeClass("Média")).toBe(URGENCIA_STYLE["Média"]!.badge);
+      expect(getUrgenciaBadgeClass("Média")).toBe(
+        URGENCIA_STYLE["Média"]!.badge,
+      );
       expect(getUrgenciaBadgeClass("Alta")).toBe(URGENCIA_STYLE.Alta.badge);
       expect(getUrgenciaBadgeClass("Urgente")).toBe(
         URGENCIA_STYLE.Urgente.badge,

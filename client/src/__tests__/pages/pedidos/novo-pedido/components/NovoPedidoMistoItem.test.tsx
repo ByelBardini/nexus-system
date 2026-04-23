@@ -255,9 +255,7 @@ describe("NovoPedidoMistoItem", () => {
     const rows = document.querySelectorAll("[data-misto-item]");
     const second = rows[1] as HTMLElement;
     await u.click(within(second).getByRole("combobox"));
-    expect(
-      screen.queryByRole("option", { name: "Cliente Um" }),
-    ).toBeNull();
+    expect(screen.queryByRole("option", { name: "Cliente Um" })).toBeNull();
     expect(
       screen.getByRole("option", { name: "Cliente Dois" }),
     ).toBeInTheDocument();
@@ -292,9 +290,7 @@ describe("NovoPedidoMistoItem", () => {
     expect(
       screen.getByText("Marca/modelo do pedido aplicado"),
     ).toBeInTheDocument();
-    expect(
-      screen.queryByText("Marca/modelo específico"),
-    ).toBeNull();
+    expect(screen.queryByText("Marca/modelo específico")).toBeNull();
   });
 
   it("trocar marca zera modelo já escolhido (evita modelo incompatível com a marca)", async () => {
@@ -320,9 +316,7 @@ describe("NovoPedidoMistoItem", () => {
     await u.click(marcaCombo);
     await u.click(screen.getByRole("option", { name: "Marca Dois" }));
     await waitFor(() => {
-      expect(bag.current?.getValues("itensMisto.0.marcaEquipamentoId")).toBe(
-        2,
-      );
+      expect(bag.current?.getValues("itensMisto.0.marcaEquipamentoId")).toBe(2);
       expect(
         bag.current?.getValues("itensMisto.0.modeloEquipamentoId"),
       ).toBeUndefined();
@@ -345,9 +339,7 @@ describe("NovoPedidoMistoItem", () => {
     expect(
       screen.getByRole("option", { name: "Mod Marca2" }),
     ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("option", { name: "Mod Marca1" }),
-    ).toBeNull();
+    expect(screen.queryByRole("option", { name: "Mod Marca1" })).toBeNull();
     await u.click(screen.getByRole("option", { name: "Mod Marca2" }));
     await u.click(marcaCb);
     const card = document.querySelector(
@@ -394,7 +386,9 @@ describe("NovoPedidoMistoItem", () => {
     });
     await u.click(opCheck);
     await waitFor(() => {
-      expect(bag.current?.getValues("itensMisto.0.operadoraId")).toBeUndefined();
+      expect(
+        bag.current?.getValues("itensMisto.0.operadoraId"),
+      ).toBeUndefined();
       expect(bag.current?.getValues("itensMisto.0.operadoraEspecifica")).toBe(
         false,
       );

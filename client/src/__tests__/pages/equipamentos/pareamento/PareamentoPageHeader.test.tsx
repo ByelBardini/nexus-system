@@ -18,12 +18,7 @@ vi.mock("@/components/MaterialIcon", () => ({
 
 describe("PareamentoPageHeader", () => {
   it("exibe link para /equipamentos e título", () => {
-    render(
-      <PareamentoPageHeader
-        modo="individual"
-        onModoChange={vi.fn()}
-      />,
-    );
+    render(<PareamentoPageHeader modo="individual" onModoChange={vi.fn()} />);
     expect(screen.getByRole("link")).toHaveAttribute("href", "/equipamentos");
     expect(
       screen.getByRole("heading", { name: /pareamento de equipamentos/i }),
@@ -31,12 +26,8 @@ describe("PareamentoPageHeader", () => {
   });
 
   it("subtítulo reflete modo individual", () => {
-    render(
-      <PareamentoPageHeader modo="individual" onModoChange={vi.fn()} />,
-    );
-    expect(
-      screen.getByText(/pareamento individual/i),
-    ).toBeInTheDocument();
+    render(<PareamentoPageHeader modo="individual" onModoChange={vi.fn()} />);
+    expect(screen.getByText(/pareamento individual/i)).toBeInTheDocument();
   });
 
   it("chama onModoChange ao clicar nas abas", async () => {

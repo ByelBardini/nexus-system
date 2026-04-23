@@ -17,8 +17,6 @@ describe("PedidoMistoChips", () => {
         ]}
       />,
     );
-    expect(
-      screen.getByText("Infinity", { exact: false }),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Infinity", { exact: false })).toBeInTheDocument();
   });
 });

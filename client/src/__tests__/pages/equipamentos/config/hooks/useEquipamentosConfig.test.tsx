@@ -34,9 +34,7 @@ vi.mock("@/hooks/useDebounce", () => ({
 
 function wrapper(qc: QueryClient) {
   return function W({ children }: { children: ReactNode }) {
-    return (
-      <QueryClientProvider client={qc}>{children}</QueryClientProvider>
-    );
+    return <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
   };
 }
 
@@ -120,9 +118,7 @@ function setupDefaultCatalogMock() {
           ativo: true,
           minCaracteresIccid: null,
           operadora: { id: 1, nome: "Vivo Norte" },
-          planos: [
-            { id: 20, marcaSimcardId: 10, planoMb: 5, ativo: true },
-          ],
+          planos: [{ id: 20, marcaSimcardId: 10, planoMb: 5, ativo: true }],
         },
       ]);
     if (
@@ -147,7 +143,9 @@ describe("useEquipamentosConfig", () => {
 
   it("canEdit reflete permissão CONFIGURACAO.APARELHO.EDITAR", async () => {
     authState.canEditConfigAparelho = false;
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
     });
@@ -156,7 +154,9 @@ describe("useEquipamentosConfig", () => {
   });
 
   it("carrega listagens: marcas inativas entram em filteredMarcas mas não em marcasAtivas", async () => {
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
     });
@@ -167,7 +167,9 @@ describe("useEquipamentosConfig", () => {
   });
 
   it("filtragem: busca por nome de modelo associa a marca correta (não só pelo nome da marca)", async () => {
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
     });
@@ -179,7 +181,9 @@ describe("useEquipamentosConfig", () => {
   });
 
   it("filtragem: operadoras e marcas simcard respondem à busca por nome (e operadora)", async () => {
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
     });
@@ -194,7 +198,9 @@ describe("useEquipamentosConfig", () => {
   });
 
   it("toggleMarca mantém expansões independentes entre IDs", async () => {
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
     });
@@ -211,7 +217,9 @@ describe("useEquipamentosConfig", () => {
   });
 
   it("toggleMarcaSimcard remove ID ao segundo clique", async () => {
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
     });
@@ -223,7 +231,9 @@ describe("useEquipamentosConfig", () => {
   });
 
   it("expõe modelosByMarca e totalModelos consistentes com o catálogo", async () => {
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
     });
@@ -236,7 +246,9 @@ describe("useEquipamentosConfig", () => {
   });
 
   it("openCreateMarca / openEditMarca preenchem estado do modal", async () => {
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
     });
@@ -259,7 +271,10 @@ describe("useEquipamentosConfig", () => {
 
   it("handleSaveMarca: trim — só espaços bloqueia; texto com espaços laterais envia o valor completo (não normaliza)", async () => {
     const qc = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
@@ -275,16 +290,18 @@ describe("useEquipamentosConfig", () => {
     act(() => result.current.setNomeMarca("  Alfa  "));
     act(() => result.current.handleSaveMarca());
     await waitFor(() =>
-      expectParsedBody(
-        findApiCall("/equipamentos/marcas", "POST"),
-        { nome: "  Alfa  " },
-      ),
+      expectParsedBody(findApiCall("/equipamentos/marcas", "POST"), {
+        nome: "  Alfa  ",
+      }),
     );
   });
 
   it("handleSaveMarca: sucesso fecha o modal; falha na API mantém modal aberto e usa toastApiError", async () => {
     const qc = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
@@ -353,7 +370,10 @@ describe("useEquipamentosConfig", () => {
 
   it("handleSaveMarca: atualização envia PATCH só com campos esperados", async () => {
     const qc = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
@@ -370,16 +390,18 @@ describe("useEquipamentosConfig", () => {
     act(() => result.current.setNomeMarca("Renomeada"));
     act(() => result.current.handleSaveMarca());
     await waitFor(() =>
-      expectParsedBody(
-        findApiCall("/equipamentos/marcas/7", "PATCH"),
-        { nome: "Renomeada" },
-      ),
+      expectParsedBody(findApiCall("/equipamentos/marcas/7", "PATCH"), {
+        nome: "Renomeada",
+      }),
     );
   });
 
   it("toggleAtivoMarca envia PATCH com ativo invertido", async () => {
     const qc = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
@@ -394,16 +416,18 @@ describe("useEquipamentosConfig", () => {
       }),
     );
     await waitFor(() =>
-      expectParsedBody(
-        findApiCall("/equipamentos/marcas/3", "PATCH"),
-        { ativo: false },
-      ),
+      expectParsedBody(findApiCall("/equipamentos/marcas/3", "PATCH"), {
+        ativo: false,
+      }),
     );
   });
 
   it("handleSaveModelo: cria sem minCaracteresImei quando campo vazio; edição omite chave ao limpar", async () => {
     const qc = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
@@ -435,16 +459,18 @@ describe("useEquipamentosConfig", () => {
     act(() => result.current.setMinCaracteresImeiModelo(""));
     act(() => result.current.handleSaveModelo());
     await waitFor(() =>
-      expectParsedBody(
-        findApiCall("/equipamentos/modelos/100", "PATCH"),
-        { nome: "SóNome" },
-      ),
+      expectParsedBody(findApiCall("/equipamentos/modelos/100", "PATCH"), {
+        nome: "SóNome",
+      }),
     );
   });
 
   it("handleSaveModelo: validações de nome e marca na criação", async () => {
     const qc = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
@@ -472,7 +498,9 @@ describe("useEquipamentosConfig", () => {
   });
 
   it("openCreateModelo com marcaId pré-preenche o select de marca", async () => {
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
     });
@@ -483,7 +511,9 @@ describe("useEquipamentosConfig", () => {
   });
 
   it("openEditModelo com minCaracteresImei nulo limpa o campo", async () => {
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
     });
@@ -502,7 +532,10 @@ describe("useEquipamentosConfig", () => {
 
   it("toggleAtivoModelo envia PATCH", async () => {
     const qc = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
@@ -517,16 +550,18 @@ describe("useEquipamentosConfig", () => {
       }),
     );
     await waitFor(() =>
-      expectParsedBody(
-        findApiCall("/equipamentos/modelos/9", "PATCH"),
-        { ativo: true },
-      ),
+      expectParsedBody(findApiCall("/equipamentos/modelos/9", "PATCH"), {
+        ativo: true,
+      }),
     );
   });
 
   it("handleSaveOperadora: validação e create/update", async () => {
     const qc = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
@@ -541,10 +576,9 @@ describe("useEquipamentosConfig", () => {
     act(() => result.current.setNomeOperadora("OpX"));
     act(() => result.current.handleSaveOperadora());
     await waitFor(() =>
-      expectParsedBody(
-        findApiCall("/equipamentos/operadoras", "POST"),
-        { nome: "OpX" },
-      ),
+      expectParsedBody(findApiCall("/equipamentos/operadoras", "POST"), {
+        nome: "OpX",
+      }),
     );
     act(() =>
       result.current.openEditOperadora({ id: 4, nome: "Old", ativo: true }),
@@ -552,16 +586,18 @@ describe("useEquipamentosConfig", () => {
     act(() => result.current.setNomeOperadora("New"));
     act(() => result.current.handleSaveOperadora());
     await waitFor(() =>
-      expectParsedBody(
-        findApiCall("/equipamentos/operadoras/4", "PATCH"),
-        { nome: "New" },
-      ),
+      expectParsedBody(findApiCall("/equipamentos/operadoras/4", "PATCH"), {
+        nome: "New",
+      }),
     );
   });
 
   it("toggleAtivoOperadora envia PATCH", async () => {
     const qc = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
@@ -571,16 +607,18 @@ describe("useEquipamentosConfig", () => {
       result.current.toggleAtivoOperadora({ id: 2, nome: "O", ativo: true }),
     );
     await waitFor(() =>
-      expectParsedBody(
-        findApiCall("/equipamentos/operadoras/2", "PATCH"),
-        { ativo: false },
-      ),
+      expectParsedBody(findApiCall("/equipamentos/operadoras/2", "PATCH"), {
+        ativo: false,
+      }),
     );
   });
 
   it("handleSaveMarcaSimcard: validações; create omite minCaracteresIccid se vazio", async () => {
     const qc = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
@@ -600,10 +638,11 @@ describe("useEquipamentosConfig", () => {
     act(() => result.current.setMinCaracteresIccidMarcaSimcard(""));
     act(() => result.current.handleSaveMarcaSimcard());
     await waitFor(() =>
-      expectParsedBody(
-        findApiCall("/equipamentos/marcas-simcard", "POST"),
-        { nome: "Chip", operadoraId: 1, temPlanos: false },
-      ),
+      expectParsedBody(findApiCall("/equipamentos/marcas-simcard", "POST"), {
+        nome: "Chip",
+        operadoraId: 1,
+        temPlanos: false,
+      }),
     );
     act(() =>
       result.current.openEditMarcaSimcard({
@@ -631,7 +670,10 @@ describe("useEquipamentosConfig", () => {
 
   it("edição marca simcard: operadora desmarcada envia operadoraId undefined (omitido no JSON)", async () => {
     const qc = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
@@ -657,7 +699,9 @@ describe("useEquipamentosConfig", () => {
   });
 
   it("openEditMarcaSimcard com minCaracteresIccid nulo limpa campo", async () => {
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
     });
@@ -678,7 +722,10 @@ describe("useEquipamentosConfig", () => {
 
   it("toggleAtivoMarcaSimcard envia PATCH", async () => {
     const qc = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
@@ -695,16 +742,18 @@ describe("useEquipamentosConfig", () => {
       }),
     );
     await waitFor(() =>
-      expectParsedBody(
-        findApiCall("/equipamentos/marcas-simcard/8", "PATCH"),
-        { ativo: false },
-      ),
+      expectParsedBody(findApiCall("/equipamentos/marcas-simcard/8", "PATCH"), {
+        ativo: false,
+      }),
     );
   });
 
   it("handleSavePlanoSimcard: MB vazio, zero, negativo e decimal válido", async () => {
     const qc = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
@@ -725,17 +774,20 @@ describe("useEquipamentosConfig", () => {
     act(() => result.current.setPlanoMbPlanoSimcard("1.5"));
     act(() => result.current.handleSavePlanoSimcard());
     await waitFor(() =>
-      expectParsedBody(
-        findApiCall("/equipamentos/planos-simcard", "POST"),
-        { marcaSimcardId: 10, planoMb: 1.5 },
-      ),
+      expectParsedBody(findApiCall("/equipamentos/planos-simcard", "POST"), {
+        marcaSimcardId: 10,
+        planoMb: 1.5,
+      }),
     );
     expect(vi.mocked(toast.error).mock.calls.length).toBe(nErr);
   });
 
   it("handleSavePlanoSimcard: valor não numérico passa pela validação atual e serializa planoMb como null no JSON", async () => {
     const qc = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
@@ -757,7 +809,10 @@ describe("useEquipamentosConfig", () => {
 
   it("handleSavePlanoSimcard: edição envia PATCH só com planoMb", async () => {
     const qc = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),
@@ -783,7 +838,10 @@ describe("useEquipamentosConfig", () => {
 
   it("handleSavePlanoSimcard: sem marcaSimcardId não enfileira mutação (nenhuma chamada mutation à API)", async () => {
     const qc = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     const { result } = renderHook(() => useEquipamentosConfig(), {
       wrapper: wrapper(qc),

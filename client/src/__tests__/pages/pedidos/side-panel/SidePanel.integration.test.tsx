@@ -5,7 +5,11 @@ import { useState, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { TipoDespacho } from "@/pages/pedidos/shared/pedidos-config-types";
 import { SidePanel } from "@/pages/pedidos/side-panel/SidePanel";
-import { buildAparelhoNoKit, buildKitComAparelhos, buildPedidoView } from "../modal-selecao-ekit/modal-selecao-ekit.fixtures";
+import {
+  buildAparelhoNoKit,
+  buildKitComAparelhos,
+  buildPedidoView,
+} from "../modal-selecao-ekit/modal-selecao-ekit.fixtures";
 import { URGENCIA_STYLE } from "@/pages/pedidos/shared/pedidos-rastreador.types";
 import { toast } from "sonner";
 
@@ -41,7 +45,8 @@ function TestApp({ children }: { children: ReactNode }) {
 }
 
 function DespachoEmMaosCenario() {
-  const [tipoDespacho, setTipoDespacho] = useState<TipoDespacho>("TRANSPORTADORA");
+  const [tipoDespacho, setTipoDespacho] =
+    useState<TipoDespacho>("TRANSPORTADORA");
   return (
     <TestApp>
       <SidePanel
@@ -147,7 +152,8 @@ describe("SidePanel (integração)", () => {
     expect(
       apiMock.mock.calls.some(
         (c) =>
-          typeof c[0] === "string" && c[0].includes("/aparelhos/pareamento/kits/"),
+          typeof c[0] === "string" &&
+          c[0].includes("/aparelhos/pareamento/kits/"),
       ),
     ).toBe(false);
   });
@@ -168,7 +174,10 @@ describe("SidePanel (integração)", () => {
             ],
           });
         }
-        if (path === "/pedidos-rastreadores/10/status" && init?.method === "PATCH") {
+        if (
+          path === "/pedidos-rastreadores/10/status" &&
+          init?.method === "PATCH"
+        ) {
           return {};
         }
         return {};
@@ -178,7 +187,11 @@ describe("SidePanel (integração)", () => {
     render(
       <TestApp>
         <SidePanel
-          pedido={buildPedidoView({ id: 10, quantidade: 5, status: "em_configuracao" })}
+          pedido={buildPedidoView({
+            id: 10,
+            quantidade: 5,
+            status: "em_configuracao",
+          })}
           pedidoApi={pedidoApi()}
           open
           onClose={vi.fn()}

@@ -31,11 +31,12 @@ describe("useSidePanelMutations", () => {
   it("statusMutation chama PATCH de status e dispara onStatusUpdated e toast de sucesso", async () => {
     apiMock.mockResolvedValueOnce({});
     const onStatus = vi.fn();
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const { result } = renderHook(
-      () => useSidePanelMutations(onStatus),
-      { wrapper: wrap(qc) },
-    );
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const { result } = renderHook(() => useSidePanelMutations(onStatus), {
+      wrapper: wrap(qc),
+    });
     await act(async () => {
       result.current.statusMutation.mutate({
         id: 1,
@@ -52,11 +53,12 @@ describe("useSidePanelMutations", () => {
 
   it("statusMutation: erro chama toast.error", async () => {
     apiMock.mockRejectedValueOnce(new Error("Falha rede"));
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const { result } = renderHook(
-      () => useSidePanelMutations(vi.fn()),
-      { wrapper: wrap(qc) },
-    );
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const { result } = renderHook(() => useSidePanelMutations(vi.fn()), {
+      wrapper: wrap(qc),
+    });
     await act(async () => {
       result.current.statusMutation.mutate({
         id: 1,
@@ -73,10 +75,9 @@ describe("useSidePanelMutations", () => {
       defaultOptions: { queries: { retry: false } },
     });
     qc.invalidateQueries = invalidateSpy;
-    const { result } = renderHook(
-      () => useSidePanelMutations(vi.fn()),
-      { wrapper: wrap(qc) },
-    );
+    const { result } = renderHook(() => useSidePanelMutations(vi.fn()), {
+      wrapper: wrap(qc),
+    });
     await act(async () => {
       result.current.kitIdsMutation.mutate({ id: 2, kitIds: [1, 2] });
     });

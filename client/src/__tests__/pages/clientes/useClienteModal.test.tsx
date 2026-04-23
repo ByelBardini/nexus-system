@@ -46,7 +46,9 @@ function clienteFixture(over: Partial<Cliente> = {}): Cliente {
     bairro: "Centro",
     cidade: "São Paulo",
     estado: "SP",
-    contatos: [{ id: 1, nome: "João", celular: "11999999999", email: "a@b.co" }],
+    contatos: [
+      { id: 1, nome: "João", celular: "11999999999", email: "a@b.co" },
+    ],
     ...over,
   };
 }

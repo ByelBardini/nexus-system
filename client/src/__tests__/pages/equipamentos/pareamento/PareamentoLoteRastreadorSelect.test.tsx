@@ -4,7 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 import { PareamentoLoteRastreadorSelect } from "@/pages/equipamentos/pareamento/components/PareamentoLoteRastreadorSelect";
 import type { LotePareamentoListItem } from "@/pages/equipamentos/pareamento/domain/types";
 
-const baseLote = (over: Partial<LotePareamentoListItem> = {}): LotePareamentoListItem => ({
+const baseLote = (
+  over: Partial<LotePareamentoListItem> = {},
+): LotePareamentoListItem => ({
   id: 10,
   referencia: "LREF-1",
   quantidadeDisponivelSemId: 1,
@@ -17,7 +19,7 @@ const baseLote = (over: Partial<LotePareamentoListItem> = {}): LotePareamentoLis
 
 describe("PareamentoLoteRastreadorSelect", () => {
   it("showLoteLabel: rótulo Lote com classe padrão; loteLabelClassName custom substitui", () => {
-    const { unmount, rerender } = render(
+    const { unmount } = render(
       <PareamentoLoteRastreadorSelect
         value=""
         onValueChange={vi.fn()}
@@ -42,9 +44,7 @@ describe("PareamentoLoteRastreadorSelect", () => {
         showLoteLabel
       />,
     );
-    expect(
-      document.querySelector(".classe-tst")?.textContent,
-    ).toBe("Lote");
+    expect(document.querySelector(".classe-tst")?.textContent).toBe("Lote");
   });
 
   it("com showLoteLabel=false: sem label, apenas combobox; texto exato 'Lote' inexistente", () => {
@@ -58,9 +58,7 @@ describe("PareamentoLoteRastreadorSelect", () => {
         showLoteLabel={false}
       />,
     );
-    expect(
-      screen.queryByText("Lote", { exact: true }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Lote", { exact: true })).not.toBeInTheDocument();
     expect(screen.getByRole("combobox")).toBeInTheDocument();
   });
 
@@ -82,15 +80,9 @@ describe("PareamentoLoteRastreadorSelect", () => {
       />,
     );
     await user.click(screen.getByRole("combobox"));
-    expect(
-      document.body.textContent,
-    ).toMatch(/\(SóMarca\)/);
-    expect(
-      document.body.textContent,
-    ).toMatch(/\(SóModelo\)/);
-    expect(
-      document.body.textContent,
-    ).toMatch(/\(M1 \/ M2\)/);
+    expect(document.body.textContent).toMatch(/\(SóMarca\)/);
+    expect(document.body.textContent).toMatch(/\(SóModelo\)/);
+    expect(document.body.textContent).toMatch(/\(M1 \/ M2\)/);
     const optD = screen.getByRole("option", { name: "D" });
     expect(
       (optD.textContent ?? "").includes("(") &&
@@ -112,14 +104,10 @@ describe("PareamentoLoteRastreadorSelect", () => {
     );
     onBuscaChange.mockClear();
     await user.click(screen.getByRole("combobox"));
-    expect(
-      onBuscaChange.mock.calls.filter((c) => c[0] === "").length,
-    ).toBe(0);
+    expect(onBuscaChange.mock.calls.filter((c) => c[0] === "").length).toBe(0);
     await user.keyboard("{Escape}");
     expect(onBuscaChange).toHaveBeenCalledWith("");
-    expect(
-      onBuscaChange.mock.calls.filter((c) => c[0] === "").length,
-    ).toBe(1);
+    expect(onBuscaChange.mock.calls.filter((c) => c[0] === "").length).toBe(1);
   });
 
   it("busca: typing repassa o valor; keyDown no input não vaza com erro (stopPropagation)", async () => {
@@ -159,11 +147,12 @@ describe("PareamentoLoteRastreadorSelect", () => {
       />,
     );
     await user.click(screen.getByRole("combobox"));
-    const vazio = screen.getByRole("option", { name: /Nenhum lote encontrado/i });
+    const vazio = screen.getByRole("option", {
+      name: /Nenhum lote encontrado/i,
+    });
     expect(vazio).toHaveAttribute("data-disabled", "");
     onValueChange.mockClear();
     await user.click(vazio);
     expect(onValueChange).not.toHaveBeenCalled();
   });
-
 });

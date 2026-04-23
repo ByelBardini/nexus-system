@@ -17,7 +17,11 @@ describe("schemaNovoPedido", () => {
   });
 
   it("rejeita TÉCNICO sem técnico", () => {
-    const d = { ...base(), tipoDestino: "TECNICO" as const, tecnicoId: undefined };
+    const d = {
+      ...base(),
+      tipoDestino: "TECNICO" as const,
+      tecnicoId: undefined,
+    };
     const r = schemaNovoPedido.safeParse(d);
     expect(r.success).toBe(false);
   });
@@ -84,8 +88,6 @@ describe("getDefaultNovoPedidoRastreadorFormValues", () => {
     const v = getDefaultNovoPedidoRastreadorFormValues("2026-04-01");
     expect(v.dataSolicitacao).toBe("2026-04-01");
     expect(v.tipoDestino).toBe("TECNICO");
-    expect(v.itensMisto).toEqual([
-      { proprietario: "INFINITY", quantidade: 1 },
-    ]);
+    expect(v.itensMisto).toEqual([{ proprietario: "INFINITY", quantidade: 1 }]);
   });
 });

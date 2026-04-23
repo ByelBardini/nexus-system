@@ -1,4 +1,7 @@
-import type { OsTeste, RastreadorParaTeste } from "@/pages/testes/lib/testes-types";
+import type {
+  OsTeste,
+  RastreadorParaTeste,
+} from "@/pages/testes/lib/testes-types";
 
 export function osTesteFixture(overrides: Partial<OsTeste> = {}): OsTeste {
   return {

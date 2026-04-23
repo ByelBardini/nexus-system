@@ -49,9 +49,7 @@ describe("ClienteRowExpandedPanel", () => {
         onEdit={vi.fn()}
       />,
     );
-    expect(
-      screen.getByText(/nenhum contato cadastrado/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/nenhum contato cadastrado/i)).toBeInTheDocument();
   });
 
   it("com contatos: exibe nome e telefone formatado", () => {
@@ -79,9 +77,7 @@ describe("ClienteRowExpandedPanel", () => {
     const user = userEvent.setup();
     const onEdit = vi.fn();
     const c = clienteBase({ id: 3 });
-    render(
-      <ClienteRowExpandedPanel cliente={c} canEdit onEdit={onEdit} />,
-    );
+    render(<ClienteRowExpandedPanel cliente={c} canEdit onEdit={onEdit} />);
     await user.click(screen.getByRole("button", { name: /editar/i }));
     expect(onEdit).toHaveBeenCalledWith(c);
   });

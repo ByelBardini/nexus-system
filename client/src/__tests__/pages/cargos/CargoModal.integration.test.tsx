@@ -41,9 +41,7 @@ function renderWithClient(ui: React.ReactElement) {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
-  return render(
-    <QueryClientProvider client={qc}>{ui}</QueryClientProvider>,
-  );
+  return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
 }
 
 describe("CargoModal — fluxo integrado (UI + hook)", () => {
@@ -102,9 +100,7 @@ describe("CargoModal — fluxo integrado (UI + hook)", () => {
         setores={setores}
       />,
     );
-    expect(
-      screen.queryByLabelText(/cargo ativo/i),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/cargo ativo/i)).not.toBeInTheDocument();
 
     rerender(
       <QueryClientProvider
@@ -190,10 +186,7 @@ describe("CargoModal — fluxo integrado (UI + hook)", () => {
       />,
     );
 
-    await user.type(
-      screen.getByPlaceholderText(/operador logístico/i),
-      "Novo",
-    );
+    await user.type(screen.getByPlaceholderText(/operador logístico/i), "Novo");
     await user.click(screen.getByRole("button", { name: /salvar cargo/i }));
 
     await waitFor(() => expect(onClose).toHaveBeenCalled());

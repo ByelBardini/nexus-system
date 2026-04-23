@@ -9,9 +9,7 @@ describe("TesteFilaCard + subclienteLabel", () => {
       subcliente: null,
       subclienteSnapshotNome: "Só snapshot",
     });
-    render(
-      <TesteFilaCard item={os} isSelected={false} onClick={() => {}} />,
-    );
+    render(<TesteFilaCard item={os} isSelected={false} onClick={() => {}} />);
     expect(screen.getByText("Só snapshot")).toBeInTheDocument();
   });
 
@@ -20,9 +18,7 @@ describe("TesteFilaCard + subclienteLabel", () => {
       subcliente: { id: 1, nome: "Base Real" },
       subclienteSnapshotNome: "Snap",
     });
-    render(
-      <TesteFilaCard item={os} isSelected={false} onClick={() => {}} />,
-    );
+    render(<TesteFilaCard item={os} isSelected={false} onClick={() => {}} />);
     expect(screen.getByText("Base Real")).toBeInTheDocument();
     expect(screen.queryByText("Snap")).not.toBeInTheDocument();
   });

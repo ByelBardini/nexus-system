@@ -39,9 +39,7 @@ beforeEach(() => {
 describe("useUsuariosMutations", () => {
   it("criar: POST /users e PATCH roles quando cargoIds não vazios; chama onCreateSettled", async () => {
     const onCreate = vi.fn();
-    apiMock
-      .mockResolvedValueOnce({ id: 7 })
-      .mockResolvedValueOnce(undefined);
+    apiMock.mockResolvedValueOnce({ id: 7 }).mockResolvedValueOnce(undefined);
     const { result } = renderHook(
       () => useUsuariosMutations({ onCreateSettled: onCreate }),
       { wrapper: createWrapper() },
@@ -53,7 +51,9 @@ describe("useUsuariosMutations", () => {
       setor: "AGENDAMENTO",
       cargoIds: [1, 2],
     });
-    await waitFor(() => expect(result.current.createMutation.isSuccess).toBe(true));
+    await waitFor(() =>
+      expect(result.current.createMutation.isSuccess).toBe(true),
+    );
     expect(apiMock).toHaveBeenCalledWith(
       "/users",
       expect.objectContaining({ method: "POST" }),
@@ -80,7 +80,9 @@ describe("useUsuariosMutations", () => {
       setor: null,
       cargoIds: [],
     });
-    await waitFor(() => expect(result.current.createMutation.isSuccess).toBe(true));
+    await waitFor(() =>
+      expect(result.current.createMutation.isSuccess).toBe(true),
+    );
     expect(apiMock).toHaveBeenCalledTimes(1);
   });
 
@@ -101,7 +103,9 @@ describe("useUsuariosMutations", () => {
       },
       roleIds: [9],
     });
-    await waitFor(() => expect(result.current.updateMutation.isSuccess).toBe(true));
+    await waitFor(() =>
+      expect(result.current.updateMutation.isSuccess).toBe(true),
+    );
     expect(apiMock).toHaveBeenCalledWith(
       "/users/3",
       expect.objectContaining({ method: "PATCH" }),

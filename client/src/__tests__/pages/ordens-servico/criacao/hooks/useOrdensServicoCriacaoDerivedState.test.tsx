@@ -38,9 +38,7 @@ function FormThenDerived({ cid }: { cid: number | null }) {
 
 describe("useOrdensServicoCriacaoDerivedState (integrado ao FormProvider)", () => {
   it("isFormValid true com Infinity e clienteId carregado", () => {
-    render(
-      <FormThenDerived cid={1} />,
-    );
+    render(<FormThenDerived cid={1} />);
     expect(screen.getByTestId("valid")).toHaveTextContent("1");
     expect(screen.getByTestId("tcliente")).toHaveTextContent("1");
   });

@@ -99,7 +99,10 @@ describe("OrigemRastreabilidadeSection", () => {
     let form: UseFormReturn<FormDataCadastroIndividual> | null = null;
     render(
       <OrigemHarness
-        defaultOverrides={{ status: "EM_MANUTENCAO", origem: "DEVOLUCAO_TECNICO" }}
+        defaultOverrides={{
+          status: "EM_MANUTENCAO",
+          origem: "DEVOLUCAO_TECNICO",
+        }}
         onFormReady={(f) => {
           form = f;
         }}
@@ -221,7 +224,10 @@ describe("OrigemRastreabilidadeSection", () => {
     const user = userEvent.setup();
     function HComErro() {
       const form = useForm<FormDataCadastroIndividual>({
-        defaultValues: { ...cadastroIndividualDefaultValues, tipo: "RASTREADOR" },
+        defaultValues: {
+          ...cadastroIndividualDefaultValues,
+          tipo: "RASTREADOR",
+        },
       });
       const origemW = form.watch("origem");
       const tipoW = form.watch("tipo");
@@ -240,12 +246,8 @@ describe("OrigemRastreabilidadeSection", () => {
       );
     }
     render(<HComErro />);
-    await user.click(
-      await screen.findByRole("button", { name: /^Cliente$/ }),
-    );
-    expect(
-      await screen.findByText("Selecione o cliente"),
-    ).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: /^Cliente$/ }));
+    expect(await screen.findByText("Selecione o cliente")).toBeInTheDocument();
   });
 
   it("qualquer troca de origem zera vinculação: proprietário INFINITY, cliente nulo e nota vazia", async () => {
@@ -301,7 +303,9 @@ describe("OrigemRastreabilidadeSection", () => {
       />,
     );
     expect(
-      screen.getByText(/simcards são sempre registrados no estoque da infinity/i),
+      screen.getByText(
+        /simcards são sempre registrados no estoque da infinity/i,
+      ),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /^Infinity$/i }),

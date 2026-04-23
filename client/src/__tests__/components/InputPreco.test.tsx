@@ -3,10 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { InputPreco } from "@/components/InputPreco";
-import {
-  centavosParaReais,
-  reaisParaCentavos,
-} from "@/lib/format";
+import { centavosParaReais, reaisParaCentavos } from "@/lib/format";
 
 /** Rótulos só para leitura do relatório; o valor esperado vem sempre de `reaisParaCentavos`. */
 const ENTRADAS_MOEDA: Array<[string, string]> = [
@@ -49,25 +46,20 @@ describe("InputPreco", () => {
 
     it("exibe centavos negativos sem normalizar (comportamento atual de centavosParaReais)", () => {
       render(<InputPreco value={-250} onChange={vi.fn()} />);
-      expect(screen.getByRole("textbox")).toHaveValue(
-        centavosParaReais(-250),
-      );
+      expect(screen.getByRole("textbox")).toHaveValue(centavosParaReais(-250));
     });
   });
 
   describe("handleChange: string do input → onChange(centavos)", () => {
-    it.each(ENTRADAS_MOEDA)(
-      "%s",
-      (_label, raw) => {
-        const esperado = reaisParaCentavos(raw);
-        const onChange = vi.fn();
-        render(<InputPreco value={0} onChange={onChange} />);
-        fireEvent.change(screen.getByRole("textbox"), {
-          target: { value: raw },
-        });
-        expect(onChange).toHaveBeenCalledWith(esperado);
-      },
-    );
+    it.each(ENTRADAS_MOEDA)("%s", (_label, raw) => {
+      const esperado = reaisParaCentavos(raw);
+      const onChange = vi.fn();
+      render(<InputPreco value={0} onChange={onChange} />);
+      fireEvent.change(screen.getByRole("textbox"), {
+        target: { value: raw },
+      });
+      expect(onChange).toHaveBeenCalledWith(esperado);
+    });
 
     it("limpar o campo dispara onChange(0) quando antes havia valor (reais → vazio)", () => {
       const onChange = vi.fn();
@@ -110,19 +102,13 @@ describe("InputPreco", () => {
 
     it("repassa className ao input subjacente", () => {
       render(
-        <InputPreco
-          value={0}
-          onChange={vi.fn()}
-          className="preco-teste-xyz"
-        />,
+        <InputPreco value={0} onChange={vi.fn()} className="preco-teste-xyz" />,
       );
       expect(screen.getByRole("textbox")).toHaveClass("preco-teste-xyz");
     });
 
     it("placeholder padrão e customizado", () => {
-      const { rerender } = render(
-        <InputPreco value={0} onChange={vi.fn()} />,
-      );
+      const { rerender } = render(<InputPreco value={0} onChange={vi.fn()} />);
       expect(screen.getByPlaceholderText("0,00")).toBeInTheDocument();
 
       rerender(

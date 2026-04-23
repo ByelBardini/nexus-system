@@ -46,9 +46,7 @@ describe("ClientesTable", () => {
         onEditCliente={onEdit}
       />,
     );
-    expect(
-      screen.getByText(/meios de contato/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/meios de contato/i)).toBeInTheDocument();
   });
 
   it("exibe CNPJ como traço quando ausente", () => {

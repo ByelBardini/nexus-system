@@ -209,9 +209,7 @@ describe("ClientesPage", () => {
         screen.getByText(/Exibindo 3 de 3 cliente\(s\)/i),
       ).toBeInTheDocument();
     });
-    expect(
-      screen.getByText(/2 ativo\(s\) na seleção/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/2 ativo\(s\) na seleção/i)).toBeInTheDocument();
   });
 
   it("após filtrar por status na busca, rodapé reflete apenas linhas exibidas", async () => {
@@ -224,7 +222,9 @@ describe("ClientesPage", () => {
     renderPage();
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText(/Razão Social ou CNPJ/i)).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText(/Razão Social ou CNPJ/i),
+      ).toBeInTheDocument();
     });
 
     const user = userEvent.setup();
@@ -236,8 +236,6 @@ describe("ClientesPage", () => {
         screen.getByText(/Exibindo 1 de 2 cliente\(s\)/i),
       ).toBeInTheDocument();
     });
-    expect(
-      screen.getByText(/0 ativo\(s\) na seleção/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/0 ativo\(s\) na seleção/i)).toBeInTheDocument();
   });
 });

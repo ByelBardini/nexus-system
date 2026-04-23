@@ -15,9 +15,10 @@ vi.mock("@/lib/api", () => ({
 }));
 
 vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual<typeof import("react-router-dom")>(
-    "react-router-dom",
-  );
+  const actual =
+    await vi.importActual<typeof import("react-router-dom")>(
+      "react-router-dom",
+    );
   return {
     ...actual,
     useNavigate: () => mockNavigate,
@@ -32,9 +33,7 @@ function wrapper({ children }: { children: ReactNode }) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  return (
-    <QueryClientProvider client={client}>{children}</QueryClientProvider>
-  );
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }
 
 describe("useOrdensServicoPage", () => {
@@ -169,11 +168,13 @@ describe("useOrdensServicoPage", () => {
       }
       return Promise.reject(new Error(`unexpected ${url}`));
     });
-    apiDownloadBlobMock.mockResolvedValue(new Blob(["%PDF"], { type: "application/pdf" }));
-
-    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(
-      () => {},
+    apiDownloadBlobMock.mockResolvedValue(
+      new Blob(["%PDF"], { type: "application/pdf" }),
     );
+
+    const clickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => {});
     const { result } = renderHook(() => useOrdensServicoPage(), { wrapper });
     await waitFor(() => expect(result.current.loadingResumo).toBe(false));
 
@@ -186,9 +187,7 @@ describe("useOrdensServicoPage", () => {
   });
 
   it("canCreate reflete permissão", async () => {
-    mockHasPermission.mockImplementation(
-      (p) => p === "AGENDAMENTO.OS.CRIAR",
-    );
+    mockHasPermission.mockImplementation((p) => p === "AGENDAMENTO.OS.CRIAR");
     apiMock.mockImplementation((url: string) => {
       if (url === "/ordens-servico/resumo") {
         return Promise.resolve({

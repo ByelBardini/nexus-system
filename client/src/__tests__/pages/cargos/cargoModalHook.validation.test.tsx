@@ -24,7 +24,10 @@ describe("useCargoModal — validação (toast)", () => {
 
   beforeEach(() => {
     queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     apiMock.mockReset();
   });

@@ -32,16 +32,21 @@ describe("aparelho-destinatario", () => {
   });
 
   it("exibição: prioriza cliente, depois técnico, depois Infinity, senão '-'", () => {
-    expect(getDestinatarioExibicaoAparelhoNoKit(base({ cliente: { id: 1, nome: "C" } }))).toBe("C");
     expect(
       getDestinatarioExibicaoAparelhoNoKit(
-        base({ cliente: null, tecnico: { id: 1, nome: "T" } as AparelhoNoKit["tecnico"] }),
+        base({ cliente: { id: 1, nome: "C" } }),
+      ),
+    ).toBe("C");
+    expect(
+      getDestinatarioExibicaoAparelhoNoKit(
+        base({
+          cliente: null,
+          tecnico: { id: 1, nome: "T" } as AparelhoNoKit["tecnico"],
+        }),
       ),
     ).toBe("T");
     expect(
-      getDestinatarioExibicaoAparelhoNoKit(
-        base({ proprietario: "INFINITY" }),
-      ),
+      getDestinatarioExibicaoAparelhoNoKit(base({ proprietario: "INFINITY" })),
     ).toBe("Infinity");
     expect(
       getDestinatarioExibicaoAparelhoNoKit(
@@ -67,9 +72,10 @@ describe("aparelho-destinatario", () => {
       cliente: null,
       tecnico: null,
     });
-    expect(
-      collectDestinatariosEmpresasAparelhos([a1, a2, a3]),
-    ).toEqual(["A", "B"]);
+    expect(collectDestinatariosEmpresasAparelhos([a1, a2, a3])).toEqual([
+      "A",
+      "B",
+    ]);
   });
 
   it("edge: aparelhos undefined vira array vazio", () => {

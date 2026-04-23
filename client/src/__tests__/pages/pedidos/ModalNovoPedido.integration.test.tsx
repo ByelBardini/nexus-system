@@ -34,18 +34,22 @@ function Providers({ children }: { children: ReactNode }) {
 
 beforeEach(() => {
   api.mockReset();
-  api.mockImplementation((url: string, o?: { method?: string; body?: string }) => {
-    if (String(url) === "/pedidos-rastreadores" && o?.method === "POST")
-      return Promise.resolve({ ok: true });
-    if (url === "/tecnicos")
-      return Promise.resolve([{ id: 1, nome: "Tec A", cidade: "S", estado: "SP" }]);
-    if (url === "/clientes?subclientes=1")
-      return Promise.resolve([{ id: 2, nome: "Cl B", subclientes: [] }]);
-    if (url === "/equipamentos/marcas") return Promise.resolve([]);
-    if (url === "/equipamentos/modelos") return Promise.resolve([]);
-    if (url === "/equipamentos/operadoras") return Promise.resolve([]);
-    return Promise.resolve(null);
-  });
+  api.mockImplementation(
+    (url: string, o?: { method?: string; body?: string }) => {
+      if (String(url) === "/pedidos-rastreadores" && o?.method === "POST")
+        return Promise.resolve({ ok: true });
+      if (url === "/tecnicos")
+        return Promise.resolve([
+          { id: 1, nome: "Tec A", cidade: "S", estado: "SP" },
+        ]);
+      if (url === "/clientes?subclientes=1")
+        return Promise.resolve([{ id: 2, nome: "Cl B", subclientes: [] }]);
+      if (url === "/equipamentos/marcas") return Promise.resolve([]);
+      if (url === "/equipamentos/modelos") return Promise.resolve([]);
+      if (url === "/equipamentos/operadoras") return Promise.resolve([]);
+      return Promise.resolve(null);
+    },
+  );
 });
 
 describe("ModalNovoPedido (integração E2E do modal)", () => {

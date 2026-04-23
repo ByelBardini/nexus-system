@@ -57,9 +57,9 @@ describe("ordens-servico-criacao schema", () => {
     });
     expect(r.success).toBe(false);
     if (!r.success) {
-      expect(
-        r.error.issues.some((i) => i.path.includes("veiculoMarca")),
-      ).toBe(true);
+      expect(r.error.issues.some((i) => i.path.includes("veiculoMarca"))).toBe(
+        true,
+      );
     }
   });
 

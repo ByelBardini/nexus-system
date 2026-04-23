@@ -32,9 +32,12 @@ function createWrapper() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
-  return { client, W: ({ children }: { children: ReactNode }) => (
-    <QueryClientProvider client={client}>{children}</QueryClientProvider>
-  ) };
+  return {
+    client,
+    W: ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    ),
+  };
 }
 
 function renderMutationsHook() {
@@ -60,9 +63,7 @@ function expectInvalidateWithKey(
   inv: ReturnType<typeof vi.spyOn>,
   key: readonly string[],
 ) {
-  expect(inv).toHaveBeenCalledWith(
-    expect.objectContaining({ queryKey: key }),
-  );
+  expect(inv).toHaveBeenCalledWith(expect.objectContaining({ queryKey: key }));
 }
 
 function expectLastApiMutationBody(url: string, method: string, body: object) {
@@ -82,17 +83,15 @@ describe("useEquipamentosConfigCrudMutations", () => {
     toastApiErrorMock.mockReset();
     vi.mocked(toast.success).mockClear();
     Object.values(closers).forEach((f) => f.mockReset());
-    apiMock.mockImplementation(
-      (_url: string, init?: { method?: string }) => {
-        if (
-          init?.method === "POST" ||
-          init?.method === "PATCH" ||
-          init?.method === "DELETE"
-        )
-          return Promise.resolve({});
-        return Promise.resolve(null);
-      },
-    );
+    apiMock.mockImplementation((_url: string, init?: { method?: string }) => {
+      if (
+        init?.method === "POST" ||
+        init?.method === "PATCH" ||
+        init?.method === "DELETE"
+      )
+        return Promise.resolve({});
+      return Promise.resolve(null);
+    });
   });
 
   it("createMarca: POST com corpo JSON, invalida cache exato, fecha modal uma vez e toast único", async () => {
@@ -100,7 +99,9 @@ describe("useEquipamentosConfigCrudMutations", () => {
     act(() => {
       result.current.createMarcaMutation.mutate({ nome: "N" });
     });
-    await waitFor(() => expect(closers.closeModalMarca).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(closers.closeModalMarca).toHaveBeenCalledTimes(1),
+    );
     expectInvalidateWithKey(inv, equipamentosQueryKeys.marcas);
     expectLastApiMutationBody("/equipamentos/marcas", "POST", { nome: "N" });
     expect(toast.success).toHaveBeenCalledTimes(1);
@@ -110,9 +111,15 @@ describe("useEquipamentosConfigCrudMutations", () => {
   it("updateMarca: PATCH parcial; deleteMarca não fecha modal", async () => {
     const { result, inv } = renderMutationsHook();
     act(() =>
-      result.current.updateMarcaMutation.mutate({ id: 1, nome: "X", ativo: false }),
+      result.current.updateMarcaMutation.mutate({
+        id: 1,
+        nome: "X",
+        ativo: false,
+      }),
     );
-    await waitFor(() => expect(closers.closeModalMarca).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(closers.closeModalMarca).toHaveBeenCalledTimes(1),
+    );
     expectInvalidateWithKey(inv, equipamentosQueryKeys.marcas);
     expectLastApiMutationBody("/equipamentos/marcas/1", "PATCH", {
       nome: "X",
@@ -144,7 +151,9 @@ describe("useEquipamentosConfigCrudMutations", () => {
         minCaracteresImei: 14,
       }),
     );
-    await waitFor(() => expect(closers.closeModalModelo).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(closers.closeModalModelo).toHaveBeenCalledTimes(1),
+    );
     expectInvalidateWithKey(inv, equipamentosQueryKeys.modelos);
     expectInvalidateWithKey(inv, equipamentosQueryKeys.marcas);
     const modelosCalls = inv.mock.calls.filter(
@@ -175,7 +184,9 @@ describe("useEquipamentosConfigCrudMutations", () => {
         ativo: true,
       }),
     );
-    await waitFor(() => expect(closers.closeModalModelo).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(closers.closeModalModelo).toHaveBeenCalledTimes(1),
+    );
     expectLastApiMutationBody("/equipamentos/modelos/2", "PATCH", {
       nome: "Y",
       ativo: true,
@@ -186,9 +197,7 @@ describe("useEquipamentosConfigCrudMutations", () => {
     act(() => result.current.deleteModeloMutation.mutate(5));
     await waitFor(() =>
       expect(
-        apiMock.mock.calls.some(
-          (c) => c[0] === "/equipamentos/modelos/5",
-        ),
+        apiMock.mock.calls.some((c) => c[0] === "/equipamentos/modelos/5"),
       ).toBe(true),
     );
     expect(closers.closeModalModelo).not.toHaveBeenCalled();
@@ -343,8 +352,7 @@ describe("useEquipamentosConfigCrudMutations", () => {
       },
       {
         label: "createModelo",
-        run: (r) =>
-          r.createModeloMutation.mutate({ nome: "m", marcaId: 1 }),
+        run: (r) => r.createModeloMutation.mutate({ nome: "m", marcaId: 1 }),
         fallback: "Erro ao criar modelo",
         closerShouldStayIdle: "closeModalModelo",
       },
@@ -390,8 +398,7 @@ describe("useEquipamentosConfigCrudMutations", () => {
       },
       {
         label: "updateMarcaSimcard",
-        run: (r) =>
-          r.updateMarcaSimcardMutation.mutate({ id: 1, nome: "s" }),
+        run: (r) => r.updateMarcaSimcardMutation.mutate({ id: 1, nome: "s" }),
         fallback: "Erro ao atualizar marca de simcard",
         closerShouldStayIdle: "closeModalMarcaSimcard",
       },
@@ -413,8 +420,7 @@ describe("useEquipamentosConfigCrudMutations", () => {
       },
       {
         label: "updatePlanoSimcard",
-        run: (r) =>
-          r.updatePlanoSimcardMutation.mutate({ id: 1, planoMb: 2 }),
+        run: (r) => r.updatePlanoSimcardMutation.mutate({ id: 1, planoMb: 2 }),
         fallback: "Erro ao atualizar plano",
         closerShouldStayIdle: "closeModalPlanoSimcard",
       },
@@ -426,7 +432,7 @@ describe("useEquipamentosConfigCrudMutations", () => {
       },
     ];
 
-    for (const { label, run, fallback, closerShouldStayIdle } of cases) {
+    for (const { run, fallback, closerShouldStayIdle } of cases) {
       apiMock.mockClear();
       toastApiErrorMock.mockClear();
       Object.values(closers).forEach((f) => f.mockClear());

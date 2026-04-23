@@ -19,7 +19,9 @@ describe("SelectRastreadorTeste (integração UI + rastreador-format)", () => {
     );
     await user.click(screen.getByPlaceholderText(/buscar imei/i));
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: /IMEI-SEL/i })).toBeInTheDocument(),
+      expect(
+        screen.getByRole("button", { name: /IMEI-SEL/i }),
+      ).toBeInTheDocument(),
     );
     await user.click(screen.getByRole("button", { name: /IMEI-SEL/i }));
     expect(onChange).toHaveBeenCalledWith("IMEI-SEL");
@@ -68,7 +70,9 @@ describe("SelectRastreadorTeste (integração UI + rastreador-format)", () => {
     );
     await user.click(screen.getByPlaceholderText(/buscar imei/i));
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: /^limpar$/i })).toBeInTheDocument(),
+      expect(
+        screen.getByRole("button", { name: /^limpar$/i }),
+      ).toBeInTheDocument(),
     );
     await user.click(screen.getByRole("button", { name: /^limpar$/i }));
     expect(onChange).toHaveBeenCalledWith("");

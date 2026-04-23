@@ -22,8 +22,7 @@ function wrapper(qc: QueryClient) {
 beforeEach(() => {
   api.mockReset();
   api.mockImplementation((url: string) => {
-    if (url === "/tecnicos")
-      return Promise.resolve([{ id: 1, nome: "T" }]);
+    if (url === "/tecnicos") return Promise.resolve([{ id: 1, nome: "T" }]);
     if (url === "/clientes?subclientes=1")
       return Promise.resolve([{ id: 2, nome: "C" }]);
     if (url === "/equipamentos/marcas")
@@ -56,16 +55,21 @@ describe("useNovoPedidoRastreadorCatalogs", () => {
     const qc = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
-    const { result } = renderHook(() => useNovoPedidoRastreadorCatalogs(false), {
-      wrapper: wrapper(qc),
-    });
+    const { result } = renderHook(
+      () => useNovoPedidoRastreadorCatalogs(false),
+      {
+        wrapper: wrapper(qc),
+      },
+    );
     expect(result.current.tecnicos).toEqual([]);
   });
 });
 
 describe("useModelosFiltradosParaMarca", () => {
   it("filtra modelos por marca", () => {
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     const { result } = renderHook(
       () =>
         useModelosFiltradosParaMarca(

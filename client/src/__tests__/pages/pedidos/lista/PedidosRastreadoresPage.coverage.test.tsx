@@ -1,5 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,7 +16,10 @@ import { toast } from "sonner";
 const apiMock = vi.hoisted(() => vi.fn());
 const deleteRequest = vi.hoisted(() => vi.fn());
 
-function makeTecnicoSolicitado(id = 7, codigo = "PED-L-7"): PedidoRastreadorApi {
+function makeTecnicoSolicitado(
+  id = 7,
+  codigo = "PED-L-7",
+): PedidoRastreadorApi {
   return {
     id,
     codigo,
@@ -33,7 +42,11 @@ function makeTecnicoSolicitado(id = 7, codigo = "PED-L-7"): PedidoRastreadorApi 
 vi.mock("@/lib/api", () => ({
   api: (...a: unknown[]) => {
     const o = a[1];
-    if (o && typeof o === "object" && (o as { method?: string }).method === "DELETE") {
+    if (
+      o &&
+      typeof o === "object" &&
+      (o as { method?: string }).method === "DELETE"
+    ) {
       deleteRequest(a[0], o);
       return Promise.resolve({});
     }
@@ -43,8 +56,7 @@ vi.mock("@/lib/api", () => ({
 
 vi.mock("@/contexts/AuthContext", () => ({
   useAuth: () => ({
-    hasPermission: (p: string) =>
-      p === "AGENDAMENTO.PEDIDO_RASTREADOR.EXCLUIR",
+    hasPermission: (p: string) => p === "AGENDAMENTO.PEDIDO_RASTREADOR.EXCLUIR",
     user: { nome: "U" },
   }),
 }));
@@ -89,7 +101,9 @@ function makeWrapper() {
   });
   const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
   function W({ children }: { children: ReactNode }) {
-    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+    return (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
   }
   return { W, invalidateSpy, queryClient };
 }
@@ -136,8 +150,7 @@ describe("PedidosRastreadoresPage — interação Kanban, modal e API", () => {
     const titulo = await waitForSolicitacao();
     const codigo = titulo.parentElement
       ?.querySelector("p")
-      ?.textContent
-      ?.trim();
+      ?.textContent?.trim();
     expect(codigo).toBe("PED-L-7");
   });
 
@@ -198,9 +211,7 @@ describe("PedidosRastreadoresPage — interação Kanban, modal e API", () => {
         <PedidosRastreadoresPage />
       </W>,
     );
-    await user.click(
-      await screen.findByRole("button", { name: /PED-L-7/ }),
-    );
+    await user.click(await screen.findByRole("button", { name: /PED-L-7/ }));
     await waitForSolicitacao();
     const confirmRoot = await abreConfirmarExcluir(user);
     await user.click(
@@ -225,9 +236,7 @@ describe("PedidosRastreadoresPage — interação Kanban, modal e API", () => {
         <PedidosRastreadoresPage />
       </W>,
     );
-    await user.click(
-      await screen.findByRole("button", { name: /PED-L-7/ }),
-    );
+    await user.click(await screen.findByRole("button", { name: /PED-L-7/ }));
     await waitForSolicitacao();
     const confirmRoot = await abreConfirmarExcluir(user);
     await user.click(
@@ -246,9 +255,7 @@ describe("PedidosRastreadoresPage — interação Kanban, modal e API", () => {
         <PedidosRastreadoresPage />
       </W>,
     );
-    await user.click(
-      await screen.findByRole("button", { name: /PED-L-7/ }),
-    );
+    await user.click(await screen.findByRole("button", { name: /PED-L-7/ }));
     await waitForSolicitacao();
     await user.click(screen.getByRole("button", { name: "Fechar" }));
     await waitFor(() =>
@@ -256,10 +263,10 @@ describe("PedidosRastreadoresPage — interação Kanban, modal e API", () => {
         screen.queryByRole("heading", { name: "Solicitação Detalhada" }),
       ).not.toBeInTheDocument(),
     );
-    expect(screen.getByText("Novo Pedido", { exact: false })).toBeInTheDocument();
-    await user.click(
-      await screen.findByRole("button", { name: /PED-L-7/ }),
-    );
+    expect(
+      screen.getByText("Novo Pedido", { exact: false }),
+    ).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: /PED-L-7/ }));
     expect(await waitForSolicitacao()).toBeInTheDocument();
   });
 });

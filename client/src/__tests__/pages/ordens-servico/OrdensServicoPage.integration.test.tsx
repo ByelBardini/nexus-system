@@ -18,9 +18,10 @@ vi.mock("@/lib/api", () => ({
 }));
 
 vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual<typeof import("react-router-dom")>(
-    "react-router-dom",
-  );
+  const actual =
+    await vi.importActual<typeof import("react-router-dom")>(
+      "react-router-dom",
+    );
   return {
     ...actual,
     useNavigate: () => mockNavigate,
@@ -69,7 +70,10 @@ function countStatusPatchCalls() {
   ).length;
 }
 
-function parseStatusPatchBody(call: unknown[]): { status?: string; observacao?: string } {
+function parseStatusPatchBody(call: unknown[]): {
+  status?: string;
+  observacao?: string;
+} {
   const init = call[1] as RequestInit;
   return JSON.parse(String(init.body)) as {
     status?: string;
@@ -91,7 +95,10 @@ describe("OrdensServicoPage (integração)", () => {
   function mockApisWithLista() {
     apiMock.mockImplementation((url: unknown, init?: RequestInit) => {
       const u = String(url);
-      if (/\/ordens-servico\/\d+\/status$/.test(u) && init?.method === "PATCH") {
+      if (
+        /\/ordens-servico\/\d+\/status$/.test(u) &&
+        init?.method === "PATCH"
+      ) {
         return Promise.resolve({});
       }
       if (u === "/ordens-servico/resumo") {
@@ -139,7 +146,10 @@ describe("OrdensServicoPage (integração)", () => {
   function mockApisComRetiradaAgendada() {
     apiMock.mockImplementation((url: unknown, init?: RequestInit) => {
       const u = String(url);
-      if (/\/ordens-servico\/\d+\/status$/.test(u) && init?.method === "PATCH") {
+      if (
+        /\/ordens-servico\/\d+\/status$/.test(u) &&
+        init?.method === "PATCH"
+      ) {
         return Promise.resolve({});
       }
       if (u === "/ordens-servico/resumo") {
@@ -210,11 +220,13 @@ describe("OrdensServicoPage (integração)", () => {
     );
 
     const strip = screen.getByTestId("ordens-servico-pipeline-strip");
-    expect(within(strip).getByTestId("ordens-servico-pipeline-TODOS")).toHaveTextContent(
-      "3",
-    );
+    expect(
+      within(strip).getByTestId("ordens-servico-pipeline-TODOS"),
+    ).toHaveTextContent("3");
 
-    await user.click(within(strip).getByTestId("ordens-servico-pipeline-EM_TESTES"));
+    await user.click(
+      within(strip).getByTestId("ordens-servico-pipeline-EM_TESTES"),
+    );
     await waitFor(() =>
       expect(apiMock).toHaveBeenCalledWith(
         expect.stringContaining("status=EM_TESTES"),
@@ -223,14 +235,14 @@ describe("OrdensServicoPage (integração)", () => {
 
     await user.type(screen.getByTestId("ordens-servico-busca-input"), "Z");
     await waitFor(() =>
-      expect(apiMock).toHaveBeenCalledWith(
-        expect.stringContaining("search=Z"),
-      ),
+      expect(apiMock).toHaveBeenCalledWith(expect.stringContaining("search=Z")),
     );
 
     await user.click(screen.getByTestId("ordens-servico-row-10"));
     await waitFor(() =>
-      expect(screen.getByTestId("ordens-servico-detalhe-panel")).toBeInTheDocument(),
+      expect(
+        screen.getByTestId("ordens-servico-detalhe-panel"),
+      ).toBeInTheDocument(),
     );
     expect(screen.getByText("Dados de Emissão")).toBeInTheDocument();
   });
@@ -255,14 +267,19 @@ describe("OrdensServicoPage (integração)", () => {
 
   it("edge: loading inicial de resumo", () => {
     apiMock.mockImplementation(
-      () => new Promise(() => {/* never */}),
+      () =>
+        new Promise(() => {
+          /* never */
+        }),
     );
     render(
       <TestApp>
         <OrdensServicoPage />
       </TestApp>,
     );
-    expect(screen.getByTestId("ordens-servico-loading-resumo")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("ordens-servico-loading-resumo"),
+    ).toBeInTheDocument();
   });
 
   it("Iniciar testes: cancelar e fechar (X) fecham o diálogo sem PATCH de status", async () => {
@@ -280,7 +297,9 @@ describe("OrdensServicoPage (integração)", () => {
     );
     await user.click(screen.getByTestId("ordens-servico-row-10"));
     await waitFor(() =>
-      expect(screen.getByTestId("ordens-servico-btn-iniciar-testes")).toBeInTheDocument(),
+      expect(
+        screen.getByTestId("ordens-servico-btn-iniciar-testes"),
+      ).toBeInTheDocument(),
     );
     const antes = countStatusPatchCalls();
     await user.click(screen.getByTestId("ordens-servico-btn-iniciar-testes"));
@@ -314,7 +333,9 @@ describe("OrdensServicoPage (integração)", () => {
     );
     await user.click(screen.getByTestId("ordens-servico-row-10"));
     await waitFor(() =>
-      expect(screen.getByTestId("ordens-servico-btn-iniciar-testes")).toBeInTheDocument(),
+      expect(
+        screen.getByTestId("ordens-servico-btn-iniciar-testes"),
+      ).toBeInTheDocument(),
     );
     await user.click(screen.getByTestId("ordens-servico-btn-iniciar-testes"));
     await user.click(
@@ -347,7 +368,9 @@ describe("OrdensServicoPage (integração)", () => {
         screen.getByTestId("ordens-servico-btn-retirada-realizada"),
       ).toBeInTheDocument(),
     );
-    await user.click(screen.getByTestId("ordens-servico-btn-retirada-realizada"));
+    await user.click(
+      screen.getByTestId("ordens-servico-btn-retirada-realizada"),
+    );
     expect(
       screen.getByTestId("ordens-servico-dialog-retirada"),
     ).toBeInTheDocument();
@@ -380,9 +403,7 @@ describe("OrdensServicoPage (integração)", () => {
     await user.click(
       await screen.findByTestId("ordens-servico-btn-retirada-realizada"),
     );
-    await user.click(
-      screen.getByTestId("ordens-servico-dialog-retirada-nao"),
-    );
+    await user.click(screen.getByTestId("ordens-servico-dialog-retirada-nao"));
     await waitFor(() => expect(countStatusPatchCalls()).toBeGreaterThan(0));
     const body = parseStatusPatchBody(findLastStatusPatchCall()!);
     expect(body.observacao).toMatch(
@@ -391,9 +412,7 @@ describe("OrdensServicoPage (integração)", () => {
   });
 
   it("sem AGENDAMENTO.OS.EDITAR: ações de mudança de status ficam desabilitadas", async () => {
-    mockHasPermission.mockImplementation(
-      (p) => p !== "AGENDAMENTO.OS.EDITAR",
-    );
+    mockHasPermission.mockImplementation((p) => p !== "AGENDAMENTO.OS.EDITAR");
     const user = userEvent.setup();
     mockApisWithLista();
 
@@ -418,7 +437,10 @@ describe("OrdensServicoPage (integração)", () => {
     const firstImpl = apiMock.getMockImplementation()!;
     apiMock.mockImplementation((url, init) => {
       const u = String(url);
-      if (/\/ordens-servico\/\d+\/status$/.test(u) && init?.method === "PATCH") {
+      if (
+        /\/ordens-servico\/\d+\/status$/.test(u) &&
+        init?.method === "PATCH"
+      ) {
         return Promise.reject(new Error("conflito de concorrência"));
       }
       return firstImpl!(url, init);

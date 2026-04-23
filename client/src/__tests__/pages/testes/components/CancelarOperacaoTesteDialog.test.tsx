@@ -59,10 +59,14 @@ describe("CancelarOperacaoTesteDialog", () => {
       const dialog = getDialog();
       expect(dialog).toBeVisible();
       expect(
-        within(dialog).getByText(/o que deseja fazer com esta ordem de serviço/i),
+        within(dialog).getByText(
+          /o que deseja fazer com esta ordem de serviço/i,
+        ),
       ).toBeInTheDocument();
       expect(
-        within(dialog).getByText("help", { selector: ".material-symbols-outlined" }),
+        within(dialog).getByText("help", {
+          selector: ".material-symbols-outlined",
+        }),
       ).toBeInTheDocument();
     });
 
@@ -96,7 +100,9 @@ describe("CancelarOperacaoTesteDialog", () => {
       const { onReagendar, onCancelarOs } = renderOpen({ canAct: false });
       const dialog = getDialog();
 
-      const reagendar = within(dialog).getByRole("button", { name: /^reagendar$/i });
+      const reagendar = within(dialog).getByRole("button", {
+        name: /^reagendar$/i,
+      });
       const cancelarOs = within(dialog).getByRole("button", {
         name: /^cancelar os$/i,
       });
@@ -114,7 +120,9 @@ describe("CancelarOperacaoTesteDialog", () => {
       const { onReagendar, onCancelarOs } = renderOpen({ isPending: true });
       const dialog = getDialog();
 
-      const reagendar = within(dialog).getByRole("button", { name: /^reagendar$/i });
+      const reagendar = within(dialog).getByRole("button", {
+        name: /^reagendar$/i,
+      });
       const cancelarOs = within(dialog).getByRole("button", {
         name: /^cancelar os$/i,
       });
@@ -143,15 +151,18 @@ describe("CancelarOperacaoTesteDialog", () => {
     it.each([
       ["Voltar", /^voltar$/i],
       ["Fechar (header)", /^fechar$/i],
-    ] as const)("via %s chama onOpenChange(false) uma vez", async (_label, name) => {
-      const user = userEvent.setup();
-      const onOpenChange = vi.fn();
-      renderOpen({ onOpenChange });
+    ] as const)(
+      "via %s chama onOpenChange(false) uma vez",
+      async (_label, name) => {
+        const user = userEvent.setup();
+        const onOpenChange = vi.fn();
+        renderOpen({ onOpenChange });
 
-      await user.click(within(getDialog()).getByRole("button", { name }));
-      expect(onOpenChange).toHaveBeenCalledTimes(1);
-      expect(onOpenChange).toHaveBeenCalledWith(false);
-    });
+        await user.click(within(getDialog()).getByRole("button", { name }));
+        expect(onOpenChange).toHaveBeenCalledTimes(1);
+        expect(onOpenChange).toHaveBeenCalledWith(false);
+      },
+    );
 
     it("via Escape propaga fechamento pelo handler do Radix Dialog", async () => {
       const user = userEvent.setup();
@@ -183,11 +194,15 @@ describe("CancelarOperacaoTesteDialog", () => {
       renderOpen({ onOpenChange, canAct: false });
       const dialog = getDialog();
 
-      await user.click(within(dialog).getByRole("button", { name: /^voltar$/i }));
+      await user.click(
+        within(dialog).getByRole("button", { name: /^voltar$/i }),
+      );
       expect(onOpenChange).toHaveBeenCalledWith(false);
 
       onOpenChange.mockClear();
-      await user.click(within(dialog).getByRole("button", { name: /^fechar$/i }));
+      await user.click(
+        within(dialog).getByRole("button", { name: /^fechar$/i }),
+      );
       expect(onOpenChange).toHaveBeenCalledWith(false);
     });
 

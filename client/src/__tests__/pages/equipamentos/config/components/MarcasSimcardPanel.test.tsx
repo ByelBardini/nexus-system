@@ -1,6 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
+import type { UseMutationResult } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 import { MarcasSimcardPanel } from "@/pages/equipamentos/config/components/MarcasSimcardPanel";
 import type { MarcaSimcard } from "@/pages/equipamentos/config/domain/equipamentos-config.types";
@@ -22,7 +23,12 @@ const m: MarcaSimcard = {
 };
 
 function createMutation(over: { isPending?: boolean } = {}) {
-  return { isPending: false, mutate: vi.fn(), ...over } as any;
+  return { isPending: false, mutate: vi.fn(), ...over } as UseMutationResult<
+    unknown,
+    Error,
+    number,
+    unknown
+  >;
 }
 
 function baseProps(
@@ -72,9 +78,7 @@ describe("MarcasSimcardPanel", () => {
   it("temPlanos false: painel expandido mostra instrução em vez de lista", () => {
     const m2: MarcaSimcard = { ...m, temPlanos: false, planos: [] };
     render(
-      <MarcasSimcardPanel
-        {...baseProps({ filteredMarcasSimcard: [m2] })}
-      />,
+      <MarcasSimcardPanel {...baseProps({ filteredMarcasSimcard: [m2] })} />,
     );
     expect(
       screen.getByText(/Marca sem planos cadastrados/),
@@ -183,7 +187,9 @@ describe("MarcasSimcardPanel", () => {
         { id: 2, marcaSimcardId: 1, planoMb: 999, ativo: false },
       ],
     };
-    render(<MarcasSimcardPanel {...baseProps({ filteredMarcasSimcard: [mp] })} />);
+    render(
+      <MarcasSimcardPanel {...baseProps({ filteredMarcasSimcard: [mp] })} />,
+    );
     expect(screen.getByText("500 MB")).toBeInTheDocument();
     expect(screen.queryByText("999 MB")).toBeNull();
   });
@@ -287,9 +293,7 @@ describe("MarcasSimcardPanel", () => {
       />,
     );
     await user.click(within(marcaRowHeader("SimM")).getByRole("button"));
-    expect(
-      screen.queryByRole("menuitem", { name: /^desativar$/i }),
-    ).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: /^desativar$/i })).toBeNull();
     await user.click(screen.getByRole("menuitem", { name: /^ativar$/i }));
     expect(onToggle).toHaveBeenCalledWith(mi);
   });
@@ -331,9 +335,7 @@ describe("MarcasSimcardPanel", () => {
 
   it("lista vazia: mensagem e total zero", () => {
     render(
-      <MarcasSimcardPanel
-        {...baseProps({ filteredMarcasSimcard: [] })}
-      />,
+      <MarcasSimcardPanel {...baseProps({ filteredMarcasSimcard: [] })} />,
     );
     expect(
       screen.getByText("Nenhuma marca de simcard encontrada"),
@@ -357,9 +359,7 @@ describe("MarcasSimcardPanel", () => {
   it("Selo Sem planos quando temPlanos é false", () => {
     const m2: MarcaSimcard = { ...m, temPlanos: false, planos: [] };
     render(
-      <MarcasSimcardPanel
-        {...baseProps({ filteredMarcasSimcard: [m2] })}
-      />,
+      <MarcasSimcardPanel {...baseProps({ filteredMarcasSimcard: [m2] })} />,
     );
     expect(screen.getByText("Sem planos")).toBeInTheDocument();
   });

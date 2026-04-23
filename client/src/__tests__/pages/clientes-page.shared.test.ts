@@ -245,9 +245,9 @@ describe("constantes de UI", () => {
       1 + TIPO_CONTRATO_VALUES.length,
     );
     for (const v of TIPO_CONTRATO_VALUES) {
-      expect(
-        FILTRO_TIPO_CONTRATO_OPTIONS.some((o) => o.value === v),
-      ).toBe(true);
+      expect(FILTRO_TIPO_CONTRATO_OPTIONS.some((o) => o.value === v)).toBe(
+        true,
+      );
       expect(TIPO_CONTRATO_LABEL[v].length).toBeGreaterThan(0);
     }
   });

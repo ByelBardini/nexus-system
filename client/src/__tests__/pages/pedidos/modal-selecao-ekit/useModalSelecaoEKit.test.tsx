@@ -4,7 +4,10 @@ import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useModalSelecaoEKit } from "@/pages/pedidos/modal-selecao-ekit/hooks/useModalSelecaoEKit";
 import { buildKitDetalhe } from "./modal-selecao-ekit.fixtures";
-import { buildPedidoApiMisto, buildPedidoView } from "./modal-selecao-ekit.fixtures";
+import {
+  buildPedidoApiMisto,
+  buildPedidoView,
+} from "./modal-selecao-ekit.fixtures";
 
 const apiMock = vi.hoisted(() => vi.fn());
 

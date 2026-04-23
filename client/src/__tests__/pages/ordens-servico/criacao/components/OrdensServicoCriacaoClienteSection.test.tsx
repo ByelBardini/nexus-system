@@ -48,9 +48,7 @@ vi.mock("@/components/SelectClienteSearch", () => ({
   }) => {
     selectClienteLastProps.clientes = p.clientes;
     selectClienteLastProps.value = p.value;
-    return (
-      <div data-testid="clisel" data-clisel-count={p.clientes.length} />
-    );
+    return <div data-testid="clisel" data-clisel-count={p.clientes.length} />;
   },
 }));
 
@@ -208,7 +206,9 @@ describe("OrdensServicoCriacaoClienteSection", () => {
       expect(v.clienteOrdemId).toBeUndefined();
       expect(v.isNovoSubcliente).toBe(true);
       expect(v.subclienteId).toBeUndefined();
-      expect(v.subclienteLogradouro).toBe("Rua que o usuário já tinha digitado");
+      expect(v.subclienteLogradouro).toBe(
+        "Rua que o usuário já tinha digitado",
+      );
       expect(v.subclienteBairro).toBe("Bairro Y");
     });
 
@@ -398,9 +398,7 @@ describe("OrdensServicoCriacaoClienteSection", () => {
         defaultValues: { ordemInstalacao: "CLIENTE" },
       });
       expect(getForm().getValues("subclienteCobranca")).toBe("INFINITY");
-      await u.click(
-        screen.getByRole("button", { name: /direto cliente/i }),
-      );
+      await u.click(screen.getByRole("button", { name: /direto cliente/i }));
       expect(getForm().getValues("subclienteCobranca")).toBe("CLIENTE");
       await u.click(
         screen.getByRole("button", { name: /infinity \(padrão\)/i }),

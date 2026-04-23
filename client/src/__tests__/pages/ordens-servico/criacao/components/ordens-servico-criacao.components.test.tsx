@@ -18,9 +18,7 @@ import { mapCriacaoOsWatchFields } from "@/pages/ordens-servico/criacao/ordens-s
 import { computeCriacaoOsDerivedFlags } from "@/pages/ordens-servico/criacao/ordens-servico-criacao.derived";
 
 vi.mock("@/components/MaterialIcon", () => ({
-  MaterialIcon: ({ name }: { name: string }) => (
-    <span data-icon={name} />
-  ),
+  MaterialIcon: ({ name }: { name: string }) => <span data-icon={name} />,
 }));
 
 vi.mock("@/components/SelectTecnicoSearch", () => ({
@@ -130,10 +128,7 @@ describe("OrdensServicoCriacaoVeiculoSection", () => {
     render(
       <FormShell>
         {(f) => (
-          <OrdensServicoCriacaoVeiculoSection
-            form={f}
-            consultaPlacaLoading
-          />
+          <OrdensServicoCriacaoVeiculoSection form={f} consultaPlacaLoading />
         )}
       </FormShell>,
     );

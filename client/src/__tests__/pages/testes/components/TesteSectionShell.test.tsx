@@ -34,7 +34,9 @@ describe("TesteSectionShell", () => {
         <span>Inner</span>
       </TesteSectionShell>,
     );
-    expect(container.querySelectorAll('[class*="shrink-0"]').length).toBeGreaterThanOrEqual(0);
+    expect(
+      container.querySelectorAll('[class*="shrink-0"]').length,
+    ).toBeGreaterThanOrEqual(0);
     expect(screen.getByText("Inner")).toBeInTheDocument();
   });
 });

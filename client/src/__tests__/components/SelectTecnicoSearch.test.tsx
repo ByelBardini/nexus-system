@@ -1,4 +1,10 @@
-import { render, screen, waitFor, fireEvent, act } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+  act,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -12,15 +18,15 @@ const tecnicos = [
   { id: 4, nome: "Daniel", cidade: "São Bernardo", estado: "SP" },
 ];
 
-function renderWithRouter(
-  ui: React.ReactElement,
-  initial = "/x",
-) {
+function renderWithRouter(ui: React.ReactElement, initial = "/x") {
   return render(
     <MemoryRouter initialEntries={[initial]}>
       <Routes>
         <Route path="/x" element={ui} />
-        <Route path="/tecnicos" element={<div data-testid="pag-tec">Página técnicos</div>} />
+        <Route
+          path="/tecnicos"
+          element={<div data-testid="pag-tec">Página técnicos</div>}
+        />
       </Routes>
     </MemoryRouter>,
   );
@@ -52,9 +58,7 @@ describe("SelectTecnicoSearch", () => {
         />
       </MemoryRouter>,
     );
-    const container = document.querySelector(
-      ".flex.h-9",
-    ) as HTMLElement;
+    const container = document.querySelector(".flex.h-9") as HTMLElement;
     expect(container).toBeInTheDocument();
     expect(
       screen.getByText("Digite para pesquisar técnico..."),
@@ -84,9 +88,7 @@ describe("SelectTecnicoSearch", () => {
         />
       </MemoryRouter>,
     );
-    expect(
-      screen.getByText(/Ana \(São Paulo - SP\)/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Ana \(São Paulo - SP\)/)).toBeInTheDocument();
   });
 
   it("técnico com só cidade (sem estado): título ainda descreve (nome + cidade)", () => {
@@ -120,9 +122,7 @@ describe("SelectTecnicoSearch", () => {
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange).toHaveBeenCalledWith(2);
     await waitFor(() => {
-      expect(
-        document.querySelector(".max-h-60"),
-      ).not.toBeInTheDocument();
+      expect(document.querySelector(".max-h-60")).not.toBeInTheDocument();
     });
   });
 
@@ -154,9 +154,7 @@ describe("SelectTecnicoSearch", () => {
       />,
     );
     await user.click(screen.getByPlaceholderText("B"));
-    expect(
-      screen.getByRole("button", { name: /Ana/ }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Ana/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Bruno/ })).toBeNull();
   });
 
@@ -310,9 +308,7 @@ describe("SelectTecnicoSearch", () => {
     await user.click(screen.getByPlaceholderText("B"));
     const panel = getPanel();
     dispatchScrollOn(panel);
-    expect(
-      screen.getByRole("button", { name: /Ana/ }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Ana/ })).toBeInTheDocument();
     dispatchScrollOn(document.body);
     await waitFor(() => {
       expect(
@@ -368,7 +364,12 @@ describe("SelectTecnicoSearch", () => {
       return (
         <MemoryRouter>
           <div>
-            <button type="button" onClick={() => setList([{ id: 1, nome: "Ana", cidade: "B", estado: "RJ" }])}>
+            <button
+              type="button"
+              onClick={() =>
+                setList([{ id: 1, nome: "Ana", cidade: "B", estado: "RJ" }])
+              }
+            >
               atualizar
             </button>
             <SelectTecnicoSearch
@@ -391,9 +392,7 @@ describe("SelectTecnicoSearch", () => {
     const user = userEvent.setup();
     renderWithRouter(
       <SelectTecnicoSearch
-        tecnicos={[
-          { id: 1, nome: "X", cidade: "Y" },
-        ]}
+        tecnicos={[{ id: 1, nome: "X", cidade: "Y" }]}
         value={undefined}
         onChange={vi.fn()}
         subclienteEstado="SP"
@@ -401,9 +400,7 @@ describe("SelectTecnicoSearch", () => {
       />,
     );
     await user.click(screen.getByPlaceholderText("B"));
-    expect(
-      screen.queryByRole("button", { name: /X/ }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /X/ })).not.toBeInTheDocument();
   });
 
   it("só com estado (sem cidade): rótulo no modo desabilitado usa (UF) — sem travar com cidade null", () => {
@@ -439,9 +436,7 @@ describe("SelectTecnicoSearch", () => {
     const user = userEvent.setup();
     renderWithRouter(
       <SelectTecnicoSearch
-        tecnicos={[
-          { id: 1, nome: "Zé", cidade: "Araçatuba" },
-        ]}
+        tecnicos={[{ id: 1, nome: "Zé", cidade: "Araçatuba" }]}
         value={undefined}
         onChange={vi.fn()}
         placeholder="B"
@@ -450,9 +445,7 @@ describe("SelectTecnicoSearch", () => {
     await user.click(screen.getByPlaceholderText("B"));
     const input = screen.getByDisplayValue("");
     await user.type(input, "aça");
-    expect(
-      screen.getByRole("button", { name: /Zé/ }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Zé/ })).toBeInTheDocument();
   });
 
   it("só subclienteCidade (sem subclienteEstado): ninguém ganha score 2/3; ordem cai no localeCompare do nome", async () => {

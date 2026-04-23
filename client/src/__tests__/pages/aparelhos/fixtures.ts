@@ -1,7 +1,8 @@
 import type { Aparelho } from "@/pages/aparelhos/lista/aparelhos-page.shared";
 
 export function aparelhoFixture(
-  overrides: Partial<Aparelho> & Pick<Aparelho, "id" | "tipo" | "status" | "proprietario">,
+  overrides: Partial<Aparelho> &
+    Pick<Aparelho, "id" | "tipo" | "status" | "proprietario">,
 ): Aparelho {
   return {
     identificador: null,

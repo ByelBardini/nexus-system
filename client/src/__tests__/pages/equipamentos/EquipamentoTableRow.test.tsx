@@ -55,7 +55,9 @@ describe("EquipamentoTableRow", () => {
         </tbody>
       </table>,
     );
-    expect(screen.getByTestId("equipamento-historico-vazio")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("equipamento-historico-vazio"),
+    ).toBeInTheDocument();
   });
 
   it("botão de toggle não propaga duplo disparo com clique na linha", async () => {

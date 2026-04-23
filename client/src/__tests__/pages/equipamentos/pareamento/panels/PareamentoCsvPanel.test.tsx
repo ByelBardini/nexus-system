@@ -94,7 +94,9 @@ vi.mock("@/components/SelectClienteSearch", () => ({
   ),
 }));
 
-function baseProps(overrides: Partial<Parameters<typeof PareamentoCsvPanel>[0]> = {}) {
+function baseProps(
+  overrides: Partial<Parameters<typeof PareamentoCsvPanel>[0]> = {},
+) {
   return {
     csvFileInputRef: createRef<HTMLInputElement>(),
     csvFileName: "",
@@ -202,8 +204,12 @@ describe("PareamentoCsvPanel", () => {
     });
 
     it("não monta SelectClienteSearch quando proprietário é INFINITY", () => {
-      render(<PareamentoCsvPanel {...baseProps({ proprietarioCsv: "INFINITY" })} />);
-      expect(screen.queryByTestId("select-cliente-csv")).not.toBeInTheDocument();
+      render(
+        <PareamentoCsvPanel {...baseProps({ proprietarioCsv: "INFINITY" })} />,
+      );
+      expect(
+        screen.queryByTestId("select-cliente-csv"),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -235,7 +241,9 @@ describe("PareamentoCsvPanel", () => {
       const input = screen.getByTestId("csv-file-input");
       const first = new File(["a"], "primeiro.csv", { type: "text/csv" });
       const second = new File(["b"], "segundo.csv", { type: "text/csv" });
-      fireEvent.change(input, { target: { files: makeFileList([first, second]) } });
+      fireEvent.change(input, {
+        target: { files: makeFileList([first, second]) },
+      });
       expect(onFileSelected).toHaveBeenCalledWith(
         expect.objectContaining({ name: "primeiro.csv" }),
       );
@@ -251,7 +259,9 @@ describe("PareamentoCsvPanel", () => {
           })}
         />,
       );
-      const dropzone = screen.getByText(/selecione o arquivo \.csv a importar/i).closest("div");
+      const dropzone = screen
+        .getByText(/selecione o arquivo \.csv a importar/i)
+        .closest("div");
       expect(dropzone).toBeTruthy();
       expect(
         screen.queryByText(/linha\(s\) carregada\(s\)/i),
@@ -282,7 +292,9 @@ describe("PareamentoCsvPanel", () => {
       await userEvent.click(
         screen.getByRole("button", { name: /escolher arquivo/i }),
       );
-      await userEvent.click(screen.getByRole("button", { name: /baixar modelo/i }));
+      await userEvent.click(
+        screen.getByRole("button", { name: /baixar modelo/i }),
+      );
       expect(onEscolherArquivoClick).toHaveBeenCalledTimes(1);
       expect(onBaixarTemplate).toHaveBeenCalledTimes(1);
     });

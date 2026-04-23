@@ -46,10 +46,14 @@ describe("TestesPage E2E (cliente)", () => {
     });
     renderTestesPage();
     await waitFor(() =>
-      expect(screen.getByRole("heading", { name: /fila de testes/i })).toBeInTheDocument(),
+      expect(
+        screen.getByRole("heading", { name: /fila de testes/i }),
+      ).toBeInTheDocument(),
     );
     expect(
-      await screen.findByRole("heading", { name: /dados da ordem de serviço/i }),
+      await screen.findByRole("heading", {
+        name: /dados da ordem de serviço/i,
+      }),
     ).toBeInTheDocument();
   });
 
@@ -86,14 +90,16 @@ describe("TestesPage E2E (cliente)", () => {
     });
     renderTestesPage();
     await screen.findByText(/cliente alfa/i);
-    await user.click(screen.getByRole("button", { name: /cancelar operação/i }));
+    await user.click(
+      screen.getByRole("button", { name: /cancelar operação/i }),
+    );
     const dialog = await screen.findByRole("dialog");
     expect(
-      within(dialog).getByText(
-        /o que deseja fazer com esta ordem de serviço/i,
-      ),
+      within(dialog).getByText(/o que deseja fazer com esta ordem de serviço/i),
     ).toBeInTheDocument();
-    await user.click(within(dialog).getByRole("button", { name: /reagendar/i }));
+    await user.click(
+      within(dialog).getByRole("button", { name: /reagendar/i }),
+    );
     await waitFor(() =>
       expect(api).toHaveBeenCalledWith(
         `/ordens-servico/${os.id}/status`,

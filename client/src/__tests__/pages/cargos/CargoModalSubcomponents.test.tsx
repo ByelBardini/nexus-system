@@ -132,7 +132,7 @@ describe("CargoModalHeaderForm", () => {
       expect(onDesc).toHaveBeenCalledWith(payloadDesc);
     });
 
-    it("vazio: propagar string vazia (limpar o campo) dispara o handler com \"\"", () => {
+    it('vazio: propagar string vazia (limpar o campo) dispara o handler com ""', () => {
       const onNome = vi.fn();
       render(
         <CargoModalHeaderForm
@@ -173,12 +173,32 @@ describe("CargoModalHeaderForm", () => {
       opcaoLabel: string;
       valorEsperado: CategoriaCargo;
     }>([
-      { inicial: "OPERACIONAL", opcaoLabel: "Administrativo", valorEsperado: "ADMINISTRATIVO" },
+      {
+        inicial: "OPERACIONAL",
+        opcaoLabel: "Administrativo",
+        valorEsperado: "ADMINISTRATIVO",
+      },
       { inicial: "OPERACIONAL", opcaoLabel: "Gestão", valorEsperado: "GESTAO" },
-      { inicial: "ADMINISTRATIVO", opcaoLabel: "Gestão", valorEsperado: "GESTAO" },
-      { inicial: "ADMINISTRATIVO", opcaoLabel: "Operacional", valorEsperado: "OPERACIONAL" },
-      { inicial: "GESTAO", opcaoLabel: "Operacional", valorEsperado: "OPERACIONAL" },
-      { inicial: "GESTAO", opcaoLabel: "Administrativo", valorEsperado: "ADMINISTRATIVO" },
+      {
+        inicial: "ADMINISTRATIVO",
+        opcaoLabel: "Gestão",
+        valorEsperado: "GESTAO",
+      },
+      {
+        inicial: "ADMINISTRATIVO",
+        opcaoLabel: "Operacional",
+        valorEsperado: "OPERACIONAL",
+      },
+      {
+        inicial: "GESTAO",
+        opcaoLabel: "Operacional",
+        valorEsperado: "OPERACIONAL",
+      },
+      {
+        inicial: "GESTAO",
+        opcaoLabel: "Administrativo",
+        valorEsperado: "ADMINISTRATIVO",
+      },
     ])(
       "de $inicial selecionando $opcaoLabel chama onCategoriaChange($valorEsperado)",
       async ({ inicial, opcaoLabel, valorEsperado }) => {
@@ -199,9 +219,7 @@ describe("CargoModalHeaderForm", () => {
           />,
         );
         await user.click(screen.getByRole("combobox"));
-        await user.click(
-          screen.getByRole("option", { name: opcaoLabel }),
-        );
+        await user.click(screen.getByRole("option", { name: opcaoLabel }));
         expect(onCategoriaChange).toHaveBeenCalledWith(valorEsperado);
         expect(onCategoriaChange).toHaveBeenCalledTimes(1);
         // Modo criação não renderiza o bloco "ativo" — trocar categoria jamais deve disparar isso
@@ -211,9 +229,7 @@ describe("CargoModalHeaderForm", () => {
 
     it("quando o pai atualiza: o texto do gatilho acompanha a categoria (fluxo com estado)", async () => {
       const user = userEvent.setup();
-      render(
-        <StatefulCargoHeaderForm isNew initialCategoria="OPERACIONAL" />,
-      );
+      render(<StatefulCargoHeaderForm isNew initialCategoria="OPERACIONAL" />);
       const combobox = screen.getByRole("combobox");
       expect(combobox).toHaveTextContent(/operacional/i);
       await user.click(combobox);
@@ -294,9 +310,7 @@ describe("CargoModalHeaderForm", () => {
           onAtivoChange={onAtivo}
         />,
       );
-      await user.click(
-        screen.getByRole("checkbox", { name: /cargo ativo/i }),
-      );
+      await user.click(screen.getByRole("checkbox", { name: /cargo ativo/i }));
       expect(onAtivo).toHaveBeenCalledTimes(1);
       expect(onAtivo).toHaveBeenCalledWith(false);
     });
@@ -334,9 +348,7 @@ describe("CargoModalSummary", () => {
 
 describe("CargoModalFooter", () => {
   it("desabilita botões quando isPending", () => {
-    render(
-      <CargoModalFooter onClose={vi.fn()} onSave={vi.fn()} isPending />,
-    );
+    render(<CargoModalFooter onClose={vi.fn()} onSave={vi.fn()} isPending />);
     expect(screen.getByRole("button", { name: /cancelar/i })).toBeDisabled();
     expect(screen.getByRole("button", { name: /salvando/i })).toBeDisabled();
   });

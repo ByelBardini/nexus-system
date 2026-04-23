@@ -53,8 +53,12 @@ describe("pages/pedidos/shared/pedidos-rastreador.types (reexports)", () => {
       const orderSet = new Set(STATUS_ORDER);
       expect(orderSet.size).toBe(STATUS_ORDER.length);
 
-      const configKeys = Object.keys(STATUS_CONFIG) as (keyof typeof STATUS_CONFIG)[];
-      const apiKeys = Object.keys(STATUS_TO_API) as (keyof typeof STATUS_TO_API)[];
+      const configKeys = Object.keys(
+        STATUS_CONFIG,
+      ) as (keyof typeof STATUS_CONFIG)[];
+      const apiKeys = Object.keys(
+        STATUS_TO_API,
+      ) as (keyof typeof STATUS_TO_API)[];
 
       expect(new Set(configKeys)).toEqual(orderSet);
       expect(new Set(apiKeys)).toEqual(orderSet);
@@ -100,9 +104,7 @@ describe("pages/pedidos/shared/pedidos-rastreador.types (reexports)", () => {
 
   describe("mapPedidoToView (via barrel)", () => {
     it("TÉCNICO sem objeto tecnico usa fallback de destinatário", () => {
-      const v = mapPedidoToView(
-        apiMin({ tecnico: null, tecnicoId: null }),
-      );
+      const v = mapPedidoToView(apiMin({ tecnico: null, tecnicoId: null }));
       expect(v.destinatario).toBe("Técnico");
     });
 

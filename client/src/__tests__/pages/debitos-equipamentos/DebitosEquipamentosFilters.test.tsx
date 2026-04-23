@@ -27,10 +27,7 @@ describe("DebitosEquipamentosFilters", () => {
         onClearFilters={vi.fn()}
       />,
     );
-    await user.type(
-      screen.getByPlaceholderText("Devedor ou credor..."),
-      "x",
-    );
+    await user.type(screen.getByPlaceholderText("Devedor ou credor..."), "x");
     expect(onBusca).toHaveBeenCalled();
   });
 

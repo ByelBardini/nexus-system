@@ -20,7 +20,11 @@ describe("AparelhoExpandedDetails", () => {
       marca: "M1",
       modelo: "X",
       historico: [
-        { data: "2024-02-01T10:00:00.000Z", acao: "Entrada", descricao: "Lote" },
+        {
+          data: "2024-02-01T10:00:00.000Z",
+          acao: "Entrada",
+          descricao: "Lote",
+        },
       ],
     });
 

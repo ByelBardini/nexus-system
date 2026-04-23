@@ -32,7 +32,11 @@ const marcaComPlano: MarcaSimcardPareamentoCatalog = {
   ],
 };
 
-const loteSim = (n: number, ref: string, o: Partial<LotePareamentoListItem> = {}): LotePareamentoListItem => ({
+const loteSim = (
+  n: number,
+  ref: string,
+  o: Partial<LotePareamentoListItem> = {},
+): LotePareamentoListItem => ({
   id: n,
   referencia: ref,
   quantidadeDisponivelSemId: 1,
@@ -140,9 +144,7 @@ describe("PareamentoCriarSimBlock", () => {
       />,
     );
     expect(screen.getAllByRole("combobox")[1]!).toBeDisabled();
-    expect(
-      document.body.textContent,
-    ).toMatch(/selecione operadora/i);
+    expect(document.body.textContent).toMatch(/selecione operadora/i);
 
     rerender(
       <PareamentoCriarSimBlock
@@ -155,9 +157,7 @@ describe("PareamentoCriarSimBlock", () => {
       />,
     );
     expect(screen.getAllByRole("combobox")[1]!).not.toBeDisabled();
-    expect(
-      document.body.textContent,
-    ).toMatch(/getrak|1nce/i);
+    expect(document.body.textContent).toMatch(/getrak|1nce/i);
   });
 
   it("ao trocar marca do simcard chama onMarcaSimcardChange e reseta onPlanoSimcardChange('')", async () => {
@@ -212,9 +212,7 @@ describe("PareamentoCriarSimBlock", () => {
         marcasSimcardPorOperadora={[semPlanosAtivos]}
       />,
     );
-    expect(
-      screen.queryByText(/^plano$/i),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/^plano$/i)).not.toBeInTheDocument();
   });
 
   it("edge: marcaSimcardId desincronizado (id no estado, não listado) não exibe bloco Plano (evita UI órfã)", () => {
@@ -229,9 +227,7 @@ describe("PareamentoCriarSimBlock", () => {
         marcasSimcardPorOperadora={[marcaComPlano]}
       />,
     );
-    expect(
-      screen.queryByText(/^plano$/i),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/^plano$/i)).not.toBeInTheDocument();
   });
 
   it("edge: temPlanos true mas planos inexistente no catálogo — não exibe bloco Plano", () => {
@@ -250,9 +246,7 @@ describe("PareamentoCriarSimBlock", () => {
         marcasSimcardPorOperadora={[sPlanos]}
       />,
     );
-    expect(
-      screen.queryByText(/^plano$/i),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/^plano$/i)).not.toBeInTheDocument();
   });
 
   it("seleciona plano e chama onPlanoSimcardChange com o id (apenas planos ativos no DOM)", async () => {
@@ -308,8 +302,6 @@ describe("PareamentoCriarSimBlock", () => {
         marcasSimcard={marcasSimcard}
       />,
     );
-    expect(
-      screen.queryByText("Lote", { exact: true }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Lote", { exact: true })).not.toBeInTheDocument();
   });
 });

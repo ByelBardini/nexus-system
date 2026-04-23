@@ -22,7 +22,9 @@ const marcas: MarcaSimcardPareamentoCatalog[] = [
   },
 ];
 
-const loteBase = (o: Partial<LotePareamentoListItem> = {}): LotePareamentoListItem => ({
+const loteBase = (
+  o: Partial<LotePareamentoListItem> = {},
+): LotePareamentoListItem => ({
   id: 20,
   referencia: "SIM-1",
   quantidadeDisponivelSemId: 2,
@@ -35,7 +37,7 @@ const loteBase = (o: Partial<LotePareamentoListItem> = {}): LotePareamentoListIt
 
 describe("PareamentoLoteSimSelect", () => {
   it("loteLabelClassName: label custom; showLoteLabel=false: sem rótulo Lote", () => {
-    const { unmount, rerender } = render(
+    const { unmount } = render(
       <PareamentoLoteSimSelect
         value=""
         onValueChange={vi.fn()}
@@ -47,9 +49,7 @@ describe("PareamentoLoteSimSelect", () => {
         showLoteLabel
       />,
     );
-    expect(
-      document.querySelector(".lbl-sim")?.textContent,
-    ).toBe("Lote");
+    expect(document.querySelector(".lbl-sim")?.textContent).toBe("Lote");
     unmount();
 
     render(
@@ -63,9 +63,7 @@ describe("PareamentoLoteSimSelect", () => {
         showLoteLabel={false}
       />,
     );
-    expect(
-      screen.queryByText("Lote", { exact: true }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Lote", { exact: true })).not.toBeInTheDocument();
   });
 
   it("resolve marca pelo id; se id inexistente no catálogo, sufixo mostra só operadora", async () => {
@@ -77,18 +75,19 @@ describe("PareamentoLoteSimSelect", () => {
         busca=""
         onBuscaChange={vi.fn()}
         lotesFiltrados={[
-          loteBase({ id: 1, referencia: "A", marcaSimcardId: 999, operadora: "Claro" }),
+          loteBase({
+            id: 1,
+            referencia: "A",
+            marcaSimcardId: 999,
+            operadora: "Claro",
+          }),
         ]}
         marcasSimcard={marcas}
       />,
     );
     await user.click(screen.getByRole("combobox"));
-    expect(
-      document.body.textContent,
-    ).toMatch(/\(Claro\)/);
-    expect(
-      document.body.textContent,
-    ).not.toMatch(/Claro.*Getrak/);
+    expect(document.body.textContent).toMatch(/\(Claro\)/);
+    expect(document.body.textContent).not.toMatch(/Claro.*Getrak/);
   });
 
   it("com marcaSimcardId null: não tenta exibir nome de marca (apenas o que tiver de operadora)", async () => {
@@ -111,9 +110,7 @@ describe("PareamentoLoteSimSelect", () => {
       />,
     );
     await user.click(screen.getByRole("combobox"));
-    expect(
-      document.body.textContent,
-    ).toMatch(/\(Tim\)/);
+    expect(document.body.textContent).toMatch(/\(Tim\)/);
   });
 
   it("onOpenChange: fechar o painel com Escape zera a busca", async () => {
@@ -149,7 +146,9 @@ describe("PareamentoLoteSimSelect", () => {
       />,
     );
     await user.click(screen.getByRole("combobox"));
-    const vazio = screen.getByRole("option", { name: /Nenhum lote encontrado/i });
+    const vazio = screen.getByRole("option", {
+      name: /Nenhum lote encontrado/i,
+    });
     await user.click(vazio);
     expect(onValueChange).not.toHaveBeenCalled();
   });
@@ -170,7 +169,10 @@ describe("PareamentoLoteSimSelect", () => {
     await user.click(screen.getByRole("combobox"));
     const input = screen.getByPlaceholderText("Buscar lote...");
     expect(
-      fireEvent.keyDown(input, new KeyboardEvent("keydown", { key: "b", bubbles: true })),
+      fireEvent.keyDown(
+        input,
+        new KeyboardEvent("keydown", { key: "b", bubbles: true }),
+      ),
     ).toBe(true);
     await user.click(screen.getByRole("option", { name: /SIM-1/ }));
     expect(onValueChange).toHaveBeenCalledWith("20");

@@ -42,7 +42,9 @@ describe("OrdensServicoDetalhePanel", () => {
         onEnviarParaCadastro={noop}
       />,
     );
-    expect(screen.getByTestId("ordens-servico-detalhe-loading")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("ordens-servico-detalhe-loading"),
+    ).toBeInTheDocument();
   });
 
   it("edge: não renderiza painel quando linha não está expandida", () => {
@@ -76,7 +78,9 @@ describe("OrdensServicoDetalhePanel", () => {
         onEnviarParaCadastro={noop}
       />,
     );
-    expect(screen.getByTestId("ordens-servico-detalhe-loading")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("ordens-servico-detalhe-loading"),
+    ).toBeInTheDocument();
   });
 
   it("AGENDADO não-RETIRADA: botão iniciar testes", async () => {
@@ -113,7 +117,9 @@ describe("OrdensServicoDetalhePanel", () => {
         onEnviarParaCadastro={noop}
       />,
     );
-    expect(screen.getByTestId("ordens-servico-btn-iniciar-testes")).toBeDisabled();
+    expect(
+      screen.getByTestId("ordens-servico-btn-iniciar-testes"),
+    ).toBeDisabled();
   });
 
   it("RETIRADA AGENDADA: retirada realizada", async () => {
@@ -139,7 +145,9 @@ describe("OrdensServicoDetalhePanel", () => {
     const ret = screen.getByTestId("ordens-servico-detalhe-retirada-agendada");
     expect(ret).toBeInTheDocument();
     expect(within(ret).getByText("IMEI-X")).toBeInTheDocument();
-    await user.click(screen.getByTestId("ordens-servico-btn-retirada-realizada"));
+    await user.click(
+      screen.getByTestId("ordens-servico-btn-retirada-realizada"),
+    );
     expect(onRet).toHaveBeenCalled();
   });
 
@@ -169,7 +177,9 @@ describe("OrdensServicoDetalhePanel", () => {
         onEnviarParaCadastro={noop}
       />,
     );
-    const block = screen.getByTestId("ordens-servico-detalhe-retirada-concluida");
+    const block = screen.getByTestId(
+      "ordens-servico-detalhe-retirada-concluida",
+    );
     expect(block).toBeInTheDocument();
     expect(within(block).getByText("10/04/2024")).toBeInTheDocument();
     expect(within(block).getByText("Não")).toBeInTheDocument();

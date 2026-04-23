@@ -40,11 +40,7 @@ describe("DebitosEquipamentosTable", () => {
         onExpandedChange={onExpand}
       />,
     );
-    expect(
-      screen.getByText("Distribuição de Modelos"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Histórico de Movimentações"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Distribuição de Modelos")).toBeInTheDocument();
+    expect(screen.getByText("Histórico de Movimentações")).toBeInTheDocument();
   });
 });

@@ -93,13 +93,15 @@ describe("EquipamentosPage (integração)", () => {
     );
 
     await waitFor(() =>
-      expect(screen.getByTestId("equipamentos-pipeline-strip")).toBeInTheDocument(),
+      expect(
+        screen.getByTestId("equipamentos-pipeline-strip"),
+      ).toBeInTheDocument(),
     );
 
     const strip = screen.getByTestId("equipamentos-pipeline-strip");
-    expect(within(strip).getByTestId("equipamentos-pipeline-TODOS")).toHaveTextContent(
-      "2",
-    );
+    expect(
+      within(strip).getByTestId("equipamentos-pipeline-TODOS"),
+    ).toHaveTextContent("2");
 
     await user.type(screen.getByTestId("equipamentos-busca-input"), "ESPECIAL");
     await waitFor(() =>
@@ -175,14 +177,17 @@ describe("EquipamentosPage (integração)", () => {
       expect(screen.getByTestId("equipamento-historico")).toBeInTheDocument(),
     );
     expect(
-      within(screen.getByTestId("equipamento-historico")).getByText("Instalado"),
+      within(screen.getByTestId("equipamento-historico")).getByText(
+        "Instalado",
+      ),
     ).toBeInTheDocument();
   });
 
   it("paginação: avança página quando há mais itens que PAGE_SIZE", async () => {
     const user = userEvent.setup();
-    const many = Array.from({ length: EQUIPAMENTOS_LIST_PAGE_SIZE + 4 }, (_, i) =>
-      montado({ id: i + 1, status: "CONFIGURADO", kitId: null }),
+    const many = Array.from(
+      { length: EQUIPAMENTOS_LIST_PAGE_SIZE + 4 },
+      (_, i) => montado({ id: i + 1, status: "CONFIGURADO", kitId: null }),
     );
     apiMock.mockImplementation((url: string) => {
       if (url === "/aparelhos") return Promise.resolve(many);
@@ -200,13 +205,17 @@ describe("EquipamentosPage (integração)", () => {
       expect(screen.getByTestId("equipamento-row-1")).toBeInTheDocument(),
     );
     expect(
-      screen.queryByTestId(`equipamento-row-${EQUIPAMENTOS_LIST_PAGE_SIZE + 1}`),
+      screen.queryByTestId(
+        `equipamento-row-${EQUIPAMENTOS_LIST_PAGE_SIZE + 1}`,
+      ),
     ).not.toBeInTheDocument();
 
     await user.click(screen.getByTestId("equipamentos-page-next"));
     await waitFor(() =>
       expect(
-        screen.getByTestId(`equipamento-row-${EQUIPAMENTOS_LIST_PAGE_SIZE + 1}`),
+        screen.getByTestId(
+          `equipamento-row-${EQUIPAMENTOS_LIST_PAGE_SIZE + 1}`,
+        ),
       ).toBeInTheDocument(),
     );
   });
@@ -239,6 +248,8 @@ describe("EquipamentosPage (integração)", () => {
     await waitFor(() =>
       expect(screen.getByTestId("equipamentos-empty")).toBeInTheDocument(),
     );
-    expect(screen.getByTestId("equipamentos-pipeline-TODOS")).toHaveTextContent("0");
+    expect(screen.getByTestId("equipamentos-pipeline-TODOS")).toHaveTextContent(
+      "0",
+    );
   });
 });

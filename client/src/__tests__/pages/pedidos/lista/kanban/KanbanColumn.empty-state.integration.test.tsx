@@ -35,15 +35,9 @@ describe("KanbanColumn e KanbanColumnConfig", () => {
   describe("estado vazio", () => {
     it("KanbanColumn: coluna vazia exibe mensagem padrão", () => {
       render(
-        <KanbanColumn
-          status="solicitado"
-          pedidos={[]}
-          onCardClick={vi.fn()}
-        />,
+        <KanbanColumn status="solicitado" pedidos={[]} onCardClick={vi.fn()} />,
       );
-      expect(
-        screen.getByText("Nenhum pedido nesta etapa"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("Nenhum pedido nesta etapa")).toBeInTheDocument();
       expectHeaderCount("Solicitado", 0);
     });
 
@@ -172,7 +166,9 @@ describe("KanbanColumn e KanbanColumnConfig", () => {
         />,
       );
       expect(screen.getByText("CFg-FIL")).toBeInTheDocument();
-      expect(screen.queryByText("Aguardando finalização")).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("Aguardando finalização"),
+      ).not.toBeInTheDocument();
     });
 
     it("clique disambigua o pedido no segundo de dois", async () => {

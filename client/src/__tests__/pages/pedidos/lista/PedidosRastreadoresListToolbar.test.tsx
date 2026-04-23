@@ -32,8 +32,6 @@ describe("PedidosRastreadoresListToolbar", () => {
         rightSlot={<button type="button">Ação</button>}
       />,
     );
-    expect(
-      screen.getByRole("button", { name: "Ação" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ação" })).toBeInTheDocument();
   });
 });

@@ -44,11 +44,16 @@ describe("useTestesBancadaController", () => {
       if (String(path).startsWith("/ordens-servico/testando"))
         return Promise.resolve([os]);
       if (String(path).startsWith("/aparelhos/para-testes"))
-        return Promise.resolve([rastreadorTesteFixture({ identificador: "IMEI-SYNC" })]);
+        return Promise.resolve([
+          rastreadorTesteFixture({ identificador: "IMEI-SYNC" }),
+        ]);
       return Promise.resolve({});
     });
     const qc = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     const { result } = renderHook(() => useTestesBancadaController(), {
       wrapper: createWrapper(qc, "/testes"),
@@ -71,12 +76,17 @@ describe("useTestesBancadaController", () => {
       return Promise.resolve({});
     });
     const qc = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     const { result } = renderHook(() => useTestesBancadaController(), {
       wrapper: createWrapper(qc, "/testes"),
     });
-    await waitFor(() => expect(result.current.selectedOs?.tipo).toBe("REVISAO"));
+    await waitFor(() =>
+      expect(result.current.selectedOs?.tipo).toBe("REVISAO"),
+    );
     await waitFor(() => expect(result.current.imeiSearch).toBe("ENT-1"));
   });
 
@@ -91,7 +101,10 @@ describe("useTestesBancadaController", () => {
       return Promise.resolve({});
     });
     const qc = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     const { result } = renderHook(() => useTestesBancadaController(), {
       wrapper: createWrapper(qc, "/testes?osId=2"),
@@ -107,7 +120,10 @@ describe("useTestesBancadaController", () => {
       return Promise.resolve([]);
     });
     const qc = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     const { result } = renderHook(() => useTestesBancadaController(), {
       wrapper: createWrapper(qc, "/testes"),
@@ -125,11 +141,16 @@ describe("useTestesBancadaController", () => {
       if (String(path).startsWith("/ordens-servico/testando"))
         return Promise.resolve([os]);
       if (String(path).startsWith("/aparelhos/para-testes"))
-        return Promise.resolve([rastreadorTesteFixture({ identificador: "OK" })]);
+        return Promise.resolve([
+          rastreadorTesteFixture({ identificador: "OK" }),
+        ]);
       return Promise.resolve({});
     });
     const qc = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     const { result } = renderHook(() => useTestesBancadaController(), {
       wrapper: createWrapper(qc, "/testes"),

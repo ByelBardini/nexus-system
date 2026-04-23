@@ -10,11 +10,14 @@ vi.mock("@/components/MaterialIcon", () => ({
   ),
 }));
 
-vi.mock("@/pages/ordens-servico/lista/components/OrdensServicoDetalhePanel", () => ({
-  OrdensServicoDetalhePanel: () => (
-    <div data-testid="ordens-servico-detalhe-mock">detalhe</div>
-  ),
-}));
+vi.mock(
+  "@/pages/ordens-servico/lista/components/OrdensServicoDetalhePanel",
+  () => ({
+    OrdensServicoDetalhePanel: () => (
+      <div data-testid="ordens-servico-detalhe-mock">detalhe</div>
+    ),
+  }),
+);
 
 const listaBase: OrdensServicoPaginatedResult = {
   data: [
@@ -63,7 +66,9 @@ describe("OrdensServicoTable", () => {
         onEnviarParaCadastro={vi.fn()}
       />,
     );
-    expect(screen.getByTestId("ordens-servico-table-empty")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("ordens-servico-table-empty"),
+    ).toBeInTheDocument();
   });
 
   it("loading lista", () => {
@@ -87,7 +92,9 @@ describe("OrdensServicoTable", () => {
         onEnviarParaCadastro={vi.fn()}
       />,
     );
-    expect(screen.getByTestId("ordens-servico-table-loading")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("ordens-servico-table-loading"),
+    ).toBeInTheDocument();
   });
 
   it("expande linha e mostra mock de detalhe", async () => {
@@ -114,7 +121,9 @@ describe("OrdensServicoTable", () => {
       />,
     );
     expect(screen.getByTestId("ordens-servico-expanded-1")).toBeInTheDocument();
-    expect(screen.getByTestId("ordens-servico-detalhe-mock")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("ordens-servico-detalhe-mock"),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByTestId("ordens-servico-row-1"));
     expect(setExp).toHaveBeenCalledWith(null);

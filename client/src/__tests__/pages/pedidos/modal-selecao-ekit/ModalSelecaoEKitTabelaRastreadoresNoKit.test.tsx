@@ -2,7 +2,10 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { ModalSelecaoEKitTabelaRastreadoresNoKit } from "@/pages/pedidos/modal-selecao-ekit/components/ModalSelecaoEKitTabelaRastreadoresNoKit";
-import { buildAparelhoNoKit, buildKitComAparelhos } from "./modal-selecao-ekit.fixtures";
+import {
+  buildAparelhoNoKit,
+  buildKitComAparelhos,
+} from "./modal-selecao-ekit.fixtures";
 
 vi.mock("@/components/MaterialIcon", () => ({
   MaterialIcon: () => null,

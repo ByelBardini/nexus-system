@@ -48,14 +48,18 @@ describe("useTecnicosMutations", () => {
     act(() => {
       result.current.updateStatusMutation.mutate({ id: 1, ativo: false });
     });
-    await waitFor(() => expect(api).toHaveBeenCalledWith(
-      "/tecnicos/1",
-      expect.objectContaining({
-        method: "PATCH",
-        body: JSON.stringify({ ativo: false }),
-      }),
-    ));
-    await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith("Status atualizado"));
+    await waitFor(() =>
+      expect(api).toHaveBeenCalledWith(
+        "/tecnicos/1",
+        expect.objectContaining({
+          method: "PATCH",
+          body: JSON.stringify({ ativo: false }),
+        }),
+      ),
+    );
+    await waitFor(() =>
+      expect(toastSuccess).toHaveBeenCalledWith("Status atualizado"),
+    );
   });
 
   it("POST cria técnico e chama onCreateSuccess", async () => {
@@ -92,7 +96,9 @@ describe("useTecnicosMutations", () => {
     });
     await waitFor(() => expect(onUpdateSuccess).toHaveBeenCalled());
     await waitFor(() =>
-      expect(toastSuccess).toHaveBeenCalledWith("Técnico atualizado com sucesso"),
+      expect(toastSuccess).toHaveBeenCalledWith(
+        "Técnico atualizado com sucesso",
+      ),
     );
   });
 
@@ -107,8 +113,6 @@ describe("useTecnicosMutations", () => {
     act(() => {
       result.current.updateStatusMutation.mutate({ id: 1, ativo: true });
     });
-    await waitFor(() =>
-      expect(toastError).toHaveBeenCalledWith("falha"),
-    );
+    await waitFor(() => expect(toastError).toHaveBeenCalledWith("falha"));
   });
 });

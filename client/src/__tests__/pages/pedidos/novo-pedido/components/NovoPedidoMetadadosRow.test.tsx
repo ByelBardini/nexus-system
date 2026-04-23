@@ -11,10 +11,7 @@ function Wrap() {
   });
   return (
     <FormProvider {...form}>
-      <NovoPedidoMetadadosRow
-        control={form.control}
-        nomeUsuario="Maria"
-      />
+      <NovoPedidoMetadadosRow control={form.control} nomeUsuario="Maria" />
     </FormProvider>
   );
 }

@@ -5,9 +5,7 @@ import { CargosAtribuicaoBlock } from "@/pages/usuarios/components/CargosAtribui
 import { cargoComPermissoesFixture } from "../fixtures";
 
 describe("CargosAtribuicaoBlock", () => {
-  const cargoA = cargoComPermissoesFixture(1, "Setor A", [
-    "X.Y.LISTAR",
-  ]);
+  const cargoA = cargoComPermissoesFixture(1, "Setor A", ["X.Y.LISTAR"]);
   const onToggle = vi.fn();
   const onToggleShow = vi.fn();
 
@@ -29,9 +27,7 @@ describe("CargosAtribuicaoBlock", () => {
       />,
     );
     expect(screen.getByText("Meus Cargos")).toBeInTheDocument();
-    expect(
-      screen.getByText(/nenhum cargo selecionado/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/nenhum cargo selecionado/i)).toBeInTheDocument();
   });
 
   it("chips: remove e botão de expansão", async () => {

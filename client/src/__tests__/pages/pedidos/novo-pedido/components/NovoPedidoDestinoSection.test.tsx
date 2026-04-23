@@ -113,9 +113,7 @@ describe("NovoPedidoDestinoSection", () => {
     expect(v.tipoDestino).toBe("TECNICO");
     expect(v.quantidade).toBe(1);
     expect(v.urgencia).toBe("MEDIA");
-    expect(v.itensMisto).toEqual([
-      { proprietario: "INFINITY", quantidade: 1 },
-    ]);
+    expect(v.itensMisto).toEqual([{ proprietario: "INFINITY", quantidade: 1 }]);
     expect(
       screen.getByRole("checkbox", { name: /Pedido misto/i }),
     ).toBeInTheDocument();
@@ -135,9 +133,7 @@ describe("NovoPedidoDestinoSection", () => {
       .parentElement as HTMLElement;
     const combo = within(destinoBlock).getByRole("combobox");
     await u.click(combo);
-    await u.click(
-      screen.getByRole("option", { name: "Cliente Alpha" }),
-    );
+    await u.click(screen.getByRole("option", { name: "Cliente Alpha" }));
     await waitFor(() => {
       expect(bag.current?.getValues("tipoDestino")).toBe("CLIENTE");
       expect(bag.current?.getValues("destinoCliente")).toBe("cliente-10");
@@ -155,10 +151,7 @@ describe("NovoPedidoDestinoSection", () => {
       current: null,
     };
     render(
-      <DestinoHarness
-        formBag={bag}
-        clientesLista={clientesComSubcliente}
-      />,
+      <DestinoHarness formBag={bag} clientesLista={clientesComSubcliente} />,
     );
     await u.click(screen.getByRole("button", { name: "Cliente" }));
     const destinoBlock = screen.getByText("Pesquisar Destinatário")
@@ -168,9 +161,7 @@ describe("NovoPedidoDestinoSection", () => {
       screen.getByRole("option", { name: /Filial Norte — Holding/ }),
     );
     await waitFor(() => {
-      expect(bag.current?.getValues("destinoCliente")).toBe(
-        "subcliente-501",
-      );
+      expect(bag.current?.getValues("destinoCliente")).toBe("subcliente-501");
     });
   });
 
@@ -212,9 +203,7 @@ describe("NovoPedidoDestinoSection", () => {
       current: null,
     };
     render(<DestinoHarness formBag={bag} />);
-    await u.click(
-      screen.getByRole("checkbox", { name: /Pedido misto/i }),
-    );
+    await u.click(screen.getByRole("checkbox", { name: /Pedido misto/i }));
     await u.click(screen.getByRole("button", { name: "Adicionar Destino" }));
     await waitFor(() => {
       const itens = bag.current!.getValues("itensMisto");
@@ -268,7 +257,9 @@ describe("NovoPedidoDestinoSection", () => {
         { proprietario: "INFINITY", quantidade: 1 },
       ]);
     });
-    expect(screen.queryByRole("button", { name: "Adicionar Destino" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Adicionar Destino" }),
+    ).toBeNull();
   });
 
   it("De Cliente: desmarcar limpa deClienteId no estado (não só some o select)", async () => {
@@ -381,9 +372,7 @@ describe("NovoPedidoDestinoSection", () => {
     }
     render(<Harness />);
     await u.click(screen.getByRole("button", { name: "erro-tecnico" }));
-    expect(
-      await screen.findByText("Selecione o técnico"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Selecione o técnico")).toBeInTheDocument();
   });
 
   it("erro em destinoCliente sem message: usa fallback 'Selecione o destinatário'", async () => {
@@ -442,9 +431,7 @@ describe("NovoPedidoDestinoSection", () => {
       );
     }
     render(<Harness />);
-    await u.click(
-      screen.getByRole("button", { name: "erro-destino-sem-msg" }),
-    );
+    await u.click(screen.getByRole("button", { name: "erro-destino-sem-msg" }));
     const destinoField = screen.getByText("Pesquisar Destinatário")
       .parentElement as HTMLElement;
     const erros = within(destinoField).getAllByText("Selecione o destinatário");
@@ -532,9 +519,7 @@ describe("NovoPedidoDestinoSection", () => {
     await u.click(
       screen.getByRole("button", { name: "disparar-erros-campos" }),
     );
-    expect(
-      await screen.findByText("Informe a quantidade"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Informe a quantidade")).toBeInTheDocument();
     expect(screen.getByText("Data inválida")).toBeInTheDocument();
   });
 
@@ -544,7 +529,8 @@ describe("NovoPedidoDestinoSection", () => {
       current: null,
     };
     render(<DestinoHarness formBag={bag} />);
-    const urgenciaBlock = screen.getByText("Urgência").parentElement as HTMLElement;
+    const urgenciaBlock = screen.getByText("Urgência")
+      .parentElement as HTMLElement;
     await u.click(within(urgenciaBlock).getByRole("combobox"));
     await u.click(screen.getByRole("option", { name: "Urgente" }));
     await waitFor(() => {
@@ -556,17 +542,13 @@ describe("NovoPedidoDestinoSection", () => {
     const u = userEvent.setup();
     render(<DestinoHarness />);
     expect(screen.getByText("Unidades")).toBeInTheDocument();
-    await u.click(
-      screen.getByRole("checkbox", { name: /Pedido misto/i }),
-    );
+    await u.click(screen.getByRole("checkbox", { name: /Pedido misto/i }));
     expect(screen.queryByText("Unidades")).toBeNull();
   });
 
   it("loadingClientes: select de destinatário (modo Cliente) fica desabilitado", async () => {
     const u = userEvent.setup();
-    render(
-      <DestinoHarness loadingClientes clientesLista={clientes} />,
-    );
+    render(<DestinoHarness loadingClientes clientesLista={clientes} />);
     await u.click(screen.getByRole("button", { name: "Cliente" }));
     const destinoBlock = screen.getByText("Pesquisar Destinatário")
       .parentElement as HTMLElement;

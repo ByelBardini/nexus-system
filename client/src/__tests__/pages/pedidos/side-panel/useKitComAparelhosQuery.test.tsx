@@ -24,26 +24,24 @@ describe("useKitComAparelhosQuery", () => {
 
   it("não chama a api quando enabled é false (painel fechado)", async () => {
     apiMock.mockResolvedValue(buildKitComAparelhos());
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    renderHook(
-      () => useKitComAparelhosQuery(1, false),
-      { wrapper: wrap(qc) },
-    );
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    renderHook(() => useKitComAparelhosQuery(1, false), { wrapper: wrap(qc) });
     await new Promise((r) => setTimeout(r, 30));
     expect(
-      apiMock.mock.calls.some(
-        (c) => c[0] === "/aparelhos/pareamento/kits/1",
-      ),
+      apiMock.mock.calls.some((c) => c[0] === "/aparelhos/pareamento/kits/1"),
     ).toBe(false);
   });
 
   it("não chama a api quando kitId é null", async () => {
     apiMock.mockResolvedValue(buildKitComAparelhos());
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    renderHook(
-      () => useKitComAparelhosQuery(null, true),
-      { wrapper: wrap(qc) },
-    );
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    renderHook(() => useKitComAparelhosQuery(null, true), {
+      wrapper: wrap(qc),
+    });
     await new Promise((r) => setTimeout(r, 30));
     expect(apiMock).not.toHaveBeenCalled();
   });
@@ -51,11 +49,12 @@ describe("useKitComAparelhosQuery", () => {
   it("quando habilitado busca o kit e compartilha query key com o modal", async () => {
     const data = buildKitComAparelhos({ id: 5, aparelhos: [] });
     apiMock.mockResolvedValue(data);
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const { result } = renderHook(
-      () => useKitComAparelhosQuery(5, true),
-      { wrapper: wrap(qc) },
-    );
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const { result } = renderHook(() => useKitComAparelhosQuery(5, true), {
+      wrapper: wrap(qc),
+    });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(data);
     expect(apiMock).toHaveBeenCalledWith("/aparelhos/pareamento/kits/5");

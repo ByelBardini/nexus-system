@@ -25,18 +25,19 @@ function wrapper(qc: QueryClient) {
 
 beforeEach(() => {
   api.mockReset();
-  api.mockImplementation((url: string, opt?: { method?: string; body?: string }) => {
-    if (String(url) === "/pedidos-rastreadores" && opt?.method === "POST")
-      return Promise.resolve({});
-    if (url === "/tecnicos")
-      return Promise.resolve([{ id: 1, nome: "T" }]);
-    if (url === "/clientes?subclientes=1")
-      return Promise.resolve([{ id: 2, nome: "C" }]);
-    if (url === "/equipamentos/marcas") return Promise.resolve([]);
-    if (url === "/equipamentos/modelos") return Promise.resolve([]);
-    if (url === "/equipamentos/operadoras") return Promise.resolve([]);
-    return Promise.resolve(null);
-  });
+  api.mockImplementation(
+    (url: string, opt?: { method?: string; body?: string }) => {
+      if (String(url) === "/pedidos-rastreadores" && opt?.method === "POST")
+        return Promise.resolve({});
+      if (url === "/tecnicos") return Promise.resolve([{ id: 1, nome: "T" }]);
+      if (url === "/clientes?subclientes=1")
+        return Promise.resolve([{ id: 2, nome: "C" }]);
+      if (url === "/equipamentos/marcas") return Promise.resolve([]);
+      if (url === "/equipamentos/modelos") return Promise.resolve([]);
+      if (url === "/equipamentos/operadoras") return Promise.resolve([]);
+      return Promise.resolve(null);
+    },
+  );
 });
 
 describe("useNovoPedidoRastreadorForm", () => {
@@ -69,16 +70,17 @@ describe("useNovoPedidoRastreadorForm", () => {
     const qc = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
-    api.mockImplementation((url: string, opts?: { method?: string; body?: string }) => {
-      if (url === "/pedidos-rastreadores" && opts?.method === "POST")
-        return Promise.resolve({});
-      if (url === "/tecnicos")
-        return Promise.resolve([{ id: 1, nome: "T" }]);
-      if (url === "/clientes?subclientes=1")
-        return Promise.resolve([{ id: 2, nome: "C" }]);
-      if (url.startsWith("/equipamentos")) return Promise.resolve([]);
-      return Promise.resolve(null);
-    });
+    api.mockImplementation(
+      (url: string, opts?: { method?: string; body?: string }) => {
+        if (url === "/pedidos-rastreadores" && opts?.method === "POST")
+          return Promise.resolve({});
+        if (url === "/tecnicos") return Promise.resolve([{ id: 1, nome: "T" }]);
+        if (url === "/clientes?subclientes=1")
+          return Promise.resolve([{ id: 2, nome: "C" }]);
+        if (url.startsWith("/equipamentos")) return Promise.resolve([]);
+        return Promise.resolve(null);
+      },
+    );
     const { result } = renderHook(
       () =>
         useNovoPedidoRastreadorForm({
@@ -115,9 +117,10 @@ describe("useNovoPedidoRastreadorForm", () => {
         c[0] === "/pedidos-rastreadores" &&
         (c[1] as { method?: string })?.method === "POST",
     )!;
-    const body = JSON.parse(
-      (post[1] as { body: string }).body,
-    ) as { tipoDestino: string; tecnicoId: number };
+    const body = JSON.parse((post[1] as { body: string }).body) as {
+      tipoDestino: string;
+      tecnicoId: number;
+    };
     expect(body.tipoDestino).toBe("TECNICO");
     expect(body.tecnicoId).toBe(1);
   });

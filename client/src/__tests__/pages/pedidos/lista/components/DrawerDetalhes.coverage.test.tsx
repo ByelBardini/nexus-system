@@ -1,5 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor, within, type RenderResult } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  within,
+  type RenderResult,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -13,7 +19,11 @@ const authExcluir = vi.hoisted(() => ({ value: true }));
 vi.mock("@/lib/api", () => ({
   api: (...a: unknown[]) => {
     const o = a[1];
-    if (o && typeof o === "object" && (o as { method?: string }).method === "DELETE") {
+    if (
+      o &&
+      typeof o === "object" &&
+      (o as { method?: string }).method === "DELETE"
+    ) {
       return apiDelete(a[0], o);
     }
     return Promise.resolve(null);
@@ -23,9 +33,7 @@ vi.mock("@/lib/api", () => ({
 vi.mock("@/contexts/AuthContext", () => ({
   useAuth: () => ({
     hasPermission: (p: string) =>
-      p === "AGENDAMENTO.PEDIDO_RASTREADOR.EXCLUIR"
-        ? authExcluir.value
-        : true,
+      p === "AGENDAMENTO.PEDIDO_RASTREADOR.EXCLUIR" ? authExcluir.value : true,
   }),
 }));
 
@@ -103,8 +111,7 @@ describe("DrawerDetalhes — conteúdo, edge cases e exclusão (API + cache)", (
     );
     expect(
       within(
-        cli.view.getByText("Informações Gerais")
-          .parentElement as HTMLElement,
+        cli.view.getByText("Informações Gerais").parentElement as HTMLElement,
       ).getByText("Cliente", { selector: "p" }),
     ).toBeInTheDocument();
     cli.view.unmount();
@@ -118,8 +125,7 @@ describe("DrawerDetalhes — conteúdo, edge cases e exclusão (API + cache)", (
     );
     expect(
       within(
-        mis.view.getByText("Informações Gerais")
-          .parentElement as HTMLElement,
+        mis.view.getByText("Informações Gerais").parentElement as HTMLElement,
       ).getByText("Misto", { selector: "p" }),
     ).toBeInTheDocument();
   });
@@ -147,7 +153,9 @@ describe("DrawerDetalhes — conteúdo, edge cases e exclusão (API + cache)", (
     expect(tfoot).toBeTruthy();
     expect(tfoot as HTMLElement).toHaveTextContent("Total");
     expect(tfoot as HTMLElement).toHaveTextContent("4");
-    const qc2 = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc2 = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     view.rerender(
       <QueryClientProvider client={qc2}>
         <DrawerDetalhes
@@ -164,12 +172,10 @@ describe("DrawerDetalhes — conteúdo, edge cases e exclusão (API + cache)", (
 
   it("Data do Pedido: hífen só quando a data vem vazia (campo, não o resto do sheet)", () => {
     const p: PedidoRastreadorView = { ...base, dataSolicitacao: undefined };
-    withUi(
-      <DrawerDetalhes pedido={p} open onOpenChange={vi.fn()} />,
-    );
-    const cél = screen
-      .getByText("Data do Pedido", { exact: true })
-      .parentElement;
+    withUi(<DrawerDetalhes pedido={p} open onOpenChange={vi.fn()} />);
+    const cél = screen.getByText("Data do Pedido", {
+      exact: true,
+    }).parentElement;
     const ps = cél?.querySelectorAll("p");
     expect(ps?.[1]?.textContent).toBe("-");
   });
@@ -192,9 +198,7 @@ describe("DrawerDetalhes — conteúdo, edge cases e exclusão (API + cache)", (
         onOpenChange={vi.fn()}
       />,
     );
-    expect(
-      b.view.getByText("Meios de Contato (Destino)"),
-    ).toBeInTheDocument();
+    expect(b.view.getByText("Meios de Contato (Destino)")).toBeInTheDocument();
     b.view.unmount();
 
     const c = withUi(
@@ -226,7 +230,9 @@ describe("DrawerDetalhes — conteúdo, edge cases e exclusão (API + cache)", (
     );
     expect(screen.getByText("119999")).toBeInTheDocument();
     expect(screen.getByText("Telefone")).toBeInTheDocument();
-    expect(screen.queryByText("E-mail", { exact: true })).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("E-mail", { exact: true }),
+    ).not.toBeInTheDocument();
   });
 
   it("Contato: só e-mail (sem telefone) — sem o label Telefone", () => {
@@ -238,7 +244,9 @@ describe("DrawerDetalhes — conteúdo, edge cases e exclusão (API + cache)", (
       />,
     );
     expect(screen.getByText("x@y.com")).toBeInTheDocument();
-    expect(screen.queryByText("Telefone", { exact: true })).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("Telefone", { exact: true }),
+    ).not.toBeInTheDocument();
   });
 
   it("Contato: com telefone e e-mail — células na mesma grelha", () => {
@@ -294,13 +302,13 @@ describe("DrawerDetalhes — conteúdo, edge cases e exclusão (API + cache)", (
 
   it("sem permissão de excluir: não há ação destrutiva; Fechar full width", () => {
     authExcluir.value = false;
-    withUi(
-      <DrawerDetalhes pedido={base} open onOpenChange={vi.fn()} />,
-    );
+    withUi(<DrawerDetalhes pedido={base} open onOpenChange={vi.fn()} />);
     expect(
       screen.queryByRole("button", { name: "Excluir" }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Fechar" })).toHaveClass("w-full");
+    expect(screen.getByRole("button", { name: "Fechar" })).toHaveClass(
+      "w-full",
+    );
   });
 
   it("excluir: DELETE com path certo, invalida `pedidos-rastreadores` e toasts/ callbacks", async () => {
@@ -337,9 +345,7 @@ describe("DrawerDetalhes — conteúdo, edge cases e exclusão (API + cache)", (
 
   it("excluir: Error na API mostra a mensagem no toast", async () => {
     apiDelete.mockRejectedValue(new Error("Servidor 502"));
-    withUi(
-      <DrawerDetalhes pedido={base} open onOpenChange={vi.fn()} />,
-    );
+    withUi(<DrawerDetalhes pedido={base} open onOpenChange={vi.fn()} />);
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Excluir" }));
     await user.click(
@@ -352,9 +358,7 @@ describe("DrawerDetalhes — conteúdo, edge cases e exclusão (API + cache)", (
 
   it("excluir: rejeição não-Error cai no texto genérico (contrato onError do mutation)", async () => {
     apiDelete.mockRejectedValue("erro de rede");
-    withUi(
-      <DrawerDetalhes pedido={base} open onOpenChange={vi.fn()} />,
-    );
+    withUi(<DrawerDetalhes pedido={base} open onOpenChange={vi.fn()} />);
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Excluir" }));
     await user.click(
@@ -367,9 +371,7 @@ describe("DrawerDetalhes — conteúdo, edge cases e exclusão (API + cache)", (
 
   it("Fechar: onOpenChange(false) e nenhum DELETE", async () => {
     const onOpen = vi.fn();
-    withUi(
-      <DrawerDetalhes pedido={base} open onOpenChange={onOpen} />,
-    );
+    withUi(<DrawerDetalhes pedido={base} open onOpenChange={onOpen} />);
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Fechar" }));
     expect(onOpen).toHaveBeenCalledWith(false);

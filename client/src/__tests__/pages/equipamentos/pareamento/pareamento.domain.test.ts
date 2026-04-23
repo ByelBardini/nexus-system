@@ -12,7 +12,7 @@ import {
 
 describe("pareamento.domain — normalizarCabecalho", () => {
   it("remove espaços, aspas e lowercases", () => {
-    expect(normalizarCabecalho('  IMEI  ')).toBe("imei");
+    expect(normalizarCabecalho("  IMEI  ")).toBe("imei");
     expect(normalizarCabecalho(`"Marca_Rastreador"`)).toBe("marca_rastreador");
     expect(normalizarCabecalho("Marca (Rastreador)")).toBe("marca(rastreador)");
   });

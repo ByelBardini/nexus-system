@@ -10,9 +10,7 @@ const apiMock = vi.hoisted(() => vi.fn());
 const navigateMock = vi.hoisted(() => vi.fn());
 const toastSuccess = vi.hoisted(() => vi.fn());
 const toastError = vi.hoisted(() => vi.fn());
-const authPermissionMock = vi.hoisted(() =>
-  vi.fn((_permission: string) => true),
-);
+const authPermissionMock = vi.hoisted(() => vi.fn(() => true));
 
 vi.mock("@/lib/api", () => ({
   api: (...a: unknown[]) => apiMock(...a),
@@ -26,9 +24,10 @@ vi.mock("sonner", () => ({
 }));
 
 vi.mock("react-router-dom", async () => {
-  const actual = await vi.importActual<typeof import("react-router-dom")>(
-    "react-router-dom",
-  );
+  const actual =
+    await vi.importActual<typeof import("react-router-dom")>(
+      "react-router-dom",
+    );
   return { ...actual, useNavigate: () => navigateMock };
 });
 
@@ -73,9 +72,7 @@ const debitoClienteM1X1: DebitoRastreadorApi = {
   quantidade: 3,
 };
 
-const clientesFixture: ClienteLista[] = [
-  { id: 7, nome: "Cliente Lote" },
-];
+const clientesFixture: ClienteLista[] = [{ id: 7, nome: "Cliente Lote" }];
 
 type PostLoteBehavior =
   | "success"
@@ -117,7 +114,10 @@ function buildApiHandler(options: BuildApiOptions = {}) {
       ]);
     if (url === "/equipamentos/operadoras")
       return Promise.resolve([{ id: 2, nome: "Op", ativo: true }]);
-    if (url === "/equipamentos/marcas-simcard" || url.includes("marcas-simcard"))
+    if (
+      url === "/equipamentos/marcas-simcard" ||
+      url.includes("marcas-simcard")
+    )
       return Promise.resolve([
         {
           id: 3,
@@ -274,9 +274,7 @@ describe("useCadastroLote", () => {
         result.current.form.setValue("clienteId", 7);
       });
       expect(result.current.podeSalvar).toBe(true);
-      expect(result.current.clienteSelecionado).toEqual(
-        clientesFixture[0],
-      );
+      expect(result.current.clienteSelecionado).toEqual(clientesFixture[0]);
     });
 
     it("valorUnitário zero bloqueia salvar; um centavo acima de zero libera (com demais campos ok)", async () => {
@@ -402,7 +400,9 @@ describe("useCadastroLote", () => {
       const { result } = renderHook(() => useCadastroLote(), {
         wrapper: createWrapper(),
       });
-      await waitFor(() => expect(result.current.operadorasAtivas.length).toBe(1));
+      await waitFor(() =>
+        expect(result.current.operadorasAtivas.length).toBe(1),
+      );
 
       act(() => {
         result.current.form.setValue("referencia", "SIM-1");
@@ -420,10 +420,7 @@ describe("useCadastroLote", () => {
       expect(result.current.podeSalvar).toBe(false);
 
       act(() => {
-        result.current.form.setValue(
-          "idsTexto",
-          "1234567890123456789",
-        );
+        result.current.form.setValue("idsTexto", "1234567890123456789");
       });
       await waitFor(() => {
         expect(result.current.idValidation.validos).toEqual([
@@ -534,7 +531,9 @@ describe("useCadastroLote", () => {
         result.current.onSubmit(result.current.form.getValues());
       });
 
-      const loteCalls = apiMock.mock.calls.filter((c) => c[0] === "/aparelhos/lote");
+      const loteCalls = apiMock.mock.calls.filter(
+        (c) => c[0] === "/aparelhos/lote",
+      );
       expect(loteCalls).toHaveLength(0);
     });
 
@@ -572,7 +571,9 @@ describe("useCadastroLote", () => {
         queryKey: ["debitos-rastreadores"],
       });
 
-      const loteCall = apiMock.mock.calls.find((c) => c[0] === "/aparelhos/lote");
+      const loteCall = apiMock.mock.calls.find(
+        (c) => c[0] === "/aparelhos/lote",
+      );
       expect(loteCall?.[1]).toMatchObject({ method: "POST" });
       const body = JSON.parse((loteCall?.[1] as RequestInit).body as string);
 
@@ -618,7 +619,9 @@ describe("useCadastroLote", () => {
 
       await waitFor(() => expect(navigateMock).toHaveBeenCalled());
 
-      const loteCall = apiMock.mock.calls.find((c) => c[0] === "/aparelhos/lote");
+      const loteCall = apiMock.mock.calls.find(
+        (c) => c[0] === "/aparelhos/lote",
+      );
       const body = JSON.parse((loteCall?.[1] as RequestInit).body as string);
       expect(body.identificadores).toEqual([]);
       expect(body.quantidade).toBe(5);
@@ -628,7 +631,9 @@ describe("useCadastroLote", () => {
       const { result } = renderHook(() => useCadastroLote(), {
         wrapper: createWrapper(),
       });
-      await waitFor(() => expect(result.current.operadorasAtivas.length).toBe(1));
+      await waitFor(() =>
+        expect(result.current.operadorasAtivas.length).toBe(1),
+      );
 
       act(() => {
         result.current.form.setValue("referencia", "SIM-LOTE");
@@ -636,10 +641,7 @@ describe("useCadastroLote", () => {
         result.current.form.setValue("operadora", "2");
         result.current.form.setValue("definirIds", true);
         result.current.form.setValue("valorUnitario", 2500);
-        result.current.form.setValue(
-          "idsTexto",
-          "1234567890123456789",
-        );
+        result.current.form.setValue("idsTexto", "1234567890123456789");
       });
 
       await waitFor(() => expect(result.current.podeSalvar).toBe(true));
@@ -650,7 +652,9 @@ describe("useCadastroLote", () => {
 
       await waitFor(() => expect(navigateMock).toHaveBeenCalled());
 
-      const loteCall = apiMock.mock.calls.find((c) => c[0] === "/aparelhos/lote");
+      const loteCall = apiMock.mock.calls.find(
+        (c) => c[0] === "/aparelhos/lote",
+      );
       const body = JSON.parse((loteCall?.[1] as RequestInit).body as string);
       expect(body).toMatchObject({
         tipo: "SIM",
@@ -683,7 +687,9 @@ describe("useCadastroLote", () => {
 
       await waitFor(() => expect(navigateMock).toHaveBeenCalled());
 
-      const loteCall = apiMock.mock.calls.find((c) => c[0] === "/aparelhos/lote");
+      const loteCall = apiMock.mock.calls.find(
+        (c) => c[0] === "/aparelhos/lote",
+      );
       const body = JSON.parse((loteCall?.[1] as RequestInit).body as string);
       expect(body.abaterDebitoId).toBe(1);
       expect(body.abaterQuantidade).toBe(2);

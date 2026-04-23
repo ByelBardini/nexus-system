@@ -49,9 +49,9 @@ function setupUser() {
 describe("InputCPFCNPJ", () => {
   describe("exibição a partir de value (dígitos no pai)", () => {
     it.each`
-      value                | exibido
-      ${"12345678901"}     | ${"123.456.789-01"}
-      ${"12345678000195"}  | ${"12.345.678/0001-95"}
+      value               | exibido
+      ${"12345678901"}    | ${"123.456.789-01"}
+      ${"12345678000195"} | ${"12.345.678/0001-95"}
     `("formata CPF (11) ou CNPJ (14): exibe $exibido", ({ value, exibido }) => {
       const onChange = vi.fn();
       render(<InputCPFCNPJ value={value} onChange={onChange} />);
@@ -60,19 +60,20 @@ describe("InputCPFCNPJ", () => {
     });
 
     it.each`
-      value          | exibido
-      ${"123"}       | ${"123"}
-      ${"1234567"}   | ${"123.456.7"}
-      ${"1234567890"}| ${"123.456.789-0"}
-    `("formata CPF em estágios parciais: $value → $exibido", ({ value, exibido }) => {
-      render(<InputCPFCNPJ value={value} onChange={vi.fn()} />);
-      expect(screen.getByRole("textbox")).toHaveValue(exibido);
-    });
+      value           | exibido
+      ${"123"}        | ${"123"}
+      ${"1234567"}    | ${"123.456.7"}
+      ${"1234567890"} | ${"123.456.789-0"}
+    `(
+      "formata CPF em estágios parciais: $value → $exibido",
+      ({ value, exibido }) => {
+        render(<InputCPFCNPJ value={value} onChange={vi.fn()} />);
+        expect(screen.getByRole("textbox")).toHaveValue(exibido);
+      },
+    );
 
     it("normaliza value quando o pai ainda tem pontuação (ex.: dado legado)", () => {
-      render(
-        <InputCPFCNPJ value="12.345.678/0001-95" onChange={vi.fn()} />,
-      );
+      render(<InputCPFCNPJ value="12.345.678/0001-95" onChange={vi.fn()} />);
       expect(screen.getByRole("textbox")).toHaveValue("12.345.678/0001-95");
     });
 
@@ -115,11 +116,7 @@ describe("InputCPFCNPJ", () => {
       const input = screen.getByRole("textbox");
       await user.type(input, "123");
       expect(onChange).toHaveBeenCalledTimes(3);
-      expect(onChange.mock.calls.map((c) => c[0])).toEqual([
-        "1",
-        "12",
-        "123",
-      ]);
+      expect(onChange.mock.calls.map((c) => c[0])).toEqual(["1", "12", "123"]);
     });
 
     it("atualiza estado com dígitos puros; exibe CPF completo após 11 teclas", async () => {

@@ -27,9 +27,13 @@ describe("ConfirmIniciarTestesDialog", () => {
     expect(
       screen.getByTestId("ordens-servico-dialog-iniciar-testes"),
     ).toBeInTheDocument();
-    await user.click(screen.getByTestId("ordens-servico-dialog-iniciar-confirmar"));
+    await user.click(
+      screen.getByTestId("ordens-servico-dialog-iniciar-confirmar"),
+    );
     expect(onConfirm).toHaveBeenCalled();
-    await user.click(screen.getByTestId("ordens-servico-dialog-iniciar-cancelar"));
+    await user.click(
+      screen.getByTestId("ordens-servico-dialog-iniciar-cancelar"),
+    );
     expect(onCancel).toHaveBeenCalled();
   });
 
@@ -86,7 +90,9 @@ describe("RetiradaRealizadaDialog", () => {
         isPending={false}
       />,
     );
-    await user.click(screen.getByTestId("ordens-servico-dialog-retirada-fechar"));
+    await user.click(
+      screen.getByTestId("ordens-servico-dialog-retirada-fechar"),
+    );
     expect(onClose).toHaveBeenCalled();
   });
 });

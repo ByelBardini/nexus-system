@@ -22,7 +22,10 @@ describe("useCargoModal — estado e sincronização", () => {
 
   beforeEach(() => {
     queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     apiMock.mockReset();
   });

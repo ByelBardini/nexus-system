@@ -19,9 +19,7 @@ describe("clientes-page.shared — formatClienteEnderecoLinhaLista", () => {
         estado: "SP",
         cep: "01310100",
       }),
-    ).toBe(
-      "Rua A, nº 10, Sala 2 - Centro - São Paulo/SP - CEP 01310-100",
-    );
+    ).toBe("Rua A, nº 10, Sala 2 - Centro - São Paulo/SP - CEP 01310-100");
   });
 
   it("ignora número vazio ou só espaços", () => {
@@ -39,9 +37,9 @@ describe("clientes-page.shared — formatClienteEnderecoLinhaLista", () => {
   });
 
   it("inclui apenas CEP quando demais campos ausentes", () => {
-    expect(
-      formatClienteEnderecoLinhaLista({ cep: "01310100" }),
-    ).toBe("- CEP 01310-100");
+    expect(formatClienteEnderecoLinhaLista({ cep: "01310100" })).toBe(
+      "- CEP 01310-100",
+    );
   });
 });
 
@@ -59,15 +57,13 @@ describe("clientes-page.shared — formatClienteEnderecoResumo", () => {
   });
 
   it("só localidade quando não há linha base", () => {
-    expect(
-      formatClienteEnderecoResumo({ cidade: "Rio", estado: "RJ" }),
-    ).toBe("— Rio/RJ");
+    expect(formatClienteEnderecoResumo({ cidade: "Rio", estado: "RJ" })).toBe(
+      "— Rio/RJ",
+    );
   });
 
   it("só base quando não há cidade/estado", () => {
-    expect(
-      formatClienteEnderecoResumo({ logradouro: "Rua X" }),
-    ).toBe("Rua X");
+    expect(formatClienteEnderecoResumo({ logradouro: "Rua X" })).toBe("Rua X");
   });
 
   it("retorna vazio sem dados", () => {

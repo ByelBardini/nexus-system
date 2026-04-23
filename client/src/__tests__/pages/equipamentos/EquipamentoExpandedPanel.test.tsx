@@ -32,7 +32,9 @@ describe("EquipamentoExpandedPanel", () => {
         </tbody>
       </table>,
     );
-    expect(screen.getByTestId("equipamento-historico-vazio")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("equipamento-historico-vazio"),
+    ).toBeInTheDocument();
   });
 
   it("renderiza itens de histórico", () => {

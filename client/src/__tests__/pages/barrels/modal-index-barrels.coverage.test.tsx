@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CargoModal } from "@/pages/cargos/cargo-modal";
 import { CargoModal as CargoModalDirect } from "@/pages/cargos/cargo-modal/CargoModal";
-import {
-  ClienteModal,
-  useClienteModal,
-} from "@/pages/clientes/cliente-modal";
+import { ClienteModal, useClienteModal } from "@/pages/clientes/cliente-modal";
 import { ClienteModal as ClienteModalDirect } from "@/pages/clientes/cliente-modal/ClienteModal";
 import { useClienteModal as useClienteModalDirect } from "@/pages/clientes/cliente-modal/useClienteModal";
 

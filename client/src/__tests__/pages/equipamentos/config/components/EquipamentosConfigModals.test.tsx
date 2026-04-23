@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import type { UseMutationResult } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 import { EquipamentosConfigModals } from "@/pages/equipamentos/config/components/EquipamentosConfigModals";
 import type { EquipamentosConfigController } from "@/pages/equipamentos/config/hooks/useEquipamentosConfig";
@@ -7,8 +8,13 @@ vi.mock("@/components/MaterialIcon", () => ({
   MaterialIcon: () => <span data-icon="m" />,
 }));
 
-function mut() {
-  return { isPending: false, mutate: vi.fn() } as any;
+function mut(): UseMutationResult<unknown, Error, number, unknown> {
+  return { isPending: false, mutate: vi.fn() } as UseMutationResult<
+    unknown,
+    Error,
+    number,
+    unknown
+  >;
 }
 
 function minController(
@@ -30,9 +36,7 @@ function minController(
     filteredMarcasSimcard: [],
     modelosByMarca: new Map(),
     totalModelos: 0,
-    marcasAtivas: [
-      { id: 1, nome: "M", ativo: true, _count: { modelos: 0 } },
-    ],
+    marcasAtivas: [{ id: 1, nome: "M", ativo: true, _count: { modelos: 0 } }],
     operadorasAtivas: [{ id: 1, nome: "O", ativo: true }],
     toggleMarca: vi.fn(),
     openCreateMarca: vi.fn(),
@@ -122,9 +126,7 @@ describe("EquipamentosConfigModals", () => {
     expect(
       screen.getByRole("heading", { name: "Nova Marca" }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByPlaceholderText("Ex: Teltonika"),
-    ).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Ex: Teltonika")).toBeInTheDocument();
   });
 
   it("modal plano (MB) com valor e edição muda título", () => {
@@ -132,7 +134,12 @@ describe("EquipamentosConfigModals", () => {
       <EquipamentosConfigModals
         c={minController({
           modalPlanoSimcardOpen: true,
-          editingPlanoSimcard: { id: 1, marcaSimcardId: 2, planoMb: 256, ativo: true },
+          editingPlanoSimcard: {
+            id: 1,
+            marcaSimcardId: 2,
+            planoMb: 256,
+            ativo: true,
+          },
           planoMbPlanoSimcard: 256,
         })}
       />,

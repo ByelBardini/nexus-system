@@ -88,14 +88,10 @@ describe("CadastroResumoEntradaPanel", () => {
         notaFiscal=""
         watchProprietario="CLIENTE"
         watchClienteId={1}
-        clientes={[
-          { id: 1, nome: "Cli", cidade: "SP", estado: "SP" },
-        ]}
+        clientes={[{ id: 1, nome: "Cli", cidade: "SP", estado: "SP" }]}
         watchStatus="EM_MANUTENCAO"
       />,
     );
-    expect(
-      screen.getByText(/Cli \(SP - SP\)/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Cli \(SP - SP\)/i)).toBeInTheDocument();
   });
 });

@@ -35,7 +35,10 @@ function renderPage() {
 describe("CadastroRastreamentoPage (integração)", () => {
   beforeEach(() => {
     apiMock.mockImplementation((url: string) => {
-      if (typeof url === "string" && url.startsWith("/cadastro-rastreamento?")) {
+      if (
+        typeof url === "string" &&
+        url.startsWith("/cadastro-rastreamento?")
+      ) {
         return Promise.resolve({ data: [osRespostaBase], total: 1 });
       }
       if (url.includes("/iniciar")) return Promise.resolve({});
@@ -59,6 +62,8 @@ describe("CadastroRastreamentoPage (integração)", () => {
 
   it("exibe contagem no rodapé", async () => {
     renderPage();
-    expect(await screen.findByText(/1 ordem\(ns\) encontrada\(s\)/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/1 ordem\(ns\) encontrada\(s\)/i),
+    ).toBeInTheDocument();
   });
 });

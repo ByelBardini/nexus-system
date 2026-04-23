@@ -224,7 +224,9 @@ describe("AparelhosStatusPipeline", () => {
       />,
     );
 
-    expect(screen.getByTestId("aparelhos-status-total")).toHaveTextContent("11");
+    expect(screen.getByTestId("aparelhos-status-total")).toHaveTextContent(
+      "11",
+    );
     expect(screen.getByTestId("aparelhos-status-despachado")).toHaveTextContent(
       "0",
     );

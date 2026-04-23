@@ -96,8 +96,9 @@ describe("useEquipamentosPageList", () => {
   });
 
   it("paginação: totalPages e paginated respeitam EQUIPAMENTOS_LIST_PAGE_SIZE", async () => {
-    const many = Array.from({ length: EQUIPAMENTOS_LIST_PAGE_SIZE + 3 }, (_, i) =>
-      montado({ id: i + 1, status: "CONFIGURADO", kitId: null }),
+    const many = Array.from(
+      { length: EQUIPAMENTOS_LIST_PAGE_SIZE + 3 },
+      (_, i) => montado({ id: i + 1, status: "CONFIGURADO", kitId: null }),
     );
     apiMock.mockImplementation((url: string) => {
       if (url === "/aparelhos") return Promise.resolve(many);

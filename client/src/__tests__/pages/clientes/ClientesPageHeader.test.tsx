@@ -29,7 +29,9 @@ describe("ClientesPageHeader", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole("heading", { name: /clientes/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /clientes/i }),
+    ).toBeInTheDocument();
     await user.type(
       screen.getByPlaceholderText(/razão social ou cnpj/i),
       "acme",

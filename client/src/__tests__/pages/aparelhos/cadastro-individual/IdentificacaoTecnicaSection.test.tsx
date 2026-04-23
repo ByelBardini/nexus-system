@@ -82,7 +82,10 @@ type HarnessProps = {
   watchMarca?: string;
   watchOperadora?: string;
   watchIdentificador?: string;
-  idJaExiste?: { identificador: string; lote?: { referencia: string } | null } | null;
+  idJaExiste?: {
+    identificador: string;
+    lote?: { referencia: string } | null;
+  } | null;
   idValido?: boolean;
   modelosLocal?: MarcaModeloCatalog[];
   marcasSimLocal?: MarcaSimcardRow[];
@@ -174,9 +177,7 @@ describe("IdentificacaoTecnicaSection", () => {
         watchIdentificador="x"
       />,
     );
-    expect(
-      screen.getByText(/já consta no sistema/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/já consta no sistema/)).toBeInTheDocument();
     expect(screen.queryByText(/Vinculado ao Lote/)).not.toBeInTheDocument();
     rerender(
       <TecnicaHarness
@@ -185,9 +186,7 @@ describe("IdentificacaoTecnicaSection", () => {
         watchIdentificador="x"
       />,
     );
-    expect(
-      screen.getByText(/Vinculado ao Lote LOTE-Z/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Vinculado ao Lote LOTE-Z/)).toBeInTheDocument();
   });
 
   it("com duplicata, a borda do input continua de erro mesmo se idValido for true (duplicata tem prioridade)", () => {
@@ -204,12 +203,7 @@ describe("IdentificacaoTecnicaSection", () => {
   });
 
   it("não exibe o aviso âmbar de tamanho quando o identificador é só espaços (trim vazio)", () => {
-    render(
-      <TecnicaHarness
-        idValido={false}
-        watchIdentificador="   "
-      />,
-    );
+    render(<TecnicaHarness idValido={false} watchIdentificador="   " />);
     expect(
       screen.queryByText(/IMEI deve ter 15 dígitos/),
     ).not.toBeInTheDocument();
@@ -223,9 +217,7 @@ describe("IdentificacaoTecnicaSection", () => {
         watchIdentificador="12"
       />,
     );
-    expect(
-      screen.getByText(/IMEI deve ter 15 dígitos/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/IMEI deve ter 15 dígitos/)).toBeInTheDocument();
   });
 
   it("id válido sem duplicata: borda e ícone de sucesso, sem mensagem de erro", () => {
@@ -238,15 +230,17 @@ describe("IdentificacaoTecnicaSection", () => {
     );
     const input = container.querySelector("input");
     expect(input?.className).toMatch(/emerald-500/);
-    expect(container.querySelector('[data-icon="check_circle"]')).toBeInTheDocument();
     expect(
-      screen.queryByText(/já consta no sistema/),
-    ).not.toBeInTheDocument();
+      container.querySelector('[data-icon="check_circle"]'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/já consta no sistema/)).not.toBeInTheDocument();
   });
 
   it("ao trocar tipo para SIM, zera rastreador e força INFINITY; ao voltar para RASTREADOR, zera campos de SIM", async () => {
     const user = userEvent.setup();
-    const formRef: { current: ReturnType<typeof useForm<FormDataCadastroIndividual>> | null } = {
+    const formRef: {
+      current: ReturnType<typeof useForm<FormDataCadastroIndividual>> | null;
+    } = {
       current: null,
     };
     function TipoSinc() {
@@ -292,7 +286,9 @@ describe("IdentificacaoTecnicaSection", () => {
     expect(f.getValues("clienteId")).toBeNull();
 
     await user.click(screen.getAllByRole("combobox")[0]!);
-    await user.click(await screen.findByRole("option", { name: /^Rastreador$/i }));
+    await user.click(
+      await screen.findByRole("option", { name: /^Rastreador$/i }),
+    );
     expect(f.getValues("tipo")).toBe("RASTREADOR");
     expect(f.getValues("operadora")).toBe("");
     expect(f.getValues("marcaSimcardId") ?? "").toBe("");
@@ -301,7 +297,9 @@ describe("IdentificacaoTecnicaSection", () => {
 
   it("rastreador: trocar marca dispara setValue e zera o modelo selecionado", async () => {
     const user = userEvent.setup();
-    const formRef: { current: ReturnType<typeof useForm<FormDataCadastroIndividual>> | null } = {
+    const formRef: {
+      current: ReturnType<typeof useForm<FormDataCadastroIndividual>> | null;
+    } = {
       current: null,
     };
     function H() {
@@ -366,7 +364,9 @@ describe("IdentificacaoTecnicaSection", () => {
 
   it("simcard: trocar operadora zera marca e plano do simcard", async () => {
     const user = userEvent.setup();
-    const formRef: { current: ReturnType<typeof useForm<FormDataCadastroIndividual>> | null } = {
+    const formRef: {
+      current: ReturnType<typeof useForm<FormDataCadastroIndividual>> | null;
+    } = {
       current: null,
     };
     function H() {
@@ -410,7 +410,9 @@ describe("IdentificacaoTecnicaSection", () => {
 
   it("simcard: ao trocar a marca do simcard, o plano é resetado; ao escolher plano, o valor fica no formulário", async () => {
     const user = userEvent.setup();
-    const formRef: { current: ReturnType<typeof useForm<FormDataCadastroIndividual>> | null } = {
+    const formRef: {
+      current: ReturnType<typeof useForm<FormDataCadastroIndividual>> | null;
+    } = {
       current: null,
     };
     function H() {

@@ -14,9 +14,7 @@ vi.mock("@/lib/api", () => ({
 
 function wrapper(qc: QueryClient) {
   return function W({ children }: { children: ReactNode }) {
-    return (
-      <QueryClientProvider client={qc}>{children}</QueryClientProvider>
-    );
+    return <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
   };
 }
 

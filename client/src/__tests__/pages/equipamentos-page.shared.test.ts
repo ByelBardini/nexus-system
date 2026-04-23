@@ -26,7 +26,7 @@ describe("EQUIPAMENTOS_LIST_PAGE_SIZE", () => {
 });
 
 describe("equipamentoMatchesStageFilter", () => {
-  it('TODOS aceita qualquer registro', () => {
+  it("TODOS aceita qualquer registro", () => {
     expect(
       equipamentoMatchesStageFilter(
         item({ id: 1, status: "CONFIGURADO", kitId: null }),

@@ -111,9 +111,7 @@ describe("ConfigFormModal", () => {
     );
     const salvar = screen.getByRole("button", { name: "Salvando..." });
     expect(salvar).toBeDisabled();
-    expect(
-      screen.getByRole("button", { name: "Cancelar" }),
-    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Cancelar" })).toBeDisabled();
     await user.click(salvar);
     expect(onSave).not.toHaveBeenCalled();
   });

@@ -63,7 +63,9 @@ describe("TecnicosPageHeader", () => {
     );
     await user.type(screen.getByPlaceholderText(/Nome ou CPF/i), "a");
     expect(onBusca).toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: /Novo Técnico/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Novo Técnico/i }),
+    ).toBeInTheDocument();
   });
 
   it("edge: oculta Novo Técnico quando canCreate false", () => {

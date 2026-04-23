@@ -1,9 +1,13 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
+import type { UseMutationResult } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 import { MarcasModelosPanel } from "@/pages/equipamentos/config/components/MarcasModelosPanel";
-import type { MarcaRastreador, ModeloRastreador } from "@/pages/equipamentos/config/domain/equipamentos-config.types";
+import type {
+  MarcaRastreador,
+  ModeloRastreador,
+} from "@/pages/equipamentos/config/domain/equipamentos-config.types";
 import { buildModelosByMarca } from "@/pages/equipamentos/config/domain/equipamentos-config.helpers";
 
 vi.mock("@/components/MaterialIcon", () => ({
@@ -27,10 +31,17 @@ const mod: ModeloRastreador = {
 };
 
 function createMutation(over: { isPending?: boolean } = {}) {
-  return { isPending: false, mutate: vi.fn(), ...over } as any;
+  return { isPending: false, mutate: vi.fn(), ...over } as UseMutationResult<
+    unknown,
+    Error,
+    number,
+    unknown
+  >;
 }
 
-function baseProps(over: Partial<Parameters<typeof MarcasModelosPanel>[0]> = {}) {
+function baseProps(
+  over: Partial<Parameters<typeof MarcasModelosPanel>[0]> = {},
+) {
   const {
     deleteMarcaMutation = createMutation(),
     deleteModeloMutation = createMutation(),
@@ -87,9 +98,7 @@ describe("MarcasModelosPanel", () => {
   it("sem canEdit: sem Nova Marca e sem menu no cabeçalho da marca", () => {
     render(<MarcasModelosPanel {...baseProps({ canEdit: false })} />);
     expect(screen.queryByRole("button", { name: /nova marca/i })).toBeNull();
-    expect(
-      within(marcaRowHeader("MarcaX")).queryByRole("button"),
-    ).toBeNull();
+    expect(within(marcaRowHeader("MarcaX")).queryByRole("button")).toBeNull();
   });
 
   it("sem canEdit: menu por modelo (⋯) ainda é exibido — ações de modelo não dependem de canEdit", () => {
@@ -172,17 +181,13 @@ describe("MarcasModelosPanel", () => {
 
   it("ícone reflete expandido vs colapsado", () => {
     const { rerender } = render(
-      <MarcasModelosPanel
-        {...baseProps({ expandedMarcaIds: new Set() })}
-      />,
+      <MarcasModelosPanel {...baseProps({ expandedMarcaIds: new Set() })} />,
     );
     const header = marcaRowHeader("MarcaX");
     expect(header.querySelector('[data-icon="chevron_right"]')).toBeTruthy();
 
     rerender(
-      <MarcasModelosPanel
-        {...baseProps({ expandedMarcaIds: new Set([1]) })}
-      />,
+      <MarcasModelosPanel {...baseProps({ expandedMarcaIds: new Set([1]) })} />,
     );
     const headerExp = marcaRowHeader("MarcaX");
     expect(headerExp.querySelector('[data-icon="expand_more"]')).toBeTruthy();
@@ -192,7 +197,9 @@ describe("MarcasModelosPanel", () => {
   it("Nova Marca chama onOpenCreateMarca exatamente uma vez, sem argumentos", async () => {
     const onOpen = vi.fn();
     const user = userEvent.setup();
-    render(<MarcasModelosPanel {...baseProps({ onOpenCreateMarca: onOpen })} />);
+    render(
+      <MarcasModelosPanel {...baseProps({ onOpenCreateMarca: onOpen })} />,
+    );
     await user.click(screen.getByRole("button", { name: /nova marca/i }));
     expect(onOpen).toHaveBeenCalledTimes(1);
     expect(onOpen).toHaveBeenCalledWith();
@@ -224,9 +231,7 @@ describe("MarcasModelosPanel", () => {
     expect(
       await screen.findByRole("menuitem", { name: /^editar$/i }),
     ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("menuitem", { name: /^excluir$/i }),
-    ).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: /^excluir$/i })).toBeNull();
   });
 
   it("Excluir marca fica desabilitado enquanto deleteMarcaMutation.isPending", async () => {

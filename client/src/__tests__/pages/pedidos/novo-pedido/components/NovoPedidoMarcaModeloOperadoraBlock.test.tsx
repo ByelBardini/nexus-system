@@ -21,9 +21,7 @@ function Wrap() {
         operadoraEspecifica={form.watch("operadoraEspecifica")}
         marcaEquipamentoId={form.watch("marcaEquipamentoId")}
         marcas={[{ id: 1, nome: "Mar" }]}
-        modelosFiltrados={[
-          { id: 2, nome: "ModA", marcaId: 1 },
-        ]}
+        modelosFiltrados={[{ id: 2, nome: "ModA", marcaId: 1 }]}
         operadoras={[{ id: 3, nome: "Op" }]}
       />
     </FormProvider>

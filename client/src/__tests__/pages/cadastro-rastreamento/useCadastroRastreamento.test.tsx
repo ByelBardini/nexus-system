@@ -17,9 +17,7 @@ vi.mock("@/lib/api", () => ({
 
 function wrapper(qc: QueryClient) {
   return function W({ children }: { children: ReactNode }) {
-    return (
-      <QueryClientProvider client={qc}>{children}</QueryClientProvider>
-    );
+    return <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
   };
 }
 
@@ -28,10 +26,16 @@ describe("useCadastroRastreamento", () => {
 
   beforeEach(() => {
     queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
     });
     apiMock.mockImplementation((url: string) => {
-      if (typeof url === "string" && url.startsWith("/cadastro-rastreamento?")) {
+      if (
+        typeof url === "string" &&
+        url.startsWith("/cadastro-rastreamento?")
+      ) {
         return Promise.resolve({ data: [osRespostaBase], total: 1 });
       }
       if (url.includes("/iniciar")) {

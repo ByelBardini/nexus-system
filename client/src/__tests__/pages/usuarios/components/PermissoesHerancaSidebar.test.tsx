@@ -35,15 +35,11 @@ describe("PermissoesHerancaSidebar", () => {
         accessScore={75}
       />,
     );
-    expect(
-      screen.getByText("Ordens de Serviço"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/visualizar, excluir/i),
-    ).toBeInTheDocument();
-    const warnBlock = screen.getByText(
-      /excluir ordens de serviço/i,
-    ).closest("div");
+    expect(screen.getByText("Ordens de Serviço")).toBeInTheDocument();
+    expect(screen.getByText(/visualizar, excluir/i)).toBeInTheDocument();
+    const warnBlock = screen
+      .getByText(/excluir ordens de serviço/i)
+      .closest("div");
     expect(
       within(warnBlock?.parentElement ?? document.body).getByText(
         /acesso via cargos selecionados/i,

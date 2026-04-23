@@ -16,8 +16,7 @@ vi.mock("@/lib/api", () => ({
 vi.mock("@/contexts/AuthContext", () => ({
   useAuth: () => ({
     hasPermission: (p: string) =>
-      p === "AGENDAMENTO.CLIENTE.CRIAR" ||
-      p === "AGENDAMENTO.CLIENTE.EDITAR",
+      p === "AGENDAMENTO.CLIENTE.CRIAR" || p === "AGENDAMENTO.CLIENTE.EDITAR",
   }),
 }));
 
@@ -42,9 +41,7 @@ function clienteLista(): Cliente[] {
       tipoContrato: "COMODATO",
       estoqueProprio: true,
       status: "ATIVO",
-      contatos: [
-        { id: 1, nome: "Zé", celular: "11999998888", email: null },
-      ],
+      contatos: [{ id: 1, nome: "Zé", celular: "11999998888", email: null }],
     },
   ];
 }
@@ -92,7 +89,9 @@ describe("ClientesPage — fluxo integrado", () => {
     render(<ClientesPage />, { wrapper });
 
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: /novo cliente/i })).toBeEnabled(),
+      expect(
+        screen.getByRole("button", { name: /novo cliente/i }),
+      ).toBeEnabled(),
     );
 
     await user.click(screen.getByRole("button", { name: /novo cliente/i }));
@@ -143,7 +142,9 @@ describe("ClientesPage — fluxo integrado", () => {
 
     render(<ClientesPage />, { wrapper });
 
-    await waitFor(() => expect(screen.getByText("Beta Outro")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Beta Outro")).toBeInTheDocument(),
+    );
 
     await user.type(
       screen.getByPlaceholderText(/razão social ou cnpj/i),

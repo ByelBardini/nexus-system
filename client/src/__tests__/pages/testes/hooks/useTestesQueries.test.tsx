@@ -27,7 +27,9 @@ beforeEach(() => {
 describe("useTestesListaQuery", () => {
   it("chama endpoint testando com search codificado", async () => {
     api.mockResolvedValueOnce([osTesteFixture()]);
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     const { result } = renderHook(() => useTestesListaQuery("ab c"), {
       wrapper: wrapper(qc),
     });
@@ -39,14 +41,20 @@ describe("useTestesListaQuery", () => {
 
   it("edge: search vazio omite query param", async () => {
     api.mockResolvedValueOnce([]);
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     renderHook(() => useTestesListaQuery(""), { wrapper: wrapper(qc) });
-    await waitFor(() => expect(api).toHaveBeenCalledWith("/ordens-servico/testando?"));
+    await waitFor(() =>
+      expect(api).toHaveBeenCalledWith("/ordens-servico/testando?"),
+    );
   });
 
   it("edge: falha de rede expõe isError", async () => {
     api.mockRejectedValueOnce(new Error("fail"));
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     const { result } = renderHook(() => useTestesListaQuery(""), {
       wrapper: wrapper(qc),
     });
@@ -58,7 +66,9 @@ describe("useRastreadoresParaTestesQuery", () => {
   it("monta query string com cliente, técnico e OS", async () => {
     const os = osTesteFixture({ id: 5, clienteId: 9, tecnicoId: 8 });
     api.mockResolvedValueOnce([rastreadorTesteFixture()]);
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     const { result } = renderHook(() => useRastreadoresParaTestesQuery(os), {
       wrapper: wrapper(qc),
     });
@@ -72,7 +82,9 @@ describe("useRastreadoresParaTestesQuery", () => {
   });
 
   it("edge: selectedOs null não chama API (enabled false)", async () => {
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     renderHook(() => useRastreadoresParaTestesQuery(null), {
       wrapper: wrapper(qc),
     });
@@ -82,7 +94,9 @@ describe("useRastreadoresParaTestesQuery", () => {
 
   it("edge: RETIRADA desabilita query", async () => {
     const os = osTesteFixture({ tipo: "RETIRADA" });
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     renderHook(() => useRastreadoresParaTestesQuery(os), {
       wrapper: wrapper(qc),
     });

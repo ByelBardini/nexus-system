@@ -60,9 +60,9 @@ describe("idOperadoraParaFiltroSim", () => {
 
 describe("getModelosDisponiveisPorMarcaNome", () => {
   it("retorna vazio se marca vazia", () => {
-    expect(getModelosDisponiveisPorMarcaNome(modelos, marcasAtivas, "")).toEqual(
-      [],
-    );
+    expect(
+      getModelosDisponiveisPorMarcaNome(modelos, marcasAtivas, ""),
+    ).toEqual([]);
   });
   it("retorna vazio se marca inexistente no catálogo ativo", () => {
     expect(
@@ -70,11 +70,7 @@ describe("getModelosDisponiveisPorMarcaNome", () => {
     ).toEqual([]);
   });
   it("filtra ativos da marca A", () => {
-    const r = getModelosDisponiveisPorMarcaNome(
-      modelos,
-      marcasAtivas,
-      "A",
-    );
+    const r = getModelosDisponiveisPorMarcaNome(modelos, marcasAtivas, "A");
     expect(r.map((m) => m.nome)).toEqual(["M1"]);
   });
 });

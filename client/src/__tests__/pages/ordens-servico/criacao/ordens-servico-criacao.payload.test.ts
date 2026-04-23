@@ -96,10 +96,7 @@ describe("buildSubclienteCreate / buildSubclienteUpdate", () => {
   });
 
   it("update só quando existente, id e dados completos", () => {
-    const u = buildSubclienteUpdate(
-      { ...base(), isNovoSubcliente: false },
-      9,
-    );
+    const u = buildSubclienteUpdate({ ...base(), isNovoSubcliente: false }, 9);
     expect(u).toBeDefined();
     expect(u?.nome).toBe("João");
   });

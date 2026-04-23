@@ -41,12 +41,7 @@ describe("getAccessLevel", () => {
 
   it("Nenhum sem cargos ou total 0", () => {
     expect(getAccessLevel(u({}), 10).label).toBe("Nenhum");
-    expect(
-      getAccessLevel(
-        u({ usuarioCargos: [] }),
-        10,
-      ).label,
-    ).toBe("Nenhum");
+    expect(getAccessLevel(u({ usuarioCargos: [] }), 10).label).toBe("Nenhum");
   });
 
   it("escala de faixas por percentual", () => {

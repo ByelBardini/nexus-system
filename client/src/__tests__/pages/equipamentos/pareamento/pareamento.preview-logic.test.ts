@@ -108,7 +108,9 @@ describe("pareamento.preview-logic — computeProgressoVinculoIndividual", () =>
 });
 
 describe("pareamento.preview-logic — computePodeConfirmarPareamentoIndividual", () => {
-  const prevOk = previewBase({ contadores: { validos: 1, exigemLote: 0, erros: 0 } });
+  const prevOk = previewBase({
+    contadores: { validos: 1, exigemLote: 0, erros: 0 },
+  });
 
   it("false sem preview", () => {
     expect(

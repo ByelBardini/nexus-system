@@ -46,15 +46,18 @@ vi.mock("@tanstack/react-query", async () => {
   };
 });
 
-vi.mock("@/pages/equipamentos/pareamento/preview/PreviewPareamentoTable", () => ({
-  PreviewPareamentoTable: () => <div />,
-  TRACKER_STATUS_LABELS: {
-    FOUND_AVAILABLE: { label: "", className: "" },
-    FOUND_ALREADY_LINKED: { label: "", className: "" },
-    NEEDS_CREATE: { label: "", className: "" },
-    INVALID_FORMAT: { label: "", className: "" },
-  },
-}));
+vi.mock(
+  "@/pages/equipamentos/pareamento/preview/PreviewPareamentoTable",
+  () => ({
+    PreviewPareamentoTable: () => <div />,
+    TRACKER_STATUS_LABELS: {
+      FOUND_AVAILABLE: { label: "", className: "" },
+      FOUND_ALREADY_LINKED: { label: "", className: "" },
+      NEEDS_CREATE: { label: "", className: "" },
+      INVALID_FORMAT: { label: "", className: "" },
+    },
+  }),
+);
 
 vi.mock("@/pages/equipamentos/pareamento/preview/PreviewCsvTable", () => ({
   PreviewCsvTable: () => <div data-testid="csv-preview-table" />,

@@ -1,4 +1,10 @@
-import { render, screen, waitFor, fireEvent, act } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+  act,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -20,7 +26,8 @@ function dispatchScrollOn(target: EventTarget) {
 }
 
 function getDropdownPanel(container: HTMLElement): HTMLElement {
-  const el = container.querySelector(".max-h-60") ?? document.querySelector(".max-h-60");
+  const el =
+    container.querySelector(".max-h-60") ?? document.querySelector(".max-h-60");
   if (!el) throw new Error("dropdown não encontrado");
   return el as HTMLElement;
 }
@@ -37,7 +44,13 @@ function StatefulSelectCidade(props: { disabled?: boolean }) {
   );
 }
 
-function ParentDrivesValue({ initial, next }: { initial: string; next: string }) {
+function ParentDrivesValue({
+  initial,
+  next,
+}: {
+  initial: string;
+  next: string;
+}) {
   const [v, setV] = useState(initial);
   return (
     <>
@@ -106,9 +119,7 @@ describe("SelectCidade", () => {
     );
 
     await user.click(screen.getByPlaceholderText("C"));
-    expect(
-      screen.getByText("Nenhuma cidade encontrada"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Nenhuma cidade encontrada")).toBeInTheDocument();
     const panel = getDropdownPanel(container);
     expect(panel).toBeInTheDocument();
 
@@ -130,7 +141,9 @@ describe("SelectCidade", () => {
 
     const input = screen.getByPlaceholderText("Cidade");
     await user.click(input);
-    expect(screen.getByRole("button", { name: "São Paulo" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "São Paulo" }),
+    ).toBeInTheDocument();
 
     await user.clear(input);
     await user.type(input, "Camp");
@@ -156,9 +169,7 @@ describe("SelectCidade", () => {
     );
     await user.click(screen.getByPlaceholderText("C"));
     await user.type(screen.getByDisplayValue(""), "sao");
-    expect(
-      screen.getByText("Nenhuma cidade encontrada"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Nenhuma cidade encontrada")).toBeInTheDocument();
   });
 
   it("Enter com itens: primeira da lista; com filtro sem resultados: não chama onChange (pai controla valor)", async () => {
@@ -221,9 +232,7 @@ describe("SelectCidade", () => {
     );
     expect(panel).toBeTruthy();
     dispatchScrollOn(panel);
-    expect(
-      screen.getByRole("button", { name: "Santos" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Santos" })).toBeInTheDocument();
   });
 
   it("click fora: fecha e restaura o texto visível com o value prop", async () => {
@@ -323,7 +332,9 @@ describe("SelectCidade", () => {
       />,
     );
     await user.click(screen.getByPlaceholderText("C"));
-    expect(screen.getByRole("button", { name: "São Paulo" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "São Paulo" }),
+    ).toBeInTheDocument();
     dispatchScrollOn(document.body);
     await waitFor(() => {
       expect(
@@ -334,9 +345,7 @@ describe("SelectCidade", () => {
 
   it("trocar value via botão externo enquanto fechado permanece coerente ao abrir de novo", async () => {
     const user = userEvent.setup();
-    render(
-      <ParentDrivesValue initial="Santos" next="Campinas" />,
-    );
+    render(<ParentDrivesValue initial="Santos" next="Campinas" />);
     expect(screen.getByDisplayValue("Santos")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "trocar" }));
     expect(screen.getByDisplayValue("Campinas")).toBeInTheDocument();

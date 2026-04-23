@@ -12,7 +12,9 @@ import type {
   ModeloRastreador,
 } from "@/pages/equipamentos/config/domain/equipamentos-config.types";
 
-const marca = (n: Partial<MarcaRastreador> & { id: number; nome: string }): MarcaRastreador => ({
+const marca = (
+  n: Partial<MarcaRastreador> & { id: number; nome: string },
+): MarcaRastreador => ({
   id: n.id,
   nome: n.nome,
   ativo: n.ativo ?? true,
@@ -38,12 +40,19 @@ describe("toggleIdInSet", () => {
 });
 
 describe("filterMarcasByMarcaOrModeloName", () => {
-  const marcas = [marca({ id: 1, nome: "Teltonika" }), marca({ id: 2, nome: "Outra" })];
+  const marcas = [
+    marca({ id: 1, nome: "Teltonika" }),
+    marca({ id: 2, nome: "Outra" }),
+  ];
   const modelos = [modelo({ id: 10, nome: "FMB920", marcaId: 1 })];
 
   it("com busca vazia (ou só espaços) retorna todas as marcas", () => {
-    expect(filterMarcasByMarcaOrModeloName(marcas, modelos, "")).toHaveLength(2);
-    expect(filterMarcasByMarcaOrModeloName(marcas, modelos, "   ")).toHaveLength(2);
+    expect(filterMarcasByMarcaOrModeloName(marcas, modelos, "")).toHaveLength(
+      2,
+    );
+    expect(
+      filterMarcasByMarcaOrModeloName(marcas, modelos, "   "),
+    ).toHaveLength(2);
   });
 
   it("filtra por nome de marca (case insensitive)", () => {
@@ -103,7 +112,12 @@ describe("buildModelosByMarca", () => {
       modelo({ id: 2, nome: "B", marcaId: 1 }),
       modelo({ id: 3, nome: "C", marcaId: 2 }),
     ]);
-    expect(map.get(1)?.map((m) => m.nome).sort()).toEqual(["A", "B"]);
+    expect(
+      map
+        .get(1)
+        ?.map((m) => m.nome)
+        .sort(),
+    ).toEqual(["A", "B"]);
     expect(map.get(2)).toHaveLength(1);
   });
 });

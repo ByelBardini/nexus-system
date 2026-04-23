@@ -32,8 +32,7 @@ describe("buildNovoPedidoRastreadorPostJson", () => {
     expect(j.tecnicoId).toBe(3);
     expect(Array.isArray(j.itens)).toBe(true);
     expect(
-      (j.itens as { clienteId?: number; proprietario: string }[])[1]
-        .clienteId,
+      (j.itens as { clienteId?: number; proprietario: string }[])[1].clienteId,
     ).toBe(9);
   });
 
@@ -47,7 +46,9 @@ describe("buildNovoPedidoRastreadorPostJson", () => {
       modeloEquipamentoId: 6,
       itensMisto: [{ proprietario: "INFINITY", quantidade: 1 }],
     };
-    const j = buildNovoPedidoRastreadorPostJson(d) as { itens: { marcaEquipamentoId?: number }[] };
+    const j = buildNovoPedidoRastreadorPostJson(d) as {
+      itens: { marcaEquipamentoId?: number }[];
+    };
     expect(j.itens[0].marcaEquipamentoId).toBe(5);
   });
 

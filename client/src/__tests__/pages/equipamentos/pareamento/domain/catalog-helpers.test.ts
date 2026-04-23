@@ -52,9 +52,9 @@ describe("catalog-helpers", () => {
     });
 
     it("edge: lista de modelos vazia → []", () => {
-      expect(
-        filterModelosPorNomeMarca("Suntech", marcasAtivas, []),
-      ).toEqual([]);
+      expect(filterModelosPorNomeMarca("Suntech", marcasAtivas, [])).toEqual(
+        [],
+      );
     });
 
     it("edge: marcas ativas vazias → []", () => {
@@ -75,7 +75,11 @@ describe("catalog-helpers", () => {
 
     it("edge: nome operadora vazio → []", () => {
       expect(
-        filterMarcasSimcardPorNomeOperadora("", operadorasAtivas, marcasSimcard),
+        filterMarcasSimcardPorNomeOperadora(
+          "",
+          operadorasAtivas,
+          marcasSimcard,
+        ),
       ).toEqual([]);
     });
 

@@ -25,9 +25,9 @@ describe("OrdensServicoPipelineStrip", () => {
     expect(
       screen.getByTestId("ordens-servico-pipeline-strip"),
     ).toBeInTheDocument();
-    expect(screen.getByTestId("ordens-servico-pipeline-TODOS")).toHaveTextContent(
-      "15",
-    );
+    expect(
+      screen.getByTestId("ordens-servico-pipeline-TODOS"),
+    ).toHaveTextContent("15");
     expect(
       screen.getByTestId("ordens-servico-pipeline-AGENDADO"),
     ).toHaveTextContent("1");
@@ -59,9 +59,9 @@ describe("OrdensServicoPipelineStrip", () => {
         onStatusClick={onClick}
       />,
     );
-    expect(screen.getByTestId("ordens-servico-pipeline-TODOS")).toHaveTextContent(
-      "0",
-    );
+    expect(
+      screen.getByTestId("ordens-servico-pipeline-TODOS"),
+    ).toHaveTextContent("0");
     expect(
       screen.getByTestId("ordens-servico-pipeline-AGENDADO"),
     ).toHaveTextContent("0");

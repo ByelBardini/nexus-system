@@ -52,7 +52,9 @@ describe("useClientesPageList", () => {
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(apiMock).toHaveBeenCalledWith("/clientes");
-    expect(qc.getQueryCache().find({ queryKey: CLIENTES_QUERY_KEY })).toBeTruthy();
+    expect(
+      qc.getQueryCache().find({ queryKey: CLIENTES_QUERY_KEY }),
+    ).toBeTruthy();
   });
 
   it("filtra por busca (nome, fantasia, CNPJ bruto)", async () => {
@@ -134,7 +136,9 @@ describe("useClientesPageList", () => {
     const { result } = renderHook(() => useClientesPageList(), {
       wrapper: wrapper(qc),
     });
-    await waitFor(() => expect(result.current.clientes.length).toBe(list.length));
+    await waitFor(() =>
+      expect(result.current.clientes.length).toBe(list.length),
+    );
 
     act(() => {
       result.current.setPage(1);

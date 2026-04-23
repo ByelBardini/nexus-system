@@ -121,7 +121,9 @@ async function operadorasPanel() {
 function expectPostJson(url: string, expected: Record<string, unknown>) {
   const call = apiMock.mock.calls.find(
     (c) =>
-      c[0] === url && (c[1] as ApiInit)?.method === "POST" && (c[1] as ApiInit)?.body,
+      c[0] === url &&
+      (c[1] as ApiInit)?.method === "POST" &&
+      (c[1] as ApiInit)?.body,
   );
   expect(call).toBeDefined();
   const body = (call![1] as ApiInit).body!;
@@ -139,47 +141,41 @@ describe("EquipamentosConfigPage (integração)", () => {
     );
   });
 
-  it(
-    "busca restringe marcas; busca inexistente exibe vazio; limpar restaura totais",
-    async () => {
-      const user = userEvent.setup();
-      render(
-        <TestApp>
-          <EquipamentosConfigPage />
-        </TestApp>,
-      );
-      const search = await screen.findByPlaceholderText(
-        "Pesquisar marca ou modelo...",
-      );
+  it("busca restringe marcas; busca inexistente exibe vazio; limpar restaura totais", async () => {
+    const user = userEvent.setup();
+    render(
+      <TestApp>
+        <EquipamentosConfigPage />
+      </TestApp>,
+    );
+    const search = await screen.findByPlaceholderText(
+      "Pesquisar marca ou modelo...",
+    );
+    expect(
+      await screen.findByText("Total: 2 Marcas / 1 Modelos"),
+    ).toBeInTheDocument();
+    await user.clear(search);
+    await user.type(search, "M2");
+    await waitFor(() => {
       expect(
-        await screen.findByText("Total: 2 Marcas / 1 Modelos"),
+        screen.getByText("Total: 1 Marcas / 1 Modelos"),
       ).toBeInTheDocument();
-      await user.clear(search);
-      await user.type(search, "M2");
-      await waitFor(() => {
-        expect(
-          screen.getByText("Total: 1 Marcas / 1 Modelos"),
-        ).toBeInTheDocument();
-      });
-      await user.clear(search);
-      await user.type(search, "nada-encaixa-zzz");
-      await waitFor(() => {
-        expect(
-          screen.getByText("Nenhuma marca encontrada"),
-        ).toBeInTheDocument();
-        expect(
-          screen.getByText("Total: 0 Marcas / 1 Modelos"),
-        ).toBeInTheDocument();
-      });
-      await user.clear(search);
-      await waitFor(() => {
-        expect(
-          screen.getByText("Total: 2 Marcas / 1 Modelos"),
-        ).toBeInTheDocument();
-      });
-    },
-    15_000,
-  );
+    });
+    await user.clear(search);
+    await user.type(search, "nada-encaixa-zzz");
+    await waitFor(() => {
+      expect(screen.getByText("Nenhuma marca encontrada")).toBeInTheDocument();
+      expect(
+        screen.getByText("Total: 0 Marcas / 1 Modelos"),
+      ).toBeInTheDocument();
+    });
+    await user.clear(search);
+    await waitFor(() => {
+      expect(
+        screen.getByText("Total: 2 Marcas / 1 Modelos"),
+      ).toBeInTheDocument();
+    });
+  }, 15_000);
 
   it("sem permissão: sem ações de criação, listagem ainda visível", async () => {
     mockHasPermission.mockReturnValue(false);
@@ -277,8 +273,7 @@ describe("EquipamentosConfigPage (integração)", () => {
     });
     const post = apiMock.mock.calls.find(
       (c) =>
-        c[0] === "/equipamentos/marcas" &&
-        (c[1] as ApiInit)?.method === "POST",
+        c[0] === "/equipamentos/marcas" && (c[1] as ApiInit)?.method === "POST",
     );
     expect(post).toBeUndefined();
   }, 15_000);
@@ -293,9 +288,7 @@ describe("EquipamentosConfigPage (integração)", () => {
     const m2 = await screen.findByText("M2", { exact: true });
     const bloco = m2.closest("div.border-b");
     await user.click(within(bloco!).getByRole("button"));
-    await user.click(
-      await screen.findByRole("menuitem", { name: /excluir/i }),
-    );
+    await user.click(await screen.findByRole("menuitem", { name: /excluir/i }));
     await waitFor(() => {
       expect(apiMock).toHaveBeenCalledWith(
         "/equipamentos/marcas/2",
@@ -317,9 +310,7 @@ describe("EquipamentosConfigPage (integração)", () => {
     const fmb = await screen.findByText("FMB");
     const rowModelo = fmb.closest("div.py-3.pl-10");
     await user.click(within(rowModelo!).getByRole("button"));
-    await user.click(
-      await screen.findByRole("menuitem", { name: /excluir/i }),
-    );
+    await user.click(await screen.findByRole("menuitem", { name: /excluir/i }));
     await waitFor(() => {
       expect(apiMock).toHaveBeenCalledWith(
         "/equipamentos/modelos/10",
@@ -342,15 +333,15 @@ describe("EquipamentosConfigPage (integração)", () => {
     const tr = vivo.closest("tr");
     expect(tr).toBeTruthy();
     await user.click(within(tr!).getByRole("button"));
-    await user.click(
-      await screen.findByRole("menuitem", { name: /excluir/i }),
-    );
+    await user.click(await screen.findByRole("menuitem", { name: /excluir/i }));
     await waitFor(() => {
       expect(apiMock).toHaveBeenCalledWith(
         "/equipamentos/operadoras/1",
         expect.objectContaining({ method: "DELETE" }),
       );
-      expect(toastSuccess).toHaveBeenCalledWith("Operadora deletada com sucesso");
+      expect(toastSuccess).toHaveBeenCalledWith(
+        "Operadora deletada com sucesso",
+      );
     });
   }, 15_000);
 
@@ -366,9 +357,7 @@ describe("EquipamentosConfigPage (integração)", () => {
     const mb = await screen.findByText("128 MB");
     const row = mb.closest("div.py-3.pl-10");
     await user.click(within(row!).getByRole("button"));
-    await user.click(
-      await screen.findByRole("menuitem", { name: /excluir/i }),
-    );
+    await user.click(await screen.findByRole("menuitem", { name: /excluir/i }));
     await waitFor(() => {
       expect(apiMock).toHaveBeenCalledWith(
         "/equipamentos/planos-simcard/1",
@@ -388,9 +377,7 @@ describe("EquipamentosConfigPage (integração)", () => {
     const g = await screen.findByText("G", { exact: true });
     const bloco = g.closest("div.border-b");
     await user.click(within(bloco!).getByRole("button"));
-    await user.click(
-      await screen.findByRole("menuitem", { name: /excluir/i }),
-    );
+    await user.click(await screen.findByRole("menuitem", { name: /excluir/i }));
     await waitFor(() => {
       expect(apiMock).toHaveBeenCalledWith(
         "/equipamentos/marcas-simcard/100",
@@ -405,7 +392,10 @@ describe("EquipamentosConfigPage (integração)", () => {
   it("DELETE de marca: erro da API vira toast.error com mensagem (sem sucesso)", async () => {
     const user = userEvent.setup();
     apiMock.mockImplementation((url, init) => {
-      if (url === "/equipamentos/marcas/2" && (init as ApiInit)?.method === "DELETE") {
+      if (
+        url === "/equipamentos/marcas/2" &&
+        (init as ApiInit)?.method === "DELETE"
+      ) {
         return Promise.reject(new Error("Servidor indisponível"));
       }
       return defaultApiHandler()(url, init);
@@ -418,9 +408,7 @@ describe("EquipamentosConfigPage (integração)", () => {
     const m2 = await screen.findByText("M2", { exact: true });
     const bloco = m2.closest("div.border-b");
     await user.click(within(bloco!).getByRole("button"));
-    await user.click(
-      await screen.findByRole("menuitem", { name: /excluir/i }),
-    );
+    await user.click(await screen.findByRole("menuitem", { name: /excluir/i }));
     await waitFor(() => {
       expect(toastError).toHaveBeenCalledWith("Servidor indisponível");
     });
@@ -435,8 +423,6 @@ describe("EquipamentosConfigPage (integração)", () => {
       </TestApp>,
     );
     expect(document.querySelector(".animate-spin")).toBeInTheDocument();
-    expect(
-      screen.queryByText("Marcas e Modelos de Rastreador"),
-    ).toBeNull();
+    expect(screen.queryByText("Marcas e Modelos de Rastreador")).toBeNull();
   });
 });

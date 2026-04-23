@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { PedidoRastreadorView } from "@/pages/pedidos/shared/pedidos-rastreador.types";
-import type { KitDetalhe, AparelhoNoKit, KitVinculado } from "@/pages/pedidos/shared/pedidos-config-types";
+import type {
+  KitDetalhe,
+  AparelhoNoKit,
+  KitVinculado,
+} from "@/pages/pedidos/shared/pedidos-config-types";
 import type { PedidoRastreadorApi } from "@/pages/pedidos/shared/pedidos-rastreador.types";
 import {
   buildAparelhosDisponiveisApiPath,
@@ -13,12 +17,17 @@ import {
   filterKitsDisponiveisParaSelecao,
   filterKitsPorTextoBusca,
 } from "@/pages/pedidos/modal-selecao-ekit/modal-selecao-ekit.utils";
-import { buildKitDetalhe, buildAparelhoNoKit } from "./modal-selecao-ekit.fixtures";
+import {
+  buildKitDetalhe,
+  buildAparelhoNoKit,
+} from "./modal-selecao-ekit.fixtures";
 
 describe("buildKitIdsEmOutrosPedidos", () => {
   it("retorna vazio sem pedidoId", () => {
     expect(
-      buildKitIdsEmOutrosPedidos(undefined, { 1: [{ id: 1, nome: "k", quantidade: 1 }] }),
+      buildKitIdsEmOutrosPedidos(undefined, {
+        1: [{ id: 1, nome: "k", quantidade: 1 }],
+      }),
     ).toEqual(new Set());
   });
 
@@ -39,7 +48,9 @@ describe("buildKitIdsEmOutrosPedidos", () => {
 
   it("pedido isolado não bloqueia nenhum id", () => {
     expect(
-      buildKitIdsEmOutrosPedidos(99, { 99: [{ id: 7, nome: "k", quantidade: 1 }] }),
+      buildKitIdsEmOutrosPedidos(99, {
+        99: [{ id: 7, nome: "k", quantidade: 1 }],
+      }),
     ).toEqual(new Set());
   });
 });
@@ -75,7 +86,9 @@ describe("filterKitsCompativeisComPedido", () => {
     const kits = [
       buildKitDetalhe({ id: 1, modelos: ["Other"], operadoras: ["Claro"] }),
     ];
-    expect(filterKitsCompativeisComPedido(kits, { ...pedidoBase })).toEqual(kits);
+    expect(filterKitsCompativeisComPedido(kits, { ...pedidoBase })).toEqual(
+      kits,
+    );
   });
 
   it("kit vazio (qtd 0) passa mesmo com requisitos", () => {
@@ -187,7 +200,9 @@ describe("filterKitsPorTextoBusca", () => {
   });
 
   it("filtra por nome case-insensitive", () => {
-    expect(filterKitsPorTextoBusca(kits, "alpha").map((k) => k.id)).toEqual([1]);
+    expect(filterKitsPorTextoBusca(kits, "alpha").map((k) => k.id)).toEqual([
+      1,
+    ]);
   });
 
   it("filtra por modelosOperadoras", () => {
@@ -201,9 +216,9 @@ describe("filterKitsPorTextoBusca", () => {
 
 describe("buildAparelhosDisponiveisApiPath", () => {
   it("sem filtros retorna path base", () => {
-    expect(
-      buildAparelhosDisponiveisApiPath(null, null, false, false),
-    ).toBe("/aparelhos/pareamento/aparelhos-disponiveis");
+    expect(buildAparelhosDisponiveisApiPath(null, null, false, false)).toBe(
+      "/aparelhos/pareamento/aparelhos-disponiveis",
+    );
   });
 
   it("não-MISTO com clienteId nos filtros inclui clienteId", () => {
@@ -219,12 +234,7 @@ describe("buildAparelhosDisponiveisApiPath", () => {
 
   it("showAllClientes ignora clienteId nos filtros", () => {
     expect(
-      buildAparelhosDisponiveisApiPath(
-        null,
-        { clienteId: 5 },
-        false,
-        true,
-      ),
+      buildAparelhosDisponiveisApiPath(null, { clienteId: 5 }, false, true),
     ).toBe("/aparelhos/pareamento/aparelhos-disponiveis");
   });
 

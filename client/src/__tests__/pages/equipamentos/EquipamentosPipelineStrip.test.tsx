@@ -22,14 +22,18 @@ describe("EquipamentosPipelineStrip", () => {
         onStageClick={onClick}
       />,
     );
-    expect(screen.getByTestId("equipamentos-pipeline-strip")).toBeInTheDocument();
-    expect(screen.getByTestId("equipamentos-pipeline-TODOS")).toHaveTextContent("10");
-    expect(screen.getByTestId("equipamentos-pipeline-CONFIGURADO")).toHaveTextContent(
-      "2",
+    expect(
+      screen.getByTestId("equipamentos-pipeline-strip"),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("equipamentos-pipeline-TODOS")).toHaveTextContent(
+      "10",
     );
-    expect(screen.getByTestId("equipamentos-pipeline-INSTALADO")).toHaveTextContent(
-      "3",
-    );
+    expect(
+      screen.getByTestId("equipamentos-pipeline-CONFIGURADO"),
+    ).toHaveTextContent("2");
+    expect(
+      screen.getByTestId("equipamentos-pipeline-INSTALADO"),
+    ).toHaveTextContent("3");
   });
 
   it("chama onStageClick com o filtro correto", async () => {

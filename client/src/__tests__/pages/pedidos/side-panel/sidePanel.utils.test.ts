@@ -8,7 +8,10 @@ import {
   getSidePanelDerivations,
 } from "@/pages/pedidos/side-panel/side-panel.utils";
 import type { KitVinculado } from "@/pages/pedidos/shared/pedidos-config-types";
-import type { PedidoRastreadorApi, PedidoRastreadorView } from "@/pages/pedidos/shared/pedidos-rastreador.types";
+import type {
+  PedidoRastreadorApi,
+  PedidoRastreadorView,
+} from "@/pages/pedidos/shared/pedidos-rastreador.types";
 
 function kitV(id: number, q: number): KitVinculado {
   return { id, nome: `K${id}`, quantidade: q };
@@ -76,7 +79,10 @@ describe("getSidePanelDerivations", () => {
   const k = [kitV(1, 3), kitV(2, 2)];
 
   it("pedido em_configuracao: progresso 5/5 permite próximo passo configurado", () => {
-    const pedido = buildPedidoView({ status: "em_configuracao", quantidade: 5 });
+    const pedido = buildPedidoView({
+      status: "em_configuracao",
+      quantidade: 5,
+    });
     const d = getSidePanelDerivations(pedido, k, "TRANSPORTADORA", true);
     expect(d.estaConcluido).toBe(false);
     expect(d.proximoStatus).toBe("configurado");
@@ -85,7 +91,10 @@ describe("getSidePanelDerivations", () => {
   });
 
   it("bloqueia avanço para configurado quando faltam rastreadores", () => {
-    const pedido = buildPedidoView({ status: "em_configuracao", quantidade: 10 });
+    const pedido = buildPedidoView({
+      status: "em_configuracao",
+      quantidade: 10,
+    });
     const d = getSidePanelDerivations(pedido, k, "TRANSPORTADORA", true);
     expect(d.proximoStatus).toBe("configurado");
     expect(d.bloqueiaAvançoParaConfigurado).toBe(true);

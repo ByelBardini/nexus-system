@@ -1,5 +1,5 @@
 import { render, waitFor } from "@testing-library/react";
-import { useForm, FormProvider } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { usePreencherVeiculoPorPlaca } from "@/pages/ordens-servico/criacao/hooks/usePreencherVeiculoPorPlaca";
@@ -45,7 +45,9 @@ describe("usePreencherVeiculoPorPlaca", () => {
       cor: "B",
       tipo: "AUTO",
     });
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     let f: ReturnType<typeof useForm<CriacaoOsFormData>> | null = null;
     render(
       <QueryClientProvider client={qc}>
@@ -72,13 +74,12 @@ describe("usePreencherVeiculoPorPlaca", () => {
 
   it("toast de placa não encontrada quando sucesso e dados nulos", async () => {
     api.mockResolvedValue(null);
-    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
     render(
       <QueryClientProvider client={qc}>
-        <PlacaEffectProbe
-          placa="ABC1D23"
-          onForm={() => {}}
-        />
+        <PlacaEffectProbe placa="ABC1D23" onForm={() => {}} />
       </QueryClientProvider>,
     );
     await waitFor(

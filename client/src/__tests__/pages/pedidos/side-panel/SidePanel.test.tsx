@@ -144,7 +144,10 @@ function pedidoApiCompleto(): PedidoRastreadorApi {
 }
 
 /** Corpo enviado no PATCH /status (id vai na URL, não no JSON). */
-function parseStatusPatchBody(call: unknown[]): { status: string; kitIds?: number[] } {
+function parseStatusPatchBody(call: unknown[]): {
+  status: string;
+  kitIds?: number[];
+} {
   const init = call[1] as { body?: string };
   return JSON.parse(init.body ?? "{}") as { status: string; kitIds?: number[] };
 }
@@ -168,12 +171,16 @@ function findKitsPatchCall(pedidoId: number) {
 /** Garante que o último PATCH de status bate com o payload de domínio (fonte única). */
 function expectStatusPatchMatchesPayload(
   pedidoId: number,
-  payload: ReturnType<typeof buildAvançarStatusPayload> | ReturnType<typeof buildRetrocederStatusPayload>,
+  payload:
+    | ReturnType<typeof buildAvançarStatusPayload>
+    | ReturnType<typeof buildRetrocederStatusPayload>,
 ) {
   const call = findStatusPatchCall(pedidoId);
   expect(call, "esperado PATCH /pedidos-rastreadores/:id/status").toBeDefined();
   const body = parseStatusPatchBody(call!);
-  const expected: { status: string; kitIds?: number[] } = { status: payload.status };
+  const expected: { status: string; kitIds?: number[] } = {
+    status: payload.status,
+  };
   if (payload.kitIds !== undefined) expected.kitIds = payload.kitIds;
   expect(body).toEqual(expected);
 }
@@ -476,7 +483,9 @@ describe("SidePanel", () => {
         { id: 99, nome: "Kit Novo", quantidade: 2 },
       ]);
       await waitFor(() => {
-        expect(JSON.parse((findKitsPatchCall(10)![1] as { body: string }).body)).toEqual({
+        expect(
+          JSON.parse((findKitsPatchCall(10)![1] as { body: string }).body),
+        ).toEqual({
           kitIds: [1, 2, 99],
         });
       });
@@ -525,20 +534,28 @@ describe("SidePanel", () => {
       });
       const tabela = screen.getByRole("table");
       const rowA = within(tabela).getByRole("row", { name: /A/i });
-      const expandA = within(rowA).getByTestId("icon-expand_more").closest("button");
+      const expandA = within(rowA)
+        .getByTestId("icon-expand_more")
+        .closest("button");
       await user.click(expandA!);
       await waitFor(() =>
-        expect(within(tabela).getByTestId("icon-expand_less")).toBeInTheDocument(),
+        expect(
+          within(tabela).getByTestId("icon-expand_less"),
+        ).toBeInTheDocument(),
       );
       const rows = within(tabela).getAllByRole("row");
       const rowB = rows.find((r) => r.textContent?.includes("B"));
       expect(rowB).toBeDefined();
-      const removerB = within(rowB!).getByRole("button", { name: /remover kit/i });
+      const removerB = within(rowB!).getByRole("button", {
+        name: /remover kit/i,
+      });
       await user.click(removerB);
       expect(onKitsChange).toHaveBeenLastCalledWith([
         { id: 1, nome: "A", quantidade: 3 },
       ]);
-      expect(within(tabela).getByTestId("icon-expand_less")).toBeInTheDocument();
+      expect(
+        within(tabela).getByTestId("icon-expand_less"),
+      ).toBeInTheDocument();
     });
 
     it("remover kit expandido fecha detalhe e não deixa expand_less no DOM", async () => {
@@ -550,7 +567,9 @@ describe("SidePanel", () => {
         return {};
       });
       renderPainel();
-      await user.click(screen.getByTestId("icon-expand_more").closest("button")!);
+      await user.click(
+        screen.getByTestId("icon-expand_more").closest("button")!,
+      );
       await waitFor(() =>
         expect(screen.getByTestId("icon-expand_less")).toBeInTheDocument(),
       );
@@ -567,11 +586,15 @@ describe("SidePanel", () => {
         return {};
       });
       renderPainel();
-      await user.click(screen.getByTestId("icon-expand_more").closest("button")!);
+      await user.click(
+        screen.getByTestId("icon-expand_more").closest("button")!,
+      );
       await waitFor(() =>
         expect(screen.getByTestId("icon-expand_less")).toBeInTheDocument(),
       );
-      await user.click(screen.getByTestId("icon-expand_less").closest("button")!);
+      await user.click(
+        screen.getByTestId("icon-expand_less").closest("button")!,
+      );
       expect(screen.queryByTestId("icon-expand_less")).toBeNull();
     });
   });
@@ -586,7 +609,9 @@ describe("SidePanel", () => {
         return {};
       });
       renderPainel();
-      await user.click(screen.getByTestId("icon-expand_more").closest("button")!);
+      await user.click(
+        screen.getByTestId("icon-expand_more").closest("button")!,
+      );
       await waitFor(() => screen.getByRole("button", { name: /^editar$/i }));
       await user.click(screen.getByRole("button", { name: /^editar$/i }));
       expect(screen.getByTestId("kit-editando-id")).toHaveTextContent("1");
@@ -603,7 +628,9 @@ describe("SidePanel", () => {
         return {};
       });
       renderPainel();
-      await user.click(screen.getByTestId("icon-expand_more").closest("button")!);
+      await user.click(
+        screen.getByTestId("icon-expand_more").closest("button")!,
+      );
       await waitFor(() => screen.getByRole("button", { name: /^editar$/i }));
       await user.click(screen.getByRole("button", { name: /^editar$/i }));
       expect(screen.getByTestId("kit-editando-id")).toHaveTextContent("1");

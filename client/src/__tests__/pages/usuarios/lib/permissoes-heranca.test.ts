@@ -84,10 +84,7 @@ describe("calcularPermissoesHerdadas", () => {
   });
 
   it("múltiplas permissões EXCLUIR de módulos distintos geram várias entradas", () => {
-    const c = cargo(1, [
-      "X.A.EXCLUIR",
-      "Y.B.EXCLUIR",
-    ]);
+    const c = cargo(1, ["X.A.EXCLUIR", "Y.B.EXCLUIR"]);
     const r = calcularPermissoesHerdadas([1], [c]);
     expect(r.acoesAltoRisco).toHaveLength(2);
   });

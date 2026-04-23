@@ -7,10 +7,7 @@ import {
 } from "@/pages/tecnicos/lib/tecnicos-table.utils";
 import type { Tecnico } from "@/pages/tecnicos/lib/tecnicos.types";
 
-function t(
-  id: number,
-  overrides: Partial<Tecnico> = {},
-): Tecnico {
+function t(id: number, overrides: Partial<Tecnico> = {}): Tecnico {
   return {
     id,
     nome: `T${id}`,
@@ -79,14 +76,11 @@ describe("filterTecnicos", () => {
   });
 
   it("edge: técnico sem estado só casa com todos ou string vazia", () => {
-    const r = filterTecnicos(
-      [t(9, { estado: null })],
-      {
-        busca: "",
-        filtroEstado: "SP",
-        filtroStatus: "todos",
-      },
-    );
+    const r = filterTecnicos([t(9, { estado: null })], {
+      busca: "",
+      filtroEstado: "SP",
+      filtroStatus: "todos",
+    });
     expect(r).toHaveLength(0);
   });
 

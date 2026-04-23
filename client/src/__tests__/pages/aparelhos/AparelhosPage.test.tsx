@@ -69,9 +69,7 @@ function renderPage() {
   function Wrapper({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter>
-          {children}
-        </MemoryRouter>
+        <MemoryRouter>{children}</MemoryRouter>
       </QueryClientProvider>
     );
   }
@@ -118,7 +116,9 @@ describe("AparelhosPage (fluxo integrado)", () => {
     renderPage();
 
     await waitFor(() =>
-      expect(screen.getByTestId("aparelhos-status-pipeline")).toBeInTheDocument(),
+      expect(
+        screen.getByTestId("aparelhos-status-pipeline"),
+      ).toBeInTheDocument(),
     );
 
     expect(screen.getByTestId("aparelhos-toolbar")).toBeInTheDocument();
@@ -289,7 +289,9 @@ describe("AparelhosPage (fluxo integrado)", () => {
       screen.getByTestId("aparelhos-filter-marca"),
     ).getByLabelText("searchable-select");
     await user.selectOptions(marca, "Vivo");
-    await waitFor(() => expect(screen.queryByTestId("aparelho-row-1")).toBeNull());
+    await waitFor(() =>
+      expect(screen.queryByTestId("aparelho-row-1")).toBeNull(),
+    );
     await user.selectOptions(marca, "TODOS");
     await waitFor(() => {
       expect(screen.getByTestId("aparelho-row-1")).toBeInTheDocument();
@@ -306,9 +308,7 @@ describe("AparelhosPage (fluxo integrado)", () => {
       return Promise.resolve([]);
     });
     renderPage();
-    expect(
-      await screen.findByTestId("aparelhos-empty"),
-    ).toBeInTheDocument();
+    expect(await screen.findByTestId("aparelhos-empty")).toBeInTheDocument();
   });
 
   it("enquanto /aparelhos aguarda, exibe carregando; depois renderiza a tabela", async () => {
@@ -361,10 +361,9 @@ describe("AparelhosPage (fluxo integrado)", () => {
       await screen.findByText("N-001", { exact: true }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByText(
-        `N-${String(PAGE_SIZE + 1).padStart(3, "0")}`,
-        { exact: true },
-      ),
+      screen.queryByText(`N-${String(PAGE_SIZE + 1).padStart(3, "0")}`, {
+        exact: true,
+      }),
     ).not.toBeInTheDocument();
     const next = screen.getByTestId("aparelhos-page-next");
     expect(next).toBeInTheDocument();
