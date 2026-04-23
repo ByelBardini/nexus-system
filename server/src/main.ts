@@ -1,7 +1,9 @@
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
+import { corsAllowedOriginsFromEnv } from './cors-origins';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -14,8 +16,11 @@ async function bootstrap() {
   );
   app.useLogger(app.get(Logger));
 
+  const configService = app.get(ConfigService);
   app.enableCors({
-    origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+    origin: corsAllowedOriginsFromEnv(
+      configService.get<string>('CORS_ORIGINS'),
+    ),
     credentials: true,
   });
 
