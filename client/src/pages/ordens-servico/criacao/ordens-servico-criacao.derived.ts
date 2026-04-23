@@ -1,4 +1,10 @@
 import { telefoneApenasDigitos } from "@/lib/format";
+import type {
+  CriacaoOsDerivedFlags,
+  CriacaoOsWatched,
+} from "@/types/ordens-servico-criacao";
+
+export type { CriacaoOsDerivedFlags, CriacaoOsWatched };
 
 export const criacaoOsWatchFieldList = [
   "subclienteTelefone",
@@ -17,24 +23,6 @@ export const criacaoOsWatchFieldList = [
   "veiculoModelo",
   "tipo",
 ] as const;
-
-export type CriacaoOsWatched = {
-  subclienteTelefone: string | undefined;
-  subclienteNome: string | undefined;
-  subclienteCep: string | undefined;
-  subclienteLogradouro: string | undefined;
-  subclienteNumero: string | undefined;
-  subclienteBairro: string | undefined;
-  subclienteEstado: string | undefined;
-  subclienteCidade: string | undefined;
-  ordemInstalacao: "INFINITY" | "CLIENTE";
-  clienteOrdemId: number | undefined;
-  tecnicoId: number | undefined;
-  veiculoPlaca: string | undefined;
-  veiculoMarca: string | undefined;
-  veiculoModelo: string | undefined;
-  tipo: string | undefined;
-};
 
 export function mapCriacaoOsWatchFields(
   fields: (string | number | boolean | undefined)[] | undefined,
@@ -58,14 +46,6 @@ export function mapCriacaoOsWatchFields(
     tipo: f[14] as string | undefined,
   };
 }
-
-export type CriacaoOsDerivedFlags = {
-  temCliente: boolean;
-  temTecnico: boolean;
-  temVeiculo: boolean;
-  temTipo: boolean;
-  isFormValid: boolean;
-};
 
 export function computeCriacaoOsDerivedFlags(
   watched: CriacaoOsWatched,

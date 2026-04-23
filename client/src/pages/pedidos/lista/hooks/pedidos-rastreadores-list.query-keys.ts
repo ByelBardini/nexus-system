@@ -3,7 +3,9 @@
  * tela de config adiciona o segmento `"config"` para cache separado.
  * Invalidar com `queryKey: ["pedidos-rastreadores"]` cobre ambos.
  */
-export type PedidosRastreadoresListScope = "lista" | "config";
+import type { PedidosRastreadoresListScope } from "@/types/pedidos-rastreador";
+
+export type { PedidosRastreadoresListScope } from "@/types/pedidos-rastreador";
 
 export function pedidosRastreadoresListQueryKey(
   scope: PedidosRastreadoresListScope,

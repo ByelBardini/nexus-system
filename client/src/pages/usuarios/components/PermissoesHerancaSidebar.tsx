@@ -4,7 +4,7 @@ import {
   getModuloLabel,
   getAcaoLabel,
 } from "../lib/permissoes-heranca";
-import type { PermissoesPorModulo } from "../lib/types";
+import type { PermissoesPorModulo } from "@/types/usuarios";
 
 export function PermissoesHerancaSidebar({
   setoresHabilitados,

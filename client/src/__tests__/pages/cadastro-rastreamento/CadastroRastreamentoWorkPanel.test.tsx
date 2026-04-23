@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { CadastroRastreamentoWorkPanel } from "@/pages/cadastro-rastreamento/components/CadastroRastreamentoWorkPanel";
-import type { OrdemCadastro } from "@/lib/cadastro-rastreamento.types";
+import type { OrdemCadastro } from "@/types/cadastro-rastreamento";
 import { mapCadastroRastreamentoOS } from "@/lib/cadastro-rastreamento-mapper";
 import { osRespostaBase } from "./cadastro-rastreamento.fixtures";
 import { getAuxilioCopiaItens } from "@/lib/cadastro-rastreamento-copy";

@@ -6,7 +6,7 @@ import {
   formatLastLogin,
   computeAccessScore,
 } from "@/pages/usuarios/lib/usuarios-format";
-import type { CargoWithPermissions, UsuarioListItem } from "@/pages/usuarios/lib/types";
+import type { CargoWithPermissions, UsuarioListItem } from "@/types/usuarios";
 
 describe("getInitials", () => {
   it("duas partes: primeira e última letra", () => {

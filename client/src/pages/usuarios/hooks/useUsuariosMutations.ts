@@ -1,12 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+import type { UsuariosMutationsOptions } from "@/types/usuarios";
 import type { FormCreate, FormEdit } from "../lib/schemas";
 
-export interface UsuariosMutationsOptions {
-  onCreateSettled?: () => void;
-  onUpdateSettled?: () => void;
-}
+export type { UsuariosMutationsOptions };
 
 export function useUsuariosMutations(options: UsuariosMutationsOptions = {}) {
   const { onCreateSettled, onUpdateSettled } = options;

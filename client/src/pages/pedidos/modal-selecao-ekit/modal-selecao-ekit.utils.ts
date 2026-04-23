@@ -9,7 +9,10 @@ import {
   collectMarcasModelosLabelsFromAparelhos,
   collectOperadorasLabelsFromAparelhos,
 } from "../shared/aparelho-no-kit-aggregates";
+import type { FiltroListaAparelhosParams } from "@/types/modal-selecao-ekit";
 import type { ModalSelecaoEKitFiltrosPedido } from "./modal-selecao-ekit.types";
+
+export type { FiltroListaAparelhosParams };
 
 export function buildKitIdsEmOutrosPedidos(
   pedidoId: number | undefined,
@@ -162,13 +165,6 @@ export function buildOpcoesCliente(
     if (c) set.add(c);
   });
   return Array.from(set).sort();
-}
-
-export interface FiltroListaAparelhosParams {
-  buscaAparelho: string;
-  filtroMarcaModelo: string;
-  filtroOperadora: string;
-  filtroCliente: string;
 }
 
 export function filterAparelhosParaSelecao(

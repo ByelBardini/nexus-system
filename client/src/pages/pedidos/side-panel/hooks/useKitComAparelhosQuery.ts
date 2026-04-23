@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { KitComAparelhos } from "../shared/pedidos-config-types";
+import type { KitComAparelhos } from "@/types/pedidos-config";
 import {
   fetchKitComAparelhos,
   kitComAparelhosQueryKey,

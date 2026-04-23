@@ -1,25 +1,15 @@
-export interface DebitoRastreadorApi {
-  id: number;
-  devedorTipo: "INFINITY" | "CLIENTE";
-  devedorClienteId: number | null;
-  devedorCliente: { id: number; nome: string } | null;
-  credorTipo: "INFINITY" | "CLIENTE";
-  credorClienteId: number | null;
-  credorCliente: { id: number; nome: string } | null;
-  marcaId: number;
-  marca: { id: number; nome: string };
-  modeloId: number;
-  modelo: { id: number; nome: string };
-  quantidade: number;
-}
+import type {
+  DebitoRastreadorApi,
+  ProprietarioDebitoFilter,
+} from "@/types/aparelhos-debito-rastreador";
+
+export type { DebitoRastreadorApi, ProprietarioDebitoFilter } from "@/types/aparelhos-debito-rastreador";
 
 export function formatDebitoLabel(d: DebitoRastreadorApi): string {
   const devedor = d.devedorCliente?.nome ?? "Infinity";
   const credor = d.credorCliente?.nome ?? "Infinity";
   return `${devedor} deve ${d.quantidade}x ${d.marca.nome} ${d.modelo.nome} → ${credor}`;
 }
-
-export type ProprietarioDebitoFilter = "INFINITY" | "CLIENTE";
 
 /**
  * Filtra débitos abertos pelo devedor e, opcionalmente, por par marca/modelo.

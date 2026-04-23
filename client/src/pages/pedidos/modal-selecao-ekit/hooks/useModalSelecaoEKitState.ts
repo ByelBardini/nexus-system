@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import type { KitComAparelhos } from "../shared/pedidos-config-types";
-import type { ModalSelecaoEKitProps } from "../modal-selecao-ekit.types";
+import type { ModalSelecaoEKitProps } from "@/types/modal-selecao-ekit";
+import type { KitComAparelhos } from "@/types/pedidos-config";
 
 export function useModalSelecaoEKitState(
   open: boolean,

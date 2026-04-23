@@ -1,4 +1,4 @@
-import type { CargoWithPermissions } from "./types";
+import type { CargoWithPermissions } from "@/types/usuarios";
 
 export function groupCargosBySetorNome(
   cargos: CargoWithPermissions[],

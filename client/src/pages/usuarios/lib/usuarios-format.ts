@@ -1,5 +1,10 @@
-import { SETORES_USUARIO, type SetorUsuario } from "./constants";
-import type { CargoWithPermissions, UsuarioListItem } from "./types";
+import {
+  SETORES_USUARIO,
+  type CargoWithPermissions,
+  type SetorUsuario,
+  type UsuarioAccessLevel,
+  type UsuarioListItem,
+} from "@/types/usuarios";
 
 export function getSetorLabel(setor?: SetorUsuario | null): string {
   if (!setor) return "";
@@ -18,7 +23,7 @@ export function getInitials(nome: string): string {
 export function getAccessLevel(
   user: UsuarioListItem,
   totalPermissions: number,
-): { percent: number; label: string; color: string; barColor: string } {
+): UsuarioAccessLevel {
   if (
     !user.usuarioCargos ||
     user.usuarioCargos.length === 0 ||

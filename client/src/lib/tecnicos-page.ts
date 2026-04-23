@@ -1,4 +1,6 @@
-export type MapState = "collapsed" | "expanded" | "fullscreen";
+import type { MapState } from "@/types/tecnicos";
+
+export type { MapState } from "@/types/tecnicos";
 
 export function nextMapState(s: MapState): MapState {
   if (s === "collapsed") return "expanded";

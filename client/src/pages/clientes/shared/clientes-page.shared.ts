@@ -1,14 +1,32 @@
 import { z } from "zod";
 import { formatarCEP } from "@/lib/format";
+import type {
+  Cliente,
+  ClienteEnderecoExibicao,
+  ClientesFooterStats,
+  StatusCliente,
+  TipoContrato,
+} from "@/types/clientes";
+
+export type {
+  Cliente,
+  ClienteContato,
+  ClienteEnderecoExibicao,
+  ClientesFooterStats,
+  StatusCliente,
+  TipoContrato,
+} from "@/types/clientes";
 
 /** Tamanho da página na listagem de clientes. */
 export const CLIENTES_PAGE_SIZE = 10;
 
-export const TIPO_CONTRATO_VALUES = ["COMODATO", "AQUISICAO"] as const;
-export type TipoContrato = (typeof TIPO_CONTRATO_VALUES)[number];
+export const TIPO_CONTRATO_VALUES = ["COMODATO", "AQUISICAO"] as const satisfies readonly TipoContrato[];
 
-export const STATUS_CLIENTE_VALUES = ["ATIVO", "PENDENTE", "INATIVO"] as const;
-export type StatusCliente = (typeof STATUS_CLIENTE_VALUES)[number];
+export const STATUS_CLIENTE_VALUES = [
+  "ATIVO",
+  "PENDENTE",
+  "INATIVO",
+] as const satisfies readonly StatusCliente[];
 
 export const TIPO_CONTRATO_LABEL: Record<TipoContrato, string> = {
   COMODATO: "Comodato",
@@ -94,40 +112,6 @@ export const clienteFormSchema = z.object({
 });
 
 export type ClienteFormData = z.infer<typeof clienteFormSchema>;
-
-export interface ClienteContato {
-  id: number;
-  nome: string;
-  celular: string | null;
-  email: string | null;
-}
-
-export interface Cliente {
-  id: number;
-  nome: string;
-  nomeFantasia: string | null;
-  cnpj: string | null;
-  tipoContrato: TipoContrato;
-  estoqueProprio: boolean;
-  status: StatusCliente;
-  cor?: string | null;
-  cep?: string | null;
-  logradouro?: string | null;
-  numero?: string | null;
-  complemento?: string | null;
-  bairro?: string | null;
-  cidade?: string | null;
-  estado?: string | null;
-  contatos: ClienteContato[];
-  _count?: { ordensServico: number };
-}
-
-/** Estatísticas do rodapé alinhadas aos filtros da tabela (não só “ativos globais”). */
-export type ClientesFooterStats = {
-  exibindo: number;
-  totalCadastro: number;
-  ativosNaSelecao: number;
-};
 
 export function getClientesFooterStats(
   todos: Cliente[],
@@ -247,18 +231,6 @@ export function buildClienteApiBody(
     ),
   }) as ClienteUpdateApiBody;
 }
-
-/** Campos de endereço usados na listagem expandida (texto único). */
-export type ClienteEnderecoExibicao = Pick<
-  Cliente,
-  | "logradouro"
-  | "numero"
-  | "complemento"
-  | "bairro"
-  | "cidade"
-  | "estado"
-  | "cep"
->;
 
 /** Formata endereço como na linha expandida da tabela (inclui CEP). */
 export function formatClienteEnderecoLinhaLista(

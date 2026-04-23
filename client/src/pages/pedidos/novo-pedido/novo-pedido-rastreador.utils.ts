@@ -1,18 +1,12 @@
-import type { ClienteResumo, SubclienteResumo, TecnicoResumo } from "../shared/pedidos-rastreador.types";
+import type { ClienteComSubclientes, OpcaoDestinoCliente } from "@/types/pedidos-novo-destino";
+import type {
+  ClienteResumo,
+  SubclienteResumo,
+  TecnicoResumo,
+} from "../shared/pedidos-rastreador.types";
 import type { FormNovoPedido } from "./novo-pedido-rastreador.schema";
 
-export type ClienteComSubclientes = ClienteResumo & {
-  subclientes?: SubclienteResumo[];
-};
-
-export type OpcaoDestinoCliente = {
-  tipo: "cliente" | "subcliente";
-  id: number;
-  label: string;
-  item:
-    | ClienteComSubclientes
-    | (SubclienteResumo & { cliente?: ClienteResumo });
-};
+export type { ClienteComSubclientes, OpcaoDestinoCliente };
 
 /** Converte o valor do select (ex.: "cliente-1", "subcliente-2") em ids. */
 export function parseDestinoClienteString(destinoCliente: string | undefined):

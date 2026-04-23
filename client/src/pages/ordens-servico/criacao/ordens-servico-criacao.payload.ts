@@ -1,6 +1,9 @@
 import { placaApenasAlfanumericos, telefoneApenasDigitos } from "@/lib/format";
+import type { PrecheckCriacaoOsResult } from "@/types/ordens-servico-criacao";
 import type { CriarOrdemServicoPayload, SubclienteEnderecoInput } from "./ordens-servico-criacao.types";
 import type { CriacaoOsFormData } from "./ordens-servico-criacao.schema";
+
+export type { PrecheckCriacaoOsResult };
 
 export function isDadosSubclienteCompletos(data: CriacaoOsFormData): boolean {
   return !!(
@@ -69,10 +72,6 @@ export function buildSubclienteUpdate(
   }
   return buildSubclienteEndereco(data);
 }
-
-export type PrecheckCriacaoOsResult =
-  | { ok: true; clienteIdFinal: number }
-  | { ok: false; errorMessage: string };
 
 export function precheckCriacaoOs(
   data: CriacaoOsFormData,

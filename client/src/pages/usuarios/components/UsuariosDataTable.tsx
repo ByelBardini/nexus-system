@@ -8,7 +8,7 @@ import {
   getInitials,
   formatLastLogin,
 } from "../lib/usuarios-format";
-import type { UsuarioListItem } from "../lib/types";
+import type { UsuarioListItem } from "@/types/usuarios";
 import { UsuarioExpandedPanel } from "./UsuarioExpandedPanel";
 
 export function UsuariosDataTable({

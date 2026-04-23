@@ -4,7 +4,7 @@ import {
   getModuloLabel,
   getAcaoLabel,
 } from "@/pages/usuarios/lib/permissoes-heranca";
-import type { CargoWithPermissions } from "@/pages/usuarios/lib/types";
+import type { CargoWithPermissions } from "@/types/usuarios";
 
 function cargo(
   id: number,

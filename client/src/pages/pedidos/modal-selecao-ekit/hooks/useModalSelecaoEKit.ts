@@ -2,13 +2,9 @@ import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-import type { AparelhosDestinatariosResponse } from "../shared/pedidos-rastreador.types";
-import type {
-  KitResumo,
-  AparelhoNoKit,
-  KitDetalhe,
-} from "../shared/pedidos-config-types";
-import type { ModalSelecaoEKitProps } from "../modal-selecao-ekit.types";
+import type { ModalSelecaoEKitProps } from "@/types/modal-selecao-ekit";
+import type { KitResumo, AparelhoNoKit, KitDetalhe } from "@/types/pedidos-config";
+import type { AparelhosDestinatariosResponse } from "@/types/pedidos-rastreador";
 import {
   KITS_DETALHES_QUERY_KEY,
   fetchKitsDetalhes,

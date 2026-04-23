@@ -3,15 +3,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { tecnicosResumoQueryKey } from "@/hooks/useTecnicosResumoQuery";
+import type { TecnicoMutationsCallbacks } from "@/types/tecnicos";
 import {
   buildTecnicoApiBody,
   type TecnicoFormData,
 } from "../lib/tecnico-form";
 
-export type TecnicoMutationsCallbacks = {
-  onCreateSuccess?: () => void;
-  onUpdateSuccess?: () => void;
-};
+export type { TecnicoMutationsCallbacks };
 
 export function useTecnicosMutations(options?: TecnicoMutationsCallbacks) {
   const queryClient = useQueryClient();

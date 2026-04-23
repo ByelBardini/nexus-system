@@ -15,20 +15,16 @@ import {
   CLIENTES_LISTA_QUERY_KEY,
   CLIENTES_QUERY_KEY,
 } from "../hooks/useClientesPageList";
+import type { UseClienteModalOptions } from "@/types/clientes";
 import {
   buildClienteApiBody,
   clienteFormSchema,
   clienteToFormValues,
   getDefaultClienteFormValues,
-  type Cliente,
   type ClienteFormData,
 } from "../shared/clientes-page.shared";
 
-export type UseClienteModalOptions = {
-  open: boolean;
-  editingCliente: Cliente | null;
-  onClose: () => void;
-};
+export type { UseClienteModalOptions };
 
 export function useClienteModal({
   open,

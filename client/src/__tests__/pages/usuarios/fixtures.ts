@@ -1,9 +1,9 @@
-import type { SetorUsuario } from "@/pages/usuarios/lib/constants";
+import type { SetorUsuario } from "@/types/usuarios";
 import type {
   CargoWithPermissions,
   UsuarioListItem,
   PaginatedUsuariosResponse,
-} from "@/pages/usuarios/lib/types";
+} from "@/types/usuarios";
 
 export function usuarioListItemFixture(
   override: Partial<UsuarioListItem> = {},

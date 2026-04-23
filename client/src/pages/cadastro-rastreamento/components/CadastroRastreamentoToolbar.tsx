@@ -10,7 +10,7 @@ import {
   CADASTRO_RAST_STATUS_TABS,
   SELECT_CADASTRO_RAST_TODOS,
 } from "@/lib/cadastro-rastreamento-ui";
-import type { StatusCadastro } from "@/lib/cadastro-rastreamento.types";
+import type { StatusCadastro } from "@/types/cadastro-rastreamento";
 import { cn } from "@/lib/utils";
 
 export function CadastroRastreamentoToolbar({

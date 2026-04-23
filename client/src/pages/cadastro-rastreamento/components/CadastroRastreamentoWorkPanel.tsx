@@ -15,7 +15,7 @@ import {
   PLATAFORMA_RAST_LABEL,
 } from "@/lib/cadastro-rastreamento-ui";
 import { cadastroRastreamentoAcaoLabels } from "@/lib/cadastro-rastreamento-tipo-mappers";
-import type { OrdemCadastro, Plataforma } from "@/lib/cadastro-rastreamento.types";
+import type { OrdemCadastro, Plataforma } from "@/types/cadastro-rastreamento";
 import { cn } from "@/lib/utils";
 import { PanelBlock, PanelRow } from "./CadastroRastreamentoPanelPrimitives";
 

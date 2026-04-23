@@ -13,7 +13,7 @@ import { EditarUsuarioDialog } from "./components/EditarUsuarioDialog";
 import { UsuariosDataTable } from "./components/UsuariosDataTable";
 import { UsuariosPageHeader } from "./components/UsuariosPageHeader";
 import { UsuariosTableFooter } from "./components/UsuariosTableFooter";
-import type { UsuarioListItem } from "./lib/types";
+import type { UsuarioListItem } from "@/types/usuarios";
 
 export function UsuariosPage() {
   const { hasPermission, user: currentUser } = useAuth();

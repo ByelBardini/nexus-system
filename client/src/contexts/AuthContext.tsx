@@ -7,24 +7,9 @@ import {
   type ReactNode,
 } from "react";
 import { api, setOnUnauthorized } from "@/lib/api";
+import type { AuthLoginApiResponse, AuthState, LoginResponse } from "@/types/auth";
 
-export interface User {
-  id: number;
-  nome: string;
-  email: string;
-}
-
-export interface AuthState {
-  user: User | null;
-  permissions: string[];
-  accessToken: string | null;
-  isLoading: boolean;
-  isAuthenticated: boolean;
-}
-
-export interface LoginResponse {
-  exigeTrocaSenha?: boolean;
-}
+export type { AuthState, LoginResponse, User } from "@/types/auth";
 
 interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<LoginResponse>;
@@ -103,12 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string): Promise<LoginResponse> => {
-      const res = await api<{
-        accessToken: string;
-        user: User;
-        permissions: string[];
-        exigeTrocaSenha?: boolean;
-      }>("/auth/login", {
+      const res = await api<AuthLoginApiResponse>("/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });

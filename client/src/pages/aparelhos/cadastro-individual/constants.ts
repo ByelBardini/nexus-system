@@ -1,15 +1,12 @@
-export type StatusAparelho = "NOVO_OK" | "EM_MANUTENCAO" | "CANCELADO_DEFEITO";
-export type OrigemItem =
-  | "RETIRADA_CLIENTE"
-  | "DEVOLUCAO_TECNICO"
-  | "COMPRA_AVULSA";
-export type CategoriaFalha =
-  | "FALHA_COMUNICACAO"
-  | "PROBLEMA_ALIMENTACAO"
-  | "DANO_FISICO"
-  | "CURTO_CIRCUITO"
-  | "OUTRO";
-export type DestinoDefeito = "SUCATA" | "GARANTIA" | "LABORATORIO";
+import type {
+  CategoriaFalha,
+  DestinoDefeito,
+  OrigemItem,
+  StatusAparelhoCadastroIndividual,
+} from "@/types/aparelhos-cadastro-individual";
+
+export type { CategoriaFalha, DestinoDefeito, OrigemItem } from "@/types/aparelhos-cadastro-individual";
+export type StatusAparelho = StatusAparelhoCadastroIndividual;
 
 export const ORIGENS: { value: OrigemItem; label: string }[] = [
   { value: "RETIRADA_CLIENTE", label: "Retirada de Cliente" },

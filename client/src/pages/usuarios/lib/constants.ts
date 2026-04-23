@@ -1,7 +1,1 @@
-export const SETORES_USUARIO = [
-  { value: "AGENDAMENTO", label: "Agendamento" },
-  { value: "CONFIGURACAO", label: "Configuração" },
-  { value: "ADMINISTRATIVO", label: "Administrativo" },
-] as const;
-
-export type SetorUsuario = (typeof SETORES_USUARIO)[number]["value"];
+export { SETORES_USUARIO, type SetorUsuario } from "@/types/usuarios";

@@ -2,7 +2,7 @@ import { MaterialIcon } from "@/components/MaterialIcon";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { categoriaCargoParaBadge } from "@/types/cargo";
-import type { CargoWithPermissions } from "../lib/types";
+import type { CargoWithPermissions } from "@/types/usuarios";
 
 export function CargosAtribuicaoBlock({
   selectedRoleIds,

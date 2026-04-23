@@ -1,5 +1,5 @@
 import type { CadastroRastreamentoTipoRegistro } from "@/lib/cadastro-rastreamento-tipo-mappers";
-import type { OrdemCadastro, Plataforma, StatusCadastro } from "@/lib/cadastro-rastreamento.types";
+import type { OrdemCadastro, Plataforma, StatusCadastro } from "@/types/cadastro-rastreamento";
 
 export const CADASTRO_RAST_STATUS_CONFIG: Record<
   StatusCadastro,

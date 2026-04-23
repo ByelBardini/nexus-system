@@ -3,7 +3,7 @@ import {
   buildTextoCopiarTodosCadastroRast,
   getAuxilioCopiaItens,
 } from "@/lib/cadastro-rastreamento-copy";
-import type { OrdemCadastro } from "@/lib/cadastro-rastreamento.types";
+import type { OrdemCadastro } from "@/types/cadastro-rastreamento";
 import { ordemMinima } from "@/__tests__/pages/cadastro-rastreamento/cadastro-rastreamento.fixtures";
 
 function o(over: Partial<OrdemCadastro>): OrdemCadastro {

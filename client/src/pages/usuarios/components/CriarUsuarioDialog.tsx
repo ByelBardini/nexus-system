@@ -6,7 +6,7 @@ import { MaterialIcon } from "@/components/MaterialIcon";
 import { calcularPermissoesHerdadas } from "../lib/permissoes-heranca";
 import { computeAccessScore } from "../lib/usuarios-format";
 import type { FormCreate } from "../lib/schemas";
-import type { CargoWithPermissions, Permission } from "../lib/types";
+import type { CargoWithPermissions, Permission } from "@/types/usuarios";
 import { CargosAtribuicaoBlock } from "./CargosAtribuicaoBlock";
 import { PermissoesHerancaSidebar } from "./PermissoesHerancaSidebar";
 import { UsuarioDadosForm } from "./UsuarioDadosForm";

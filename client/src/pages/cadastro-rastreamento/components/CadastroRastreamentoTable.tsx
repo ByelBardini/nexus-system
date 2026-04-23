@@ -10,7 +10,7 @@ import {
   CADASTRO_RAST_STATUS_CONFIG,
   badgeServicoColunaCadastroRast,
 } from "@/lib/cadastro-rastreamento-ui";
-import type { OrdemCadastro } from "@/lib/cadastro-rastreamento.types";
+import type { OrdemCadastro } from "@/types/cadastro-rastreamento";
 import { cn } from "@/lib/utils";
 import { getColunaEquipamentoSaida } from "../lib/table-helpers";
 

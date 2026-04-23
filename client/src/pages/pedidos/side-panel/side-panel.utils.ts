@@ -11,12 +11,12 @@ import type {
   StatusPedidoRastreador,
 } from "../shared/pedidos-rastreador.types";
 import { STATUS_ORDER, STATUS_TO_API } from "../shared/pedidos-rastreador.types";
+import type {
+  ResumoAparelhosDoKit,
+  SidePanelDerivations,
+} from "@/types/pedidos-side-panel";
 
-export type ResumoAparelhosDoKit = {
-  marcasModelos: string[];
-  operadoras: string[];
-  empresas: string[];
-};
+export type { ResumoAparelhosDoKit, SidePanelDerivations };
 
 /** Agrega listas exibidas no painel a partir dos aparelhos de um kit. */
 export function aggregateResumoAparelhosDoKit(
@@ -28,21 +28,6 @@ export function aggregateResumoAparelhosDoKit(
   const empresas = collectDestinatariosEmpresasAparelhos(list);
   return { marcasModelos, operadoras, empresas };
 }
-
-export type SidePanelDerivations = {
-  estaConcluido: boolean;
-  statusIdx: number;
-  podeRetroceder: boolean;
-  statusAnterior: StatusPedidoKey | null;
-  proximoStatus: StatusPedidoKey | null;
-  progress: number;
-  total: number;
-  progressPct: number;
-  podeDespachar: boolean;
-  bloqueiaAvançoParaConfigurado: boolean;
-  podeAvançar: boolean;
-  mostraConcluir: boolean;
-};
 
 export function getSidePanelDerivations(
   pedido: PedidoRastreadorView,

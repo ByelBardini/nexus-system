@@ -1,4 +1,4 @@
-import type { OrdemCadastro } from "@/lib/cadastro-rastreamento.types";
+import type { OrdemCadastro } from "@/types/cadastro-rastreamento";
 
 export interface AuxilioCopiaItem {
   label: string;

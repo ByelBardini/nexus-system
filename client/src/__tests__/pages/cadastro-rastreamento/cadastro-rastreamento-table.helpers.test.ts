@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getColunaEquipamentoSaida } from "@/pages/cadastro-rastreamento/lib/table-helpers";
-import type { OrdemCadastro } from "@/lib/cadastro-rastreamento.types";
+import type { OrdemCadastro } from "@/types/cadastro-rastreamento";
 import { ordemMinima } from "./cadastro-rastreamento.fixtures";
 
 function o(over: Partial<OrdemCadastro>): OrdemCadastro {

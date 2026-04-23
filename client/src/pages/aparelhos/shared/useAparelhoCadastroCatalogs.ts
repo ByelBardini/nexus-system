@@ -11,6 +11,7 @@ import type {
   MarcaModeloCatalog,
   MarcaSimcardRow,
   OperadoraCatalog,
+  OperadoraSelecionadaInput,
 } from "./catalog.types";
 import {
   idOperadoraParaFiltroSim,
@@ -18,11 +19,7 @@ import {
 } from "./catalog.helpers";
 import type { DebitoRastreadorApi } from "./debito-rastreador";
 
-export type OperadoraSelecionadaInput = {
-  value: string;
-  /** `nome`: form guarda o nome (cadastro individual). `id`: form guarda o id em string (lote). */
-  idMode: "nome" | "id";
-};
+export type { OperadoraSelecionadaInput };
 
 export function useAparelhoCadastroCatalogs(options: {
   marcasSimcardQueryEnabled: boolean;

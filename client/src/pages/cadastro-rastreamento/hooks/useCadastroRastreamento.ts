@@ -12,7 +12,7 @@ import type {
   OrdemCadastro,
   Plataforma,
   StatusCadastro,
-} from "@/lib/cadastro-rastreamento.types";
+} from "@/types/cadastro-rastreamento";
 import { cadastroRastreamentoAcaoLabels } from "@/lib/cadastro-rastreamento-tipo-mappers";
 import { toast } from "sonner";
 

@@ -5,6 +5,11 @@ export interface Permission {
   code: string;
 }
 
+export type EstruturaPermissoes = Record<
+  string,
+  Record<string, { acao: string; permissao: Permission }[]>
+>;
+
 export interface Setor {
   id: number;
   code: string;

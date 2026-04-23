@@ -3,7 +3,7 @@ import {
   formatModeloAparelhoCadastro,
   mapCadastroRastreamentoOS,
 } from "@/lib/cadastro-rastreamento-mapper";
-import type { OSResponse } from "@/lib/cadastro-rastreamento.types";
+import type { OSResponse } from "@/types/cadastro-rastreamento";
 import { osRespostaBase } from "@/__tests__/pages/cadastro-rastreamento/cadastro-rastreamento.fixtures";
 
 function os(over: Partial<OSResponse>): OSResponse {

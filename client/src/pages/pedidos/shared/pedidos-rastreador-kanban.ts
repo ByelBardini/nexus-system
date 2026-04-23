@@ -1,12 +1,6 @@
-import type { StatusPedidoRastreador } from "./pedidos-rastreador-api-enums";
+import type { StatusPedidoKey, StatusPedidoRastreador } from "@/types/pedidos-rastreador";
 
-/** Status em minúsculo para o kanban */
-export type StatusPedidoKey =
-  | "solicitado"
-  | "em_configuracao"
-  | "configurado"
-  | "despachado"
-  | "entregue";
+export type { StatusPedidoKey } from "@/types/pedidos-rastreador";
 
 export const URGENCIA_LABELS: Record<string, string> = {
   BAIXA: "Baixa",

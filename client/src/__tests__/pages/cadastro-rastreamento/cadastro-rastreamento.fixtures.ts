@@ -1,4 +1,4 @@
-import type { OrdemCadastro, OSResponse } from "@/lib/cadastro-rastreamento.types";
+import type { OrdemCadastro, OSResponse } from "@/types/cadastro-rastreamento";
 
 export const osRespostaBase: OSResponse = {
   id: 42,

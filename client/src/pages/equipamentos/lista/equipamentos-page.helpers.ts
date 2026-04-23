@@ -3,12 +3,20 @@ import {
   slicePagina,
   totalPaginas,
 } from "@/pages/aparelhos/lista/aparelhos-list.helpers";
+import type {
+  EquipamentoListItem,
+  EquipamentosListFiltros,
+  EquipamentoStatusPresentation,
+} from "@/types/equipamentos-lista";
 import {
   EQUIPAMENTOS_LIST_PAGE_SIZE,
-  type EquipamentoListItem,
-  type EquipamentoPipelineFilter,
   equipamentoMatchesStageFilter,
 } from "./equipamentos-page.shared";
+
+export type {
+  EquipamentosListFiltros,
+  EquipamentoStatusPresentation,
+} from "@/types/equipamentos-lista";
 
 export function listOnlyEquipamentosMontados(
   aparelhos: EquipamentoListItem[],
@@ -58,15 +66,6 @@ export function computePipelineCounts(equipamentos: EquipamentoListItem[]) {
     ).length,
   };
 }
-
-export type EquipamentosListFiltros = {
-  busca: string;
-  pipelineFilter: EquipamentoPipelineFilter;
-  statusFilter: string;
-  proprietarioFilter: "TODOS" | "INFINITY" | "CLIENTE";
-  marcaFilter: string;
-  operadoraFilter: string;
-};
 
 export function filterEquipamentosList(
   equipamentos: EquipamentoListItem[],
@@ -141,22 +140,6 @@ export function loteEquipamentoResumo(e: EquipamentoListItem): string {
   ) as string[];
   return parts.length ? parts.join(" · ") : "-";
 }
-
-export type EquipamentoStatusPresentation =
-  | {
-      kind: "em_kit";
-      label: string;
-      dotClass: string;
-      badgeClass: string;
-      headerIcon: string;
-    }
-  | {
-      kind: "standard";
-      label: string;
-      dotClass: string;
-      badgeClass: string;
-      headerIcon: string;
-    };
 
 export function getEquipamentoStatusPresentation(
   e: EquipamentoListItem,

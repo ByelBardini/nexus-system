@@ -1,4 +1,6 @@
-import type { Permission } from "@/types/cargo";
+import type { EstruturaPermissoes, Permission } from "@/types/cargo";
+
+export type { EstruturaPermissoes };
 
 export const NOMES_SETOR: Record<string, string> = {
   ADMINISTRATIVO: "Administrativo",
@@ -51,11 +53,6 @@ export const ORDEM_ACOES = [
   "EXCLUIR",
   "EXECUTAR",
 ];
-
-export type EstruturaPermissoes = Record<
-  string,
-  Record<string, { acao: string; permissao: Permission }[]>
->;
 
 export function agruparPermissoes(permissoes: Permission[]): EstruturaPermissoes {
   const estrutura: EstruturaPermissoes = {};

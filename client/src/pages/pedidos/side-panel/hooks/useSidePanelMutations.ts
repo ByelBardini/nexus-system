@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-import type { StatusPedidoRastreador } from "../shared/pedidos-rastreador.types";
+import type { StatusPedidoRastreador } from "@/types/pedidos-rastreador";
 
 export function useSidePanelMutations(onStatusUpdated: () => void) {
   const queryClient = useQueryClient();

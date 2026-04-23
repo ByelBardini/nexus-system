@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { groupCargosBySetorNome } from "@/pages/usuarios/lib/groupCargos";
-import type { CargoWithPermissions } from "@/pages/usuarios/lib/types";
+import type { CargoWithPermissions } from "@/types/usuarios";
 
 const c = (id: number, setor: string): CargoWithPermissions => ({
   id,

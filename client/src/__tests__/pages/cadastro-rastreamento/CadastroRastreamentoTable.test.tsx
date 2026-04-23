@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { CadastroRastreamentoTable } from "@/pages/cadastro-rastreamento/components/CadastroRastreamentoTable";
-import type { OrdemCadastro } from "@/lib/cadastro-rastreamento.types";
+import type { OrdemCadastro } from "@/types/cadastro-rastreamento";
 import { ordemMinima } from "./cadastro-rastreamento.fixtures";
 
 vi.mock("@/components/MaterialIcon", () => ({

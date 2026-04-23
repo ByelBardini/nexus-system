@@ -1,4 +1,4 @@
-import type { CargoWithPermissions, PermissoesPorModulo } from "./types";
+import type { CargoWithPermissions, PermissoesPorModulo } from "@/types/usuarios";
 
 /** Rótulo por chave "ITEM" (segundo segmento do código legado) */
 const ITEM_KEY_LABELS: Record<string, string> = {

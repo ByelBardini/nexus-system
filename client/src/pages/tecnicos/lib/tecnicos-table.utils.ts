@@ -1,8 +1,9 @@
+import type { TecnicoFiltroStatus } from "@/types/tecnicos";
 import type { Tecnico } from "./tecnicos.types";
 
 export const TECNICOS_PAGE_SIZE = 10;
 
-export type TecnicoFiltroStatus = "todos" | "ativo" | "inativo";
+export type { TecnicoFiltroStatus } from "@/types/tecnicos";
 
 export function filterTecnicos(
   tecnicos: Tecnico[],

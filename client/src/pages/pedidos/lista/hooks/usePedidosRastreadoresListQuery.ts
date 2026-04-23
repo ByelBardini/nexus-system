@@ -1,12 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import type { PedidoRastreadorApi } from "../../shared/pedidos-rastreador.types";
-import {
-  type PedidosRastreadoresListScope,
-  pedidosRastreadoresListQueryKey,
-} from "./pedidos-rastreadores-list.query-keys";
+import type {
+  PedidosRastreadoresListResponse,
+  PedidosRastreadoresListScope,
+} from "@/types/pedidos-rastreador";
+import { pedidosRastreadoresListQueryKey } from "./pedidos-rastreadores-list.query-keys";
 
-export type PedidosRastreadoresListResponse = { data: PedidoRastreadorApi[] };
+export type { PedidosRastreadoresListResponse };
 
 type Options = {
   busca: string;

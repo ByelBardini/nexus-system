@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { badgeServicoColunaCadastroRast } from "@/lib/cadastro-rastreamento-ui";
-import type { OrdemCadastro } from "@/lib/cadastro-rastreamento.types";
+import type { OrdemCadastro } from "@/types/cadastro-rastreamento";
 import { ordemMinima } from "@/__tests__/pages/cadastro-rastreamento/cadastro-rastreamento.fixtures";
 
 function ordem(over: Partial<OrdemCadastro>): OrdemCadastro {

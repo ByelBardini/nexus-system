@@ -4,14 +4,7 @@ import {
   categoriaCargoOuOperacional,
 } from "@/types/cargo";
 import { formatLastLogin } from "../lib/usuarios-format";
-import type { UsuarioListItem } from "../lib/types";
-
-type AccessLevel = {
-  percent: number;
-  label: string;
-  color: string;
-  barColor: string;
-};
+import type { UsuarioExpandedPanelProps } from "@/types/usuarios";
 
 export function UsuarioExpandedPanel({
   user,
@@ -23,17 +16,7 @@ export function UsuarioExpandedPanel({
   onEdit,
   onToggleStatus,
   resetPasswordPending,
-}: {
-  user: UsuarioListItem;
-  accessLevel: AccessLevel;
-  totalPermissions: number;
-  canEdit: boolean;
-  currentUserId?: number;
-  onResetPassword: () => void;
-  onEdit: () => void;
-  onToggleStatus: () => void;
-  resetPasswordPending: boolean;
-}) {
+}: UsuarioExpandedPanelProps) {
   return (
     <div className="bg-slate-50 border-b border-slate-200 px-8 py-4 shadow-inner">
       <div className="grid grid-cols-12 gap-6">
