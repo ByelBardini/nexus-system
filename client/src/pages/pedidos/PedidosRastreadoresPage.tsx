@@ -1,19 +1,19 @@
 import { useState, useMemo } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { MaterialIcon } from "@/components/MaterialIcon";
-import { api } from "@/lib/api";
 import {
   mapPedidoToView,
   STATUS_ORDER,
   type PedidoRastreadorView,
   type StatusPedidoKey,
-} from "./types";
-import { KanbanColumn } from "./KanbanColumn";
-import { DrawerDetalhes } from "./DrawerDetalhes";
-import { ModalNovoPedido } from "./ModalNovoPedido";
+} from "./shared/pedidos-rastreador.types";
+import { KanbanColumn } from "./lista/kanban/KanbanColumn";
+import { DrawerDetalhes } from "./lista/components/DrawerDetalhes";
+import { ModalNovoPedido } from "./novo-pedido/ModalNovoPedido";
+import { usePedidosRastreadoresListQuery } from "./lista/hooks/usePedidosRastreadoresListQuery";
+import { PedidosRastreadoresListToolbar } from "./lista/components/PedidosRastreadoresListToolbar";
 
 export function PedidosRastreadoresPage() {
   const queryClient = useQueryClient();
@@ -23,18 +23,13 @@ export function PedidosRastreadoresPage() {
     useState<PedidoRastreadorView | null>(null);
   const [modalNovoPedidoOpen, setModalNovoPedidoOpen] = useState(false);
 
-  const { data: lista, isLoading } = useQuery({
-    queryKey: ["pedidos-rastreadores", busca],
-    queryFn: () => {
-      const params = new URLSearchParams();
-      params.set("limit", "500");
-      if (busca.trim()) params.set("search", busca.trim());
-      return api<{ data: unknown[] }>(`/pedidos-rastreadores?${params}`);
-    },
+  const { data: lista, isLoading } = usePedidosRastreadoresListQuery({
+    busca,
+    scope: "lista",
   });
 
   const pedidosView = useMemo(() => {
-    const arr = (lista?.data ?? []) as Parameters<typeof mapPedidoToView>[0][];
+    const arr = lista?.data ?? [];
     return arr.map(mapPedidoToView);
   }, [lista?.data]);
 
@@ -65,20 +60,11 @@ export function PedidosRastreadoresPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-2rem)] min-h-0">
-      <div className="flex items-center justify-between gap-4 shrink-0 pb-4">
-        <div className="relative flex-1 max-w-xs">
-          <MaterialIcon
-            name="search"
-            className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-base"
-          />
-          <Input
-            className="pl-8 text-[11px]"
-            placeholder="Buscar pedido ou destino..."
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-        </div>
-        <div className="flex gap-2">
+      <PedidosRastreadoresListToolbar
+        value={busca}
+        onValueChange={setBusca}
+        placeholder="Buscar pedido ou destino..."
+        rightSlot={
           <Button
             onClick={() => setModalNovoPedidoOpen(true)}
             className="bg-erp-blue hover:bg-blue-700 text-[11px] font-bold uppercase"
@@ -86,8 +72,8 @@ export function PedidosRastreadoresPage() {
             <MaterialIcon name="add" className="text-sm mr-1" />
             Novo Pedido
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       <div className="bg-white border border-slate-300 shadow-sm overflow-hidden flex-1 min-h-0 flex flex-col">
         <div className="overflow-auto bg-slate-100 p-4 flex-1 min-h-0">

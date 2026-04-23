@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { useClientesComSubclientesQuery } from "@/hooks/useClientesComSubclientesQuery";
 import type {
   AparelhoRastreadorList,
   Cliente,
@@ -21,10 +22,7 @@ export function useOrdensServicoCriacaoCatalogs(
   ordemInstalacao: "INFINITY" | "CLIENTE",
   clienteOrdemId: number | undefined,
 ): OrdensServicoCriacaoCatalogs {
-  const { data: clientes = [] } = useQuery<Cliente[]>({
-    queryKey: ["clientes", "subclientes"],
-    queryFn: () => api("/clientes?subclientes=1"),
-  });
+  const { data: clientes = [] } = useClientesComSubclientesQuery();
 
   const { data: clienteInfinityData } = useQuery<{
     clienteId: number | null;
