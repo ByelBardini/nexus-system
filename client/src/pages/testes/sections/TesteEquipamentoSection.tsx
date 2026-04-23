@@ -1,29 +1,11 @@
-import { MaterialIcon } from "@/components/MaterialIcon";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { SelectRastreadorTeste } from "../SelectRastreadorTeste";
+import { SelectRastreadorTeste } from "../components/SelectRastreadorTeste";
+import { TesteSectionShell } from "../components/TesteSectionShell";
 import { STATUS_CONFIG_APARELHO } from "@/lib/aparelho-status";
 import { formatarTempoMinutos } from "@/lib/format";
-import type { RastreadorParaTeste } from "../testes-types";
-
-function operadoraMarcaIccid(r: RastreadorParaTeste): string {
-  const operadora =
-    r.marcaSimcard?.operadora?.nome ??
-    r.operadora ??
-    r.simVinculado?.marcaSimcard?.operadora?.nome ??
-    r.simVinculado?.operadora ??
-    null;
-  const marcaSim =
-    r.marcaSimcard?.nome ?? r.simVinculado?.marcaSimcard?.nome ?? null;
-  const iccid = (r.simVinculado?.identificador ?? "").trim();
-  const plano =
-    r.planoSimcard?.planoMb ?? r.simVinculado?.planoSimcard?.planoMb;
-  const planoStr = plano != null ? `${plano} MB` : null;
-  const partes = [operadora, marcaSim, iccid || null, planoStr].filter(
-    (x): x is string => !!x,
-  );
-  return partes.length > 0 ? partes.join(" / ") : "—";
-}
+import { formatRastreadorOperadoraMarcaIccidPlano } from "../lib/rastreador-format";
+import type { RastreadorParaTeste } from "../lib/testes-types";
 
 interface TesteEquipamentoSectionProps {
   rastreadores: RastreadorParaTeste[];
@@ -50,24 +32,25 @@ export function TesteEquipamentoSection({
       ]
     : null;
 
+  const resumoLinha = aparelhoSelecionado
+    ? formatRastreadorOperadoraMarcaIccidPlano(aparelhoSelecionado)
+    : "";
+
   return (
-    <section className="bg-white border border-slate-300 shadow-sm overflow-hidden">
-      <div className="bg-slate-50 border-b border-slate-300 px-4 py-2 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <MaterialIcon name="devices" className="text-erp-blue text-lg" />
-          <h2 className="text-xs font-bold text-slate-700 font-condensed uppercase">
-            02. Identificação do Equipamento
-          </h2>
-        </div>
-        {tempoRastreadorEmTestesMin != null && aparelhoSelecionado && (
+    <TesteSectionShell
+      icon="devices"
+      title="02. Identificação do Equipamento"
+      headerRight={
+        tempoRastreadorEmTestesMin != null && aparelhoSelecionado ? (
           <span className="text-[10px] font-medium text-slate-500">
             Rastreador em testes:{" "}
             <span className="font-bold text-slate-700">
               {formatarTempoMinutos(tempoRastreadorEmTestesMin)}
             </span>
           </span>
-        )}
-      </div>
+        ) : undefined
+      }
+    >
       <div className="p-6">
         <div className="flex gap-4 items-end mb-6">
           <div className="flex-1">
@@ -108,9 +91,9 @@ export function TesteEquipamentoSection({
               </span>
               <span
                 className="text-sm font-medium text-slate-700 truncate"
-                title={operadoraMarcaIccid(aparelhoSelecionado)}
+                title={resumoLinha}
               >
-                {operadoraMarcaIccid(aparelhoSelecionado)}
+                {resumoLinha}
               </span>
             </div>
             <div className="flex flex-col border-l border-erp-blue/20 pl-6">
@@ -130,6 +113,6 @@ export function TesteEquipamentoSection({
           </div>
         )}
       </div>
-    </section>
+    </TesteSectionShell>
   );
 }

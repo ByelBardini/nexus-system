@@ -1,9 +1,9 @@
 import { Check, Clock, X } from "lucide-react";
-import { MaterialIcon } from "@/components/MaterialIcon";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import type { ComunicacaoResult } from "../testes-types";
+import { TesteSectionShell } from "../components/TesteSectionShell";
+import type { ComunicacaoResult } from "../lib/testes-types";
 
 type PosChaveValue = "SIM" | "NAO";
 
@@ -73,13 +73,7 @@ export function TesteComunicacaoSection({
   const showNovoLocal = value === "COMUNICANDO";
 
   return (
-    <section className="bg-white border border-slate-300 shadow-sm overflow-hidden">
-      <div className="bg-slate-50 border-b border-slate-300 px-4 py-2 flex items-center gap-2">
-        <MaterialIcon name="wifi" className="text-erp-blue text-lg" />
-        <h2 className="text-xs font-bold text-slate-700 font-condensed uppercase">
-          03. Validação de Comunicação GPRS/GPS
-        </h2>
-      </div>
+    <TesteSectionShell icon="wifi" title="03. Validação de Comunicação GPRS/GPS">
       <div className="p-6 space-y-6">
         <div className="grid grid-cols-3 gap-4">
           {OPTIONS.map((opt) => {
@@ -172,6 +166,6 @@ export function TesteComunicacaoSection({
           </div>
         )}
       </div>
-    </section>
+    </TesteSectionShell>
   );
 }

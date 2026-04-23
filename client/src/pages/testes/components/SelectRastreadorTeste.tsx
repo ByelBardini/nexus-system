@@ -4,22 +4,14 @@ import { Search } from "lucide-react";
 import { MaterialIcon } from "@/components/MaterialIcon";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import type { RastreadorParaTeste } from "./testes-types";
+import type { RastreadorParaTeste } from "../lib/testes-types";
+import {
+  rastreadorTextoBusca,
+  rastreadorLinhaOperadoraPlano,
+  rastreadorMarcaModeloLabel,
+} from "../lib/rastreador-format";
 
 const BLUR_DELAY_MS = 150;
-
-function textoRastreador(r: RastreadorParaTeste): string {
-  const imei = (r.identificador ?? "").trim();
-  const iccid = (r.simVinculado?.identificador ?? "").trim();
-  const marcaModelo = [r.marca, r.modelo].filter(Boolean).join(" ");
-  const operadora = r.marcaSimcard?.operadora?.nome ?? r.operadora ?? "";
-  const marcaSim = r.marcaSimcard?.nome ?? "";
-  const plano =
-    r.planoSimcard?.planoMb ?? r.simVinculado?.planoSimcard?.planoMb;
-  const partes = [imei, iccid, marcaModelo, operadora, marcaSim];
-  if (plano != null) partes.push(`${plano}MB`);
-  return partes.filter(Boolean).join(" ").toLowerCase();
-}
 
 export function SelectRastreadorTeste({
   rastreadores,
@@ -75,13 +67,12 @@ export function SelectRastreadorTeste({
   const filtered = useMemo(() => {
     if (!searchTerm.trim()) return rastreadores.slice(0, 15);
     const term = searchTerm.toLowerCase();
-    return rastreadores.filter((r) => textoRastreador(r).includes(term));
+    return rastreadores.filter((r) => rastreadorTextoBusca(r).includes(term));
   }, [rastreadores, searchTerm]);
 
   const displayValue = isOpen ? searchTerm : value;
 
   useEffect(() => {
-    // Cancela timer de blur pendente quando o value muda externamente (ex: troca de OS)
     if (blurTimeoutRef.current) {
       clearTimeout(blurTimeoutRef.current);
       blurTimeoutRef.current = null;
@@ -162,27 +153,8 @@ export function SelectRastreadorTeste({
                   if (!id) return null;
                   const imei = id;
                   const iccid = (r.simVinculado?.identificador ?? "").trim();
-                  const marcaModelo =
-                    [r.marca, r.modelo].filter(Boolean).join(" ") || "—";
-                  const operadora =
-                    r.marcaSimcard?.operadora?.nome ??
-                    r.operadora ??
-                    r.simVinculado?.marcaSimcard?.operadora?.nome ??
-                    r.simVinculado?.operadora ??
-                    null;
-                  const marcaSim =
-                    r.marcaSimcard?.nome ??
-                    r.simVinculado?.marcaSimcard?.nome ??
-                    null;
-                  const plano =
-                    r.planoSimcard?.planoMb ??
-                    r.simVinculado?.planoSimcard?.planoMb;
-                  const planoStr = plano != null ? `${plano} MB` : null;
-                  const partes = [operadora, marcaSim, planoStr].filter(
-                    (x): x is string => !!x,
-                  );
-                  const operadoraLinha =
-                    partes.length > 0 ? partes.join(" / ") : null;
+                  const marcaModelo = rastreadorMarcaModeloLabel(r);
+                  const operadoraLinha = rastreadorLinhaOperadoraPlano(r);
 
                   const ehDeOutroCliente =
                     r.proprietario === "INFINITY" ||

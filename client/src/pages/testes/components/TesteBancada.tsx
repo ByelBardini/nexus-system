@@ -1,15 +1,15 @@
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { TesteOsDataSection } from "./sections/TesteOsDataSection";
-import { TesteEquipamentoSection } from "./sections/TesteEquipamentoSection";
-import { TesteComunicacaoSection } from "./sections/TesteComunicacaoSection";
-import { TesteRetiradaSection } from "./sections/TesteRetiradaSection";
-import { TesteObservacoesSection } from "./sections/TesteObservacoesSection";
+import { TesteOsDataSection } from "../sections/TesteOsDataSection";
+import { TesteEquipamentoSection } from "../sections/TesteEquipamentoSection";
+import { TesteComunicacaoSection } from "../sections/TesteComunicacaoSection";
+import { TesteRetiradaSection } from "../sections/TesteRetiradaSection";
+import { TesteObservacoesSection } from "../sections/TesteObservacoesSection";
 import type {
   ComunicacaoResult,
   OsTeste,
   RastreadorParaTeste,
-} from "./testes-types";
+} from "../lib/testes-types";
 
 interface TesteBancadaProps {
   selectedOs: OsTeste | null;

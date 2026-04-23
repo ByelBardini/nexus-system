@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { formatarTempoMinutos } from "@/lib/format";
-import type { OsTeste } from "./testes-types";
+import { subclienteLabel } from "../lib/testes-utils";
+import type { OsTeste } from "../lib/testes-types";
 
 interface TesteFilaCardProps {
   item: OsTeste;
@@ -13,8 +14,7 @@ export function TesteFilaCard({
   isSelected,
   onClick,
 }: TesteFilaCardProps) {
-  const subclienteNome =
-    item.subcliente?.nome ?? item.subclienteSnapshotNome ?? "—";
+  const subclienteNome = subclienteLabel(item);
   const placa = item.veiculo?.placa ?? "—";
   const showTempoElevado = item.tempoEmTestesMin > 30;
 

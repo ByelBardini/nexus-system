@@ -1,7 +1,8 @@
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { TesteFilaCard } from "./TesteFilaCard";
-import type { OsTeste } from "./testes-types";
+import { filtrarOsTesteNaFila } from "../lib/testes-utils";
+import type { OsTeste } from "../lib/testes-types";
+import { TesteFilaCard } from "@/pages/testes/components/TesteFilaCard";
 
 interface TesteFilaSidebarProps {
   items: OsTeste[];
@@ -11,19 +12,6 @@ interface TesteFilaSidebarProps {
   onSelect: (id: number) => void;
 }
 
-function filterItems(items: OsTeste[], search: string): OsTeste[] {
-  if (!search.trim()) return items;
-  const term = search.toLowerCase().trim();
-  return items.filter(
-    (i) =>
-      String(i.numero).includes(term) ||
-      (i.veiculo?.placa ?? "").toLowerCase().includes(term) ||
-      (i.cliente?.nome ?? "").toLowerCase().includes(term) ||
-      (i.subcliente?.nome ?? "").toLowerCase().includes(term) ||
-      (i.idAparelho?.toLowerCase().includes(term) ?? false),
-  );
-}
-
 export function TesteFilaSidebar({
   items,
   selectedId,
@@ -31,7 +19,7 @@ export function TesteFilaSidebar({
   onSearchChange,
   onSelect,
 }: TesteFilaSidebarProps) {
-  const filtered = filterItems(items, search);
+  const filtered = filtrarOsTesteNaFila(items, search);
 
   return (
     <aside className="w-80 shrink-0 bg-white border-l border-slate-200 flex flex-col h-full overflow-hidden">

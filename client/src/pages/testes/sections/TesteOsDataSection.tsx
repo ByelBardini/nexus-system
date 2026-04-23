@@ -1,7 +1,8 @@
-import { MaterialIcon } from "@/components/MaterialIcon";
 import { Label } from "@/components/ui/label";
 import { formatarTempoMinutos, TIPO_OS_LABELS } from "@/lib/format";
-import type { OsTeste } from "../testes-types";
+import { TesteSectionShell } from "../components/TesteSectionShell";
+import { subclienteLabel } from "../lib/testes-utils";
+import type { OsTeste } from "../lib/testes-types";
 
 interface TesteOsDataSectionProps {
   os: OsTeste | null;
@@ -10,36 +11,27 @@ interface TesteOsDataSectionProps {
 export function TesteOsDataSection({ os }: TesteOsDataSectionProps) {
   if (!os) {
     return (
-      <section className="bg-white border border-slate-300 shadow-sm overflow-hidden">
-        <div className="bg-slate-50 border-b border-slate-300 px-4 py-2 flex items-center gap-2">
-          <MaterialIcon name="description" className="text-erp-blue text-lg" />
-          <h2 className="text-xs font-bold text-slate-700 font-condensed uppercase">
-            01. Dados da Ordem de Serviço
-          </h2>
-        </div>
+      <TesteSectionShell icon="description" title="01. Dados da Ordem de Serviço">
         <div className="p-6 text-center text-sm text-slate-500">
           Selecione uma OS na fila à direita
         </div>
-      </section>
+      </TesteSectionShell>
     );
   }
 
   return (
-    <section className="bg-white border border-slate-300 shadow-sm overflow-hidden">
-      <div className="bg-slate-50 border-b border-slate-300 px-4 py-2 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <MaterialIcon name="description" className="text-erp-blue text-lg" />
-          <h2 className="text-xs font-bold text-slate-700 font-condensed uppercase">
-            01. Dados da Ordem de Serviço
-          </h2>
-        </div>
+    <TesteSectionShell
+      icon="description"
+      title="01. Dados da Ordem de Serviço"
+      headerRight={
         <span className="text-[10px] font-medium text-slate-500">
           Tempo em testes:{" "}
           <span className="font-bold text-slate-700">
             {formatarTempoMinutos(os.tempoEmTestesMin)}
           </span>
         </span>
-      </div>
+      }
+    >
       <div className="p-4 grid grid-cols-5 gap-6">
         <div>
           <Label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">
@@ -60,7 +52,7 @@ export function TesteOsDataSection({ os }: TesteOsDataSectionProps) {
             Subcliente / Base
           </Label>
           <p className="text-sm font-medium text-slate-700">
-            {os.subcliente?.nome ?? os.subclienteSnapshotNome ?? "—"}
+            {subclienteLabel(os)}
           </p>
         </div>
         <div>
@@ -87,6 +79,6 @@ export function TesteOsDataSection({ os }: TesteOsDataSectionProps) {
           </p>
         </div>
       </div>
-    </section>
+    </TesteSectionShell>
   );
 }
