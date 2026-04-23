@@ -11,9 +11,11 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 | `users.module.ts` | Registra `UsersController` e `UsersService`; importa `PrismaModule`; **exporta `UsersService`** (consumido por `AuthModule`, `RolesModule` e vários outros módulos de domínio) |
 | `users.controller.ts` | Rotas em `/users`; `@UseGuards(PermissionsGuard)` no controller; `@ApiTags('users')` |
 | `users.service.ts` | CRUD de usuários, consultas internas usadas por `auth` e `roles`, gestão de senha, permissões |
-| `dto/create-user.dto.ts` | `nome` (MinLength 1), `email` (IsEmail), `password` (MinLength 4), `ativo?` (default `true`), `setor?` (`SetorUsuario \| null`) |
-| `dto/update-user.dto.ts` | Todos os campos opcionais: `nome?`, `email?`, `ativo?`, `setor?` — **`password` não é atualizável por este DTO** |
-| `dto/user-response.dto.ts` | Shape de resposta pública: `id`, `nome`, `email`, `ativo`, `createdAt`, `updatedAt` — **`senhaHash` nunca exposto** |
+| `users.prisma-include.ts` | Includes Prisma reutilizáveis: `usuarioIncludeListagem` (listagem/detalhe admin), `usuarioIncludeAuth` (login e `getPermissions`); tipos `UsuarioComListagemInclude` e `UsuarioComAuthInclude` via `Prisma.UsuarioGetPayload` |
+| `users.constants.ts` | `BCRYPT_SALT_ROUNDS` — única fonte do custo do `bcrypt.hash` em criação e reset de senha |
+| `dto/create-user.dto.ts` | `nome` (MinLength 1), `email` (IsEmail), `password` (MinLength 4), `ativo?` (default `true`), `setor?` opcional com `@IsEnum(SetorUsuario)` (enum do `@prisma/client`, alinhado ao schema) |
+| `dto/update-user.dto.ts` | Todos os campos opcionais: `nome?`, `email?`, `ativo?`, `setor?` (`@IsEnum(SetorUsuario)` quando informado) — **`password` não é atualizável por este DTO** |
+| `dto/user-response.dto.ts` | Shape documental de resposta “flat”; **não está amarrado** ao controller — respostas reais incluem `usuarioCargos` e demais campos do Prisma; **`senhaHash` nunca exposto** nas respostas sanitizadas |
 
 **Endpoints e permissões:**
 
@@ -32,31 +34,36 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 
 | Param | Tipo | Comportamento |
 |-------|------|--------------|
-| `search` | `string?` | Busca case-insensitive em `nome` **ou** `email` (OR) |
+| `search` | `string?` | Busca em `nome` **ou** `email` (OR); implementação usa `mode: 'insensitive'` no Prisma — **com MySQL/MariaDB o Prisma pode rejeitar esse filtro** (erro de validação em runtime). Em ambientes PostgreSQL costuma funcionar como case-insensitive. |
 | `ativo` | `string?` (`'true'` / `'false'`) | Filtra por `ativo`; omitido = sem filtro |
 | `page` | `string?` (convertido com `+`) | Default `1` |
 | `limit` | `string?` | Default `15`; max `100` |
 
+**Includes Prisma (DRY):**
+
+- **`usuarioIncludeListagem`** — `usuarioCargos → cargo → setor` + `cargoPermissoes` (sem nested `permissao`). Usado em `findAll`, `findAllPaginated`, `findOne`, `findById` (detalhe alinhado à listagem).
+- **`usuarioIncludeAuth`** — `usuarioCargos → cargo → cargoPermissoes → permissao`. Usado em `findByEmail`, `findByIdWithPassword` (login, guard, troca de senha).
+
 **Diferenças entre `GET /users` e `GET /users/paginated`:**
 
-- `GET /users` (`findAll`): sem paginação; inclui `usuarioCargos → cargo → setor + cargoPermissoes`; ordena por `nome asc`. Ideal para selects.
-- `GET /users/paginated` (`findAllPaginated`): paginado; inclui mesma estrutura de cargos; filtros de `search` e `ativo`. Ideal para listagens administrativas.
+- `GET /users` (`findAll`): sem paginação; include **`usuarioIncludeListagem`**; ordena por `nome asc`. Ideal para selects.
+- `GET /users/paginated` (`findAllPaginated`): paginado; mesma estrutura de cargos; filtros de `search` e `ativo`. Ideal para listagens administrativas.
 
 **Métodos públicos do `UsersService`:**
 
 | Método | Retorno | Notas |
 |--------|---------|-------|
-| `findAll()` | `Usuario[]` sem `senhaHash` | Inclui `usuarioCargos → cargo → setor + cargoPermissoes` |
-| `findAllPaginated(params)` | `PaginatedResult` sem `senhaHash` | Filtros `search`/`ativo`; `maxLimit=100` |
-| `findOne(id)` | `Usuario` sem `senhaHash` | Inclui `usuarioCargos → cargo`; lança `NotFoundException` |
-| `create(dto)` | `Usuario` sem `senhaHash` | Lança `ConflictException` se email duplicado; `senhaExpiradaEm = null` na criação |
-| `update(id, dto)` | `Usuario` sem `senhaHash` | Valida existência; lança `ConflictException` se novo email já pertence a outro usuário; **não altera senha** |
-| `resetPassword(id)` | `{ message: string }` | Seta senha padrão `'#Infinity123'`; reseta `senhaExpiradaEm = null` |
-| `findByIdWithPassword(id)` | `Usuario \| null` (com `senhaHash`) | **Uso interno** — `auth.service` usa para validação de senha em `trocarSenha` |
+| `findAll()` | `Usuario[]` sem `senhaHash` | Include **`usuarioIncludeListagem`** |
+| `findAllPaginated(params)` | `PaginatedResult` sem `senhaHash` | Filtros `search`/`ativo`; `maxLimit=100`; mesmo include de listagem |
+| `findOne(id)` | `Usuario` sem `senhaHash` | Mesmo include que a listagem; lança `NotFoundException` |
+| `create(dto)` | `Usuario` sem `senhaHash` | Lança `ConflictException` se email duplicado; `senhaExpiradaEm = null`; `setor` aplicado só se `dto.setor !== undefined` (permite `null` explícito); hash com **`BCRYPT_SALT_ROUNDS`** |
+| `update(id, dto)` | `Usuario` sem `senhaHash` | Valida existência via `findOne`; `setor` aceita `null` para limpar; **não altera senha**; resposta do `update` Prisma **sem** re-include de relações (payload pode ser mais “flat” que `findOne`) |
+| `resetPassword(id)` | `{ message: string }` | Senha padrão `'#Infinity123'`; hash com **`BCRYPT_SALT_ROUNDS`**; reseta `senhaExpiradaEm = null` |
+| `findByIdWithPassword(id)` | `Promise<UsuarioComAuthInclude \| null>` | Include **`usuarioIncludeAuth`**; **uso interno** — ex.: `trocarSenha` |
 | `updatePassword(id, senhaHash, senhaExpiradaEm)` | `void` | **Uso interno** — chamado por `auth.service` após troca de senha bem-sucedida |
-| `findByEmail(email)` | `Usuario \| null` (com `senhaHash`, cargos e permissões) | **Uso interno** — `auth.service` (`login`), `PermissionsGuard` |
-| `findById(id)` | `Usuario \| null` sem `senhaHash` | **Uso interno** — `JwtStrategy.validate` via `auth.service.validateUser` |
-| `getPermissions(user)` | `string[]` | Recebe user com `usuarioCargos → cargo → cargoPermissoes → permissao`; retorna array deduplicado de `code`; **Uso interno** — `PermissionsGuard` |
+| `findByEmail(email)` | `Promise<UsuarioComAuthInclude \| null>` | Include **`usuarioIncludeAuth`**; **uso interno** — `login`, `PermissionsGuard` |
+| `findById(id)` | `Usuario \| null` sem `senhaHash` | Include **`usuarioIncludeListagem`**; **uso interno** — `JwtStrategy.validate` / `validateUser` |
+| `getPermissions(user)` | `string[]` | Parâmetro tipado como **`UsuarioComAuthInclude`**; retorna `code` deduplicados; **uso interno** — `AuthService.login`, `PermissionsGuard` |
 | `updateLastLogin(id)` | `void` | Seta `ultimoAcesso = new Date()`; chamado após login bem-sucedido |
 
 **`sanitizeUser` (privado):**
@@ -81,32 +88,49 @@ Todos os métodos que retornam `Usuario` para o exterior passam por `sanitizeUse
 | Arquivo | Cobertura |
 |---------|-----------|
 | `users.controller.spec.ts` | Delegação controller → service; conversão `string → number` em `id`; defaults de `page`/`limit`; conversão de `ativo` string para booleano (true/false/undefined); todos os 6 endpoints |
-| `users.service.spec.ts` | `findAll` (sem senhaHash), `findAllPaginated` (paginação, search OR, filtro ativo, cálculo skip), `findOne` (NotFoundException, sanitize), `create` (ConflictException email, criação ok), `update` (NotFoundException, ConflictException email duplicado, atualização ok), `resetPassword` (NotFoundException, senha padrão, retorno de mensagem), `getPermissions` (deduplicação, lista vazia) |
+| `users.service.spec.ts` | Mock de `bcrypt`; asserts de **`BCRYPT_SALT_ROUNDS`** em `create`/`resetPassword`; includes **`usuarioIncludeListagem`** / **`usuarioIncludeAuth`** nas chamadas Prisma relevantes; `findById` / `findByEmail` / `findByIdWithPassword`; demais fluxos (paginação, conflitos, `getPermissions`, etc.) |
+| `users.prisma-include.spec.ts` | Forma dos objetos de include (listagem vs auth) |
+| `create-user.dto.spec.ts` | `class-validator` + `SetorUsuario`: valores válidos, `null`, enum inválido |
+| `update-user.dto.spec.ts` | Patch vazio, `setor` enum/`null`, enum inválido, email inválido |
 
-**Frontend (`client/src/pages/usuarios/UsuariosPage.tsx`):**
+**Testes E2E (`server/test/users.e2e-spec.ts`):**
 
-Rota: `/usuarios` (sidebar → seção Configurações → "Usuários"). Sem hook dedicado; usa TanStack Query diretamente.
+- Módulo `UsersModule` + `PermissionsGuard` mockado; dados isolados com e-mail `*@e2e-users-nexus.test` e **`cleanupE2eUsers`** em `test/helpers/e2e-db-cleanup.ts`.
+- Cobertura: listagem e paginação (sem `senhaHash`, `usuarioCargos`), filtro **`ativo`**, CRUD parcial (POST/PATCH), enum `setor` inválido (400), senha curta (400), email duplicado (409), `setor` null (create/patch), reset de senha (hash e `bcrypt.getRounds` vs constante), 404 em rotas com usuário inexistente.
+- **`search` em paginação não é exercitado no E2E** pelo limite do provider MySQL/MariaDB com `mode: 'insensitive'` (ver tabela de query params acima).
 
-**Interface `User` (frontend):**
+**Frontend (`client/src/pages/usuarios/`):**
+
+Rota: `/usuarios` (Configurações → "Usuários"). A tela é composta por `UsuariosPage.tsx` (orquestração) + módulos abaixo; TanStack Query via hooks dedicados.
+
+**Estrutura de pastas (cliente):**
+
+| Caminho | Conteúdo |
+|---------|----------|
+| `UsuariosPage.tsx` | Estado local, `useForm` (criar/editar), liga header, tabela, rodapé e modais |
+| `hooks/useUsuariosQueries.ts` | `useUsuariosPaginatedQuery`, `usePermissionsQuery`, `useCargosComPermissoesQuery` (este último com `enabled` quando modal de criação/edição abre) |
+| `hooks/useUsuariosMutations.ts` | `create` / `update` / `toggleStatus` / `resetPassword` + `invalidateQueries`; callbacks opcionais `onCreateSettled` / `onUpdateSettled` (fechar modal, reset de form) **antes** do toast, como no fluxo original |
+| `lib/types.ts` | `UsuarioListItem`, `CargoWithPermissions`, respostas paginadas, etc. |
+| `lib/schemas.ts` | `schemaCreate` / `schemaEdit` (Zod) e tipos de formulário |
+| `lib/constants.ts` | `SETORES_USUARIO` e `SetorUsuario` |
+| `lib/permissoes-heranca.ts` | `calcularPermissoesHerdadas`, `getModuloLabel`, `getAcaoLabel` |
+| `lib/usuarios-format.ts` | `getSetorLabel`, `getInitials`, `getAccessLevel`, `formatLastLogin` (aceita `now` injetável para testes), `computeAccessScore` (score lateral dos modais; unifica a lógica duplicada de “access score” por cargos) |
+| `lib/groupCargos.ts` | `groupCargosBySetorNome` — agrupa `GET /roles?includePermissions=true` por `cargo.setor.nome` |
+| `components/UsuariosPageHeader.tsx` | Busca, filtro de status, botão "Novo Usuário" |
+| `components/UsuariosDataTable.tsx` + `UsuarioExpandedPanel.tsx` | Tabela, accordion, painel de auditoria e ações |
+| `components/UsuariosTableFooter.tsx` | Totais e paginação |
+| `components/UsuarioDadosForm.tsx` | Nome, setor, e-mail (criação e edição) |
+| `components/CargosAtribuicaoBlock.tsx` | Chips, lista por setor, toggle expansível |
+| `components/PermissoesHerancaSidebar.tsx` | "Resumo de Herança" + score (compartilhado entre modais) |
+| `components/CriarUsuarioDialog.tsx` / `EditarUsuarioDialog.tsx` | Modais; sidebar recalcula preview com as libs acima |
+
+**Testes (Vitest + RTL, API mockada):** `client/src/__tests__/pages/usuarios/` — unidades em `lib/`, hooks, componentes e `UsuariosPage.e2e.test.tsx` (fluxo da página).
+
+**Interface de linha da lista (`UsuarioListItem` em `lib/types.ts`):** equivale ao antigo `User` na página.
 
 ```ts
-interface User {
-  id: number;
-  nome: string;
-  email: string;
-  ativo: boolean;
-  setor?: "AGENDAMENTO" | "CONFIGURACAO" | "ADMINISTRATIVO" | null;
-  createdAt: string;
-  ultimoAcesso?: string | null;
-  usuarioCargos?: {
-    cargo: {
-      id: number;
-      nome: string;
-      categoria: string;
-      cargoPermissoes: { permissaoId: number }[];
-    };
-  }[];
-}
+// Resumo: id, nome, email, ativo, setor?, createdAt, ultimoAcesso?, usuarioCargos?
+// usuarioCargos[].cargo: id, nome, categoria, cargoPermissoes: { permissaoId }[]
 ```
 
 **Estado e queries:**
@@ -139,29 +163,29 @@ interface User {
 | `toggleStatusMutation` | `PATCH /users/:id` | Envia `{ ativo: boolean }`; bloqueado para o `currentUser` (não pode inativar a si mesmo) |
 | `resetPasswordMutation` | `POST /users/:id/reset-password` | Reseta para `#Infinity123`; toast exibe a senha padrão |
 
-Todas as mutations invalidam `["users-paginated"]` em `onSuccess`.
+Definição em `hooks/useUsuariosMutations.ts`. Todas invalidam `["users-paginated"]` em `onSuccess` (após a conclusão da mutation, antes/depois do toast conforme o hook — callbacks de fechamento de modal rodam antes do toast de sucesso).
 
-**Formulário de criação (`schemaCreate` — zod):**
+**Formulário de criação (`schemaCreate` em `lib/schemas.ts` — zod):**
 
 `nome` (min 1), `email` (IsEmail), `ativo: boolean` (default `true`), `setor: string | null | undefined`, `cargoIds: number[]` (array de IDs — **não é campo do DTO da API**, é gerenciado via estado `selectedCreateRoleIds`).
 
-**Formulário de edição (`schemaEdit` — zod):**
+**Formulário de edição (`schemaEdit` em `lib/schemas.ts` — zod):**
 
 `nome`, `email`, `ativo`, `setor` — sem campo `cargoIds` (cargos gerenciados via `selectedRoleIds` separado).
 
-**`cargosPorSetor` (useMemo):**
+**`cargosPorSetor` (useMemo na página):**
 
-`cargosComPermissoes` agrupados por `c.setor.nome` → `Record<string, CargoWithPermissions[]>`. Usado para renderizar a lista expandível de seleção de cargos agrupada por setor.
+`useMemo(() => groupCargosBySetorNome(cargosComPermissoes), [cargosComPermissoes])` — ver `lib/groupCargos.ts`. Usado na lista expandível de cargos nos modais.
 
-**`calcularPermissoesHerdadas` (função pura):**
+**`calcularPermissoesHerdadas` (`lib/permissoes-heranca.ts`):**
 
 Recebe `selectedCargoIds` e `cargos`; percorre `cargoPermissoes` dos cargos selecionados; agrupa por `SETOR.MODULO`; detecta ações `EXCLUIR` como "alto risco". Retorna:
 - `setoresHabilitados: { modulo: string; acoes: string[] }[]`
 - `acoesAltoRisco: { modulo: string; permissao: string }[]`
 
-Usado em tempo real no painel lateral "Resumo de Herança" de ambos os modais.
+O painel lateral "Resumo de Herança" consome o resultado; os modais também usam `computeAccessScore` (`lib/usuarios-format.ts`) para a barra de score (percentual de permissões distintas vs lista global `["permissions"]`).
 
-**`getAccessLevel` (função pura):**
+**`getAccessLevel` (`lib/usuarios-format.ts`):**
 
 Calcula % de permissões únicas de um usuário vs `totalPermissions` (contagem de `["permissions"]`). Retorna `{ percent, label, color, barColor }`:
 
@@ -173,11 +197,11 @@ Calcula % de permissões únicas de um usuário vs `totalPermissions` (contagem 
 | ≤ 75% | "Alto" | orange |
 | > 75% | "Total" | red |
 
-**`formatLastLogin` (função pura):**
+**`formatLastLogin` (`lib/usuarios-format.ts`):**
 
-`null/undefined` → `"Nunca acessou"`; hoje → `"Hoje, HH:mm"`; ontem → `"Ontem, HH:mm"`; < 7 dias → `"N dias atrás"`; mais antigo → data pt-BR completa.
+`null/undefined` → `"Nunca acessou"`; hoje → `"Hoje, HH:mm"`; ontem → `"Ontem, HH:mm"`; < 7 dias → `"N dias atrás"`; mais antigo → data pt-BR completa. Segundo parâmetro opcional `now` (para testes).
 
-**Colunas da tabela (7):** expand icon · Usuário/Identificação (avatar iniciais + nome + ID 5 dígitos + email) · Setor · Cargo(s) Atribuídos (badges por `CATEGORIA_CONFIG`) · Último Acesso · Nível de Acesso (barra + label) · Status (badge emerald/slate).
+**Colunas da tabela (7):** expand icon · Usuário/Identificação (avatar iniciais + nome + ID 5 dígitos + email) · Setor · Cargo(s) Atribuídos (badges via `@/types/cargo`) · Último Acesso · Nível de Acesso (barra + label) · Status (badge emerald/slate).
 
 **Linha expandida (accordion, `colSpan=7`):** grid 12 colunas em 3 seções:
 1. **Audit Trail & Segurança** (col-5) — data de cadastro, último acesso, percentual de permissões ativas.
@@ -210,19 +234,13 @@ O `aside` (painel "Resumo de Herança") exibe em tempo real:
 | `ADMINISTRATIVO.USUARIO.CRIAR` | Exibe botão "Novo Usuário" no header |
 | `ADMINISTRATIVO.USUARIO.EDITAR` | Exibe botões "Resetar Senha", "Editar Usuário", "Inativar/Ativar" na linha expandida |
 
-**`CATEGORIA_CONFIG` (constante local — mesmas cores do `CargosPage`):**
+**Categorias de cargo na UI (badges):** `categoriaCargoOuOperacional` e `categoriaCargoParaBadge` de `@/types/cargo` (tabela, chips de cargos, painel expandido) — alinhado ao padrão de outras telas (ex. `CargosPage`).
 
-```ts
-OPERACIONAL: { label: "Operacional", className: "bg-blue-50 text-blue-700 border-blue-200" }
-ADMINISTRATIVO: { label: "Administrativo", className: "bg-emerald-50 text-emerald-700 border-emerald-200" }
-GESTAO: { label: "Gestão", className: "bg-purple-50 text-purple-700 border-purple-200" }
-```
+**`getModuloLabel` / `getAcaoLabel` (`lib/permissoes-heranca.ts`):**
 
-**`getModuloLabel` / `getAcaoLabel` (funções puras locais — não importadas de lib):**
+`getModuloLabel` mapeia path `"SETOR.ITEM"` (e fallback legado por segmento) para label pt-BR. `getAcaoLabel` mapeia `LISTAR→"Visualizar"`, `CRIAR`, `EDITAR`, `EXCLUIR`, `EXECUTAR`.
 
-`getModuloLabel` mapeia `"SETOR.ITEM"` para label pt-BR (ex.: `"ADMINISTRATIVO.USUARIO"` → `"Usuários"`). `getAcaoLabel` mapeia `LISTAR→"Visualizar"`, `CRIAR→"Criar"`, `EDITAR→"Editar"`, `EXCLUIR→"Excluir"`, `EXECUTAR→"Executar"`.
-
-> **Atenção:** Ao adicionar novos módulos de permissão, atualizar `getModuloLabel` no `UsuariosPage.tsx` E os mapas equivalentes no `CargoModal.tsx` (que tem lógica similar mas independente).
+> **Atenção:** Ao adicionar novos módulos de permissão, atualizar os mapas em `client/src/pages/usuarios/lib/permissoes-heranca.ts` e, se necessário, os equivalentes no `CargoModal` / outras telas (lógica pode divergir até haver módulo compartilhado de labels RBAC).
 
 ---
 

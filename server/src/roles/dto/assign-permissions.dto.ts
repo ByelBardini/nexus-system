@@ -1,9 +1,6 @@
-import { IsArray, IsNumber } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsNumericIdArrayProperty } from './is-numeric-id-array.decorator';
 
 export class AssignPermissionsDto {
-  @ApiProperty({ type: [Number], example: [1, 2, 3] })
-  @IsArray()
-  @IsNumber({}, { each: true })
+  @IsNumericIdArrayProperty({ example: [1, 2, 3] })
   permissionIds: number[];
 }

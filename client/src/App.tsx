@@ -6,7 +6,7 @@ import { Login } from "@/pages/Login";
 import { Loader2 } from "lucide-react";
 
 const OrdensServicoPage = lazy(() =>
-  import("@/pages/OrdensServicoPage").then((m) => ({
+  import("@/pages/ordens-servico/OrdensServicoPage").then((m) => ({
     default: m.OrdensServicoPage,
   })),
 );
@@ -49,7 +49,7 @@ const CadastroLotePage = lazy(() =>
   })),
 );
 const EquipamentosPage = lazy(() =>
-  import("@/pages/equipamentos/EquipamentosPage").then((m) => ({
+  import("@/pages/equipamentos/lista/EquipamentosPage").then((m) => ({
     default: m.EquipamentosPage,
   })),
 );
@@ -59,7 +59,7 @@ const EquipamentosConfigPage = lazy(() =>
   })),
 );
 const PareamentoPage = lazy(() =>
-  import("@/pages/equipamentos/PareamentoPage").then((m) => ({
+  import("@/pages/equipamentos/pareamento/PareamentoPage").then((m) => ({
     default: m.PareamentoPage,
   })),
 );

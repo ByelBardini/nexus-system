@@ -1,6 +1,8 @@
 import { BadGatewayException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { consultarPlaca } from 'api-placa-fipe';
+import { CriarOuBuscarVeiculoDto } from './dto/criar-ou-buscar-veiculo.dto';
+import { placaNormalizadaOuNull } from './veiculos.helpers';
 
 interface PlacaResultado {
   marca?: string;
@@ -11,26 +13,13 @@ interface PlacaResultado {
   tipoVeiculo?: string;
 }
 
-function normalizarPlaca(placa: string): string {
-  return placa
-    .replace(/[^a-zA-Z0-9]/g, '')
-    .toUpperCase()
-    .slice(0, 7);
-}
-
 @Injectable()
 export class VeiculosService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async criarOuBuscarPorPlaca(dados: {
-    placa: string;
-    marca: string;
-    modelo: string;
-    ano: string | number;
-    cor: string;
-  }) {
-    const raw = normalizarPlaca(dados.placa);
-    if (raw.length < 7) return null;
+  async criarOuBuscarPorPlaca(dados: CriarOuBuscarVeiculoDto) {
+    const raw = placaNormalizadaOuNull(dados.placa);
+    if (!raw) return null;
     const anoNum =
       typeof dados.ano === 'string' ? parseInt(dados.ano, 10) : dados.ano;
     const ano = Number.isNaN(anoNum) ? 0 : anoNum;
@@ -48,8 +37,8 @@ export class VeiculosService {
   }
 
   async consultaPlaca(placa: string) {
-    const raw = normalizarPlaca(placa);
-    if (raw.length < 7) return null;
+    const raw = placaNormalizadaOuNull(placa);
+    if (!raw) return null;
     let resultado: PlacaResultado | null | undefined;
     try {
       resultado = (await consultarPlaca(raw)) as PlacaResultado | null;

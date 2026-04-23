@@ -28,6 +28,11 @@ describe('EquipamentosController', () => {
     createMarcaSimcard: jest.fn(),
     updateMarcaSimcard: jest.fn(),
     deleteMarcaSimcard: jest.fn(),
+    findAllPlanosSimcard: jest.fn(),
+    findOnePlanoSimcard: jest.fn(),
+    createPlanoSimcard: jest.fn(),
+    updatePlanoSimcard: jest.fn(),
+    deletePlanoSimcard: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -59,13 +64,13 @@ describe('EquipamentosController', () => {
   });
 
   describe('findOneMarca', () => {
-    it('converte id para número e chama service', async () => {
+    it('repassa id numérico ao service (ParseIntPipe na rota HTTP)', async () => {
       (service.findOneMarca as jest.Mock).mockResolvedValue({
         id: 3,
         nome: 'Teltonika',
       });
 
-      await controller.findOneMarca('3');
+      await controller.findOneMarca(3);
 
       expect(service.findOneMarca).toHaveBeenCalledWith(3);
     });
@@ -83,21 +88,21 @@ describe('EquipamentosController', () => {
   });
 
   describe('updateMarca', () => {
-    it('converte id e chama service.updateMarca', async () => {
+    it('repassa id numérico e DTO ao service', async () => {
       const dto = { nome: 'Atualizada' };
       (service.updateMarca as jest.Mock).mockResolvedValue({ id: 2, ...dto });
 
-      await controller.updateMarca('2', dto);
+      await controller.updateMarca(2, dto);
 
       expect(service.updateMarca).toHaveBeenCalledWith(2, dto);
     });
   });
 
   describe('deleteMarca', () => {
-    it('converte id e chama service.deleteMarca', async () => {
+    it('repassa id numérico ao service.deleteMarca', async () => {
       (service.deleteMarca as jest.Mock).mockResolvedValue({ id: 5 });
 
-      await controller.deleteMarca('5');
+      await controller.deleteMarca(5);
 
       expect(service.deleteMarca).toHaveBeenCalledWith(5);
     });
@@ -109,28 +114,28 @@ describe('EquipamentosController', () => {
     it('passa undefined para marcaId quando não informado', async () => {
       (service.findAllModelos as jest.Mock).mockResolvedValue([]);
 
-      await controller.findAllModelos();
+      await controller.findAllModelos(undefined);
 
       expect(service.findAllModelos).toHaveBeenCalledWith(undefined);
     });
 
-    it('converte marcaId para número quando informado', async () => {
+    it('repassa marcaId numérico ao service', async () => {
       (service.findAllModelos as jest.Mock).mockResolvedValue([]);
 
-      await controller.findAllModelos('3');
+      await controller.findAllModelos(3);
 
       expect(service.findAllModelos).toHaveBeenCalledWith(3);
     });
   });
 
   describe('findOneModelo', () => {
-    it('converte id para número e chama service', async () => {
+    it('repassa id numérico ao service', async () => {
       (service.findOneModelo as jest.Mock).mockResolvedValue({
         id: 7,
         nome: 'GV300',
       });
 
-      await controller.findOneModelo('7');
+      await controller.findOneModelo(7);
 
       expect(service.findOneModelo).toHaveBeenCalledWith(7);
     });
@@ -148,10 +153,10 @@ describe('EquipamentosController', () => {
   });
 
   describe('deleteModelo', () => {
-    it('converte id e chama service.deleteModelo', async () => {
+    it('repassa id numérico ao service.deleteModelo', async () => {
       (service.deleteModelo as jest.Mock).mockResolvedValue({ id: 4 });
 
-      await controller.deleteModelo('4');
+      await controller.deleteModelo(4);
 
       expect(service.deleteModelo).toHaveBeenCalledWith(4);
     });
@@ -172,13 +177,13 @@ describe('EquipamentosController', () => {
   });
 
   describe('findOneOperadora', () => {
-    it('converte id para número e chama service', async () => {
+    it('repassa id numérico ao service', async () => {
       (service.findOneOperadora as jest.Mock).mockResolvedValue({
         id: 2,
         nome: 'Claro',
       });
 
-      await controller.findOneOperadora('2');
+      await controller.findOneOperadora(2);
 
       expect(service.findOneOperadora).toHaveBeenCalledWith(2);
     });
@@ -199,24 +204,24 @@ describe('EquipamentosController', () => {
   });
 
   describe('updateOperadora', () => {
-    it('converte id e chama service.updateOperadora', async () => {
+    it('repassa id numérico ao service.updateOperadora', async () => {
       const dto = { nome: 'Oi' };
       (service.updateOperadora as jest.Mock).mockResolvedValue({
         id: 6,
         ...dto,
       });
 
-      await controller.updateOperadora('6', dto);
+      await controller.updateOperadora(6, dto);
 
       expect(service.updateOperadora).toHaveBeenCalledWith(6, dto);
     });
   });
 
   describe('deleteOperadora', () => {
-    it('converte id e chama service.deleteOperadora', async () => {
+    it('repassa id numérico ao service.deleteOperadora', async () => {
       (service.deleteOperadora as jest.Mock).mockResolvedValue({ id: 3 });
 
-      await controller.deleteOperadora('3');
+      await controller.deleteOperadora(3);
 
       expect(service.deleteOperadora).toHaveBeenCalledWith(3);
     });
@@ -230,29 +235,29 @@ describe('EquipamentosController', () => {
         { id: 1, nome: 'Getrak', operadora: { nome: 'Vivo' } },
       ]);
 
-      await controller.findAllMarcasSimcard();
+      await controller.findAllMarcasSimcard(undefined);
 
       expect(service.findAllMarcasSimcard).toHaveBeenCalledWith(undefined);
     });
 
-    it('passa operadoraId convertido para número quando informado', async () => {
+    it('repassa operadoraId numérico ao service', async () => {
       (service.findAllMarcasSimcard as jest.Mock).mockResolvedValue([]);
 
-      await controller.findAllMarcasSimcard('2');
+      await controller.findAllMarcasSimcard(2);
 
       expect(service.findAllMarcasSimcard).toHaveBeenCalledWith(2);
     });
   });
 
   describe('findOneMarcaSimcard', () => {
-    it('converte id para número e chama service', async () => {
+    it('repassa id numérico ao service', async () => {
       (service.findOneMarcaSimcard as jest.Mock).mockResolvedValue({
         id: 1,
         nome: 'Getrak',
         operadora: { nome: 'Vivo' },
       });
 
-      await controller.findOneMarcaSimcard('1');
+      await controller.findOneMarcaSimcard(1);
 
       expect(service.findOneMarcaSimcard).toHaveBeenCalledWith(1);
     });
@@ -273,26 +278,75 @@ describe('EquipamentosController', () => {
   });
 
   describe('updateMarcaSimcard', () => {
-    it('converte id e chama service.updateMarcaSimcard', async () => {
+    it('repassa id numérico ao service.updateMarcaSimcard', async () => {
       const dto = { nome: 'Getrak Novo' };
       (service.updateMarcaSimcard as jest.Mock).mockResolvedValue({
         id: 1,
         ...dto,
       });
 
-      await controller.updateMarcaSimcard('1', dto);
+      await controller.updateMarcaSimcard(1, dto);
 
       expect(service.updateMarcaSimcard).toHaveBeenCalledWith(1, dto);
     });
   });
 
   describe('deleteMarcaSimcard', () => {
-    it('converte id e chama service.deleteMarcaSimcard', async () => {
+    it('repassa id numérico ao service.deleteMarcaSimcard', async () => {
       (service.deleteMarcaSimcard as jest.Mock).mockResolvedValue({ id: 1 });
 
-      await controller.deleteMarcaSimcard('1');
+      await controller.deleteMarcaSimcard(1);
 
       expect(service.deleteMarcaSimcard).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe('findAllPlanosSimcard', () => {
+    it('repassa undefined ou marcaSimcardId numérico', async () => {
+      (service.findAllPlanosSimcard as jest.Mock).mockResolvedValue([]);
+
+      await controller.findAllPlanosSimcard(undefined);
+      expect(service.findAllPlanosSimcard).toHaveBeenCalledWith(undefined);
+
+      await controller.findAllPlanosSimcard(5);
+      expect(service.findAllPlanosSimcard).toHaveBeenCalledWith(5);
+    });
+  });
+
+  describe('findOnePlanoSimcard', () => {
+    it('repassa id numérico', async () => {
+      (service.findOnePlanoSimcard as jest.Mock).mockResolvedValue({
+        id: 9,
+        planoMb: 500,
+      });
+
+      await controller.findOnePlanoSimcard(9);
+
+      expect(service.findOnePlanoSimcard).toHaveBeenCalledWith(9);
+    });
+  });
+
+  describe('updatePlanoSimcard', () => {
+    it('repassa id numérico e DTO', async () => {
+      const dto = { planoMb: 1024 };
+      (service.updatePlanoSimcard as jest.Mock).mockResolvedValue({
+        id: 2,
+        ...dto,
+      });
+
+      await controller.updatePlanoSimcard(2, dto);
+
+      expect(service.updatePlanoSimcard).toHaveBeenCalledWith(2, dto);
+    });
+  });
+
+  describe('deletePlanoSimcard', () => {
+    it('repassa id numérico', async () => {
+      (service.deletePlanoSimcard as jest.Mock).mockResolvedValue({ id: 3 });
+
+      await controller.deletePlanoSimcard(3);
+
+      expect(service.deletePlanoSimcard).toHaveBeenCalledWith(3);
     });
   });
 });

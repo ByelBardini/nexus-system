@@ -8,10 +8,12 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 
 | Arquivo | Responsabilidade |
 |---------|-----------------|
-| `ordens-servico.module.ts` | Registra controller + services; importa `PrismaModule`, `UsersModule`, `DebitosRastreadoresModule`; providers: `OrdensServicoService`, `HtmlOrdemServicoGenerator`, `PdfOrdemServicoGenerator` |
+| `ordens-servico.module.ts` | Registra controller + services; importa `PrismaModule`, `UsersModule`, `DebitosRastreadoresModule`; providers: `OrdensServicoService`, `OrdemServicoStatusSideEffectsService`, `HtmlOrdemServicoGenerator`, `PdfOrdemServicoGenerator` |
 | `ordens-servico.controller.ts` | Rotas em `/ordens-servico`; `@UseGuards(PermissionsGuard)` no controller; `@ApiTags('ordens-servico')` |
-| `ordens-servico.service.ts` | CRUD, listagem, atualização de status/aparelho, geração de HTML/PDF, lógica de negócio de testes |
-| `html-ordem-servico.generator.ts` | Gera string HTML completa da OS para impressão |
+| `ordens-servico.service.ts` | CRUD, listagem, atualização de status/aparelho, geração de HTML/PDF, orquestração de testes |
+| `ordem-servico.helpers.ts` | Funções puras: `buildOrdemServicoSearchOrClauses(termo, scope)` (busca compartilhada `listagem` \| `emTestes`); `proximoNumeroOrdemServico(tx)` (próximo `numero` na transação) |
+| `ordem-servico-status-side-effects.service.ts` | Efeitos colaterais ao atingir `TESTES_REALIZADOS` dentro da transação de `updateStatus`: desvincular aparelho de saída (REVISÃO/RETIRADA), instalar rastreador novo, SIM, débito via `DebitosRastreadoresService.consolidarDebitoTx` |
+| `html-ordem-servico.generator.ts` | Gera string HTML completa da OS para impressão; ramos por tipo usam enum `TipoOS` (RETIRADA, REVISÃO, instalações explícitas) |
 | `pdf-ordem-servico.generator.ts` | Gera PDF via Puppeteer — ver detalhes abaixo |
 
 **`PdfOrdemServicoGenerator` — Puppeteer:**
@@ -62,14 +64,14 @@ CANCELADO         → AGENDADO
 | `page` | `number?` | Default 1 |
 | `limit` | `number?` | Default 15, max 100 |
 | `status` | `StatusOS?` | Filtro exato |
-| `search` | `string?` | Busca em: `numero` (se numérico), `cliente.nome`, `subcliente.nome`, `veiculo.placa`, `tecnico.nome` |
+| `search` | `string?` | Busca via `buildOrdemServicoSearchOrClauses(..., 'listagem')`: `numero` (se numérico), `cliente.nome`, `subcliente.nome`, `veiculo.placa`, `tecnico.nome`. `where` tipado como `Prisma.OrdemServicoWhereInput`. |
 
 **`GET /ordens-servico/testando` — diferenças:**
 
 - Retorna apenas OS com `status = EM_TESTES`; sem paginação.
 - Inclui campo calculado `tempoEmTestesMin` (minutos desde entrada em `EM_TESTES`, via `OSHistorico`).
-- Busca `search` adicional: `subclienteSnapshotNome`, `idAparelho`, `idEntrada`.
-- OS do tipo `RETIRADA`: os campos `veiculo`, `subcliente` e `subclienteSnapshotNome` são zerados no retorno (não há veículo/subcliente a exibir).
+- Busca `search`: mesma base que a listagem + cláusulas extras via `buildOrdemServicoSearchOrClauses(..., 'emTestes')`: `subclienteSnapshotNome`, `idAparelho`, `idEntrada`. Termo vazio após trim não monta `OR` (o helper lança se chamado com string vazia — o serviço só chama após `search?.trim()`).
+- OS do tipo `TipoOS.RETIRADA`: os campos `veiculo`, `subcliente` e `subclienteSnapshotNome` são zerados no retorno (não há veículo/subcliente a exibir).
 
 **`POST /ordens-servico` — lógica de criação (`CreateOrdemServicoDto`):**
 
@@ -80,20 +82,20 @@ CANCELADO         → AGENDADO
 | `subclienteId` (sem update) | Busca subcliente e captura snapshot atual; cria OS |
 | Nenhum dos anteriores | Cria OS sem subcliente; sem snapshot |
 
-- `numero` gerado via `MAX(numero) + 1` dentro da transação (sem sequence).
+- `numero` gerado via `proximoNumeroOrdemServico(tx)` (`aggregate` `_max.numero` + 1) dentro da transação (sem sequence).
 - Retry automático (até 5×) em caso de erro `P2002` (unique constraint race condition no `numero`).
 - `status` default: `AGENDADO`.
 - `idAparelho` e `localInstalacao` recebem `.trim()` na persistência.
 
-**`PATCH /:id/status` — efeitos colaterais em `updateStatus`:**
+**`PATCH /:id/status` — fluxo em `updateStatus`:**
 
-1. Valida transição via `TRANSICOES_VALIDAS` (lança `BadRequestException` se inválida).
+1. Valida transição via `TRANSICOES_VALIDAS` (lança `BadRequestException` se inválida). Exceção: `TipoOS.RETIRADA` em `AGENDADO` pode ir direto para `AGUARDANDO_CADASTRO`.
 2. Ao transitar para `AGUARDANDO_CADASTRO`: grava `statusCadastro = AGUARDANDO`.
 3. Campo `localInstalacao`/`posChave`: em OS do tipo `REVISAO`, vai para `localInstalacaoEntrada`/`posChaveEntrada` (não sobrescreve campos de emissão).
 4. Campo `observacao`: prefixado com `"Observações do Teste:"` e concatenado a `os.observacoes` existente.
-5. Ao transitar para `TESTES_REALIZADOS` em `REVISAO` ou `RETIRADA` — **aparelho de saída** (`idAparelho`): se existir e estiver vinculado ao mesmo `veiculoId` da OS, muda status para `COM_TECNICO`, desvincula `veiculoId` e `subclienteId`, cria `AparelhoHistorico`.
-6. Ao transitar para `TESTES_REALIZADOS` em `INSTALACAO_*` ou `REVISAO` — **aparelho novo** (rastreador `idAparelho` ou `idEntrada` em REVISAO): muda status para `INSTALADO` e replica no SIM vinculado; cria `AparelhoHistorico` para ambos.
-7. Débito: se rastreador novo tem `proprietario = INFINITY` ou `proprietario = CLIENTE` mas `clienteId ≠ os.clienteId`, chama `debitosService.consolidarDebitoTx` com `devedorClienteId = os.clienteId` e `credorClienteId` do aparelho. Lança `BadRequestException` se marca/modelo não encontrados no catálogo.
+5. Transação Prisma: grava `OSHistorico` + `update` da OS; em seguida `OrdemServicoStatusSideEffectsService.aplicarSeTestesRealizados(tx, id, novoStatus, snapshot mínimo da OS)` quando o novo status é `TESTES_REALIZADOS`:
+   - **Aparelho de saída** (`REVISAO` / `RETIRADA`, `idAparelho`, mesmo `veiculoId`): `COM_TECNICO`, desvincula veículo/subcliente, `AparelhoHistorico`.
+   - **Aparelho novo** (`INSTALACAO_*` / `REVISAO` com IMEI novo): `INSTALADO`, SIM vinculado, históricos; débito via `consolidarDebitoTx` nas mesmas regras de proprietário/catálogo (erro de catálogo → `BadRequestException`).
 
 **`PATCH /:id/aparelho` — `updateIdAparelho`:**
 
@@ -129,15 +131,49 @@ Todos os campos abaixo são gravados no momento da criação da OS e não se alt
 
 **`OSHistorico`:** `id`, `ordemServicoId`, `statusAnterior`, `statusNovo`, `observacao?`, `criadoEm`.
 
-**Frontend — páginas do domínio:**
+**Frontend — estrutura do domínio (`client/src/pages/ordens-servico/`):**
 
-| Arquivo | Função |
+| Caminho | Função |
 |---------|--------|
-| `client/src/pages/OrdensServicoPage.tsx` | Lista principal de OS; filtros por status/search; paginação |
-| `client/src/pages/ordens-servico/OrdensServicoCriacaoPage.tsx` | Criação de OS com seleção de subcliente/create/update inline |
-| `client/src/pages/testes/TestesPage.tsx` | Bancada de testes; ver seção **"Página: TestesPage — Bancada de Testes"** para detalhes completos |
+| `OrdensServicoPage.tsx` | Entrada da **listagem**: compõe componentes em `lista/components/` e o hook `hooks/useOrdensServicoPage.ts` |
+| `OrdensServicoCriacaoPage.tsx` | Entrada da **criação** (`/ordens-servico/nova`): orquestra formulário; importa módulos em `criacao/*` |
+| `shared/ordens-servico.types.ts` | Tipos compartilháveis da feature: resumo, lista paginada, detalhe da OS, subcliente para exibição |
+| `shared/ordens-servico.constants.ts` | Labels/cores de status de workflow (`ORDENS_SERVICO_STATUS_*`), `totalOrdensFromResumo` |
+| `shared/ordens-servico.display.ts` | Helpers puros: `getSubclienteParaExibicao`, `formatEnderecoSubcliente`, `formatDadosVeiculo`, `getDadosTeste`, `getDadosRetirada` |
+| `hooks/useOrdensServicoPage.ts` | Estado, queries, mutation de status, PDF e handlers da listagem |
+| `lista/components/` | UI só da listagem: pipeline, toolbar, tabela, painel expandido, diálogos (confirmar testes, retirada) |
+| `criacao/` | Schema, payload, resumo, derived, hooks e componentes da tela de criação (ver tabela abaixo) |
+| `client/src/pages/testes/TestesPage.tsx` | Bancada de testes (módulo em `pages/testes/{components,hooks,lib,sections}/`); ver `docs/context/frontend-agendamento.md` |
 
-**`OrdensServicoCriacaoPage` — detalhes de implementação:**
+**Testes de frontend (Vitest) — listagem:** `client/src/__tests__/pages/ordens-servico/` — integração da página, hook `useOrdensServicoPage`, componentes de `lista/components/`, e testes unitários de `shared/` (`ordens-servico-page.display.test.ts`, `ordens-servico-page.constants.test.ts`).
+
+**Módulo de criação de OS (`client/src/pages/ordens-servico/criacao/`):**
+
+A tela de criação foi refatorada em módulos reutilizáveis (schema, payload, cálculo de resumo, hooks e componentes de seção). A página `OrdensServicoCriacaoPage.tsx` só compõe esses blocos e define `handleSubmit` (incl. `POST /veiculos/criar-ou-buscar` antes da mutação).
+
+| Arquivo / pasta | Responsabilidade |
+|-----------------|------------------|
+| `ordens-servico-criacao.schema.ts` | `criacaoOsFormSchema`, `criacaoOsDefaultValues`, tipo `CriacaoOsFormData` (Zod + refine veículo/placa) |
+| `ordens-servico-criacao.types.ts` | Tipos: cliente/subcliente/técnico/preços, payload `CriarOrdemServicoPayload` |
+| `ordens-servico-criacao.constants.ts` | `tipoServicoConfig`, `cobrancaOptions`, `VEICULO_TIPOS`, `veiculoTipoIconMap`, `tipoToPrecoKey`, `TECNICO_PRECO_CARDS` |
+| `ordens-servico-criacao.payload.ts` | Regras puras: `precheckCriacaoOs`, `buildSubclienteCreate/Update`, `buildCriarOrdemServicoPayload`, `buscarOuCriarVeiculoId`, `trimObservacoes` |
+| `ordens-servico-criacao.resumo.ts` | `computeDeslocamentoSidebar`, `computeValorTotalAproximado`, `precoTecnicoCardDisplay`, `formatBrl` (sidebar: um único núcleo de cálculo) |
+| `ordens-servico-criacao.derived.ts` | `criacaoOsWatchFieldList`, `mapCriacaoOsWatchFields`, `computeCriacaoOsDerivedFlags` (checklist + `isFormValid`) |
+| `hooks/useOrdensServicoCriacaoCatalogs.ts` | Queries: clientes, cliente Infinity, detalhe Infinity, técnicos, aparelhos; `rastreadoresInstalados` filtrado |
+| `hooks/usePreencherVeiculoPorPlaca.ts` | `useConsultaPlaca` + efeitos que preenchem o form e toasts de sucesso/erro |
+| `hooks/useOrdensServicoCriacaoDerivedState.ts` | `useWatch` + flags derivadas; `useCriacaoOsWatchedForSidebar` para a sidebar |
+| `hooks/useCriarOrdemServicoMutation.ts` | `POST /ordens-servico`, invalidação de queries, toast, `navigate("/")` |
+| `components/OrdensServicoCriacaoHeader.tsx` | Cabeçalho: voltar, cancelar, emitir |
+| `components/OrdensServicoCriacaoClienteSection.tsx` | Infinity/Cliente + subcliente completo |
+| `components/OrdensServicoCriacaoTecnicoSection.tsx` | Técnico + cards de preço |
+| `components/OrdensServicoCriacaoVeiculoSection.tsx` | Placa e dados do veículo |
+| `components/OrdensServicoCriacaoServicoSection.tsx` | Tipo de serviço + bloco revisão/retirada |
+| `components/OrdensServicoCriacaoObservacoesSection.tsx` | Textarea de observações |
+| `components/OrdensServicoCriacaoSidebar.tsx` | Resumo, checklist, KM para deslocamento, total aproximado; **estado `kmEstimado` local ao sidebar** |
+
+**Testes de frontend (Vitest) — criação de OS:** `client/src/__tests__/pages/ordens-servico/criacao/` (schema, constants, payload, resumo, derived, hooks, componentes, integração importando `OrdensServicoCriacaoPage` de `@/pages/ordens-servico/OrdensServicoCriacaoPage`).
+
+**`OrdensServicoCriacaoPage` — detalhes de implementação (comportamento inalterado):**
 
 Permissão exigida: `AGENDAMENTO.OS.CRIAR` (via `hasPermission` de `useAuth`). Sem ela o botão "Emitir Ordem" fica desabilitado.
 
@@ -170,12 +206,12 @@ Permissão exigida: `AGENDAMENTO.OS.CRIAR` (via `hasPermission` de `useAuth`). S
 | `REVISAO` | Exibe seção "ID Instalado / Local de Instalação / Pós Chave" |
 | `RETIRADA` | Idem acima |
 
-Mapeamento `tipoToPrecoKey` converte `tipo` → chave em `PrecoTecnico` para exibir preço do técnico.
+Mapeamento `tipoToPrecoKey` (em `ordens-servico-criacao.constants.ts`) converte `tipo` → chave em `PrecoTecnico` para exibir preço do técnico.
 
 **Formulário (react-hook-form + Zod):**
 
-- Schema: `client/src/pages/ordens-servico/OrdensServicoCriacaoPage.tsx` (inline, `z.object(...).refine(...)`).
-- Validação mínima para habilitar "Emitir Ordem": `temCliente` (subcliente completo + cliente resolvido) **E** `temTipo`.
+- Schema: `criacao/ordens-servico-criacao.schema.ts` — `z.object(...).refine(...)` (veículo com placa preenchida exige marca/modelo/ano/cor).
+- Validação mínima para habilitar "Emitir Ordem": `temCliente` (subcliente completo + cliente resolvido) **E** `temTipo` — veja `computeCriacaoOsDerivedFlags` em `ordens-servico-criacao.derived.ts`.
 - `temTecnico` e `temVeiculo` contribuem apenas para o checklist visual na sidebar — não bloqueiam submissão.
 
 **Sidebar fixa (resumo + checklist):**
@@ -207,8 +243,10 @@ Mutação `POST /ordens-servico` invalida `["ordens-servico"]`; se `subclienteUp
 | Arquivo | Cobertura |
 |---------|-----------|
 | `ordens-servico.controller.spec.ts` | Delegação controller → service; parsing de ids; `findTestando` com/sem search; `updateIdAparelho` trim; `getPdf` retorna `StreamableFile` |
-| `ordens-servico.service.spec.ts` | `findAll` (paginação, filtros), `findOne` (NotFoundException), `create` (todos os fluxos de subcliente), `updateStatus` (máquina de estados, efeitos em aparelhos, débitos), `updateIdAparelho` (REVISAO vs demais), `getResumo`, `getClienteInfinityOuCriar`, `findTestando` |
-| `html-ordem-servico.generator.spec.ts` | Geração de HTML por tipo de OS |
+| `ordens-servico.service.spec.ts` | `findAll` / `findTestando` (paginação, filtros, OR alinhado aos helpers, RETIRADA/REVISAO no retorno), `findOne`, `create` (subcliente, `aggregate` 1× por transição), `updateStatus` (máquina de estados, exceção RETIRADA, efeitos em aparelhos, débitos), `updateIdAparelho`, `getResumo`, `getClienteInfinityOuCriar` |
+| `ordem-servico.helpers.spec.ts` | `buildOrdemServicoSearchOrClauses` (escopos, base compartilhada, edges numéricos/unicode/vazio); `proximoNumeroOrdemServico` |
+| `ordem-servico-status-side-effects.service.spec.ts` | Efeitos em `TESTES_REALIZADOS`: desvinculação, instalação, SIM, débito, catálogo |
+| `html-ordem-servico.generator.spec.ts` | Geração de HTML por tipo de OS; ramos `TipoOS` (RETIRADA, DESLOCAMENTO, instalação, tipo desconhecido) |
 
 ---
 

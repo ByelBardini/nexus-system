@@ -216,6 +216,91 @@ describe('Tecnicos (e2e)', () => {
     expect(patchRes.status).toBe(200);
     expect(geocodeMock).toHaveBeenCalledTimes(1);
   });
+
+  it('GET /tecnicos/:id retorna técnico com preços após criação', async () => {
+    geocodeMock.mockResolvedValue(null);
+    const suffix = Date.now() + 10;
+    const createRes = await request(app.getHttpServer())
+      .post('/tecnicos')
+      .send({
+        nome: `E2E GetOne ${suffix}`,
+        precos: {
+          instalacaoComBloqueio: 100,
+          instalacaoSemBloqueio: 80,
+          revisao: 50,
+          retirada: 10,
+          deslocamento: 5,
+        },
+      });
+
+    expect([200, 201]).toContain(createRes.status);
+    const id = createRes.body.id as number;
+
+    const getRes = await request(app.getHttpServer()).get(`/tecnicos/${id}`);
+
+    expect(getRes.status).toBe(200);
+    expect(getRes.body).toMatchObject({
+      id,
+      nome: `E2E GetOne ${suffix}`,
+      precos: expect.objectContaining({
+        revisao: expect.anything(),
+        instalacaoComBloqueio: expect.anything(),
+      }),
+    });
+  });
+
+  it('GET /tecnicos/:id retorna 404 para id inexistente', async () => {
+    const res = await request(app.getHttpServer()).get('/tecnicos/999999999');
+    expect(res.status).toBe(404);
+  });
+
+  it('POST /tecnicos sem precos retorna técnico sem objeto precos preenchido pelo ORM', async () => {
+    geocodeMock.mockResolvedValue(null);
+    const suffix = Date.now() + 11;
+    const res = await request(app.getHttpServer())
+      .post('/tecnicos')
+      .send({
+        nome: `E2E Sem Precos ${suffix}`,
+      });
+
+    expect([200, 201]).toContain(res.status);
+    expect(res.body.precos).toBeNull();
+  });
+
+  it('PATCH /tecnicos/:id com precos parciais preserva demais valores numéricos', async () => {
+    geocodeMock.mockResolvedValue(null);
+    const suffix = Date.now() + 12;
+    const createRes = await request(app.getHttpServer())
+      .post('/tecnicos')
+      .send({
+        nome: `E2E Merge Preco ${suffix}`,
+        precos: {
+          instalacaoComBloqueio: 100,
+          instalacaoSemBloqueio: 90,
+          revisao: 40,
+          retirada: 20,
+          deslocamento: 15,
+        },
+      });
+
+    expect([200, 201]).toContain(createRes.status);
+    const id = createRes.body.id as number;
+
+    const patchRes = await request(app.getHttpServer())
+      .patch(`/tecnicos/${id}`)
+      .send({
+        precos: { revisao: 77 },
+      });
+
+    expect(patchRes.status).toBe(200);
+    const p = patchRes.body.precos;
+    expect(p).toBeDefined();
+    expect(Number(p.revisao)).toBe(77);
+    expect(Number(p.instalacaoComBloqueio)).toBe(100);
+    expect(Number(p.instalacaoSemBloqueio)).toBe(90);
+    expect(Number(p.retirada)).toBe(20);
+    expect(Number(p.deslocamento)).toBe(15);
+  });
 });
 
 describe('Tecnicos (e2e) — permissão POST', () => {

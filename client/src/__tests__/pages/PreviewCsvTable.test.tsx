@@ -4,7 +4,7 @@ import {
   PreviewCsvTable,
   type CsvPreviewResult,
   type CsvPreviewLinha,
-} from "@/pages/equipamentos/PreviewCsvTable";
+} from "@/pages/equipamentos/pareamento/preview/PreviewCsvTable";
 
 function makePreview(
   linhas: CsvPreviewLinha[],
@@ -34,37 +34,41 @@ const linhaBase: CsvPreviewLinha = {
 };
 
 describe("PreviewCsvTable — contadores e cabeçalhos", () => {
-  it("renderiza os três contadores (válidos, total, erros)", () => {
-    const preview = makePreview([
-      { ...linhaBase },
-      {
-        ...linhaBase,
-        imei: "222",
-        iccid: "333",
-        tracker_acao: "ERRO",
-        sim_acao: "ERRO",
-        erros: ["IMEI_INVALIDO"],
-      },
-      {
-        ...linhaBase,
-        imei: "444",
-        iccid: "555",
-        tracker_acao: "ERRO",
-        sim_acao: "ERRO",
-        erros: ["IMEI_INVALIDO"],
-      },
-    ]);
+  it("renderiza os quatro contadores (válidos, com aviso, total, erros)", () => {
+    const preview = makePreview(
+      [
+        { ...linhaBase },
+        {
+          ...linhaBase,
+          imei: "222",
+          iccid: "333",
+          tracker_acao: "ERRO",
+          sim_acao: "ERRO",
+          erros: ["IMEI_INVALIDO"],
+        },
+        {
+          ...linhaBase,
+          imei: "444",
+          iccid: "555",
+          tracker_acao: "ERRO",
+          sim_acao: "ERRO",
+          erros: ["IMEI_INVALIDO"],
+        },
+      ],
+      { comAviso: 7 },
+    );
 
     const { container } = render(<PreviewCsvTable preview={preview} />);
 
     expect(screen.getByText(/válidos/i)).toBeInTheDocument();
+    expect(screen.getByText(/com aviso/i)).toBeInTheDocument();
     expect(screen.getByText(/total de linhas/i)).toBeInTheDocument();
     expect(screen.getAllByText(/^erros$/i).length).toBeGreaterThanOrEqual(1);
 
     const valores = Array.from(container.querySelectorAll("p.text-2xl")).map(
       (p) => p.textContent,
     );
-    expect(valores).toEqual(["1", "3", "2"]);
+    expect(valores).toEqual(["1", "7", "3", "2"]);
   });
 
   it("renderiza todas as colunas no header da tabela", () => {

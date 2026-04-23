@@ -261,13 +261,7 @@ export class CadastroRastreamentoService {
         data: this._dadosConclusaoOS(dto, userId),
       });
 
-      await tx.oSHistorico.create({
-        data: {
-          ordemServicoId: os.id,
-          statusAnterior: StatusOS.AGUARDANDO_CADASTRO,
-          statusNovo: StatusOS.FINALIZADO,
-        },
-      });
+      await this._criarHistoricoConclusaoCadastro(tx, os.id);
     });
 
     return this.prisma.ordemServico.findUnique({ where: { id: os.id } });
@@ -339,13 +333,7 @@ export class CadastroRastreamentoService {
         data: this._dadosConclusaoOS(dto, userId),
       });
 
-      await tx.oSHistorico.create({
-        data: {
-          ordemServicoId: os.id,
-          statusAnterior: StatusOS.AGUARDANDO_CADASTRO,
-          statusNovo: StatusOS.FINALIZADO,
-        },
-      });
+      await this._criarHistoricoConclusaoCadastro(tx, os.id);
     });
 
     return this.prisma.ordemServico.findUnique({ where: { id: os.id } });
@@ -390,16 +378,23 @@ export class CadastroRastreamentoService {
         data: this._dadosConclusaoOS(dto, userId),
       });
 
-      await tx.oSHistorico.create({
-        data: {
-          ordemServicoId: os.id,
-          statusAnterior: StatusOS.AGUARDANDO_CADASTRO,
-          statusNovo: StatusOS.FINALIZADO,
-        },
-      });
+      await this._criarHistoricoConclusaoCadastro(tx, os.id);
     });
 
     return this.prisma.ordemServico.findUnique({ where: { id: os.id } });
+  }
+
+  private async _criarHistoricoConclusaoCadastro(
+    tx: Prisma.TransactionClient,
+    ordemServicoId: number,
+  ) {
+    await tx.oSHistorico.create({
+      data: {
+        ordemServicoId,
+        statusAnterior: StatusOS.AGUARDANDO_CADASTRO,
+        statusNovo: StatusOS.FINALIZADO,
+      },
+    });
   }
 
   private _dadosConclusaoOS(

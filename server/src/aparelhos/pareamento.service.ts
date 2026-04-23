@@ -1,7 +1,33 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { DebitosRastreadoresService } from '../debitos-rastreadores/debitos-rastreadores.service';
-import { ProprietarioTipo } from '@prisma/client';
+import { Prisma, ProprietarioTipo } from '@prisma/client';
+
+type PlanoRastreadorPareamentoTx =
+  | { kind: 'EXISTENTE'; trackerId: number }
+  | { kind: 'LOTE'; loteId: number }
+  | { kind: 'MANUAL'; marca: string; modelo: string }
+  | { kind: 'PULAR' };
+
+type PlanoSimPareamentoTx =
+  | { kind: 'EXISTENTE'; simId: number }
+  | { kind: 'LOTE'; loteId: number }
+  | {
+      kind: 'MANUAL';
+      operadora?: string | null;
+      marcaSimcardId?: number | null;
+      planoSimcardId?: number | null;
+    }
+  | { kind: 'PULAR' };
+
+type CtxPareamentoLinhaTx = {
+  imei: string;
+  iccid: string;
+  proprietarioFinal: ProprietarioTipo;
+  clienteId: number | null;
+  tecnicoId: number | undefined;
+  historicoObservacao: string;
+};
 
 export type TrackerCsvAcao =
   | 'VINCULAR_EXISTENTE'
@@ -64,6 +90,322 @@ export class PareamentoService {
     private readonly prisma: PrismaService,
     private readonly debitosService: DebitosRastreadoresService,
   ) {}
+
+  private mapearPlanoPareamentoSimples(
+    linha: {
+      tracker_status:
+        | 'FOUND_AVAILABLE'
+        | 'FOUND_ALREADY_LINKED'
+        | 'NEEDS_CREATE'
+        | 'INVALID_FORMAT';
+      sim_status:
+        | 'FOUND_AVAILABLE'
+        | 'FOUND_ALREADY_LINKED'
+        | 'NEEDS_CREATE'
+        | 'INVALID_FORMAT';
+      trackerId?: number;
+      simId?: number;
+    },
+    loteRastreadorId: number | undefined,
+    loteSimId: number | undefined,
+    rastreadorManual: { marca: string; modelo: string } | undefined,
+    simManual:
+      | {
+          operadora?: string;
+          marcaSimcardId?: number;
+          planoSimcardId?: number;
+        }
+      | undefined,
+  ): {
+    planoRastreador: PlanoRastreadorPareamentoTx;
+    planoSim: PlanoSimPareamentoTx;
+  } {
+    let planoRastreador: PlanoRastreadorPareamentoTx = { kind: 'PULAR' };
+    if (linha.tracker_status === 'FOUND_AVAILABLE' && linha.trackerId) {
+      planoRastreador = { kind: 'EXISTENTE', trackerId: linha.trackerId };
+    } else if (linha.tracker_status === 'NEEDS_CREATE' && loteRastreadorId) {
+      planoRastreador = { kind: 'LOTE', loteId: loteRastreadorId };
+    } else if (
+      linha.tracker_status === 'NEEDS_CREATE' &&
+      rastreadorManual?.marca &&
+      rastreadorManual?.modelo
+    ) {
+      planoRastreador = {
+        kind: 'MANUAL',
+        marca: rastreadorManual.marca,
+        modelo: rastreadorManual.modelo,
+      };
+    }
+
+    let planoSim: PlanoSimPareamentoTx = { kind: 'PULAR' };
+    if (linha.sim_status === 'FOUND_AVAILABLE' && linha.simId) {
+      planoSim = { kind: 'EXISTENTE', simId: linha.simId };
+    } else if (linha.sim_status === 'NEEDS_CREATE' && loteSimId) {
+      planoSim = { kind: 'LOTE', loteId: loteSimId };
+    } else if (
+      linha.sim_status === 'NEEDS_CREATE' &&
+      (simManual?.operadora || simManual?.marcaSimcardId)
+    ) {
+      planoSim = {
+        kind: 'MANUAL',
+        operadora: simManual?.operadora,
+        marcaSimcardId: simManual?.marcaSimcardId ?? null,
+        planoSimcardId: simManual?.planoSimcardId ?? null,
+      };
+    }
+
+    return { planoRastreador, planoSim };
+  }
+
+  private mapearPlanoPareamentoCsv(linha: PareamentoCsvPreviewLinha): {
+    planoRastreador: PlanoRastreadorPareamentoTx;
+    planoSim: PlanoSimPareamentoTx;
+  } {
+    let planoRastreador: PlanoRastreadorPareamentoTx = { kind: 'PULAR' };
+    if (linha.tracker_acao === 'VINCULAR_EXISTENTE' && linha.trackerId) {
+      planoRastreador = { kind: 'EXISTENTE', trackerId: linha.trackerId };
+    } else if (
+      linha.tracker_acao === 'CRIAR_VIA_LOTE' &&
+      linha.loteRastreadorId
+    ) {
+      planoRastreador = { kind: 'LOTE', loteId: linha.loteRastreadorId };
+    } else if (
+      linha.tracker_acao === 'CRIAR_MANUAL' &&
+      linha.marcaRastreador &&
+      linha.modeloRastreador
+    ) {
+      planoRastreador = {
+        kind: 'MANUAL',
+        marca: linha.marcaRastreador,
+        modelo: linha.modeloRastreador,
+      };
+    }
+
+    let planoSim: PlanoSimPareamentoTx = { kind: 'PULAR' };
+    if (linha.sim_acao === 'VINCULAR_EXISTENTE' && linha.simId) {
+      planoSim = { kind: 'EXISTENTE', simId: linha.simId };
+    } else if (linha.sim_acao === 'CRIAR_VIA_LOTE' && linha.loteSimId) {
+      planoSim = { kind: 'LOTE', loteId: linha.loteSimId };
+    } else if (linha.sim_acao === 'CRIAR_MANUAL') {
+      planoSim = {
+        kind: 'MANUAL',
+        operadora: linha.operadora,
+        marcaSimcardId: linha.marcaSimcardId ?? null,
+        planoSimcardId: linha.planoSimcardId ?? null,
+      };
+    }
+
+    return { planoRastreador, planoSim };
+  }
+
+  private async executarPareamentoLinhaTx(
+    tx: Prisma.TransactionClient,
+    ctx: CtxPareamentoLinhaTx,
+    planoRastreador: PlanoRastreadorPareamentoTx,
+    planoSim: PlanoSimPareamentoTx,
+  ): Promise<{
+    rastreadorId: number;
+    simId: number;
+    equipamentoId: number;
+  } | null> {
+    if (planoRastreador.kind === 'PULAR' || planoSim.kind === 'PULAR') {
+      return null;
+    }
+
+    const { proprietarioFinal, clienteId, tecnicoId } = ctx;
+    let rastreadorId: number;
+    let simId: number;
+    let rastreadorAnterior: {
+      proprietario: ProprietarioTipo;
+      clienteId: number | null;
+      marca: string | null;
+      modelo: string | null;
+    } | null = null;
+
+    if (planoRastreador.kind === 'EXISTENTE') {
+      rastreadorId = planoRastreador.trackerId;
+      rastreadorAnterior = await tx.aparelho.findUnique({
+        where: { id: planoRastreador.trackerId },
+        select: {
+          proprietario: true,
+          clienteId: true,
+          marca: true,
+          modelo: true,
+        },
+      });
+    } else if (planoRastreador.kind === 'LOTE') {
+      const aparelhoSemId = await tx.aparelho.findFirst({
+        where: {
+          loteId: planoRastreador.loteId,
+          tipo: 'RASTREADOR',
+          identificador: null,
+          status: 'EM_ESTOQUE',
+        },
+        include: { lote: true },
+      });
+      if (!aparelhoSemId) {
+        throw new BadRequestException(
+          `Lote de rastreadores sem saldo disponível para IMEI ${ctx.imei}`,
+        );
+      }
+      rastreadorAnterior = {
+        proprietario: aparelhoSemId.proprietario,
+        clienteId: aparelhoSemId.clienteId,
+        marca: aparelhoSemId.marca ?? aparelhoSemId.lote?.marca ?? null,
+        modelo: aparelhoSemId.modelo ?? aparelhoSemId.lote?.modelo ?? null,
+      };
+      const cleanImei = ctx.imei.replace(/\D/g, '');
+      await tx.aparelho.update({
+        where: { id: aparelhoSemId.id },
+        data: {
+          identificador: cleanImei,
+          proprietario: proprietarioFinal,
+          clienteId: clienteId ?? null,
+          tecnicoId: tecnicoId ?? null,
+        },
+      });
+      rastreadorId = aparelhoSemId.id;
+    } else {
+      const cleanImei = ctx.imei.replace(/\D/g, '');
+      const novo = await tx.aparelho.create({
+        data: {
+          tipo: 'RASTREADOR',
+          identificador: cleanImei,
+          status: 'EM_ESTOQUE',
+          proprietario: proprietarioFinal,
+          clienteId: clienteId ?? null,
+          tecnicoId: tecnicoId ?? null,
+          marca: planoRastreador.marca,
+          modelo: planoRastreador.modelo,
+        },
+      });
+      rastreadorId = novo.id;
+    }
+
+    if (planoSim.kind === 'EXISTENTE') {
+      simId = planoSim.simId;
+    } else if (planoSim.kind === 'LOTE') {
+      const aparelhoSemId = await tx.aparelho.findFirst({
+        where: {
+          loteId: planoSim.loteId,
+          tipo: 'SIM',
+          identificador: null,
+          status: 'EM_ESTOQUE',
+        },
+      });
+      if (!aparelhoSemId) {
+        throw new BadRequestException(
+          `Lote de SIMs sem saldo disponível para ICCID ${ctx.iccid}`,
+        );
+      }
+      const cleanIccid = ctx.iccid.replace(/\D/g, '');
+      await tx.aparelho.update({
+        where: { id: aparelhoSemId.id },
+        data: {
+          identificador: cleanIccid,
+          proprietario: 'INFINITY',
+          clienteId: null,
+        },
+      });
+      simId = aparelhoSemId.id;
+    } else {
+      const cleanIccid = ctx.iccid.replace(/\D/g, '');
+      let operadoraNome = planoSim.operadora;
+      if (planoSim.marcaSimcardId) {
+        const marcaSim = await tx.marcaSimcard.findUnique({
+          where: { id: planoSim.marcaSimcardId },
+          include: { operadora: true },
+        });
+        if (!marcaSim)
+          throw new BadRequestException('Marca de simcard não encontrada');
+        operadoraNome = marcaSim.operadora.nome;
+      }
+      const novo = await tx.aparelho.create({
+        data: {
+          tipo: 'SIM',
+          identificador: cleanIccid,
+          status: 'EM_ESTOQUE',
+          proprietario: 'INFINITY',
+          clienteId: null,
+          operadora: operadoraNome ?? null,
+          marcaSimcardId: planoSim.marcaSimcardId ?? null,
+          planoSimcardId: planoSim.planoSimcardId ?? null,
+        },
+      });
+      simId = novo.id;
+    }
+
+    await tx.aparelho.update({
+      where: { id: rastreadorId },
+      data: {
+        simVinculadoId: simId,
+        status: 'CONFIGURADO',
+        proprietario: proprietarioFinal,
+        clienteId: clienteId ?? null,
+        ...(tecnicoId !== undefined ? { tecnicoId } : {}),
+      },
+    });
+    await tx.aparelho.update({
+      where: { id: simId },
+      data: {
+        status: 'CONFIGURADO',
+        proprietario: 'INFINITY',
+        clienteId: null,
+      },
+    });
+
+    if (rastreadorAnterior) {
+      const proprietarioMudou =
+        rastreadorAnterior.proprietario !== proprietarioFinal ||
+        rastreadorAnterior.clienteId !== (clienteId ?? null);
+
+      if (
+        proprietarioMudou &&
+        rastreadorAnterior.marca &&
+        rastreadorAnterior.modelo
+      ) {
+        const marcaRec = await tx.marcaEquipamento.findFirst({
+          where: { nome: rastreadorAnterior.marca },
+        });
+        const modeloRec = marcaRec
+          ? await tx.modeloEquipamento.findFirst({
+              where: {
+                marcaId: marcaRec.id,
+                nome: rastreadorAnterior.modelo,
+              },
+            })
+          : null;
+
+        if (marcaRec && modeloRec) {
+          await this.debitosService.consolidarDebitoTx(tx, {
+            devedorTipo: proprietarioFinal,
+            devedorClienteId: clienteId ?? null,
+            credorTipo: rastreadorAnterior.proprietario,
+            credorClienteId: rastreadorAnterior.clienteId,
+            marcaId: marcaRec.id,
+            modeloId: modeloRec.id,
+            delta: 1,
+            aparelhoId: rastreadorId,
+          });
+        }
+      }
+    }
+
+    await tx.aparelhoHistorico.create({
+      data: {
+        aparelhoId: rastreadorId,
+        statusAnterior: 'EM_ESTOQUE',
+        statusNovo: 'CONFIGURADO',
+        observacao: ctx.historicoObservacao,
+      },
+    });
+
+    return {
+      rastreadorId,
+      simId,
+      equipamentoId: rastreadorId,
+    };
+  }
 
   /** Resolve rastreador por IMEI: FOUND_AVAILABLE | FOUND_ALREADY_LINKED | NEEDS_CREATE | INVALID_FORMAT */
   private async resolveRastreador(imei: string): Promise<{
@@ -241,7 +583,7 @@ export class PareamentoService {
       clienteId,
       tecnicoId,
     } = dto;
-    const proprietarioFinal = proprietario ?? 'INFINITY';
+    const proprietarioFinal = (proprietario ?? 'INFINITY') as ProprietarioTipo;
     if (!pares?.length) {
       throw new BadRequestException('Nenhum par informado');
     }
@@ -280,215 +622,27 @@ export class PareamentoService {
       }[] = [];
 
       for (const linha of preview.linhas) {
-        let rastreadorId: number;
-        let simId: number;
-        let rastreadorAnterior: {
-          proprietario: ProprietarioTipo;
-          clienteId: number | null;
-          marca: string | null;
-          modelo: string | null;
-        } | null = null;
-
-        // Resolver rastreador
-        if (linha.tracker_status === 'FOUND_AVAILABLE' && linha.trackerId) {
-          rastreadorId = linha.trackerId;
-          rastreadorAnterior = await tx.aparelho.findUnique({
-            where: { id: linha.trackerId },
-            select: {
-              proprietario: true,
-              clienteId: true,
-              marca: true,
-              modelo: true,
-            },
-          });
-        } else if (
-          linha.tracker_status === 'NEEDS_CREATE' &&
-          loteRastreadorId
-        ) {
-          const aparelhoSemId = await tx.aparelho.findFirst({
-            where: {
-              loteId: loteRastreadorId,
-              tipo: 'RASTREADOR',
-              identificador: null,
-              status: 'EM_ESTOQUE',
-            },
-            include: { lote: true },
-          });
-          if (!aparelhoSemId) {
-            throw new BadRequestException(
-              `Lote de rastreadores sem saldo disponível para IMEI ${linha.imei}`,
-            );
-          }
-          rastreadorAnterior = {
-            proprietario: aparelhoSemId.proprietario,
-            clienteId: aparelhoSemId.clienteId,
-            marca: aparelhoSemId.marca ?? aparelhoSemId.lote?.marca ?? null,
-            modelo: aparelhoSemId.modelo ?? aparelhoSemId.lote?.modelo ?? null,
-          };
-          const cleanImei = linha.imei.replace(/\D/g, '');
-          await tx.aparelho.update({
-            where: { id: aparelhoSemId.id },
-            data: {
-              identificador: cleanImei,
-              proprietario: proprietarioFinal,
-              clienteId: clienteId ?? null,
-              tecnicoId: tecnicoId ?? null,
-            },
-          });
-          rastreadorId = aparelhoSemId.id;
-        } else if (
-          linha.tracker_status === 'NEEDS_CREATE' &&
-          rastreadorManual?.marca &&
-          rastreadorManual?.modelo
-        ) {
-          const cleanImei = linha.imei.replace(/\D/g, '');
-          const novo = await tx.aparelho.create({
-            data: {
-              tipo: 'RASTREADOR',
-              identificador: cleanImei,
-              status: 'EM_ESTOQUE',
-              proprietario: proprietarioFinal,
-              clienteId: clienteId ?? null,
-              tecnicoId: tecnicoId ?? null,
-              marca: rastreadorManual.marca,
-              modelo: rastreadorManual.modelo,
-            },
-          });
-          rastreadorId = novo.id;
-        } else {
-          continue;
-        }
-
-        // Resolver SIM
-        if (linha.sim_status === 'FOUND_AVAILABLE' && linha.simId) {
-          simId = linha.simId;
-        } else if (linha.sim_status === 'NEEDS_CREATE' && loteSimId) {
-          const aparelhoSemId = await tx.aparelho.findFirst({
-            where: {
-              loteId: loteSimId,
-              tipo: 'SIM',
-              identificador: null,
-              status: 'EM_ESTOQUE',
-            },
-          });
-          if (!aparelhoSemId) {
-            throw new BadRequestException(
-              `Lote de SIMs sem saldo disponível para ICCID ${linha.iccid}`,
-            );
-          }
-          const cleanIccid = linha.iccid.replace(/\D/g, '');
-          await tx.aparelho.update({
-            where: { id: aparelhoSemId.id },
-            data: {
-              identificador: cleanIccid,
-              proprietario: 'INFINITY',
-              clienteId: null,
-            },
-          });
-          simId = aparelhoSemId.id;
-        } else if (
-          linha.sim_status === 'NEEDS_CREATE' &&
-          (simManual?.operadora || simManual?.marcaSimcardId)
-        ) {
-          const cleanIccid = linha.iccid.replace(/\D/g, '');
-          let operadoraNome = simManual.operadora;
-          if (simManual.marcaSimcardId) {
-            const marcaSim = await tx.marcaSimcard.findUnique({
-              where: { id: simManual.marcaSimcardId },
-              include: { operadora: true },
-            });
-            if (!marcaSim)
-              throw new BadRequestException('Marca de simcard não encontrada');
-            operadoraNome = marcaSim.operadora.nome;
-          }
-          const novo = await tx.aparelho.create({
-            data: {
-              tipo: 'SIM',
-              identificador: cleanIccid,
-              status: 'EM_ESTOQUE',
-              proprietario: 'INFINITY',
-              clienteId: null,
-              operadora: operadoraNome ?? null,
-              marcaSimcardId: simManual.marcaSimcardId ?? null,
-              planoSimcardId: simManual.planoSimcardId ?? null,
-            },
-          });
-          simId = novo.id;
-        } else {
-          continue;
-        }
-
-        // Vincular: rastreador recebe simVinculadoId e status CONFIGURADO
-        await tx.aparelho.update({
-          where: { id: rastreadorId },
-          data: {
-            simVinculadoId: simId,
-            status: 'CONFIGURADO',
-            proprietario: proprietarioFinal,
+        const { planoRastreador, planoSim } = this.mapearPlanoPareamentoSimples(
+          linha,
+          loteRastreadorId,
+          loteSimId,
+          rastreadorManual,
+          simManual,
+        );
+        const feito = await this.executarPareamentoLinhaTx(
+          tx,
+          {
+            imei: linha.imei,
+            iccid: linha.iccid,
+            proprietarioFinal,
             clienteId: clienteId ?? null,
-            ...(tecnicoId !== undefined ? { tecnicoId } : {}),
+            tecnicoId,
+            historicoObservacao: `Pareamento com SIM ${linha.iccid}`,
           },
-        });
-        await tx.aparelho.update({
-          where: { id: simId },
-          data: {
-            status: 'CONFIGURADO',
-            proprietario: 'INFINITY',
-            clienteId: null,
-          },
-        });
-
-        if (rastreadorAnterior) {
-          const proprietarioMudou =
-            rastreadorAnterior.proprietario !== proprietarioFinal ||
-            rastreadorAnterior.clienteId !== (clienteId ?? null);
-
-          if (
-            proprietarioMudou &&
-            rastreadorAnterior.marca &&
-            rastreadorAnterior.modelo
-          ) {
-            const marcaRec = await tx.marcaEquipamento.findFirst({
-              where: { nome: rastreadorAnterior.marca },
-            });
-            const modeloRec = marcaRec
-              ? await tx.modeloEquipamento.findFirst({
-                  where: {
-                    marcaId: marcaRec.id,
-                    nome: rastreadorAnterior.modelo,
-                  },
-                })
-              : null;
-
-            if (marcaRec && modeloRec) {
-              await this.debitosService.consolidarDebitoTx(tx, {
-                devedorTipo: proprietarioFinal,
-                devedorClienteId: clienteId ?? null,
-                credorTipo: rastreadorAnterior.proprietario,
-                credorClienteId: rastreadorAnterior.clienteId,
-                marcaId: marcaRec.id,
-                modeloId: modeloRec.id,
-                delta: 1,
-                aparelhoId: rastreadorId,
-              });
-            }
-          }
-        }
-
-        await tx.aparelhoHistorico.create({
-          data: {
-            aparelhoId: rastreadorId,
-            statusAnterior: 'EM_ESTOQUE',
-            statusNovo: 'CONFIGURADO',
-            observacao: `Pareamento com SIM ${linha.iccid}`,
-          },
-        });
-
-        criados.push({
-          rastreadorId,
-          simId,
-          equipamentoId: rastreadorId,
-        });
+          planoRastreador,
+          planoSim,
+        );
+        if (feito) criados.push(feito);
       }
 
       return { criados: criados.length, equipamentos: criados };
@@ -739,7 +893,8 @@ export class PareamentoService {
       );
     }
 
-    const proprietarioFinal = input.proprietario ?? 'INFINITY';
+    const proprietarioFinal = (input.proprietario ??
+      'INFINITY') as ProprietarioTipo;
     const clienteId = input.clienteId;
     const tecnicoId = input.tecnicoId;
 
@@ -751,209 +906,22 @@ export class PareamentoService {
       }[] = [];
 
       for (const linha of preview.linhas) {
-        let rastreadorId: number;
-        let simId: number;
-        let rastreadorAnterior: {
-          proprietario: ProprietarioTipo;
-          clienteId: number | null;
-          marca: string | null;
-          modelo: string | null;
-        } | null = null;
-
-        if (linha.tracker_acao === 'VINCULAR_EXISTENTE' && linha.trackerId) {
-          rastreadorId = linha.trackerId;
-          rastreadorAnterior = await tx.aparelho.findUnique({
-            where: { id: linha.trackerId },
-            select: {
-              proprietario: true,
-              clienteId: true,
-              marca: true,
-              modelo: true,
-            },
-          });
-        } else if (
-          linha.tracker_acao === 'CRIAR_VIA_LOTE' &&
-          linha.loteRastreadorId
-        ) {
-          const aparelhoSemId = await tx.aparelho.findFirst({
-            where: {
-              loteId: linha.loteRastreadorId,
-              tipo: 'RASTREADOR',
-              identificador: null,
-              status: 'EM_ESTOQUE',
-            },
-            include: { lote: true },
-          });
-          if (!aparelhoSemId) {
-            throw new BadRequestException(
-              `Lote de rastreadores sem saldo disponível para IMEI ${linha.imei}`,
-            );
-          }
-          rastreadorAnterior = {
-            proprietario: aparelhoSemId.proprietario,
-            clienteId: aparelhoSemId.clienteId,
-            marca: aparelhoSemId.marca ?? aparelhoSemId.lote?.marca ?? null,
-            modelo: aparelhoSemId.modelo ?? aparelhoSemId.lote?.modelo ?? null,
-          };
-          const cleanImei = linha.imei.replace(/\D/g, '');
-          await tx.aparelho.update({
-            where: { id: aparelhoSemId.id },
-            data: {
-              identificador: cleanImei,
-              proprietario: proprietarioFinal,
-              clienteId: clienteId ?? null,
-              tecnicoId: tecnicoId ?? null,
-            },
-          });
-          rastreadorId = aparelhoSemId.id;
-        } else if (
-          linha.tracker_acao === 'CRIAR_MANUAL' &&
-          linha.marcaRastreador &&
-          linha.modeloRastreador
-        ) {
-          const cleanImei = linha.imei.replace(/\D/g, '');
-          const novo = await tx.aparelho.create({
-            data: {
-              tipo: 'RASTREADOR',
-              identificador: cleanImei,
-              status: 'EM_ESTOQUE',
-              proprietario: proprietarioFinal,
-              clienteId: clienteId ?? null,
-              tecnicoId: tecnicoId ?? null,
-              marca: linha.marcaRastreador,
-              modelo: linha.modeloRastreador,
-            },
-          });
-          rastreadorId = novo.id;
-        } else {
-          continue;
-        }
-
-        if (linha.sim_acao === 'VINCULAR_EXISTENTE' && linha.simId) {
-          simId = linha.simId;
-        } else if (linha.sim_acao === 'CRIAR_VIA_LOTE' && linha.loteSimId) {
-          const aparelhoSemId = await tx.aparelho.findFirst({
-            where: {
-              loteId: linha.loteSimId,
-              tipo: 'SIM',
-              identificador: null,
-              status: 'EM_ESTOQUE',
-            },
-          });
-          if (!aparelhoSemId) {
-            throw new BadRequestException(
-              `Lote de SIMs sem saldo disponível para ICCID ${linha.iccid}`,
-            );
-          }
-          const cleanIccid = linha.iccid.replace(/\D/g, '');
-          await tx.aparelho.update({
-            where: { id: aparelhoSemId.id },
-            data: {
-              identificador: cleanIccid,
-              proprietario: 'INFINITY',
-              clienteId: null,
-            },
-          });
-          simId = aparelhoSemId.id;
-        } else if (linha.sim_acao === 'CRIAR_MANUAL') {
-          const cleanIccid = linha.iccid.replace(/\D/g, '');
-          let operadoraNome = linha.operadora;
-          if (linha.marcaSimcardId) {
-            const marcaSim = await tx.marcaSimcard.findUnique({
-              where: { id: linha.marcaSimcardId },
-              include: { operadora: true },
-            });
-            if (!marcaSim)
-              throw new BadRequestException('Marca de simcard não encontrada');
-            operadoraNome = marcaSim.operadora.nome;
-          }
-          const novo = await tx.aparelho.create({
-            data: {
-              tipo: 'SIM',
-              identificador: cleanIccid,
-              status: 'EM_ESTOQUE',
-              proprietario: 'INFINITY',
-              clienteId: null,
-              operadora: operadoraNome ?? null,
-              marcaSimcardId: linha.marcaSimcardId ?? null,
-              planoSimcardId: linha.planoSimcardId ?? null,
-            },
-          });
-          simId = novo.id;
-        } else {
-          continue;
-        }
-
-        await tx.aparelho.update({
-          where: { id: rastreadorId },
-          data: {
-            simVinculadoId: simId,
-            status: 'CONFIGURADO',
-            proprietario: proprietarioFinal,
+        const { planoRastreador, planoSim } =
+          this.mapearPlanoPareamentoCsv(linha);
+        const feito = await this.executarPareamentoLinhaTx(
+          tx,
+          {
+            imei: linha.imei,
+            iccid: linha.iccid,
+            proprietarioFinal,
             clienteId: clienteId ?? null,
-            ...(tecnicoId !== undefined ? { tecnicoId } : {}),
+            tecnicoId,
+            historicoObservacao: `Pareamento CSV com SIM ${linha.iccid}`,
           },
-        });
-        await tx.aparelho.update({
-          where: { id: simId },
-          data: {
-            status: 'CONFIGURADO',
-            proprietario: 'INFINITY',
-            clienteId: null,
-          },
-        });
-
-        if (rastreadorAnterior) {
-          const proprietarioMudou =
-            rastreadorAnterior.proprietario !== proprietarioFinal ||
-            rastreadorAnterior.clienteId !== (clienteId ?? null);
-
-          if (
-            proprietarioMudou &&
-            rastreadorAnterior.marca &&
-            rastreadorAnterior.modelo
-          ) {
-            const marcaRec = await tx.marcaEquipamento.findFirst({
-              where: { nome: rastreadorAnterior.marca },
-            });
-            const modeloRec = marcaRec
-              ? await tx.modeloEquipamento.findFirst({
-                  where: {
-                    marcaId: marcaRec.id,
-                    nome: rastreadorAnterior.modelo,
-                  },
-                })
-              : null;
-
-            if (marcaRec && modeloRec) {
-              await this.debitosService.consolidarDebitoTx(tx, {
-                devedorTipo: proprietarioFinal,
-                devedorClienteId: clienteId ?? null,
-                credorTipo: rastreadorAnterior.proprietario,
-                credorClienteId: rastreadorAnterior.clienteId,
-                marcaId: marcaRec.id,
-                modeloId: modeloRec.id,
-                delta: 1,
-                aparelhoId: rastreadorId,
-              });
-            }
-          }
-        }
-
-        await tx.aparelhoHistorico.create({
-          data: {
-            aparelhoId: rastreadorId,
-            statusAnterior: 'EM_ESTOQUE',
-            statusNovo: 'CONFIGURADO',
-            observacao: `Pareamento CSV com SIM ${linha.iccid}`,
-          },
-        });
-
-        criados.push({
-          rastreadorId,
-          simId,
-          equipamentoId: rastreadorId,
-        });
+          planoRastreador,
+          planoSim,
+        );
+        if (feito) criados.push(feito);
       }
 
       return { criados: criados.length, equipamentos: criados };

@@ -1,23 +1,26 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { MaterialIcon } from "@/components/MaterialIcon";
-import { api } from "@/lib/api";
 import {
   mapPedidoToView,
   STATUS_ORDER,
   type PedidoRastreadorView,
   type PedidoRastreadorApi,
   type StatusPedidoKey,
-} from "./types";
+} from "./shared/pedidos-rastreador.types";
 import type {
   KitVinculado,
   KitDetalhe,
   TipoDespacho,
-} from "./pedidos-config-types";
-import { SidePanel } from "./SidePanel";
-import { KanbanColumnConfig } from "./KanbanColumnConfig";
+} from "./shared/pedidos-config-types";
+import {
+  KITS_DETALHES_QUERY_KEY,
+  fetchKitsDetalhes,
+} from "./modal-selecao-ekit/hooks/pareamento-kits.queries";
+import { SidePanel } from "./side-panel/SidePanel";
+import { KanbanColumnConfig } from "./lista/kanban/KanbanColumnConfig";
+import { usePedidosRastreadoresListQuery } from "./lista/hooks/usePedidosRastreadoresListQuery";
+import { PedidosRastreadoresListToolbar } from "./lista/components/PedidosRastreadoresListToolbar";
 
 const STORAGE_KEY = "nexus-pedidos-config-workspace";
 
@@ -143,21 +146,14 @@ export function PedidosConfigPage() {
     numeroNfPorPedido,
   ]);
 
-  const { data: lista, isLoading } = useQuery({
-    queryKey: ["pedidos-rastreadores", "config", busca],
-    queryFn: () => {
-      const params = new URLSearchParams();
-      params.set("limit", "500");
-      if (busca.trim()) params.set("search", busca.trim());
-      return api<{ data: PedidoRastreadorApi[] }>(
-        `/pedidos-rastreadores?${params}`,
-      );
-    },
+  const { data: lista, isLoading } = usePedidosRastreadoresListQuery({
+    busca,
+    scope: "config",
   });
 
   const { data: kitsDetalhes = [] } = useQuery<KitDetalhe[]>({
-    queryKey: ["aparelhos", "pareamento", "kits", "detalhes"],
-    queryFn: () => api("/aparelhos/pareamento/kits/detalhes"),
+    queryKey: KITS_DETALHES_QUERY_KEY,
+    queryFn: fetchKitsDetalhes,
     enabled: panelOpen && (pedidoApiSelecionado?.kitIds?.length ?? 0) > 0,
   });
 
@@ -229,20 +225,11 @@ export function PedidosConfigPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-2rem)] min-h-0">
-      <div className="flex items-center justify-between gap-4 shrink-0 pb-4">
-        <div className="relative flex-1 max-w-xs">
-          <MaterialIcon
-            name="search"
-            className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-base"
-          />
-          <Input
-            className="pl-8 text-[11px]"
-            placeholder="Buscar por PED, Técnico ou IMEI..."
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-          />
-        </div>
-      </div>
+      <PedidosRastreadoresListToolbar
+        value={busca}
+        onValueChange={setBusca}
+        placeholder="Buscar por PED, Técnico ou IMEI..."
+      />
 
       <div className="bg-white border border-slate-300 shadow-sm overflow-hidden flex-1 min-h-0 flex flex-col">
         <div className="overflow-auto bg-slate-100 p-4 flex-1 min-h-0">

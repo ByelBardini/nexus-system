@@ -9,21 +9,35 @@ Ver índice em `AGENTS.md`.
 
 #### Estrutura de arquivos
 
-| Arquivo | Responsabilidade |
-|---------|-----------------|
-| `TestesPage.tsx` | Orquestrador: todo o estado e mutations; renderiza `TesteBancada` + `TesteFilaSidebar` + modais |
-| `testes-types.ts` | Tipos compartilhados: `OsTeste`, `RastreadorParaTeste`, `ComunicacaoResult` |
-| `TesteBancada.tsx` | Área principal (flex-1 à esquerda); recebe tudo via props; compõe as seções |
-| `TesteFilaSidebar.tsx` | Sidebar direita (w-80); lista de OS em testes com busca client-side |
-| `TesteFilaCard.tsx` | Card individual na fila; mostra OS#, cliente, técnico, placa, IMEI e tempo |
-| `SelectRastreadorTeste.tsx` | Dropdown portal para seleção de rastreador por IMEI/ICCID/serial |
-| `sections/TesteOsDataSection.tsx` | Seção "01. Dados da Ordem de Serviço" |
-| `sections/TesteEquipamentoSection.tsx` | Seção "02. Identificação do Equipamento" (usa `SelectRastreadorTeste`) |
-| `sections/TesteComunicacaoSection.tsx` | Seção "03. Validação de Comunicação GPRS/GPS" |
-| `sections/TesteRetiradaSection.tsx` | Seção "02. Dados da Retirada" (substituí Equipamento quando `tipo=RETIRADA`) |
-| `sections/TesteObservacoesSection.tsx` | Seção "Observações Adicionais" (textarea) |
+Na pasta `client/src/pages/testes/`, **só** o ponto de entrada da rota fica na raiz; o restante em subpastas.
 
-#### Tipos principais (`testes-types.ts`)
+| Caminho | Responsabilidade |
+|---------|------------------|
+| **`TestesPage.tsx`** (raiz) | Orquestração mínima: chama `useTestesBancadaController()` e renderiza `TesteBancada`, `TesteFilaSidebar`, modais |
+| **`hooks/useTestesBancadaController.ts`** | Estado local, efeitos (seleção, sincronização IMEI, auto-vínculo), handlers que usam as mutations |
+| **`hooks/useTestesQueries.ts`** | `useQuery` da fila `GET /ordens-servico/testando` e de `GET /aparelhos/para-testes` |
+| **`hooks/useTestesMutations.ts`** | Mutations de status da OS, vínculo de aparelho e PATCH de status do aparelho + invalidação + `toast` |
+| **`lib/testes-types.ts`** | Tipos: `OsTeste`, `RastreadorParaTeste`, `ComunicacaoResult` |
+| **`lib/testes-utils.ts`** | `imeiVinculadoNaBancadaTestes`, `subclienteLabel`, `filtrarOsTesteNaFila` (filtro da sidebar) |
+| **`lib/rastreador-format.ts`** | Texto de busca / resumo de rastreador (`rastreadorTextoBusca`, `formatRastreadorOperadoraMarcaIccidPlano`, `findRastreadorPorIdentificador`, etc.) — usado por `SelectRastreadorTeste` e `TesteEquipamentoSection` |
+| **`components/TesteBancada.tsx`** | Área principal (flex-1 à esquerda); recebe props; compõe as seções |
+| **`components/TesteFilaSidebar.tsx`** | Sidebar direita (w-80); `filtrarOsTesteNaFila` + renderiza `TesteFilaCard` por item |
+| **`components/TesteFilaCard.tsx`** | Card na fila; usa `subclienteLabel` |
+| **`components/SelectRastreadorTeste.tsx`** | Dropdown em portal para IMEI/ICCID/serial |
+| **`components/TesteSectionShell.tsx`** | Cabeçalho reutilizável (ícone + título + slot direito) das seções em cartão |
+| **`components/RetiradaRealizadaDialog.tsx`** | Modal “Retirada realizada” (Sim/Não) |
+| **`components/CancelarOperacaoTesteDialog.tsx`** | Modal “Cancelar operação” (Voltar / Reagendar / Cancelar OS) |
+| **`sections/TesteOsDataSection.tsx`** | Seção "01. Dados da Ordem de Serviço" |
+| **`sections/TesteEquipamentoSection.tsx`** | Seção "02. Identificação do Equipamento" (`SelectRastreadorTeste` + resumo via `rastreador-format`) |
+| **`sections/TesteComunicacaoSection.tsx`** | Seção "03. Validação de Comunicação GPRS/GPS" |
+| **`sections/TesteRetiradaSection.tsx`** | Seção "02. Dados da Retirada" (quando `tipo=RETIRADA`) |
+| **`sections/TesteObservacoesSection.tsx`** | Seção "Observações Adicionais" (textarea) |
+
+**Imports:** no mesmo módulo, caminhos relativos (`../lib/…`, `./sections/…`) são usados à vontade; para alguns pares de componentes irmãos em `components/`, o alias `@/` do `tsconfig` é preferível (ex.: `TesteFilaSidebar` importa `TesteFilaCard` de `@/pages/testes/components/TesteFilaCard`) para evitar **TS2307** / resolução instável no IDE com `./OutroComponente` entre ficheiros `.tsx`.
+
+**Testes (Vitest + RTL):** `client/src/__tests__/pages/testes/` — libs, hooks, componentes, fluxo da página (`TestesPage.e2e.test.tsx` com API mockada).
+
+#### Tipos principais (`lib/testes-types.ts`)
 
 ```ts
 type ComunicacaoResult = "COMUNICANDO" | "AGUARDANDO" | "NAO_COMUNICOU";
@@ -51,7 +65,7 @@ interface RastreadorParaTeste {
 - **Esquerda:** `TesteBancada` (flex-1, overflow-y-auto com padding)
 - **Direita:** `TesteFilaSidebar` (w-80, shrink-0, fixed height)
 
-#### Estado (todos em `TestesPage`)
+#### Estado (em `useTestesBancadaController`)
 
 | Estado | Tipo | Valor inicial | Notas |
 |--------|------|--------------|-------|
@@ -80,13 +94,13 @@ interface RastreadorParaTeste {
 
 Quando `imeiSearch` muda e encontra match exato (case-insensitive) em `rastreadores`, chama `vincularAparelhoMutation` automaticamente — sem precisar o usuário clicar em confirmar. `pendingLinkRef` guarda `{ osId, imei }` para evitar chamada repetida enquanto o servidor não confirma.
 
-Helper `imeiVinculadoNosTestes(os)`: retorna `os.idEntrada` para tipo `REVISAO`, `os.idAparelho` para os demais.
+Helper **`imeiVinculadoNaBancadaTestes(os)`** (`lib/testes-utils.ts`): retorna `os.idEntrada` para tipo `REVISAO`, `os.idAparelho` para os demais (inclui `RETIRADA`).
 
 #### Condição `canFinalizar`
 
 ```ts
 canFinalizar =
-  !!imeiVinculadoNosTestes(selectedOs) &&
+  !!imeiVinculadoNaBancadaTestes(selectedOs) &&
   comunicacaoResult === "COMUNICANDO" &&
   !!novoLocalInstalacao.trim()
 ```
@@ -111,12 +125,12 @@ canFinalizar =
 
 **Auto-seleção:** se nenhuma OS está selecionada, não há `?osId` na URL e a lista carrega com itens → seleciona automaticamente o primeiro. Se a OS selecionada sai da lista (foi finalizada por outro usuário) → `selectedOsId = null`.
 
-**Sincronização `imeiSearch` ↔ OS:** ao mudar `selectedOs`, `imeiSearch` é atualizado com `imeiVinculadoNosTestes(selectedOs)` via `useEffect`.
+**Sincronização `imeiSearch` ↔ OS:** ao mudar `selectedOs`, `imeiSearch` é atualizado com `imeiVinculadoNaBancadaTestes(selectedOs)` via `useEffect`.
 
 #### `SelectRastreadorTeste` — detalhes
 
 - Portal em `document.body` (não dialog-aware — a bancada não usa modais para esse campo).
-- Filtro: concatena `imei + iccid + marcaModelo + operadora + marcaSim + planoMB` em lowercase.
+- Filtro: função **`rastreadorTextoBusca`** em `lib/rastreador-format.ts` (concatena IMEI, ICCID, marca/modelo, operadora, chip, plano em lowercase).
 - Sem filtro: exibe os primeiros 15 rastreadores.
 - Largura mínima do dropdown: `max(triggerWidth, 420px)`.
 - Rastreador de "outro cliente" (proprietário Infinity ou cliente diferente da OS): destaque em `text-amber-600`.
@@ -127,7 +141,11 @@ canFinalizar =
 
 - Tempo > 30 min: número em `text-red-600` + bolinha `bg-red-500`.
 - OS selecionada: borda esquerda `border-l-4 border-erp-blue bg-erp-blue/5`.
-- Exibe: OS#, nome do cliente, técnico • placa, subcliente (snapshot como fallback), IMEI.
+- Exibe: OS#, nome do cliente, técnico • placa, subcliente via **`subclienteLabel`** (`lib/testes-utils.ts`), IMEI.
+
+#### Sidebar — filtro
+
+A busca da fila usa **`filtrarOsTesteNaFila(items, search)`** (`lib/testes-utils.ts`): número da OS, placa, nome do cliente, nome do subcliente e `idAparelho` (case-insensitive no texto digitado).
 
 ---
 
@@ -136,18 +154,17 @@ canFinalizar =
 
 ### Página: `CadastroRastreamentoPage`
 
-**Arquivo:** `client/src/pages/cadastro-rastreamento/CadastroRastreamentoPage.tsx`  
+**Entrada (rota):** `client/src/pages/cadastro-rastreamento/CadastroRastreamentoPage.tsx` — apenas compõe o hook e os componentes em `components/`.  
+**Lógica e dados:** `hooks/useCadastroRastreamento.ts`.  
 **Rota:** `/cadastro-rastreamento` (sidebar → seção Configuração)
 
-#### Tipos locais (definidos no próprio arquivo)
+#### Tipos e mapeamento (lib)
 
-| Tipo | Valores |
-|------|---------|
-| `StatusCadastro` | `"AGUARDANDO" \| "EM_CADASTRO" \| "CONCLUIDO"` |
-| `Plataforma` | `"GETRAK" \| "GEOMAPS" \| "SELSYN"` |
-| `TipoRegistro` | `"CADASTRO" \| "REVISAO" \| "RETIRADA"` |
-| `OrdemCadastro` | Tipo de domínio local (resultado de `mapOS`); campos: `id`, `status`, `tipoRegistro`, `instalacaoComBloqueio`, `cliente`, `subcliente`, `tipoServico`, `tecnico`, `veiculo`, `placa`, `cor`, `modelo`, `modeloAparelhoEntrada`, `imei`, `iccid`, `local`, `posChave`, `imeiSaida`, `iccidSaida`, `modeloSaida`, `data`, `plataforma`, `concluidoEm`, `concluidoPor` |
-| `OSResponse` | Shape bruto da API; mapeado para `OrdemCadastro` via `mapOS()` |
+| Tipo / função | Local |
+|---------------|--------|
+| `StatusCadastro`, `Plataforma`, `OrdemCadastro`, `OSResponse` | `@/lib/cadastro-rastreamento.types` |
+| `mapCadastroRastreamentoOS` (ex-`mapOS`) | `@/lib/cadastro-rastreamento-mapper` — resposta API → `OrdemCadastro`; datas com `formatarDataHoraCurta` |
+| Categoria UI + rótulos de ação | `@/lib/cadastro-rastreamento-tipo-mappers` — `TipoRegistro` inclui `OUTRO` para tipos de OS não mapeados |
 
 #### Mapeamento `TipoOS` (backend) → `TipoRegistro` (frontend)
 
@@ -158,6 +175,8 @@ canFinalizar =
 | `REVISAO` | `REVISAO` | "Troca de Equipamento" |
 | `RETIRADA` | `RETIRADA` | "Retirada de Equipamento" |
 
+Outros valores de `tipo` na API mapeiam para `OUTRO` (ver `cadastro-rastreamento-tipo-mappers`).
+
 `instalacaoComBloqueio: boolean | null` — `true` para `COM_BLOQUEIO`, `false` para `SEM_BLOQUEIO`, `null` para outros tipos.
 
 #### Dependências de lib utilizadas
@@ -167,8 +186,9 @@ canFinalizar =
 | `buildCadastroRastreamentoPeriodoQuery` | `@/lib/cadastro-rastreamento-periodo` — calcula `{ dataInicio, dataFim }` para filtro de período |
 | `getCadastroMapDeviceFields` | `@/lib/os-revisao-display` — extrai `imeiEntrada`, `imeiSaida`, `iccidEntradaOs`, `iccidSaidaOs`, `local`, `posChave` conforme `tipoOs`; **não duplicar essa lógica** |
 | `api` | `@/lib/api` — cliente HTTP central |
+| Mappers / UI / cópia | `cadastro-rastreamento-mapper`, `cadastro-rastreamento-ui`, `cadastro-rastreamento-copy` — ver `docs/context/cadastro-rastreamento.md` |
 
-#### Estado da página
+#### Estado (`useCadastroRastreamento`)
 
 | Estado | Tipo | Uso |
 |--------|------|-----|
@@ -184,8 +204,8 @@ canFinalizar =
 | Símbolo | Key / endpoint | Notas |
 |---------|---------------|-------|
 | `useQuery` | `["cadastro-rastreamento", dataInicio, dataFim]` | `GET /cadastro-rastreamento?dataInicio=&dataFim=&limit=100`; retorna `{ data: OSResponse[]; total: number }` |
-| `mutIniciar` | `PATCH /cadastro-rastreamento/:id/iniciar` | Move para `EM_CADASTRO`; invalida a query acima |
-| `mutConcluir` | `PATCH /cadastro-rastreamento/:id/concluir` | Body: `{ plataforma }`; move para `CONCLUIDO`; invalida a query acima |
+| `mutIniciar` | `PATCH /cadastro-rastreamento/:id/iniciar` | Move para `EM_CADASTRO`; `invalidateQueries` com prefixo `["cadastro-rastreamento"]` (export `CADASTRO_RAST_QUERY_KEY`) |
+| `mutConcluir` | `PATCH /cadastro-rastreamento/:id/concluir` | Body: `{ plataforma }`; idem invalidação |
 
 #### Lógica de filtros (client-side, aplicada sobre `ordens`)
 
@@ -201,24 +221,21 @@ ordensFiltradas = ordens.filter(
 
 #### Coluna "Equipamento de Saída" — lógica especial
 
-Para `tipoRegistro === "CADASTRO"` sem `imeiSaida` preenchido, a coluna exibe o mesmo aparelho de entrada (`imei` / `modeloAparelhoEntrada`). Esse comportamento está em `saidaIgualEntradaCadastro`.
+Para `tipoRegistro === "CADASTRO"` sem `imeiSaida` preenchido (após trim), a coluna replica entrada — função `getColunaEquipamentoSaida` em `pages/cadastro-rastreamento/lib/table-helpers.ts`.
 
 #### Constante de Select vazio
 
-`SELECT_FILTRO_TODOS = "__todos__"` — Radix `Select` não aceita `value=""` como item; usar esta constante e normalizar para `""` no estado.
+`SELECT_CADASTRO_RAST_TODOS` (`"__todos__"`) em `cadastro-rastreamento-ui` — Radix `Select` não aceita `value=""` como item; normalizar para `""` no estado.
 
-#### Config Maps (evitar consulta ao código)
+#### Config Maps (`cadastro-rastreamento-ui`)
 
-`STATUS_CONFIG` — badge por `StatusCadastro`:
-- `AGUARDANDO`: amber-50/800/200
-- `EM_CADASTRO`: blue-50/800/200
-- `CONCLUIDO`: emerald-50/800/200
+`CADASTRO_RAST_STATUS_CONFIG` — badge por `StatusCadastro` (ex.: `AGUARDANDO` amber, `EM_CADASTRO` blue, `CONCLUIDO` emerald).
 
-`TIPO_REGISTRO_CONFIG` — badge por `TipoRegistro`: `CADASTRO`=sky, `REVISAO`=purple, `RETIRADA`=orange.
+`CADASTRO_RAST_TIPO_REGISTRO_CONFIG` — badge base por categoria; instalação c/ s/ bloqueio usa `badgeServicoColunaCadastroRast` + rótulos longos.
 
-`ACAO_LABELS` — labels de botão por `TipoRegistro` × ação (iniciar / concluir / concluído).
+`cadastroRastreamentoAcaoLabels` (em `cadastro-rastreamento-tipo-mappers`) — rótulos de botão e toasts por `TipoRegistro` × ação.
 
-`PLATAFORMA_LABEL` — `GETRAK→"Getrak"`, `GEOMAPS→"Geomaps"`, `SELSYN→"Selsyn"`.
+`PLATAFORMA_RAST_LABEL` — `GETRAK` / `GEOMAPS` / `SELSYN` → texto legível.
 
 #### Estrutura visual
 
@@ -239,14 +256,13 @@ Para `tipoRegistro === "CADASTRO"` sem `imeiSaida` preenchido, a coluna exibe o 
   Rodapé count
 ```
 
-#### Componentes helper internos (exportados apenas dentro do arquivo)
+#### `PanelBlock` / `PanelRow`
 
-| Componente | Props | Uso |
-|------------|-------|-----|
-| `PanelBlock` | `icon: string`, `title`, `children` | Seção com header + caixa cinza `bg-slate-50` |
-| `PanelRow` | `label`, `value`, `highlight?` | Par label/valor; `highlight` usa `text-erp-blue` |
+Definidos em `components/CadastroRastreamentoPanelPrimitives.tsx` (seção com header + `bg-slate-50`; linha label/valor com `highlight` opcional).
 
-#### Função `copiarTodos`
+#### Função `copiarTodos` / texto agregado
+
+Montagem do texto em `buildTextoCopiarTodosCadastroRast` (`@/lib/cadastro-rastreamento-copy`). A UI lista botões a partir de `getAuxilioCopiaItens` (mesma lib).
 
 Copia para clipboard o bloco de texto:
 ```
@@ -284,9 +300,11 @@ ICCID (Saída): <iccidSaida>  (se existir)
 
 ---
 
-## Página: `OrdensServicoPage` (`client/src/pages/OrdensServicoPage.tsx`)
+## Página: `OrdensServicoPage` (`client/src/pages/ordens-servico/OrdensServicoPage.tsx`)
 
 Dashboard principal de ordens de serviço. Rota: `/` (índice do `AppLayout`).
+
+**Organização do código:** a página é um orquestrador fino. Estado e dados vêm de `hooks/useOrdensServicoPage.ts`; UI em `lista/components/` (pipeline, toolbar, tabela, painel de detalhe expandido, diálogos); tipos, constantes de status e helpers de exibição em `shared/` (`ordens-servico.types.ts`, `ordens-servico.constants.ts`, `ordens-servico.display.ts`). Lazy load no `App.tsx`: `@/pages/ordens-servico/OrdensServicoPage`.
 
 ### Queries
 
@@ -305,7 +323,7 @@ Ações mapeadas para a mutation:
 - **Retirada Realizada**: `status = "AGUARDANDO_CADASTRO"`, `observacao = "Data retirada: dd/mm/yyyy | Aparelho encontrado: Sim/Não"` (com modal de confirmação).
 - **Enviar para Cadastro**: `status = "AGUARDANDO_CADASTRO"` (direto, sem modal).
 
-### Estado
+### Estado (em `useOrdensServicoPage`)
 
 | Estado | Tipo | Descrição |
 |--------|------|-----------|
@@ -335,21 +353,18 @@ Ações mapeadas para a mutation:
   3. **Dados de Cadastro** — botão "Enviar para Cadastro" (quando `TESTES_REALIZADOS`); data de envio, plataforma, status do cadastro (quando `AGUARDANDO_CADASTRO` ou `FINALIZADO`).
 - **Download PDF**: `apiDownloadBlob(\`/ordens-servico/${id}/pdf\`, 30_000)` → cria `<a>` e dispara download.
 
-### Helpers puros locais
+### Helpers e constantes (`shared/`)
 
-| Função | Uso |
-|--------|-----|
-| `getSubclienteParaExibicao(os)` | Prioriza `subclienteSnapshot*` sobre `os.subcliente` |
-| `formatEnderecoSubcliente(sub)` | Compila endereço em string única |
-| `formatDadosVeiculo(v)` | `placa · marca modelo · ano · cor` |
-| `getDadosTeste(os)` | Extrai `entradaEmTestes`, `saidaEmTestes`, `tempoMin` do histórico |
-| `getDadosRetirada(os)` | Parseia observação `"Data retirada: ... \| Aparelho encontrado: ..."` do histórico |
+| Módulo | Conteúdo |
+|--------|----------|
+| `shared/ordens-servico.display.ts` | `getSubclienteParaExibicao`, `formatEnderecoSubcliente`, `formatDadosVeiculo`, `getDadosTeste`, `getDadosRetirada` |
+| `shared/ordens-servico.constants.ts` | `ORDENS_SERVICO_STATUS_LABELS`, `ORDENS_SERVICO_STATUS_COLORS`, `totalOrdensFromResumo` |
+| `shared/ordens-servico.types.ts` | Tipos de resumo, lista, detalhe e subcliente para exibição |
 
-### Constantes locais
+O painel expandido trata **detalhe obsoleto** durante o refetch ao trocar de linha: mostra loading enquanto `osDetalhe.id` não bate com a linha expandida.
 
-```ts
-statusLabels: Record<StatusOS, string> // "AGENDADO" → "Agendado", etc.
-statusColors: Record<StatusOS, string> // classes Tailwind para badges
-```
+## Página: `OrdensServicoCriacaoPage` (`/ordens-servico/nova`)
+
+Criação de ordem de serviço. O **ponto de entrada** é `client/src/pages/ordens-servico/OrdensServicoCriacaoPage.tsx` (lazy: `@/pages/ordens-servico/OrdensServicoCriacaoPage`); a implementação está modularizada em `client/src/pages/ordens-servico/criacao/` (schema, constantes, payload, resumo, hooks, componentes de seção e sidebar). Detalhe de ficheiros, queries, fluxo de subcliente/veículo e testes de frontend: **`docs/context/ordens-servico.md`** (secção *Módulo de criação de OS* e *OrdensServicoCriacaoPage — detalhes de implementação*).
 
 ---

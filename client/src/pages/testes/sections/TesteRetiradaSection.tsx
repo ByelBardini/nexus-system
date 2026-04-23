@@ -1,5 +1,5 @@
-import { MaterialIcon } from "@/components/MaterialIcon";
-import type { OsTeste } from "../testes-types";
+import { TesteSectionShell } from "../components/TesteSectionShell";
+import type { OsTeste } from "../lib/testes-types";
 
 interface TesteRetiradaSectionProps {
   os: OsTeste | null;
@@ -7,13 +7,7 @@ interface TesteRetiradaSectionProps {
 
 export function TesteRetiradaSection({ os }: TesteRetiradaSectionProps) {
   return (
-    <section className="bg-white border border-slate-300 shadow-sm overflow-hidden">
-      <div className="bg-slate-50 border-b border-slate-300 px-4 py-2 flex items-center gap-2">
-        <MaterialIcon name="remove_circle" className="text-erp-blue text-lg" />
-        <h2 className="text-xs font-bold text-slate-700 font-condensed uppercase">
-          02. Dados da Retirada
-        </h2>
-      </div>
+    <TesteSectionShell icon="remove_circle" title="02. Dados da Retirada">
       <div className="p-6">
         <div className="grid grid-cols-1 gap-4 max-w-md">
           <div className="flex flex-col">
@@ -26,6 +20,6 @@ export function TesteRetiradaSection({ os }: TesteRetiradaSectionProps) {
           </div>
         </div>
       </div>
-    </section>
+    </TesteSectionShell>
   );
 }

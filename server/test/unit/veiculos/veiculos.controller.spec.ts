@@ -10,6 +10,7 @@ describe('VeiculosController', () => {
   const serviceMock = {
     findAll: jest.fn(),
     consultaPlaca: jest.fn(),
+    criarOuBuscarPorPlaca: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -43,6 +44,40 @@ describe('VeiculosController', () => {
 
       expect(service.findAll).toHaveBeenCalledWith('ABC');
       expect(result).toEqual(veiculos);
+    });
+  });
+
+  describe('criarOuBuscar', () => {
+    it('repassa o DTO ao service sem remapear campos', async () => {
+      const dto = {
+        placa: 'ABC-1D23',
+        marca: 'Fiat',
+        modelo: 'Uno',
+        ano: '2020',
+        cor: 'Branco',
+      };
+      const retorno = { id: 1, placa: 'ABC1D23', ...dto, ano: 2020 };
+      (service.criarOuBuscarPorPlaca as jest.Mock).mockResolvedValue(retorno);
+
+      const result = await controller.criarOuBuscar(dto);
+
+      expect(service.criarOuBuscarPorPlaca).toHaveBeenCalledWith(dto);
+      expect(result).toEqual(retorno);
+    });
+
+    it('propaga null quando service retorna null', async () => {
+      const dto = {
+        placa: 'ABC1D23',
+        marca: 'Fiat',
+        modelo: 'Uno',
+        ano: '2020',
+        cor: 'Branco',
+      };
+      (service.criarOuBuscarPorPlaca as jest.Mock).mockResolvedValue(null);
+
+      const result = await controller.criarOuBuscar(dto);
+
+      expect(result).toBeNull();
     });
   });
 

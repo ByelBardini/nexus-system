@@ -2,41 +2,78 @@
 
 Ver índice em `AGENTS.md`. Páginas de aparelhos/equipamentos (detalhe de UI).
 
+**Pastas em `client/src/pages/equipamentos/`:** `lista/` (equipamentos montados — pipeline, filtros, tabela), `pareamento/` (módulo da tela de pareamento — ver estrutura abaixo), `config/` (hook e UI da tela de configuração de catálogos), e `EquipamentosConfigPage.tsx` na raiz como página de entrada dessa config.
+
 **Frontend — páginas do domínio:**
 
 | Arquivo | Função |
 |---------|--------|
-| `client/src/pages/aparelhos/AparelhosPage.tsx` | Lista paginada com filtros e expansão de linha |
-| `client/src/pages/aparelhos/CadastroLotePage.tsx` | POST `/aparelhos/lote` — entrada em massa |
-| `client/src/pages/aparelhos/CadastroIndividualPage.tsx` | POST `/aparelhos/individual` — entrada avulsa |
-| `client/src/pages/equipamentos/EquipamentosPage.tsx` | Lista equipamentos (RASTREADOR com SIM vinculado) + pipeline de status + filtros |
-| `client/src/pages/equipamentos/PareamentoPage.tsx` | Pareamento IMEI↔ICCID: modos individual, massa e CSV |
-| `client/src/pages/equipamentos/EquipamentosConfigPage.tsx` | CRUD de marcas, modelos, operadoras, marcas-simcard e planos-simcard |
-| `client/src/pages/equipamentos/PreviewPareamentoTable.tsx` | Componente de preview de associação IMEI↔ICCID (modos individual/massa; reexporta tipos) |
-| `client/src/pages/equipamentos/PreviewCsvTable.tsx` | Componente de preview exclusivo do modo CSV (ações VINCULAR/CRIAR/ERRO + erros mapeados) |
-| `client/src/pages/testes/TestesPage.tsx` | `/aparelhos/para-testes` + PATCH status |
+| `client/src/pages/aparelhos/AparelhosPage.tsx` | Orquestra a lista (loading + composição de subcomponentes em `lista/`) |
+| `client/src/pages/aparelhos/lista/useAparelhosList.ts` | Hook: `useQuery` de aparelhos e kits, estado de filtros/paginação/expansão, derivados (`filtered`, `paginated`, contagens) |
+| `client/src/pages/aparelhos/lista/aparelhos-page.shared.ts` | Tipos `Aparelho`, `HistoricoItem`, `TIPO_CONFIG`, `PROPRIETARIO_CONFIG`, `PAGE_SIZE`, `AparelhosFiltros` |
+| `client/src/pages/aparelhos/lista/aparelhos-list.helpers.ts` | Funções puras: filtro, marcas, contagens por status, paginação, resolução de kit/vínculos, nomes de técnico/cliente (inclui diferença coluna tabela vs. painel “Vínculos”) |
+| `client/src/pages/aparelhos/lista/AparelhosStatusPipeline.tsx` | Cards de status no topo (`data-testid` nos botões) |
+| `client/src/pages/aparelhos/lista/AparelhosToolbar.tsx` | Busca, selects de filtro, links Lote/Individual |
+| `client/src/pages/aparelhos/lista/AparelhosTable.tsx` | Tabela + estado vazio |
+| `client/src/pages/aparelhos/lista/AparelhoTableRow.tsx` | Linha clicável e expansão |
+| `client/src/pages/aparelhos/lista/AparelhoExpandedDetails.tsx` | Painel expandido (3 colunas: equipamento, vínculos, histórico) |
+| `client/src/pages/aparelhos/lista/AparelhosTableFooter.tsx` | Rodapé com intervalo exibido e paginação |
+| `client/src/__tests__/pages/aparelhos/*` | Testes (helpers, `shared/`, `cadastro-individual/`, `cadastro-lote/`, fluxo integrado da lista) |
+| `client/src/pages/aparelhos/shared/` | Código comum aos cadastros (individual e lote): `catalog.types.ts`, `catalog.helpers.ts` (filtros de modelo, operadora, IDs), `debito-rastreador.ts` (tipo API + `filterDebitosRastreadores` / `formatDebitoLabel`), `useAparelhoCadastroCatalogs.ts` (React Query: clientes, débitos abertos, `/aparelhos` para duplicidade; **marcas/modelos/operadoras** via `useEquipamentosTrioCatalogQueries` e **marcas-simcard** via `useEquipamentosMarcasSimcardListQuery` em `pages/equipamentos/hooks/useEquipamentosCatalogQueries.ts`, alinhados a `equipamentosQueryKeys`) |
+| `client/src/pages/aparelhos/cadastro-individual/` | Formulário avulso: `schema.ts` + `constants.ts` (Zod, defaults, `STATUS_CONFIG`, origens), seções de UI, `useCadastroIndividualAparelhoMutation.ts` (POST `/aparelhos/individual`) |
+| `client/src/pages/aparelhos/cadastro-lote/` | **Cadastro em lote (refatorado em módulo):** `useCadastroLote.ts` (form + memos + `useMutation` → `buildLotePostBody` + `POST /aparelhos/lote`), `schema.ts` (`loteFormSchema` / `LoteFormValues`), `validate-lote-ids.ts` (`validateLoteIds`), `build-lote-post-body.ts`, `lote-form-errors.ts` (`toastLoteFormValidationErrors`). UI: `CadastroLoteHeader`, `CadastroLoteFooter`, `LoteIdentificacaoSection`, `LotePropriedadeTipoSection`, `LoteSimcardPlanoField` (plano condicional), `LoteIdentificadoresSection`, `LoteValoresSection`, `LoteAbaterDividaSection`, `CadastroLoteResumoPanel` |
+| `client/src/pages/aparelhos/CadastroLotePage.tsx` | Rota de entrada em massa — `POST /aparelhos/lote` via `useCadastroLote`; página só orquestra o hook + componentes de `cadastro-lote/` |
+| `client/src/__tests__/pages/aparelhos/cadastro-lote/` | Testes do módulo: schema, `validateLoteIds`, `buildLotePostBody`, toasts, `useCadastroLote`, seções, `CadastroLotePage` integrado (APIs mockadas) |
+| `client/src/pages/aparelhos/CadastroIndividualPage.tsx` | POST `/aparelhos/individual` — entrada avulsa; orquestra `shared` + seções em `cadastro-individual/` |
+| `client/src/pages/equipamentos/lista/EquipamentosPage.tsx` | Orquestra a listagem (loading + pipeline + toolbar + tabela); espelha o padrão `aparelhos/lista/` |
+| `client/src/pages/equipamentos/lista/useEquipamentosPageList.ts` | Hook: `useQuery` de aparelhos e kits, estado de filtros/pipeline/paginação/expansão, derivados (`filtered`, `paginated`, contagens do pipeline) |
+| `client/src/pages/equipamentos/lista/equipamentos-page.shared.ts` | Tipos `EquipamentoListItem`, `EquipamentoPipelineFilter`, `EQUIPAMENTOS_LIST_PAGE_SIZE` e `equipamentoMatchesStageFilter` (regra única para pipeline, filtro de status e contagens) |
+| `client/src/pages/equipamentos/lista/equipamentos-page.helpers.ts` | Funções puras: só rastreadores com SIM, marcas/operadoras, filtro da lista, resolução de kit, textos de coluna/painel, paginação via `slicePagina`/`totalPaginas` importados de `aparelhos/lista/aparelhos-list.helpers.ts` |
+| `client/src/pages/equipamentos/lista/components/*` | `EquipamentosPipelineStrip`, `EquipamentosPageToolbar`, `EquipamentosTable`, `EquipamentoTableRow`, `EquipamentoExpandedPanel` |
+| `client/src/components/ClientSideTableFooter.tsx` | Rodapé de paginação client-side (intervalo + botões); usado pela tabela de equipamentos e encapsulado por `AparelhosTableFooter` |
+| `client/src/pages/equipamentos/pareamento/PareamentoPage.tsx` | Orquestra modos individual, massa e CSV: compõe hooks de estado/mutações/preview, `getPostBodyInput` para `usePareamentoSubmitMutation`, handlers de arquivo CSV e JSX de `panels/` + `components/` |
+| `client/src/pages/equipamentos/pareamento/domain/` | Tipos (`types.ts`), CSV e `parseIds` (`parsing.ts`), regras de preview (`preview-rules.ts`), `buildPareamentoPostBody` (`payload.ts`), `pareamentoQueryKeys` (`query-keys.ts`), filtros de catálogo puros (`catalog-helpers.ts` — modelos por marca, marcas-simcard por operadora), resets de formulário compartilhados (`pareamento-form-reset.ts` — limpar individual/massa/CSV e pós-sucesso individual vs massa) |
+| `client/src/pages/equipamentos/pareamento/preview/` | `PreviewPareamentoTable.tsx`, `PreviewCsvTable.tsx` (UI de preview; tipos relevantes também em `domain/types.ts`) |
+| `client/src/pages/equipamentos/pareamento/hooks/` | `usePareamentoModoFromSearchParams`, `usePareamentoRemoteQueries`, `usePareamentoCatalogDerivados` (memos de listas filtradas individual/massa), `usePareamentoIndividualFormState`, `usePareamentoMassaFormState`, `usePareamentoCsvState`, `usePareamentoSharedLotesState` (lotes + buscas compartilhadas entre individual e massa), `usePareamentoMainPreview` (estado do preview IMEI/ICCID, mutation, auto-preview no individual, `handleGerarPreview`), `usePareamentoSubmitMutation` (`POST /aparelhos/pareamento`), `usePareamentoCsvMutations` (preview + import CSV) |
+| `client/src/pages/equipamentos/pareamento/components/` | Header, footer, selects de lote, blocos criar rastreador/SIM, card proprietário Infinity/Cliente |
+| `client/src/pages/equipamentos/pareamento/panels/` | `PareamentoIndividualPanel`, `PareamentoMassaPanel`, `PareamentoCsvPanel` |
+| `client/src/pages/equipamentos/EquipamentosConfigPage.tsx` | Entrada fina: importa módulo `./config` (reexporta hook, painéis, modais). CRUD de marcas, modelos, operadoras, marcas-simcard e planos-simcard |
+| `client/src/pages/equipamentos/config/` | Módulo da tela de configuração: `domain/` (`equipamentos-config.types.ts`, `equipamentos-config.helpers.ts`); `hooks/useEquipamentosConfig.ts` (orquestra debounce, filtros, handlers e expõe `EquipamentosConfigController`); `hooks/useEquipamentosConfigModalState.ts` (estado e `close*` dos modais); `hooks/useEquipamentosConfigCrudMutations.ts` (mutações TanStack Query + toasts, usando `toastApiError`); `components/` (`ConfigFormModal`, `EquipamentosConfigPageHeader`, `EquipamentosConfigModals`, `MarcasModelosPanel`, `OperadorasTablePanel`, `MarcasSimcardPanel`); `index.ts` reexporta domínio/helpers e o hook principal. |
+| `client/src/pages/equipamentos/hooks/useEquipamentosCatalogQueries.ts` | Hooks reutilizáveis de listagem: `useEquipamentosTrioCatalogQueries` (marcas, modelos, operadoras), `useEquipamentosFullCatalogQueries` (acima + `marcasSimcard` lista geral), `useEquipamentosMarcasSimcardListQuery` (lista com escopo por operadora — mesmas URLs/chaves que o cadastro de aparelho). Usados por `useEquipamentosConfig`, `usePareamentoRemoteQueries` e `useAparelhoCadastroCatalogs`. |
+| `client/src/lib/toast-api-error.ts` | `toastApiError(caught, fallbackMessage)` — padroniza toast de erro em mutações (config de equipamentos, preview/submit/CSV do pareamento). |
+| `client/src/lib/query-keys/equipamentos.ts` | `equipamentosQueryKeys` — chaves de cache de catálogos (`marcas`, `modelos`, `operadoras`, `marcasSimcard` lista completa, `marcasSimcardScoped` com operadora) compartilhadas com `useAparelhoCadastroCatalogs`, pareamento e configuração para invalidação consistente |
+| `client/src/pages/equipamentos/pareamento/preview/PreviewPareamentoTable.tsx` | Preview IMEI↔ICCID (modos individual/massa); exporta helpers como `countPareamentoPreviewDuplicateLinhas` |
+| `client/src/__tests__/pages/PreviewPareamentoTable.test.tsx` | Vitest/RTL: `countPareamentoPreviewDuplicateLinhas` (trim, vazios, IMEI/ICCID repetidos) e valor exibido no card **Duplicados** (`within` sobre o card ancestral do rótulo; `closest` assertado como `HTMLElement` para compatibilidade com os typings do Testing Library) |
+| `client/src/pages/equipamentos/pareamento/preview/PreviewCsvTable.tsx` | Preview exclusivo do modo CSV (ações VINCULAR/CRIAR/ERRO + erros mapeados) |
+| `client/src/__tests__/pages/equipamentos/pareamento/` | Domínio (`pareamento.domain.test.ts`, `pareamento.payload.test.ts`, `pareamento.preview-logic.test.ts`, `pareamento.query-keys.test.ts`, `domain/catalog-helpers.test.ts`, `domain/pareamento-form-reset.test.ts`), hooks (`usePareamentoModoFromSearchParams`, `usePareamentoRemoteQueries`, `usePareamentoCatalogDerivados`, `usePareamentoIndividualFormState`, `usePareamentoMassaFormState`, `usePareamentoCsvState`, `usePareamentoSharedLotesState`, `usePareamentoMainPreview`, `usePareamentoSubmitMutation`, `usePareamentoCsvMutations`) e componentes (`PareamentoPageHeader`, `PareamentoCriarRastreadorBlock`) |
+| `client/src/pages/testes/TestesPage.tsx` | Bancada de testes (`hooks/useTestesQueries` → `/aparelhos/para-testes`; mutations em `hooks/useTestesMutations`) |
 | `client/src/lib/aparelho-status.ts` | Labels/cores por `StatusAparelho` (`STATUS_CONFIG_APARELHO`) |
 | `client/src/components/IdAparelhoSearch.tsx` | Busca de IMEI em rastreadores |
 
-Sem hook dedicado `useAparelhos`; páginas usam `useQuery` do TanStack Query diretamente.
+A lista principal de aparelhos concentra o data fetching em **`useAparelhosList`**. As telas de **cadastro** (individual e lote) compartilham **`useAparelhoCadastroCatalogs`** e helpers em `aparelhos/shared/`; as listagens HTTP de marcas/modelos/operadoras e a de marcas-simcard (com filtro por operadora quando aplicável) reutilizam os hooks em **`pages/equipamentos/hooks/useEquipamentosCatalogQueries.ts`** para manter as mesmas `queryKey` que a configuração e o pareamento. Demais páginas do domínio continuam usando `useQuery` diretamente onde fizer sentido.
 
-**`AparelhosPage.tsx` — detalhes:**
+**Lista de aparelhos (`AparelhosPage` + módulos) — detalhes:**
 
-- `queryKey: ["aparelhos"]` → `GET /aparelhos`; `queryKey: ["aparelhos", "pareamento", "kits"]` → `GET /aparelhos/pareamento/kits` (pode retornar 404 — ver divergência abaixo).
-- `PAGE_SIZE = 15`; paginação client-side sobre array filtrado.
-- Filtros: `busca` (texto livre sobre `identificador`, `lote.referencia`, `tecnico.nome`), `statusFilter` (`StatusAparelho | "TODOS"`), `tipoFilter` (`"RASTREADOR" | "SIM" | "TODOS"`), `proprietarioFilter` (`"INFINITY" | "CLIENTE" | "TODOS"`), `marcaFilter` (string dinâmico — `marca` para RASTREADOR, `operadora` para SIM).
-- Pipeline de status no topo: cards clicáveis para TODOS / EM_ESTOQUE / CONFIGURADO / DESPACHADO / COM_TECNICO / INSTALADO com contagem.
-- Linha expansível (`expandedId`): mostra 3 colunas — Dados do Equipamento (IMEI/ICCID, marca/modelo ou operadora/plano, proprietário, valor unitário, lote), Vínculos (SIM/rastreador vinculado, kit, técnico, OS, subcliente, placa), Histórico (`HistoricoItem[]`).
-- Kit resolvido com fallback: `aparelho.kit?.nome ?? kitsPorId.get(aparelho.kitId) ?? rastreador?.kit?.nome ?? kitsPorId.get(rastreador?.kitId)` — precisa do map de kits para SIM sem kit direto.
-- Botões de criação condicionais: `hasPermission("CONFIGURACAO.APARELHO.CRIAR")` → links para `/aparelhos/lote` e `/aparelhos/individual`.
-- Tipo local `Aparelho` define shape completo incluindo `simVinculado`, `aparelhosVinculados[]`, `ordemServicoVinculada`, `historico[]` — verificar se backend inclui esses campos no `GET /aparelhos`.
-- Campo `cor` do cliente incluído no select do backend (`cliente: { select: { id, nome, cor } }`); todos os blocos `findMany`/`findUnique` de `aparelhos.service.ts` já retornam `cor`.
-- **Badge de proprietário/cliente na tabela:** se `proprietario === "CLIENTE"` e `aparelho.cliente` existe, exibe badge com o nome do cliente usando a cor personalizada do cliente (`cor`): `backgroundColor: ${cor}22`, `color: cor`, `borderColor: ${cor}55`. Se o cliente não tem `cor`, usa fallback amber. Para outros proprietários, exibe badge estático via `propConfig.className`.
+- `queryKey: ["aparelhos"]` → `GET /aparelhos`; `queryKey: ["aparelhos", "pareamento", "kits"]` → `GET /aparelhos/pareamento/kits` (pode retornar 404 — ver divergência abaixo). Ambos são disparados no hook `useAparelhosList`.
+- `PAGE_SIZE = 15` em `lista/aparelhos-page.shared.ts`; paginação client-side sobre o array já filtrado (`filterAparelhos` + `slicePagina` em `lista/aparelhos-list.helpers.ts`).
+- Filtros: `busca` (texto livre sobre `identificador`, `lote.referencia`, `tecnico.nome`), `statusFilter` (`StatusAparelho | "TODOS"`), `tipoFilter` (`"RASTREADOR" | "SIM" | "TODOS"`), `proprietarioFilter` (`"INFINITY" | "CLIENTE" | "TODOS"`), `marcaFilter` (string dinâmico — `marca` para RASTREADOR, `operadora` para SIM). Alterar busca ou qualquer select na toolbar zera a página (`setPage(0)` na página); o card de status usa `handleStatusClick` no hook (filtro + página 0).
+- Pipeline de status: componente `AparelhosStatusPipeline` — cards clicáveis TODOS / EM_ESTOQUE / CONFIGURADO / DESPACHADO / COM_TECNICO / INSTALADO com contagem.
+- Linha expansível: estado `expandedId` no hook; `AparelhoTableRow` + `AparelhoExpandedDetails` — Dados do Equipamento, Vínculos, Histórico (`HistoricoItem[]`).
+- **Kit:** resolução centralizada em `resolveKitNome(aparelho, kitsPorId)` — mesma ideia de fallback (`kit` inline → `kitsPorId` por `kitId` → kit do rastreador vinculado ao SIM).
+- **Técnico (regra dupla):** na coluna da tabela, `getTecnicoNomeColunaTabela` usa só `aparelho.tecnico` e `rastreadorVinculado.tecnico` (não trata o nome do cliente como técnico). No painel Vínculos, `getNomeDestaqueVinculosTecnico` prioriza `cliente` do aparelho, depois `tecnico`, depois cliente/técnico do rastreador vinculado — comportamento intencional herdado da implementação anterior.
+- Botões de criação condicionais na toolbar: `hasPermission("CONFIGURACAO.APARELHO.CRIAR")` → links para `/aparelhos/lote` e `/aparelhos/individual`.
+- Tipo `Aparelho` em `lista/aparelhos-page.shared.ts` (shape com `simVinculado`, `aparelhosVinculados[]`, `ordemServicoVinculada`, `historico[]`) — alinhado ao `GET /aparelhos`.
+- Campo `cor` do cliente no backend (`cliente: { select: { id, nome, cor } }`); `findMany`/`findUnique` em `aparelhos.service.ts` expõem `cor`.
+- **Badge de proprietário/cliente na tabela:** se `proprietario === "CLIENTE"` e `aparelho.cliente` existe, badge com nome e cor (`backgroundColor: ${cor}22`, etc.); sem `cor`, fallback amber; demais casos usam `PROPRIETARIO_CONFIG`.
+- **Cabeçalho da tabela:** a coluna que exibe cliente titular / “Infinity” está rotulada **Cliente** (antes duplicava o rótulo “Proprietário” com a coluna de tipo Infinity/Cliente).
+- **Acessibilidade / testes:** `data-testid` em pipeline, toolbar (busca, wrappers dos filtros, links), tabela, linhas `aparelho-row-{id}`, painel `aparelho-expanded-{id}`, rodapé e paginação.
 
-**`CadastroIndividualPage.tsx` — detalhes:**
+**`CadastroIndividualPage` + `cadastro-individual/` — detalhes:**
 
+- Estrutura: a página orquestra estado e watch do `react-hook-form`; UI fatiada em componentes em `cadastro-individual/*` (identificação, origem, status, abater dívida, resumo, header/footer). Schema e opções de UI vivem em `cadastro-individual/schema.ts` e `constants.ts`. Mutação de criação em `useCadastroIndividualAparelhoMutation.ts`.
+- Catálogos e checagem de duplicidade: **`useAparelhoCadastroCatalogs`** em `aparelhos/shared/` — operadora do form é **nome** (`idMode: "nome"`). Helpers: `getModelosDisponiveisPorMarcaNome`, `resolveMarcaModeloIdsPorNome`, `filterDebitosRastreadores` (com par marca/modelo resolvido por nome quando ambos preenchidos e encontrados nas listas).
 - Permissão: `CONFIGURACAO.APARELHO.CRIAR` (bloqueia botões de submit).
-- Queries disparadas: `["clientes-lista"]` → `/clientes`; `["marcas"]` → `/equipamentos/marcas`; `["modelos"]` → `/equipamentos/modelos`; `["operadoras"]` → `/equipamentos/operadoras`; `["marcas-simcard", operadoraIdParaMarca]` → `/equipamentos/marcas-simcard?operadoraId=N` (só quando `tipo=SIM`); `["debitos-rastreadores", "aberto"]` → `/debitos-rastreadores?status=aberto&limit=500` (só quando `tipo=RASTREADOR`); `["aparelhos-ids"]` → `/aparelhos` (para checagem de duplicata, `select` extrai só `identificador`).
+- Queries (via hook compartilhado): `["clientes-lista"]` → `/clientes`; marcas/modelos/operadoras e marcas-simcard usam **`equipamentosQueryKeys`** em `lib/query-keys/equipamentos.ts` (mesma forma que a tela `EquipamentosConfigPage` e `PareamentoPage`, para o mesmo `invalidateQueries` invalidar o cache do catálogo em qualquer tela). Em particular: `equipamentosQueryKeys.marcas` → `/equipamentos/marcas`; `modelos` → `/equipamentos/modelos`; `operadoras` → `/equipamentos/operadoras`; `equipamentosQueryKeys.marcasSimcardScoped(operadoraId ?? "all")` → `/equipamentos/marcas-simcard` (com `?operadoraId=` quando aplicável) — query de simcard habilitada só quando `tipo=SIM`; `["debitos-rastreadores", "aberto"]` → `/debitos-rastreadores?status=aberto&limit=500` (só quando `tipo=RASTREADOR` — **sem** `incluirHistoricos`; a listagem padrão da API não traz histórico, suficiente para saldo e seleção de abate); `["aparelhos-ids"]` → `/aparelhos` (para checagem de duplicata, `select` em `catalog.helpers` extrai `identificador` + `lote`).
 - Validação de identificador: strip de não-dígitos; compara com `minCaracteresImei` (modelo) para RASTREADOR ou `minCaracteresIccid` (marcaSimcard) para SIM. Feedback visual verde/vermelho/amarelo em tempo real.
 - Lógica de `origem` muda `statusDisponiveis` e `proprietario`:
   - `COMPRA_AVULSA` → apenas `NOVO_OK`; `notaFiscal` visível.
@@ -47,37 +84,40 @@ Sem hook dedicado `useAparelhos`; páginas usam `useQuery` do TanStack Query dir
 - Payload enviado a `POST /aparelhos/individual`: `identificador` (clean), `tipo`, `marca`/`modelo` (RASTREADOR) ou `operadora`/`marcaSimcardId`/`planoSimcardId` (SIM), `origem`, `responsavelEntrega` (derivado: nome cliente ou "Infinity" ou NF), `proprietario`, `clienteId`, `notaFiscal`, `observacoes`, `statusEntrada`, `categoriaFalha`, `destinoDefeito`, `abaterDebitoId`.
 - Dois botões de submit: "Cadastrar e Finalizar" → navega para `/aparelhos`; "Cadastrar Outro" → limpa só `identificador`, mantém demais campos.
 
-**`CadastroLotePage.tsx` — detalhes:**
+**`CadastroLotePage` + `cadastro-lote/` — detalhes:**
 
+- Estrutura: `CadastroLotePage.tsx` só monta o `<form>` e repassa o retorno de **`useCadastroLote`**. Toda a lógica fica no hook: `react-hook-form` + Zod (`loteFormSchema` em `schema.ts`), catálogos via **`useAparelhoCadastroCatalogs`**, validação de textarea de IDs com **`validateLoteIds`** (`validate-lote-ids.ts` — antes função `validateIds` no arquivo monolítico), corpo do request tipado com **`buildLotePostBody`** (`build-lote-post-body.ts`), erros de submit com **`toastLoteFormValidationErrors`** (`lote-form-errors.ts`). Cada bloco de tela é um componente em `cadastro-lote/*` (ver tabela acima).
 - Permissão: `CONFIGURACAO.APARELHO.CRIAR`.
-- Queries: mesmas do Individual exceto `aparelhos-ids` usa `select` diferente (só `identificador`).
-- **Diferença de payload vs. Individual:** LotePage guarda `marca`/`modelo`/`operadora` como IDs numéricos (string do `Select`); payload resolve names via `marcasAtivas.find(m => m.id === Number(data.marca))?.nome` antes de enviar ao backend.
+- Catálogos: **`useAparelhoCadastroCatalogs`** com `marcasSimcardQueryEnabled: true` e operadora do form como **id** (`idMode: "id"`). `getModelosDisponiveisPorMarcaId`, `resolveMarcaModeloFiltroLote` e `filterDebitosRastreadores` (marca/modelo do form são ids numéricos em string; filtro de débito compara `marcaId`/`modeloId` diretamente após `Number()`).
+- **`aparelhos-ids`:** mesma rota e `select` unificado com o individual (identificador + lote no tipo); o lote deriva `existingIds` com `.map` só dos identificadores.
+- **Diferença de payload vs. Individual:** o lote guarda `marca`/`modelo`/`operadora` como **IDs** (string do `Select`); `build-lote-post-body` resolve nomes a partir de `marcasAtivas` / `modelosDisponiveis` / `operadorasAtivas` antes de enviar.
 - `valorUnitario` armazenado em **centavos** pelo componente `InputPreco`; payload divide por 100 antes de enviar.
-- `definirIds` toggle: se `true`, IDs são colados em textarea; validação via `validateIds()`:
-  - Separa por `\n`, `,` ou `;`; strip de não-dígitos.
-  - Tamanho esperado: RASTREADOR = 15 dígitos, SIM = 19 dígitos (±1 tolerado).
-  - Classifica em: `validos`, `duplicados` (dentro do batch), `invalidos` (tamanho errado), `jaExistentes` (já no sistema).
+- `definirIds` toggle: se `true`, IDs no textarea; validação via **`validateLoteIds`** (mesma regra: separadores `\n`, `,`, `;`, strip de não-dígitos, tamanho RASTREADOR 15 / SIM 19 com ±1, duplicados no batch, já existentes).
   - Quantidade efetiva = `idValidation.validos.length`; se `definirIds=false`, usa `quantidade` manual.
-- `valorTotal` = `(valorUnitario / 100) * quantidadeFinal` — exibido em tempo real no painel lateral.
+- `valorTotal` = `(valorUnitario / 100) * quantidadeFinal` — exibido em tempo real no painel (`CadastroLoteResumoPanel`). A nota fiscal no resumo usa **`form.watch("notaFiscal")`** (atualiza ao digitar; não depender de `getValues` no render).
 - Abate de dívida inclui `abaterQuantidade` (máx: `min(debito.quantidade, quantidadeFinal)`).
 - Payload enviado a `POST /aparelhos/lote`: `referencia`, `notaFiscal`, `dataChegada`, `proprietarioTipo`, `clienteId`, `tipo`, `marca`/`modelo` (nomes resolvidos), `operadora` (nome resolvido), `marcaSimcardId`, `planoSimcardId`, `quantidade`, `valorUnitario` (dividido por 100), `identificadores` (array — vazio se `definirIds=false`), `abaterDebitoId`, `abaterQuantidade`.
 
-**`EquipamentosPage.tsx` — detalhes:**
+**`equipamentos/lista/` — listagem (`EquipamentosPage`) — detalhes:**
 
-- `queryKey: ["aparelhos"]` → `GET /aparelhos`; `queryKey: ["aparelhos", "pareamento", "kits"]` → `GET /aparelhos/pareamento/kits` (pode retornar 404 — ver divergência abaixo).
-- `PAGE_SIZE = 12`; paginação client-side. Equipamentos = apenas aparelhos com `tipo === "RASTREADOR"` e `simVinculado != null`.
+- Data fetching e estado: **`useEquipamentosPageList`** (mesmas `queryKey` que a lista de aparelhos para `/aparelhos` e kits).
+- `queryKey: ["aparelhos"]` → `GET /aparelhos`; `queryKey: ["aparelhos", "pareamento", "kits"]` → `GET /aparelhos/pareamento/kits` (pode retornar 404 — ver divergência em `docs/context/aparelhos.md`).
+- `EQUIPAMENTOS_LIST_PAGE_SIZE = 12` em `lista/equipamentos-page.shared.ts`; fatia e total de páginas via helpers em `lista/equipamentos-page.helpers.ts` (que delegam a `aparelhos/lista/aparelhos-list.helpers.ts`). Rodapé: **`ClientSideTableFooter`**.
+- Equipamentos na grade = apenas aparelhos com `tipo === "RASTREADOR"` e `simVinculado != null` (`listOnlyEquipamentosMontados` no helper).
 - Pipeline no topo (cards clicáveis): **Total / Configurados / Em Kit / Despachados / Com Técnico / Instalados**. Cada card filtra `pipelineFilter` + `statusFilter` em sincronia.
   - "Em Kit": `status === "CONFIGURADO"` **e** `kitId != null` — distinto de "Configurado" que exige `kitId === null`.
+- **Regra de estágio centralizada:** `equipamentoMatchesStageFilter` em `lista/equipamentos-page.shared.ts` — usada para contagens do pipeline, filtro (`filterEquipamentosList` no helper) e evita duplicar a mesma lógica entre card e select.
 - Filtros adicionais: `busca` (IMEI, ICCID, nome do técnico, kitId string, lote.referencia), `statusFilter`, `proprietarioFilter` (`INFINITY | CLIENTE | TODOS`), `marcaFilter` (marca do rastreador), `operadoraFilter` (operadora do SIM vinculado).
 - `pipelineFilter` e `statusFilter` são mantidos em sincronia: clicar no card muda ambos; mudar o select de Status muda ambos também.
 - Linha expansível (`expandedId`): cabeçalho com status badge + IMEI + kit + técnico + proprietário; grid 2 colunas — **Equipamento** (IMEI, Modelo, ICCID, Operadora, Lote) | **Operação** (Técnico, Proprietário, Kit, Transporte, Ordem de Instalação, Subcliente/Placa); **Histórico** em largura total (timeline flat horizontal).
 - Status "Em Kit" exibido com badge roxo (`bg-purple-50 text-purple-700`) na linha e detalhe — o enum Prisma permanece `CONFIGURADO` (sem valor "EM_KIT").
 - `kitsPorId`: `Map<number, string>` construído a partir do query de kits — fallback para `aparelho.kit?.nome` quando dados inline estão disponíveis.
 - Permissão `CONFIGURACAO.APARELHO.CRIAR` controla botões "Montar Equipamento" (`/equipamentos/pareamento`) e "Cadastro em Lote" (`/equipamentos/pareamento?modo=massa`).
-- Tipo local `Aparelho` inclui `simVinculado` (com `marcaSimcard`, `planoSimcard`, `lote`), `kit`, `tecnico`, `lote`, `ordemServicoVinculada`, `historico[]`.
+- Tipo da listagem: `EquipamentoListItem` exportado de `lista/equipamentos-page.shared.ts` (campos usados na tabela: `simVinculado` com `marcaSimcard`/`planoSimcard`/`lote`, `kit`, `tecnico`, `lote`, `ordemServicoVinculada`, `historico[]`, etc.).
 
-**`PareamentoPage.tsx` — detalhes:**
+**`equipamentos/pareamento/PareamentoPage` — detalhes:**
 
+- **Organização:** lógica pura e contratos em `domain/` (incl. `catalog-helpers.ts` e `pareamento-form-reset.ts`); pré-visualização em `preview/`; modo de rota, catálogos remotos, estado por modo, preview principal, submit e CSV em `hooks/`; formulários por modo em `panels/`; pedaços reutilizáveis de UI em `components/`. A página concentra `useMemo` de regras (`minImei`/`minIccid`, `paresIndividual`, flags de confirmação), `getPostBodyInput` (objeto de entrada de `buildPareamentoPostBody`, sem chamar `build` no render) e handlers de template/upload CSV. As quatro listagens de catálogo (quando o modo exige) vêm de `usePareamentoRemoteQueries` → **`useEquipamentosFullCatalogQueries`** (`client/src/pages/equipamentos/hooks/useEquipamentosCatalogQueries.ts`), com as mesmas chaves `equipamentosQueryKeys` em `lib/query-keys/equipamentos.ts`; invalidação de lotes usa `pareamentoQueryKeys` em `pareamento/domain/query-keys.ts`. Mutações de preview/POST/CSV usam `toastApiError` onde aplicável.
 - Três modos controlados por `?modo=individual|massa|csv` (searchParam); fallback para `"individual"`.
 - **Modo individual:** um par IMEI + ICCID; checkboxes `pertenceLoteRastreador` / `pertenceLoteSim` determinam se o aparelho será buscado num lote existente (sem criar novo) ou criado informando marca/modelo/operadora/marcaSimcard/plano. Proprietário `INFINITY | CLIENTE`; se `CLIENTE`, exibe `SelectClienteSearch`. Payload para `POST /aparelhos/pareamento`: `{ imei, iccid, loteRastreadorId?, marcaRastreador?, modeloRastreador?, criarNovoRastreador, loteSímId?, operadoraSim?, marcaSimcardId?, planoSimcardId?, criarNovoSim, proprietario, clienteId? }`.
 - **Modo massa:** textareas separadas para IMEIs e ICCIDs (separados por vírgula, ponto-e-vírgula ou quebra de linha); `parseIds` normaliza strip de espaços e zero-width chars. Preview disparado via `POST /aparelhos/pareamento/preview` com array de pares `{ imei, iccid }[]`. Botão "Confirmar Pareamento" envia `POST /aparelhos/pareamento` com os mesmos pares + configuração de lote/metadados (lote/manual aplicam-se a **todas** as linhas `NEEDS_CREATE`).
@@ -85,41 +125,46 @@ Sem hook dedicado `useAparelhos`; páginas usam `useQuery` do TanStack Query dir
   - Upload `<input type="file" data-testid="csv-file-input" accept=".csv">`; parse com `papaparse` (`header: true`, `skipEmptyLines`, `transformHeader` via `normalizarCabecalho` — lowercase + strip de espaços/aspas).
   - Cabeçalhos aceitos (`CSV_HEADER_ALIASES`): `marca_rastreador` (aliases `marcarastreador`, `marca(rastreador)`), `modelo` / `modelo_rastreador`, `imei`, `operadora`, `marca_simcard` (aliases `marcasimcard`, `marca(simcard)`), `plano`, `iccid`, `lote_rastreador` (+ aliases), `lote_simcard` / `lote_sim` / `lote(simcard)`. Linhas com ambos `imei` e `iccid` vazios são descartadas.
   - Botão "Baixar modelo" gera arquivo `template-pareamento.csv` (separador `;`, BOM UTF-8) com 2 exemplos — um manual e um via lotes (`LOTE-RAST-001`/`LOTE-SIM-001`).
-  - Estado no componente: `csvFileName`, `csvLinhas: CsvLinhaInput[]`, `csvParseErro`, `csvPreview: CsvPreviewResult | null`, `proprietarioCsv`, `clienteIdCsv`, `csvFileInputRef`. `limparCsv` reseta tudo e o `<input>` real.
-  - `csvPreviewMutation` → `POST /aparelhos/pareamento/csv/preview` com `{ linhas, proprietario, clienteId }`. Botão **"Validar CSV"** desabilitado enquanto `csvLinhas.length === 0`.
-  - `csvImportarMutation` → `POST /aparelhos/pareamento/csv` (mesmo payload); no sucesso invalida `["aparelhos"]`, `["lotes-rastreadores"]`, `["lotes-sims"]` e chama `limparCsv()`. Botão **"Confirmar Importação"** habilitado apenas se `csvLinhas.length > 0 && csvPreview !== null && !csvTemErros && (proprietarioCsv === "INFINITY" || clienteIdCsv !== null)`.
+  - Estado: hook **`usePareamentoCsvState`** (`csvFileName`, `csvLinhas: CsvLinhaInput[]`, `csvParseErro`, `csvPreview: CsvPreviewResult | null`, `proprietarioCsv`, `clienteIdCsv`, `csvFileInputRef`). Limpeza: **`limparCsvForm`** em `domain/pareamento-form-reset.ts` (reutilizado pelo rodapé e pelo `onSuccess` da importação).
+  - **`usePareamentoCsvMutations`**: `csvPreviewMutation` → `POST /aparelhos/pareamento/csv/preview` com `{ linhas, proprietario, clienteId }`. Botão **"Validar CSV"** desabilitado enquanto `csvLinhas.length === 0`.
+  - `csvImportarMutation` → `POST /aparelhos/pareamento/csv` (mesmo payload); no sucesso invalida `["aparelhos"]`, `["lotes-rastreadores"]`, `["lotes-sims"]` e chama a mesma rotina de limpeza que o botão Cancelar/Limpar CSV. Botão **"Confirmar Importação"** habilitado apenas se `csvLinhas.length > 0 && csvPreview !== null && !csvTemErros && (proprietarioCsv === "INFINITY" || clienteIdCsv !== null)`.
   - Queries de marcas/modelos/operadoras/marcas-simcard são **não** usadas no modo CSV (resolução é backend).
-- Queries disparadas (habilitadas por modo): `["lotes-rastreadores"]` → `GET /aparelhos/pareamento/lotes-rastreadores` (individual/massa); `["lotes-sims"]` → `GET /aparelhos/pareamento/lotes-sims` (individual/massa); `["marcas"]`, `["modelos"]`, `["operadoras"]`, `["marcas-simcard"]` (individual/massa); `["clientes-lista"]` → `GET /clientes` quando qualquer proprietário (individual/massa/csv) for `CLIENTE`.
-- `modelosPorMarca` / `marcasSimcardPorOperadora`: derivados de marca/operadora selecionada — filtra por `id` do objeto ativo (apenas individual/massa).
+- Queries disparadas (habilitadas por modo): `["lotes-rastreadores"]` → `GET /aparelhos/pareamento/lotes-rastreadores` (individual/massa); `["lotes-sims"]` → `GET /aparelhos/pareamento/lotes-sims` (individual/massa); catálogos de equipamentos (`marcas`, `modelos`, `operadoras`, `marcasSimcard` lista geral) via **`useEquipamentosFullCatalogQueries`** com `enabled` falso fora de individual/massa — individual/massa; `["clientes-lista"]` → `GET /clientes` quando qualquer proprietário (individual/massa/csv) for `CLIENTE`.
+- `modelosPorMarca` / `modelosPorMarcaMassa` / `marcasSimcardPorOperadora` / `marcasSimcardPorOperadoraMassa`: derivados via **`usePareamentoCatalogDerivados`**, usando funções puras em `domain/catalog-helpers.ts` (filtra modelos pela marca ativa e marcas-simcard pela operadora ativa).
 - Validação IMEI/ICCID em tempo real (individual/massa): `minImeiIndividual` lido de `modelo.minCaracteresImei`; `minIccidIndividual` lido de `marcaSimcard.minCaracteresIccid`; ambos ignorados se o campo pertence a lote.
 - Quantidade criada (`quantidadeCriada`) incrementada após sucesso no individual para feedback visual.
+- **Limpar vs pós-sucesso:** `limparIndividualFormComPreview` zera campos, preview e a chave de deduplicação do auto-preview; após **`POST /aparelhos/pareamento` bem-sucedido** no individual, **`resetIndividualFormAfterPareamentoSuccess`** aplica o mesmo reset de campos **sem** limpar o preview (comportamento preservado da implementação anterior). No modo massa, **`resetMassaFormAndPreview`** é usado tanto em **Limpar** quanto após sucesso (inclui `marcaSimcardIdSimMassa` / `planoSimcardIdSimMassa`, alinhado ao reset já feito no sucesso).
 
-**`PreviewCsvTable.tsx` — detalhes:**
+**`preview/PreviewCsvTable.tsx` — detalhes:**
 
 Componente puro que recebe `preview: CsvPreviewResult` e renderiza:
 
-- 3 cards de contagem: **Válidos**, **Total de linhas** e **Erros** (não há "Exigem Lote" — o backend resolve tudo por linha).
+- 4 cards de contagem em grid responsivo: **Válidos**, **Com aviso** (`preview.contadores.comAviso`), **Total de linhas** e **Erros** (não há "Exigem Lote" no resumo — o backend resolve ações por linha).
 - Tabela com colunas `#`, `IMEI`, `ICCID`, `Rastreador`, `SIM`, `Erros`. Células Rastreador/SIM mostram badge da `tracker_acao`/`sim_acao` (`VINCULAR_EXISTENTE` verde, `CRIAR_VIA_LOTE` azul, `CRIAR_MANUAL` indigo, `ERRO` vermelho) + detalhe em texto (`marca / modelo`, `Lote <ref>`, operadora).
 - Linhas com `erros.length > 0` recebem `bg-red-50/50`.
 - `ERROS_LABELS`: traduz códigos do backend (`IMEI_INVALIDO`, `ICCID_INVALIDO`, `IMEI_JA_VINCULADO`, `ICCID_JA_VINCULADO`, `FALTA_DADOS_RASTREADOR`, `FALTA_DADOS_SIM`, `LOTE_RASTREADOR_NAO_ENCONTRADO`, `LOTE_SIMCARD_NAO_ENCONTRADO`, `MARCA_SIMCARD_NAO_ENCONTRADA`, `PLANO_SIMCARD_NAO_ENCONTRADO`) para mensagens em português. Códigos desconhecidos caem no fallback `e => e`.
-- Tipos exportados: `CsvPreviewLinha`, `CsvPreviewResult` (usados em `PareamentoPage.tsx`).
+- Tipos exportados: `CsvPreviewLinha`, `CsvPreviewResult` (definidos em `pareamento/preview/PreviewCsvTable.tsx`; `CsvLinhaInput` e demais tipos de lote/catálogo em `domain/types.ts`).
 
-**`PreviewPareamentoTable.tsx` — detalhes:**
+**`preview/PreviewPareamentoTable.tsx` — detalhes:**
 
 Componente puro (sem queries) que recebe `preview: PreviewResult` e renderiza resumo + tabela.
 
 - Tipos exportados: `PreviewLinha`, `PreviewResult`, `TRACKER_STATUS_LABELS`, `ACTION_LABELS`.
+- Função exportada `countPareamentoPreviewDuplicateLinhas(linhas)`: conta quantas linhas do preview têm **IMEI** ou **ICCID** não vazio repetido dentro do mesmo lote (normalização com `trim`; duas linhas com o mesmo IMEI contam ambas).
 - `TrackerStatus`: `FOUND_AVAILABLE` | `FOUND_ALREADY_LINKED` | `NEEDS_CREATE` | `INVALID_FORMAT`.
 - `ActionNeeded`: `OK` | `SELECT_TRACKER_LOT` | `SELECT_SIM_LOT` | `FIX_ERROR`.
-- Cards de contagem: Válidos, Exigem Lote, Duplicados (fixo 0 — campo não preenchido pelo backend atual), Erros.
+- Cards de contagem: Válidos, Exigem Lote, **Duplicados** (valor = `countPareamentoPreviewDuplicateLinhas(preview.linhas)`), Erros.
+- Cobertura de testes: `client/src/__tests__/pages/PreviewPareamentoTable.test.tsx` (função pura + asserções no card Duplicados após `render`).
 
-**`EquipamentosConfigPage.tsx` — detalhes:**
+**`EquipamentosConfigPage.tsx` + `config/` — detalhes:**
 
-- Rota: `/equipamentos/configuracoes`; link de volta para `/equipamentos`. Permissão `CONFIGURACAO.APARELHO.EDITAR` controla todos os botões de criação/edição.
-- Queries: `["marcas"]` → `GET /equipamentos/marcas`; `["modelos"]` → `GET /equipamentos/modelos`; `["operadoras"]` → `GET /equipamentos/operadoras`; `["marcas-simcard"]` → `GET /equipamentos/marcas-simcard`.
+- Rota: `/equipamentos/config` (redirects legados `/equipamentos/marcas` etc. apontam para cá); link de volta para `/equipamentos`. Permissão `CONFIGURACAO.APARELHO.EDITAR` (`canEdit`) controla **de forma uniforme**: botões **Nova Marca** e ações em dropdown na coluna de **Marcas e Modelos de Rastreador**; botão **Nova Operadora**, coluna de menu (⚙) nas linhas de operadora; botão **Nova Marca** (simcard), menu ⚙ de cada marca simcard, botões **Adicionar Plano** e menus de edição/exclusão de plano. Sem `EDITAR`, essas ações somem; listagem e busca permanecem.
+- **Arquitetura:** a página importa o barrel `client/src/pages/equipamentos/config/index.ts` (hook + componentes). O hook **`useEquipamentosConfig`** orquestra permissão, estado de modal (`useEquipamentosConfigModalState`), mutações CRUD (`useEquipamentosConfigCrudMutations` — invalidação + `toast`/`toastApiError`), listagens com **`useEquipamentosFullCatalogQueries`**, debounce e handlers. Listagens em três painéis (`MarcasModelosPanel`, `OperadorasTablePanel`, `MarcasSimcardPanel`); cinco modais em **`EquipamentosConfigModals`**, com shell **`ConfigFormModal`**. Filtros puros e tipos em `config/domain/`.
+- Queries: mesmas rotas e chaves que antes, obtidas via **`useEquipamentosFullCatalogQueries`**: `marcas` → `GET /equipamentos/marcas`; `modelos` → `GET /equipamentos/modelos`; `operadoras` → `GET /equipamentos/operadoras`; `marcasSimcard` (chave `equipamentosQueryKeys.marcasSimcard`) → `GET /equipamentos/marcas-simcard` (lista completa).
 - **Seção Marcas e Modelos (col-7):** lista acordeão — clicar na marca expande modelos. Filtro de busca debounce 300 ms que filtra por nome da marca **ou** nome de qualquer modelo da marca. Modelo deletável sem confirmação; marca deletável apenas se `_count.modelos === 0`. Desativar marca não remove modelos.
 - **Seção Operadoras (col-5):** tabela simples; ativar/desativar via toggle (PATCH `{ ativo }`); excluir sem restrição (backend pode bloquear).
 - **Seção Marcas Simcard (full-width col-12):** acordeão similar; cada marca tem `temPlanos: boolean`. Se `temPlanos=false`, a expansão mostra aviso; se `temPlanos=true`, lista planos ativos (`plano.ativo`). Planos excluídos via DELETE (backend faz `ativo=false`, não exclui hard).
-- **Modals:** padrão `Dialog` com `hideClose` — 5 modais em estado local: Marca, Modelo, Operadora, MarcaSimcard, PlanoSimcard. Todos usam `onOpenChange={(o) => !o && closeFn()}` para fechar com Esc/overlay.
+- **Modals:** cinco `Dialog` com `hideClose` — `ConfigFormModal` (header com ícone + título + `X`, footer Salvar/Cancelar); `EquipamentosConfigModals` compõe Marca, Modelo, Operadora, MarcaSimcard, Plano. Fechamento: `onOpenChange` com `!open` chama a função `close*` correspondente.
 - Campo `minCaracteresImei` (Modelo) e `minCaracteresIccid` (MarcaSimcard) são opcionais; enviados apenas se preenchidos.
+- **Testes (cliente):** `client/src/__tests__/pages/equipamentos-page.shared.test.ts` (shared da listagem); `client/src/__tests__/pages/equipamentos/` — `equipamentos-page.helpers.test.ts`, `useEquipamentosPageList.test.tsx`, `hooks/useEquipamentosCatalogQueries.test.tsx`, testes dos componentes da listagem (`EquipamentosPipelineStrip`, toolbar, tabela, linha, painel), `EquipamentosPage.integration.test.tsx`, `EquipamentosConfigPage.integration.test.tsx`, subpastas `config/domain/`, `config/hooks/` (incl. `useEquipamentosConfig*`, `useEquipamentosConfigModalState`, `useEquipamentosConfigCrudMutations`), `config/components/`; `client/src/__tests__/pages/equipamentos/pareamento/` — domínio, hooks e componentes do pareamento (ver tabela de arquivos acima); `client/src/__tests__/pages/EquipamentosConfigPage.test.tsx` (permissões); `client/src/__tests__/pages/PreviewPareamentoTable.test.tsx`, `PreviewCsvTable.test.tsx`, `PareamentoPage.test.tsx` (integração/fluxos da página; fonte em `pages/equipamentos/pareamento/`); `client/src/__tests__/components/ClientSideTableFooter.test.tsx`; `client/src/__tests__/lib/query-keys/equipamentos.test.ts` e `client/src/__tests__/lib/toast-api-error.test.ts`.
 

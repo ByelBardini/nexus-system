@@ -8,9 +8,14 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 
 | Arquivo | Responsabilidade |
 |---------|-----------------|
-| `pedidos-rastreadores.module.ts` | Registra controller + service; importa `PrismaModule`, `UsersModule`, `DebitosRastreadoresModule`; **não** exporta o service |
+| `pedidos-rastreadores.module.ts` | Registra controller, `PedidosRastreadoresService`, `PedidosRastreadoresProprietarioDebitoHelper`; importa `PrismaModule`, `UsersModule`, `DebitosRastreadoresModule`; **não** exporta o service |
 | `pedidos-rastreadores.controller.ts` | Rotas em `/pedidos-rastreadores`; `@UseGuards(PermissionsGuard)` no controller; `@ApiTags('pedidos-rastreadores')` |
 | `pedidos-rastreadores.service.ts` | Criação, listagem, atualização de status, gestão de kits, destinatários MISTO, remoção |
+| `pedidos-rastreadores.constants.ts` | `ORDEM_STATUS_PEDIDO_RASTREADOR` (sequência linear de status para validação em `updateStatus`) |
+| `pedidos-rastreadores-include.ts` | `PEDIDO_RASTREADOR_INCLUDE_BASE` — shape de `include` Prisma reutilizado em `findMany` / `findOne` / updates |
+| `pedidos-rastreadores-kit-ids.helper.ts` | `extrairKitIds(unknown)` — normaliza `pedido.kitIds` (`Json` ou string JSON) para `number[]` |
+| `pedidos-rastreadores-destino.helpers.ts` | Funções puras: `resolveTargetClienteId`, `resolveNonMistoClienteDestino`, `resolveNonMistoTecnicoDestino` (pedidos não-MISTO em transições de status) |
+| `pedidos-rastreadores-proprietario-debito.helper.ts` | `@Injectable()` — resolve marca/modelo por nome **com cache por transação** (evita N+1) e chama `DebitosRastreadoresService.consolidarDebitoTx` quando o proprietário do aparelho muda |
 | `dto/create-pedido-rastreador.dto.ts` | Body de criação; valida destino e itens MISTO |
 | `dto/create-pedido-rastreador-item.dto.ts` | Item de pedido MISTO (proprietário, quantidade, marca/modelo/operadora) |
 | `dto/update-status-pedido.dto.ts` | `status`, `observacao?`, `kitIds?`, `deClienteId?` |
@@ -50,9 +55,9 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 **Modelos Prisma (campos-chave):**
 
 - `PedidoRastreador`: `id`, `codigo` (formato `PED-0001`, gerado via `MAX+1` com até 5 retries em race P2002), `tipoDestino` (`TipoDestinoPedido`), `status` (`StatusPedidoRastreador`), `urgencia` (`UrgenciaPedido`, default `MEDIA`), `dataSolicitacao`, `quantidade`, `tecnicoId?`, `clienteId?`, `subclienteId?`, `deClienteId?`, `marcaEquipamentoId?`, `modeloEquipamentoId?`, `operadoraId?`, `kitIds` (`Json?`), `observacao?`, `entregueEm?`, `criadoPorId?`, `criadoEm`, `atualizadoEm`.
-- `PedidoRastreadorHistorico`: `id`, `pedidoId`, `statusAnterior`, `statusNovo`, `observacao?`, `criadoEm`.
-- `PedidoRastreadorItem`: `id`, `pedidoId`, `proprietario` (`ProprietarioTipo`), `clienteId?`, `quantidade`, `marcaEquipamentoId?`, `modeloEquipamentoId?`, `operadoraId?`.
-- `PedidoRastreadorAparelho`: vínculo aparelho ↔ pedido com destinatário; campos `aparelhoId`, `pedidoId`, `proprietario`, `clienteId?`.
+- `PedidoRastreadorHistorico`: `id`, `pedidoRastreadorId`, `statusAnterior`, `statusNovo`, `observacao?`, `criadoEm`.
+- `PedidoRastreadorItem`: `id`, `pedidoRastreadorId`, `proprietario` (`ProprietarioTipo`), `clienteId?`, `quantidade`, `marcaEquipamentoId?`, `modeloEquipamentoId?`, `operadoraId?`.
+- `PedidoRastreadorAparelho`: vínculo aparelho ↔ pedido com destinatário; campos `aparelhoId`, `pedidoRastreadorId`, `destinatarioProprietario`, `destinatarioClienteId?`.
 
 **Regras de negócio críticas:**
 
@@ -77,9 +82,9 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 
 **`updateStatus` — máquina de estados e efeitos:**
 1. **Idempotência:** se `dto.status === statusAtual`, retorna `findOne` sem transação.
-2. **Fluxo linear:** `SOLICITADO → EM_CONFIGURACAO → CONFIGURADO → DESPACHADO → ENTREGUE`. Retroagir de `DESPACHADO` é bloqueado explicitamente. `ENTREGUE → CONFIGURADO` é permitido e **reseta** aparelhos.
+2. **Fluxo linear:** definido por `ORDEM_STATUS_PEDIDO_RASTREADOR` em `pedidos-rastreadores.constants.ts` — `SOLICITADO → EM_CONFIGURACAO → CONFIGURADO → DESPACHADO → ENTREGUE`. Retroagir de `DESPACHADO` é bloqueado explicitamente. `ENTREGUE → CONFIGURADO` é permitido e **reseta** aparelhos.
 3. **`entregueEm`:** setado em `new Date()` ao ir para `ENTREGUE`; zerado (`null`) ao voltar para `CONFIGURADO`.
-4. **`kitIds`:** pode vir no DTO ou ser lido de `pedido.kitIds` (campo `Json?`, parseado por `extrairKitIds`). Persistido se não vazio; **preserva** kits existentes se DTO não trouxer novos.
+4. **`kitIds`:** pode vir no DTO ou ser lido de `pedido.kitIds` (campo `Json?`, parseado por `extrairKitIds` em `pedidos-rastreadores-kit-ids.helper.ts`). Persistido se não vazio; **preserva** kits existentes se DTO não trouxer novos.
 5. **Kits (`Kit.kitConcluido`):**
    - Status `CONFIGURADO`, `DESPACHADO`, `ENTREGUE` + `kitIds` → `kit.updateMany { kitConcluido: true }`.
    - Regressão para `SOLICITADO`/`EM_CONFIGURACAO` → para cada kitId antigo não presente em outros pedidos restritivos, `kit.kitConcluido = false`.
@@ -89,7 +94,7 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
    - `CONFIGURADO` (vindo de ENTREGUE) → `StatusAparelho.CONFIGURADO`
    - Outros → sem atualização de aparelhos.
 7. **MISTO + ENTREGUE/DESPACHADO com COM_TECNICO/DESPACHADO:** exige que **todos** os rastreadores dos kits tenham entrada em `PedidoRastreadorAparelho`; caso contrário lança `BadRequestException` com contagem faltante.
-8. **Débitos:** chama `debitosService.consolidarDebitoTx` quando proprietário/cliente de origem e destino diferem — resolve marca/modelo pelo nome via `MarcaEquipamento` + `ModeloEquipamento`; rastreios de `pedidoId` passados ao histórico.
+8. **Débitos:** `PedidosRastreadoresProprietarioDebitoHelper.consolidarDebitoSeProprietarioMudou` chama `DebitosRastreadoresService.consolidarDebitoTx` quando proprietário/cliente de origem e destino diferem e o aparelho tem `marca`/`modelo` (strings). Resolução de IDs de marca/modelo no banco usa **cache por par (marca, modelo) dentro da mesma transação** para evitar N+1. Destino não-MISTO usa os helpers em `pedidos-rastreadores-destino.helpers.ts`. Em pedido não-MISTO + `DESPACHADO`, a atualização de ownership do aparelho segue a mesma condição de antes (inclui exigência de `marca`/`modelo` no aparelho). `pedidoId` segue sendo passado ao histórico de débito.
 9. **SIM vinculado:** replica o mesmo `novoStatusAparelho` no SIM vinculado (`simVinculadoId`).
 10. Toda lógica de aparelhos, kits e débitos ocorre **dentro de `prisma.$transaction`**.
 
@@ -99,15 +104,22 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 **`remove`:**
 - `findOne` + `prisma.pedidoRastreador.delete`; filhos com `onDelete: Cascade` no schema são removidos automaticamente (histórico, itens, vínculos aparelho).
 
-**Constante `includeBase`:**
-- Shape de includes padrão: `tecnico`, `cliente`, `subcliente`, `deCliente`, `marcaEquipamento`, `modeloEquipamento`, `operadora`, `criadoPor`, `itens` (com `cliente`, `marcaEquipamento`, `modeloEquipamento`, `operadora`), `aparelhosDestinatarios`.
-- `findOne` adiciona `historico` (50 registros, desc).
+**`PEDIDO_RASTREADOR_INCLUDE_BASE` (`pedidos-rastreadores-include.ts`):**
+- Shape de includes padrão: `tecnico`, `cliente`, `subcliente`, `deCliente`, `marcaEquipamento`, `modeloEquipamento`, `operadora`, `criadoPor`, `itens` (com `cliente`, `marcaEquipamento`, `modeloEquipamento`, `operadora`).
+- `findOne` faz spread desse objeto e adiciona `historico` (50 registros, desc).
 
 **Integrações com outros domínios:**
 
-- **`DebitosRastreadoresService`:** `consolidarDebitoTx` chamado dentro de transação Prisma em `updateStatus`.
+- **`DebitosRastreadoresService`:** consumido por `PedidosRastreadoresProprietarioDebitoHelper`; `consolidarDebitoTx` é chamado dentro da transação de `updateStatus` quando há mudança de proprietário elegível.
 - **`Kit`:** `kitConcluido` sincronizado em `updateStatus` nos dois sentidos.
 - **`Aparelho` / `AparelhoHistorico`:** status de rastreadores e SIMs nos kits atualizados em `updateStatus`.
 
-**Testes unitários:** não há pasta `server/test/unit/pedidos-rastreadores/` — domínio **sem cobertura unitária** atualmente.
+**Testes unitários (`server/test/unit/pedidos-rastreadores/`):**
+
+| Arquivo | Escopo |
+|---------|--------|
+| `pedidos-rastreadores.service.spec.ts` | `findAll`, `findOne`, `create`, `updateStatus` (incl. idempotência, MISTO, débito com cache marca/modelo, destino CLIENTE/subcliente/TECNICO+DTO, `bulkSetDestinatarios`, `getAparelhosDestinatarios`, `removeAparelhoDestinatario`, `updateKitIds`, `remove`) |
+| `pedidos-rastreadores.controller.spec.ts` | Delegação do controller ao service |
+
+O módulo de teste do service registra `PedidosRastreadoresProprietarioDebitoHelper` e mock de `DebitosRastreadoresService` (`consolidarDebitoTx`).
 

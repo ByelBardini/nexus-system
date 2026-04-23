@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HtmlOrdemServicoGenerator } from 'src/ordens-servico/html-ordem-servico.generator';
-import { StatusOS } from '@prisma/client';
+import { StatusOS, TipoOS } from '@prisma/client';
 
 const osBase = {
   id: 1,
@@ -225,6 +225,54 @@ describe('HtmlOrdemServicoGenerator', () => {
 
         expect(result).toContain('Local emissão');
         expect(result).not.toContain('Local testes');
+      });
+    });
+
+    describe('TipoOS — ramos do template (edge cases pós-enum)', () => {
+      it('RETIRADA exibe ID a retirar e não ID a substituir', () => {
+        const result = generator.gerar({
+          ...osBase,
+          tipo: TipoOS.RETIRADA,
+          status: StatusOS.AGENDADO,
+          idAparelho: 'IMEI_RETIRAR',
+        });
+
+        expect(result).toContain('ID a retirar:');
+        expect(result).toContain('IMEI_RETIRAR');
+        expect(result).not.toContain('ID a substituir:');
+      });
+
+      it('DESLOCAMENTO não adiciona sufixo "e Detalhes" ao título da seção', () => {
+        const result = generator.gerar({
+          ...osBase,
+          tipo: TipoOS.DESLOCAMENTO,
+          status: StatusOS.AGENDADO,
+        });
+
+        expect(result).not.toContain('Tipo de Serviço e Detalhes');
+      });
+
+      it('INSTALACAO_SEM_BLOQUEIO inclui "e Detalhes" no título (enum explícito)', () => {
+        const result = generator.gerar({
+          ...osBase,
+          tipo: TipoOS.INSTALACAO_SEM_BLOQUEIO,
+          status: StatusOS.AGENDADO,
+        });
+
+        expect(result).toContain('Tipo de Serviço e Detalhes');
+      });
+
+      it('string de tipo desconhecida cai no ramo genérico (não quebra com TipoOS)', () => {
+        const result = generator.gerar({
+          ...osBase,
+          tipo: 'TIPO_INVENTADO' as any,
+          status: StatusOS.AGENDADO,
+        });
+
+        expect(result).toContain('<!DOCTYPE html>');
+        expect(result).toContain('TIPO_INVENTADO');
+        expect(result).not.toContain('ID a retirar:');
+        expect(result).not.toContain('ID a substituir:');
       });
     });
   });

@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -22,6 +23,7 @@ import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { AssignPermissionsDto } from './dto/assign-permissions.dto';
 import { AssignRolesDto } from './dto/assign-roles.dto';
+import { ROLES_CONTROLLER_PERMISSIONS } from './roles.permissions';
 
 @ApiTags('roles')
 @ApiBearerAuth()
@@ -31,14 +33,14 @@ export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
   @Get()
-  @RequirePermissions('ADMINISTRATIVO.CARGO.LISTAR')
+  @RequirePermissions(ROLES_CONTROLLER_PERMISSIONS.CARGO_LISTAR)
   @ApiOperation({ summary: 'Listar roles por setor' })
   findAll() {
     return this.rolesService.findAllWithSectors();
   }
 
   @Get('paginated')
-  @RequirePermissions('ADMINISTRATIVO.CARGO.LISTAR')
+  @RequirePermissions(ROLES_CONTROLLER_PERMISSIONS.CARGO_LISTAR)
   @ApiOperation({ summary: 'Listar roles com paginação e filtros' })
   @ApiQuery({ name: 'search', required: false })
   @ApiQuery({ name: 'categoria', required: false, enum: CategoriaCargo })
@@ -59,64 +61,64 @@ export class RolesController {
   }
 
   @Get('setores')
-  @RequirePermissions('ADMINISTRATIVO.CARGO.LISTAR')
+  @RequirePermissions(ROLES_CONTROLLER_PERMISSIONS.CARGO_LISTAR)
   @ApiOperation({ summary: 'Listar setores' })
   findAllSetores() {
     return this.rolesService.findAllSetores();
   }
 
   @Get('permissions')
-  @RequirePermissions('ADMINISTRATIVO.CARGO.LISTAR')
+  @RequirePermissions(ROLES_CONTROLLER_PERMISSIONS.CARGO_LISTAR)
   @ApiOperation({ summary: 'Listar todas as permissões' })
   findAllPermissions() {
     return this.rolesService.findAllPermissions();
   }
 
   @Get(':id')
-  @RequirePermissions('ADMINISTRATIVO.CARGO.LISTAR')
+  @RequirePermissions(ROLES_CONTROLLER_PERMISSIONS.CARGO_LISTAR)
   @ApiOperation({ summary: 'Buscar cargo por ID' })
-  findById(@Param('id') id: string) {
-    return this.rolesService.findById(+id);
+  findById(@Param('id', ParseIntPipe) id: number) {
+    return this.rolesService.findById(id);
   }
 
   @Post()
-  @RequirePermissions('ADMINISTRATIVO.CARGO.CRIAR')
+  @RequirePermissions(ROLES_CONTROLLER_PERMISSIONS.CARGO_CRIAR)
   @ApiOperation({ summary: 'Criar novo cargo' })
   create(@Body() dto: CreateRoleDto) {
     return this.rolesService.create(dto);
   }
 
   @Patch(':id')
-  @RequirePermissions('ADMINISTRATIVO.CARGO.EDITAR')
+  @RequirePermissions(ROLES_CONTROLLER_PERMISSIONS.CARGO_EDITAR)
   @ApiOperation({ summary: 'Atualizar cargo' })
-  update(@Param('id') id: string, @Body() dto: UpdateRoleDto) {
-    return this.rolesService.update(+id, dto);
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateRoleDto) {
+    return this.rolesService.update(id, dto);
   }
 
   @Patch(':id/permissions')
-  @RequirePermissions('ADMINISTRATIVO.CARGO.EDITAR')
+  @RequirePermissions(ROLES_CONTROLLER_PERMISSIONS.CARGO_EDITAR)
   @ApiOperation({ summary: 'Atualizar permissões do role' })
   updatePermissions(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() dto: AssignPermissionsDto,
   ) {
-    return this.rolesService.updateRolePermissions(+id, dto.permissionIds);
+    return this.rolesService.updateRolePermissions(id, dto.permissionIds);
   }
 
   @Get('users/:userId/roles')
-  @RequirePermissions('ADMINISTRATIVO.USUARIO.LISTAR')
+  @RequirePermissions(ROLES_CONTROLLER_PERMISSIONS.USUARIO_LISTAR)
   @ApiOperation({ summary: 'Listar roles do usuário' })
-  getUserRoles(@Param('userId') userId: string) {
-    return this.rolesService.getUserRoles(+userId);
+  getUserRoles(@Param('userId', ParseIntPipe) userId: number) {
+    return this.rolesService.getUserRoles(userId);
   }
 
   @Patch('users/:userId/roles')
-  @RequirePermissions('ADMINISTRATIVO.USUARIO.EDITAR')
+  @RequirePermissions(ROLES_CONTROLLER_PERMISSIONS.USUARIO_EDITAR)
   @ApiOperation({ summary: 'Atualizar roles do usuário' })
   updateUserRoles(
-    @Param('userId') userId: string,
+    @Param('userId', ParseIntPipe) userId: number,
     @Body() dto: AssignRolesDto,
   ) {
-    return this.rolesService.updateUserRoles(+userId, dto.roleIds);
+    return this.rolesService.updateUserRoles(userId, dto.roleIds);
   }
 }

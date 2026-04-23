@@ -8,10 +8,11 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 
 | Arquivo | Responsabilidade |
 |---------|-----------------|
-| `debitos-rastreadores.module.ts` | Registra controller + service; importa `PrismaModule`, `UsersModule`; **exporta `DebitosRastreadoresService`** (consumido por `AparelhosModule`) |
-| `debitos-rastreadores.controller.ts` | Rotas em `/debitos-rastreadores`; `@UseGuards(PermissionsGuard)` no controller; `@ApiTags('debitos-rastreadores')` |
+| `debitos-rastreadores.module.ts` | Registra controller + service; importa `PrismaModule`, `UsersModule`; **exporta `DebitosRastreadoresService`** (consumido por `AparelhosModule`, `PedidosRastreadoresModule`, `OrdensServicoModule`, etc.) |
+| `debitos-rastreadores.controller.ts` | Rotas em `/debitos-rastreadores`; `@UseGuards(PermissionsGuard)` no controller; `@ApiTags('debitos-rastreadores')`; `GET :id` usa `ParseIntPipe` |
 | `debitos-rastreadores.service.ts` | `findAll`, `findOne`, `consolidarDebitoTx` (método transacional exportado para outros serviços) |
-| `dto/list-debitos.dto.ts` | Query params de listagem; `status?: 'aberto' | 'quitado'` |
+| `debito-rastreador.include.ts` | Include Prisma compartilhado: relações `devedorCliente` / `credorCliente` / `marca` / `modelo`; `buildDebitoRastreadorFindInclude(incluirHistoricos)` adiciona ou omite `historicos` aninhados |
+| `dto/list-debitos.dto.ts` | Query params de listagem; validação `page`/`limit` ≥ 1; filtros por tipo de proprietário; flag `incluirHistoricos` |
 
 **Endpoints e permissões:**
 
@@ -20,26 +21,29 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 | GET | `/debitos-rastreadores` | `AGENDAMENTO.PEDIDO_RASTREADOR.LISTAR` |
 | GET | `/debitos-rastreadores/:id` | `AGENDAMENTO.PEDIDO_RASTREADOR.LISTAR` |
 
-> Não há rotas de criação, edição ou exclusão: débitos são gerados exclusivamente via `consolidarDebitoTx` chamado por outros serviços (ex.: `PedidosRastreadoresService`, `pareamento.service`).
+> Não há rotas de criação, edição ou exclusão: débitos são gerados exclusivamente via `consolidarDebitoTx` chamado por outros serviços (ex.: `PedidosRastreadoresProprietarioDebitoHelper`, `pareamento.service`, `lotes.service`, `aparelhos.service`, `ordem-servico-status-side-effects.service`).
 
 **`ListDebitosDto` — query params:**
 
 | Param | Tipo | Comportamento |
 |-------|------|--------------|
-| `page` | `number?` | Default `1` |
-| `limit` | `number?` | Default `100`; máximo absoluto `500` |
+| `page` | `number?` | Default `1` no service; validação **`>= 1`** |
+| `limit` | `number?` | Default `100` no service; validação **`>= 1`**; máximo absoluto `500` |
+| `devedorTipo` | `ProprietarioTipo?` | Filtro exato (`INFINITY` \| `CLIENTE`) |
+| `credorTipo` | `ProprietarioTipo?` | Filtro exato |
 | `devedorClienteId` | `number?` | Filtro exato |
 | `credorClienteId` | `number?` | Filtro exato |
 | `marcaId` | `number?` | Filtro exato |
 | `modeloId` | `number?` | Filtro exato |
 | `status` | `'aberto' \| 'quitado'?` | `aberto` → `quantidade > 0`; `quitado` → `quantidade <= 0` |
+| `incluirHistoricos` | `boolean?` | Query: `true` / `false` (strings aceitas após transform). **Default `false`** — listagem não carrega histórico por linha (menos carga). Use `true` quando a UI precisar de movimentações (ex.: página de débitos equipamentos). |
 
 **`findAll` — inclui no retorno:**
-- `devedorCliente` `{ id, nome }`, `credorCliente` `{ id, nome }`, `marca` `{ id, nome }`, `modelo` `{ id, nome }`.
-- `historicos` (ordenados por `criadoEm asc`) com join em `pedido { id, codigo }`, `lote { id, referencia }`, `aparelho { id, identificador }`, `ordemServico { id, numero }`.
+- Sempre: `devedorCliente` `{ id, nome }`, `credorCliente` `{ id, nome }`, `marca` `{ id, nome }`, `modelo` `{ id, nome }` (definidos em `debito-rastreador.include.ts`).
+- **Somente se `incluirHistoricos=true`:** `historicos` (ordenados por `criadoEm asc`) com join em `pedido { id, codigo }`, `lote { id, referencia }`, `aparelho { id, identificador }`, `ordemServico { id, numero }`.
 - Ordenação: `atualizadoEm desc`.
 
-**`findOne` — inclui:** `devedorCliente`, `credorCliente`, `marca`, `modelo` (sem históricos). Lança `NotFoundException` se não encontrado.
+**`findOne` — inclui:** mesmas quatro relações de cliente/marca/modelo que o include base (**sem** históricos). Lança `NotFoundException` se não encontrado.
 
 **Interface `ConsolidarDebitoParams`:**
 
@@ -63,39 +67,74 @@ interface ConsolidarDebitoParams {
 
 1. Se `devedorTipo === credorTipo && devedorClienteId === credorClienteId` → retorna sem fazer nada (sem auto-dívida).
 2. Busca débito no sentido **inverso** (`devedorTipo`↔`credorTipo`, `devedorClienteId`↔`credorClienteId`, mesma marca/modelo).
-   - Se existir com `quantidade > 0` → **decrementa** o reverso (`delta`), registra histórico com `delta = -delta` (devolução).
-   - Se não existir (ou saldo ≤ 0) → busca débito no sentido **direto**.
+   - Se existir com `quantidade > 0` e **`delta` ≤ saldo reverso** → **decrementa** o reverso em `delta`, um histórico no registro reverso com `delta = -delta`.
+   - Se existir com `quantidade > 0` e **`delta` > saldo reverso** → **zera** o reverso (`quantidade = 0`); histórico no registro reverso com `delta = -saldoReverso`; calcula `remainder = delta - saldoReverso` e, se `remainder > 0`, **incrementa ou cria** o débito no sentido **direto** com `remainder`, com **segundo** histórico `delta = +remainder` (mesmos metadados `pedidoId` / `loteId` / `aparelhoId` / `ordemServicoId` nos dois lançamentos).
+   - Se não existir reverso com saldo > 0 → busca débito no sentido **direto**.
      - Se existir → **incrementa** (`delta`).
      - Se não existir → **cria** novo registro com `quantidade = delta`.
-3. Sempre grava um `HistoricoDebitoRastreador` com o `debitoId` resultante e os IDs de rastreabilidade (`pedidoId`, `loteId`, `aparelhoId`, `ordemServicoId` — `null` quando não informados).
+     - Grava **um** `HistoricoDebitoRastreador` com `delta` positivo no `debitoId` do sentido direto.
+3. Nos fluxos com um único lançamento no fim (abatimento parcial/total sem estouro, ou sentido direto sem reverso), aplica-se um único `HistoricoDebitoRastreador` como acima.
 
 > **Atenção:** Upsert direto do Prisma não é usado porque campos nullable em chave única não suportam `upsert` no MySQL — o código faz `findFirst` + `update`/`create` manualmente.
 
 **Modelos Prisma (campos-chave):**
 
 - `DebitoRastreador`: `id`, `devedorTipo` (`ProprietarioTipo`), `devedorClienteId` (null = Infinity), `credorTipo`, `credorClienteId`, `marcaId`, `modeloId`, `quantidade`, `criadoEm`, `atualizadoEm`.
-- `HistoricoDebitoRastreador`: `id`, `debitoId`, `pedidoId?`, `loteId?`, `aparelhoId?`, `ordemServicoId?`, `delta` (positivo = nova dívida, negativo = devolução), `criadoEm`.
+- `HistoricoDebitoRastreador`: `id`, `debitoId`, `pedidoId?`, `loteId?`, `aparelhoId?`, `ordemServicoId?`, `delta` (positivo = nova dívida no sentido do registro alvo, negativo = abatimento no registro reverso), `criadoEm`.
 
 **Quem chama `consolidarDebitoTx`:**
 
-- `pareamento.service` (`server/src/aparelhos/`) — durante pareamento de rastreadores com mudança de proprietário.
-- Potencialmente `PedidosRastreadoresService` (`server/src/pedidos-rastreadores/`) durante transição de status.
-- Sempre chamado **dentro de uma transação Prisma** existente (`Prisma.TransactionClient`).
+- `pareamento.service` — pareamento com mudança de proprietário.
+- `PedidosRastreadoresProprietarioDebitoHelper` — transição de status do pedido quando o proprietário do aparelho muda.
+- `lotes.service` — cadastro em lote com abate de débito.
+- `aparelhos.service` — cadastro individual com abate de débito.
+- `ordem-servico-status-side-effects.service` — efeitos colaterais de status de OS quando aplicável.
+- Sempre **dentro de** `prisma.$transaction` (`Prisma.TransactionClient`).
 
-**Testes unitários (`server/test/unit/debitos-rastreadores/debitos-rastreadores.service.spec.ts`):**
+**Testes unitários (`server/test/unit/debitos-rastreadores/`):**
 
-| Cenário coberto |
-|----------------|
+| Arquivo | Conteúdo |
+|---------|----------|
+| `debitos-rastreadores.service.spec.ts` | `consolidarDebitoTx` (auto-dívida, criação, incremento, abate reverso parcial/total, **delta maior que saldo** com zera + resto no sentido direto, incremento do direto existente, metadados nos dois históricos); `findAll` (defaults, **sem** `historicos` por padrão, **com** `incluirHistoricos`, filtros por tipo, `totalPages` com cap 500); `findOne` + include compartilhado |
+| `list-debitos.dto.spec.ts` | `page`/`limit` mínimos, enums, `incluirHistoricos`, `status` |
+| `debitos-rastreadores.controller.spec.ts` | Delegação `findAll` / `findOne` |
+| `debito-rastreador.include.spec.ts` | Shape do include com e sem histórico |
+
+| Cenário coberto (service — resumo) |
+|-----------------------------------|
 | Não cria débito quando devedor = credor (mesmo tipo e clienteId) |
 | Não cria quando ambos são `INFINITY` |
 | Cria novo registro quando não há débito nem reverso |
 | Incrementa débito direto existente |
-| Abate (decrementa) dívida reversa existente com saldo > 0 |
+| Abate reverso quando `delta` ≤ saldo |
+| Quando `delta` > saldo reverso: zera reverso, cria/incrementa direto com resto e dois históricos |
 | Não abate reverso com saldo 0 — cria novo débito direto |
-| Histórico com `delta` positivo ao criar / negativo ao abater reverso |
-| Rastreabilidade: `pedidoId`, `loteId`, `aparelhoId`, `ordemServicoId` propagados ao histórico |
-| `findAll` — paginação, filtros por `devedorClienteId`/`credorClienteId`, `status aberto/quitado`, cap de 500 |
-| `findOne` — retorno correto e `NotFoundException` |
+| Histórico positivo/negativo e rastreabilidade (`pedidoId`, `loteId`, `aparelhoId`, `ordemServicoId`) |
 
 ---
 
+### Frontend — página **Débitos (equipamentos)**
+
+- **Rota:** `/debitos-equipamentos` (lazy em `client/src/App.tsx`); link na sidebar em **Configuração** (`client/src/layouts/AppLayout.tsx`).
+- **Pasta:** `client/src/pages/debitos-equipamentos/`
+
+| Caminho | Responsabilidade |
+|---------|------------------|
+| `DebitosEquipamentosPage.tsx` | Compõe cards de resumo, barra de filtros, tabela e texto de contagem de registros |
+| `hooks/useDebitosEquipamentos.ts` | TanStack Query (`useQuery`) + estado local (busca, filtros, linha expandida). `queryKey`: `['debitos-rastreadores']` (constante `DEBITOS_EQUIPAMENTOS_QUERY_KEY`). Fetch: `GET` com URL em `DEBITOS_EQUIPAMENTOS_LISTA_URL` — **`limit=500`** e **`incluirHistoricos=true`** (alinhado ao backend: histórico só quando a flag vem na query) |
+| `domain/types.ts` | Tipos da view (`DebitoEquipamento`, status, etc.) e **`DebitoRastreadorListaApi`**: estende `DebitoRastreadorApi` de `client/src/pages/aparelhos/shared/debito-rastreador.ts` com `atualizadoEm`, `historicos?`, etc. |
+| `domain/mapDebitoApiToView.ts` | Converte resposta da API para o modelo da tela; **`buildHistoricoMovimentacaoDescricao`** monta o texto da movimentação (pedido, lote, aparelho, OS) |
+| `domain/debito-equipamento.constants.ts` | `STATUS_DEBITO_CONFIG`, `ENTIDADE_DEBITO_CONFIG`, query key e URL da listagem |
+| `domain/debitos-equipamentos-helpers.ts` | KPIs do topo (`computeDebitosEquipamentosStats`), opções dos selects, filtro da lista, `hasFiltrosAtivos` |
+| `components/DebitosEquipamentosSummaryCards.tsx` | Três colunas de resumo (aparelhos devidos, clientes devedores, modelos ativos) |
+| `components/DebitosEquipamentosFilters.tsx` | Busca, `SearchableSelect` de devedor/credor e modelo, botão limpar, abas de status |
+| `components/DebitosEquipamentosTable.tsx` | Cabeçalho da tabela + corpo; estado vazio |
+| `components/DebitoEquipamentoRowGroup.tsx` | Linha clicável + painel expandido (modelos, histórico, ações placeholder / toast) |
+
+**Formatação na UI:** coluna **Últ. mov.** usa `formatarDataDiaMesAno`; itens do histórico expandido usam `formatarDataHora` (`client/src/lib/format.ts` — ver `docs/context/frontend-core.md`).
+
+**Testes (cliente):** `client/src/__tests__/pages/debitos-equipamentos/` — helpers/mapper/constants, hook, componentes e teste de integração da página (Vitest + Testing Library).
+
+> **Nota:** As abas incluem status **“Parcial”**, mas o mapper atual deriva só **aberto** / **quitado** a partir de `quantidade > 0` ou `≤ 0`; filtrar “Parcial” pode não retornar linhas até existir regra de negócio explícita no backend/mapper.
+
+---

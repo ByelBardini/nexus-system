@@ -2,45 +2,12 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsBoolean,
-  IsNumber,
   IsOptional,
   IsString,
-  Min,
   MinLength,
   ValidateNested,
 } from 'class-validator';
-
-export class PrecosDto {
-  @ApiPropertyOptional({ default: 0 })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  instalacaoComBloqueio?: number;
-
-  @ApiPropertyOptional({ default: 0 })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  instalacaoSemBloqueio?: number;
-
-  @ApiPropertyOptional({ default: 0 })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  revisao?: number;
-
-  @ApiPropertyOptional({ default: 0 })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  retirada?: number;
-
-  @ApiPropertyOptional({ default: 0 })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  deslocamento?: number;
-}
+import { PrecosDto } from './precos.dto';
 
 export class CreateTecnicoDto {
   @ApiPropertyOptional()

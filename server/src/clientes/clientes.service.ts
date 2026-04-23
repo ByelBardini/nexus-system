@@ -1,8 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CLIENTE_INFINITY_ID } from '../common/constants';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
+import { toPrismaContatoWriteData } from './clientes.contato.helpers';
 
 @Injectable()
 export class ClientesService {
@@ -37,11 +42,7 @@ export class ClientesService {
         ...clienteData,
         contatos: contatos?.length
           ? {
-              create: contatos.map((c) => ({
-                nome: c.nome,
-                celular: c.celular,
-                email: c.email,
-              })),
+              create: contatos.map((c) => toPrismaContatoWriteData(c)),
             }
           : undefined,
       },
@@ -55,11 +56,25 @@ export class ClientesService {
     const { contatos, ...clienteData } = dto;
 
     if (contatos !== undefined) {
-      const existingIds = contatos
-        .filter((c) => c.id)
-        .map((c) => c.id as number);
-
       await this.prisma.$transaction(async (tx) => {
+        for (const contato of contatos) {
+          if (contato.id != null) {
+            const owned = await tx.contatoCliente.findFirst({
+              where: { id: contato.id, clienteId: id },
+              select: { id: true },
+            });
+            if (!owned) {
+              throw new BadRequestException(
+                'Contato não pertence a este cliente',
+              );
+            }
+          }
+        }
+
+        const existingIds = contatos
+          .filter((c) => c.id != null)
+          .map((c) => c.id as number);
+
         await tx.contatoCliente.deleteMany({
           where: {
             clienteId: id,
@@ -68,22 +83,16 @@ export class ClientesService {
         });
 
         for (const contato of contatos) {
-          if (contato.id) {
+          if (contato.id != null) {
             await tx.contatoCliente.update({
               where: { id: contato.id },
-              data: {
-                nome: contato.nome,
-                celular: contato.celular,
-                email: contato.email,
-              },
+              data: toPrismaContatoWriteData(contato),
             });
           } else {
             await tx.contatoCliente.create({
               data: {
                 clienteId: id,
-                nome: contato.nome,
-                celular: contato.celular,
-                email: contato.email,
+                ...toPrismaContatoWriteData(contato),
               },
             });
           }

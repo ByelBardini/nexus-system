@@ -38,7 +38,7 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 **Regras de negócio críticas:**
 
 - `JWT_SECRET` deve estar em `server/.env` (lido via `ConfigService`). Sem ele o módulo falha no boot.
-- Senhas são hasheadas com `bcrypt` (salt rounds = 10).
+- Senhas são hasheadas com `bcrypt`. No módulo `users`, criação e reset usam **`BCRYPT_SALT_ROUNDS`** em `server/src/users/users.constants.ts` (valor atual: **10**); `auth.service` continua usando `bcrypt.compare` / fluxo de troca com hashes produzidos pelo mesmo custo.
 - Expiração de senha: após `trocarSenha`, nova `senhaExpiradaEm` = data atual + **6 meses** (`PRAZO_EXPIRACAO_SENHA_MESES` em `server/src/common/constants.ts`).
 - `PermissionsGuard` faz **nova query** a cada requisição (`usersService.findByEmail`) — não usa o user do JWT diretamente para permissões, garantindo permissões sempre atualizadas.
 - `@Public()` **só** ignora JWT; `PermissionsGuard` ainda exigiria permissões se aplicado separadamente (não é o caso das rotas públicas atuais).

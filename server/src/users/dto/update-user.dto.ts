@@ -1,4 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { SetorUsuario } from '@prisma/client';
 import {
   IsBoolean,
   IsEmail,
@@ -25,10 +26,8 @@ export class UpdateUserDto {
   @IsBoolean()
   ativo?: boolean;
 
-  @ApiPropertyOptional({
-    enum: ['AGENDAMENTO', 'CONFIGURACAO', 'ADMINISTRATIVO'],
-  })
+  @ApiPropertyOptional({ enum: SetorUsuario, enumName: 'SetorUsuario' })
   @IsOptional()
-  @IsEnum(['AGENDAMENTO', 'CONFIGURACAO', 'ADMINISTRATIVO'])
-  setor?: string | null;
+  @IsEnum(SetorUsuario)
+  setor?: SetorUsuario | null;
 }

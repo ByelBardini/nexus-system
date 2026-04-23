@@ -32,7 +32,7 @@ Ver índice em `AGENTS.md`.
 
 **Rota de health check:** `GET /` com `@Public()` → `AppService.getHello()` → `"Hello World!"`.
 
-**Armadilhas de roteamento (importante):** Certos controllers declaram `@Get(':id')` antes de rotas estáticas de um segmento. O NestJS resolve por ordem de declaração no arquivo — um path como `GET /roles/users` pode ser capturado por `:id = "users"` se o controller ordenar `@Get(':id')` antes de `@Get('users/:userId/roles')`. Hoje os paths problemáticos conhecidos: `GET /roles/users/...` e sub-rotas de `/aparelhos/pareamento`. Ao adicionar novas rotas **estáticas** em controllers que tenham `@Get(':id')`, declarar a rota estática **antes** do `:id`.
+**Armadilhas de roteamento (importante):** Certos controllers declaram `@Get(':id')` antes de rotas estáticas de um segmento. O NestJS resolve por ordem de declaração no arquivo — um path como `GET /roles/users` pode ser capturado por `:id = "users"` (um único segmento após `/roles`). No **`RolesController`**, `:id` e `:userId` usam **`ParseIntPipe`**: esse caso devolve **400** (id não inteiro), em vez de chegar ao Prisma com `NaN`. Ainda assim, ao adicionar novas rotas **estáticas** de um segmento em controllers que tenham `@Get(':id')`, prefira declarar a rota estática **antes** do `:id`. Outro ponto de atenção: sub-rotas de `/aparelhos/pareamento`.
 
 ---
 
@@ -57,10 +57,12 @@ Enums principais incluem `SetorUsuario`, `CategoriaCargo`, `TipoContrato`, `Stat
 | Arquivo | Enum local | Enum Prisma equivalente |
 |---------|-----------|------------------------|
 | `clientes/dto/create-cliente.dto.ts` | `TipoContrato`, `StatusCliente` | `TipoContrato`, `StatusCliente` (Prisma) |
-| `users/dto/create-user.dto.ts` | `setor` como array de strings em `@IsEnum` | `SetorUsuario` (Prisma) |
+| `users/dto/create-user.dto.ts`, `users/dto/update-user.dto.ts` | — | `SetorUsuario` no `@IsEnum` importado de `@prisma/client` (**sem** literais duplicados) |
 | `aparelhos/dto/create-individual.dto.ts` | `ORIGEM_VALORES`, `STATUS_ENTRADA_VALORES`, `PROPRIETARIO_VALORES` (consts, não enums Prisma) | — |
 
 > Ao renomear valores de enums Prisma, verifique também as cópias locais nos DTOs acima.
+
+> **Clientes — update:** `clientes/dto/update-cliente.dto.ts` não duplica enums; `UpdateClienteDto` deriva de `CreateClienteDto` com `PartialType` + `OmitType` (`@nestjs/swagger`), e `UpdateContatoDto` estende `ContatoDto`. Alterações de enum ficam em `create-cliente.dto.ts` (ver também `docs/context/clientes.md`).
 
 **Scripts (`server/package.json`):**
 

@@ -9,14 +9,14 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 | Arquivo | Responsabilidade |
 |---------|-----------------|
 | `equipamentos.module.ts` | Registra controller + service; importa `PrismaModule`, `UsersModule`; **exporta `EquipamentosService`** |
-| `equipamentos.controller.ts` | Rotas em `/equipamentos`; `@UseGuards(PermissionsGuard)` no controller; `@ApiTags('equipamentos')` |
+| `equipamentos.controller.ts` | Rotas em `/equipamentos`; `@UseGuards(PermissionsGuard)` no controller; `@ApiTags('equipamentos')`. **IDs de rota** (`:id`) usam `ParseIntPipe` — valor não inteiro → **400** (Bad Request). **Query opcionais** `marcaId`, `operadoraId`, `marcaSimcardId` usam `ParseIntPipe({ optional: true })` — ausente = ok; string inválida → **400** |
 | `equipamentos.service.ts` | CRUD completo de 5 sub-recursos: marcas, modelos, operadoras, marcas-simcard, planos-simcard |
 | `dto/create-marca.dto.ts` | `nome: string` (MaxLength 100) |
 | `dto/update-marca.dto.ts` | `nome?: string`, `ativo?: boolean` |
 | `dto/create-modelo.dto.ts` | `nome: string`, `marcaId: number`, `minCaracteresImei?: number` |
 | `dto/update-modelo.dto.ts` | `nome?: string`, `ativo?: boolean`, `minCaracteresImei?: number` |
 | `dto/create-operadora.dto.ts` | `nome: string` (MaxLength 100) |
-| `dto/update-operadora.dto.ts` | `nome?: string` |
+| `dto/update-operadora.dto.ts` | `nome?: string`, `ativo?: boolean` |
 | `dto/create-marca-simcard.dto.ts` | `nome: string`, `operadoraId: number`, `temPlanos?: boolean`, `minCaracteresIccid?: number` |
 | `dto/update-marca-simcard.dto.ts` | `nome?`, `operadoraId?`, `temPlanos?`, `ativo?`, `minCaracteresIccid?` |
 | `dto/create-plano-simcard.dto.ts` | `marcaSimcardId: number`, `planoMb: number` |
@@ -76,16 +76,15 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 - `createPlanoSimcard` executa em `prisma.$transaction`: cria o plano e seta `marcaSimcard.temPlanos = true` atomicamente.
 - `deletePlanoSimcard` é **soft delete** (`ativo=false`), não hard delete. Após desativar, conta planos ainda ativos: se zero, atualiza `marcaSimcard.temPlanos = false`.
 - Unique key `(marcaSimcardId, planoMb)` é composta — Prisma a referencia como `marcaSimcardId_planoMb` no `findUnique`.
-- `updateMarcaSimcard` valida nova `operadoraId` antes de checar unicidade do nome (lança `NotFoundException` se operadora não existe).
+- `updateMarcaSimcard`: se `dto.operadoraId` vier no PATCH, valida existência da operadora (`NotFoundException` se não existir). **Unicidade `(operadoraId, nome)`** é verificada **sempre** com o par efetivo após o merge (`operadoraIdFinal` / `nomeFinal`) — inclui alteração só de `operadoraId`, só de `nome`, só de `ativo`, etc.; evita conflito com outra marca da mesma operadora que já use o mesmo nome.
 
-**Testes unitários (`server/test/unit/equipamentos/`):**
+**Testes (`server/test/`):**
 
 | Arquivo | Cobertura |
 |---------|-----------|
-| `equipamentos.controller.spec.ts` | Delegação e parsing de id para marcas, modelos e operadoras; filtros `marcaId`/`operadoraId` em listagens; CRUD de marcas-simcard. **Sem cobertura de PlanoSimcard no controller** |
-| `equipamentos.service.spec.ts` | CRUD completo de marcas, modelos, operadoras, marcas-simcard e planos-simcard; `NotFoundException` e `ConflictException`; `createPlanoSimcard` usa transação e atualiza `temPlanos`; `deletePlanoSimcard` desativa e atualiza `temPlanos` quando sem planos ativos |
-
-> **Gap conhecido:** `equipamentos.controller.spec.ts` não testa as rotas de `planos-simcard`.
+| `unit/equipamentos/equipamentos.controller.spec.ts` | Delegação ao service com **ids numéricos** (espelho do contrato pós-`ParseIntPipe` na rota HTTP); filtros opcionais `marcaId` / `operadoraId` / `marcaSimcardId`; marcas, modelos, operadoras, marcas-simcard e **planos-simcard** |
+| `unit/equipamentos/equipamentos.service.spec.ts` | CRUD completo; `updateMarcaSimcard` inclui conflito ao mudar **só** `operadoraId`, sucesso só com `operadoraId`, e validação de unicidade ao alterar **só** `ativo` |
+| `equipamentos.e2e-spec.ts` | Smoke de validação HTTP: `GET .../marcas/:id` com id não numérico → 400; `GET .../modelos?marcaId=xyz` → 400; `GET .../planos-simcard?marcaSimcardId=bad` → 400; listagem de modelos sem query → 200 |
 
 ---
 

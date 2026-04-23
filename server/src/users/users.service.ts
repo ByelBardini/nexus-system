@@ -9,6 +9,12 @@ import { SetorUsuario } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { BCRYPT_SALT_ROUNDS } from './users.constants';
+import {
+  type UsuarioComAuthInclude,
+  usuarioIncludeAuth,
+  usuarioIncludeListagem,
+} from './users.prisma-include';
 
 @Injectable()
 export class UsersService {
@@ -24,18 +30,7 @@ export class UsersService {
   async findAll() {
     const users = await this.prisma.usuario.findMany({
       orderBy: { nome: 'asc' },
-      include: {
-        usuarioCargos: {
-          include: {
-            cargo: {
-              include: {
-                setor: true,
-                cargoPermissoes: true,
-              },
-            },
-          },
-        },
-      },
+      include: usuarioIncludeListagem,
     });
     return users.map((u) => this.sanitizeUser(u));
   }
@@ -79,18 +74,7 @@ export class UsersService {
         orderBy: { nome: 'asc' },
         skip,
         take: limit,
-        include: {
-          usuarioCargos: {
-            include: {
-              cargo: {
-                include: {
-                  setor: true,
-                  cargoPermissoes: true,
-                },
-              },
-            },
-          },
-        },
+        include: usuarioIncludeListagem,
       }),
       this.prisma.usuario.count({ where }),
     ]);
@@ -107,7 +91,7 @@ export class UsersService {
   async findOne(id: number) {
     const user = await this.prisma.usuario.findUnique({
       where: { id },
-      include: { usuarioCargos: { include: { cargo: true } } },
+      include: usuarioIncludeListagem,
     });
     if (!user) throw new NotFoundException('Usuário não encontrado');
     return this.sanitizeUser(user);
@@ -118,15 +102,15 @@ export class UsersService {
       where: { email: dto.email },
     });
     if (exists) throw new ConflictException('Email já cadastrado');
-    const senhaHash = await bcrypt.hash(dto.password, 10);
+    const senhaHash = await bcrypt.hash(dto.password, BCRYPT_SALT_ROUNDS);
     const user = await this.prisma.usuario.create({
       data: {
         nome: dto.nome,
         email: dto.email,
         senhaHash,
         ativo: dto.ativo ?? true,
-        setor: dto.setor as SetorUsuario | undefined,
         senhaExpiradaEm: null,
+        ...(dto.setor !== undefined ? { setor: dto.setor } : {}),
       },
     });
     return this.sanitizeUser(user);
@@ -144,12 +128,12 @@ export class UsersService {
       nome?: string;
       email?: string;
       ativo?: boolean;
-      setor?: SetorUsuario;
+      setor?: SetorUsuario | null;
     } = {};
     if (dto.nome !== undefined) data.nome = dto.nome;
     if (dto.email !== undefined) data.email = dto.email;
     if (dto.ativo !== undefined) data.ativo = dto.ativo;
-    if (dto.setor !== undefined) data.setor = dto.setor as SetorUsuario;
+    if (dto.setor !== undefined) data.setor = dto.setor;
     const user = await this.prisma.usuario.update({
       where: { id },
       data,
@@ -160,7 +144,7 @@ export class UsersService {
   async resetPassword(id: number) {
     await this.findOne(id);
     const defaultPassword = '#Infinity123';
-    const senhaHash = await bcrypt.hash(defaultPassword, 10);
+    const senhaHash = await bcrypt.hash(defaultPassword, BCRYPT_SALT_ROUNDS);
     await this.prisma.usuario.update({
       where: { id },
       data: { senhaHash, senhaExpiradaEm: null },
@@ -168,20 +152,12 @@ export class UsersService {
     return { message: 'Senha resetada com sucesso' };
   }
 
-  async findByIdWithPassword(id: number) {
+  async findByIdWithPassword(
+    id: number,
+  ): Promise<UsuarioComAuthInclude | null> {
     return this.prisma.usuario.findUnique({
       where: { id },
-      include: {
-        usuarioCargos: {
-          include: {
-            cargo: {
-              include: {
-                cargoPermissoes: { include: { permissao: true } },
-              },
-            },
-          },
-        },
-      },
+      include: usuarioIncludeAuth,
     });
   }
 
@@ -192,40 +168,22 @@ export class UsersService {
     });
   }
 
-  async findByEmail(email: string) {
+  async findByEmail(email: string): Promise<UsuarioComAuthInclude | null> {
     return this.prisma.usuario.findUnique({
       where: { email },
-      include: {
-        usuarioCargos: {
-          include: {
-            cargo: {
-              include: {
-                cargoPermissoes: {
-                  include: { permissao: true },
-                },
-              },
-            },
-          },
-        },
-      },
+      include: usuarioIncludeAuth,
     });
   }
 
   async findById(id: number) {
     const user = await this.prisma.usuario.findUnique({
       where: { id },
-      include: {
-        usuarioCargos: {
-          include: { cargo: true },
-        },
-      },
+      include: usuarioIncludeListagem,
     });
     return user ? this.sanitizeUser(user) : null;
   }
 
-  getPermissions(
-    user: NonNullable<Awaited<ReturnType<typeof this.findByEmail>>>,
-  ) {
+  getPermissions(user: UsuarioComAuthInclude) {
     const codes = new Set<string>();
     for (const uc of user.usuarioCargos) {
       for (const cp of uc.cargo.cargoPermissoes) {

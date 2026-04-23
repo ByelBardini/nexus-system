@@ -6,6 +6,12 @@ import {
 } from '../common/geocoding/geocoding.service';
 import { CreateTecnicoDto } from './dto/create-tecnico.dto';
 import { UpdateTecnicoDto } from './dto/update-tecnico.dto';
+import {
+  precoTecnicoDataForCreate,
+  precoTecnicoMergedRowForUpsert,
+  tecnicoCreateDataFromDto,
+  tecnicoUpdateDataFromDto,
+} from './tecnicos.persist-helpers';
 
 interface EnderecoSnapshot {
   cep?: string | null;
@@ -41,33 +47,11 @@ export class TecnicosService {
 
   async create(dto: CreateTecnicoDto) {
     const tecnico = await this.prisma.tecnico.create({
-      data: {
-        nome: dto.nome,
-        cpfCnpj: dto.cpfCnpj,
-        telefone: dto.telefone,
-        cidade: dto.cidade,
-        estado: dto.estado,
-        cep: dto.cep,
-        logradouro: dto.logradouro,
-        numero: dto.numero,
-        complemento: dto.complemento,
-        bairro: dto.bairro,
-        cidadeEndereco: dto.cidadeEndereco,
-        estadoEndereco: dto.estadoEndereco,
-        ativo: dto.ativo ?? true,
-      },
+      data: tecnicoCreateDataFromDto(dto),
     });
     if (dto.precos) {
-      const p = dto.precos;
       await this.prisma.precoTecnico.create({
-        data: {
-          tecnicoId: tecnico.id,
-          instalacaoComBloqueio: p.instalacaoComBloqueio ?? 0,
-          instalacaoSemBloqueio: p.instalacaoSemBloqueio ?? 0,
-          revisao: p.revisao ?? 0,
-          retirada: p.retirada ?? 0,
-          deslocamento: p.deslocamento ?? 0,
-        },
+        data: precoTecnicoDataForCreate(tecnico.id, dto.precos),
       });
     }
     await this.persistGeocoding(tecnico.id, dto);
@@ -79,40 +63,17 @@ export class TecnicosService {
     await this.prisma.$transaction(async (tx) => {
       await tx.tecnico.update({
         where: { id },
-        data: {
-          nome: dto.nome,
-          cpfCnpj: dto.cpfCnpj,
-          telefone: dto.telefone,
-          cidade: dto.cidade,
-          estado: dto.estado,
-          cep: dto.cep,
-          logradouro: dto.logradouro,
-          numero: dto.numero,
-          complemento: dto.complemento,
-          bairro: dto.bairro,
-          cidadeEndereco: dto.cidadeEndereco,
-          estadoEndereco: dto.estadoEndereco,
-          ativo: dto.ativo,
-        },
+        data: tecnicoUpdateDataFromDto(dto),
       });
       if (dto.precos) {
-        const p = dto.precos;
         const existingPrecos = await tx.precoTecnico.findUnique({
           where: { tecnicoId: id },
         });
-        const data = {
-          instalacaoComBloqueio:
-            p.instalacaoComBloqueio ??
-            Number(existingPrecos?.instalacaoComBloqueio ?? 0),
-          instalacaoSemBloqueio:
-            p.instalacaoSemBloqueio ??
-            Number(existingPrecos?.instalacaoSemBloqueio ?? 0),
-          revisao: p.revisao ?? Number(existingPrecos?.revisao ?? 0),
-          retirada: p.retirada ?? Number(existingPrecos?.retirada ?? 0),
-          deslocamento:
-            p.deslocamento ?? Number(existingPrecos?.deslocamento ?? 0),
-        };
-        if (existingPrecos) {
+        const { data, hadExisting } = precoTecnicoMergedRowForUpsert(
+          dto.precos,
+          existingPrecos,
+        );
+        if (hadExisting) {
           await tx.precoTecnico.update({
             where: { tecnicoId: id },
             data,

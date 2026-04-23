@@ -15,34 +15,11 @@ import {
 import { MaterialIcon } from "@/components/MaterialIcon";
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { api } from "@/lib/api";
-import { CargoModal } from "./CargoModal";
+import { CargoModal } from "./cargo-modal";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
-
-type CategoriaCargo = "OPERACIONAL" | "ADMINISTRATIVO" | "GESTAO";
-
-interface Permission {
-  id: number;
-  code: string;
-}
-
-interface Setor {
-  id: number;
-  code: string;
-  nome: string;
-}
-
-interface Cargo {
-  id: number;
-  code: string;
-  nome: string;
-  descricao: string | null;
-  categoria: CategoriaCargo;
-  ativo: boolean;
-  setor: Setor;
-  usuariosVinculados: number;
-  cargoPermissoes: { permissaoId: number }[];
-}
+import type { Cargo, Permission, Setor } from "@/types/cargo";
+import { CATEGORIA_CONFIG } from "@/types/cargo";
 
 interface PaginatedResponse {
   data: Cargo[];
@@ -50,27 +27,6 @@ interface PaginatedResponse {
   page: number;
   totalPages: number;
 }
-
-const CATEGORIA_CONFIG: Record<
-  CategoriaCargo,
-  { label: string; className: string; dotColor: string }
-> = {
-  OPERACIONAL: {
-    label: "Operacional",
-    className: "bg-blue-100 text-blue-700 border-blue-200",
-    dotColor: "bg-blue-500",
-  },
-  ADMINISTRATIVO: {
-    label: "Administrativo",
-    className: "bg-emerald-100 text-emerald-700 border-emerald-200",
-    dotColor: "bg-emerald-500",
-  },
-  GESTAO: {
-    label: "Gestão",
-    className: "bg-purple-100 text-purple-700 border-purple-200",
-    dotColor: "bg-purple-500",
-  },
-};
 
 export function CargosPage() {
   const { hasPermission } = useAuth();

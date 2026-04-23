@@ -24,13 +24,7 @@ export class VeiculosController {
   @RequirePermissions('AGENDAMENTO.OS.CRIAR')
   @ApiOperation({ summary: 'Criar ou buscar veículo por placa' })
   criarOuBuscar(@Body() dto: CriarOuBuscarVeiculoDto) {
-    return this.service.criarOuBuscarPorPlaca({
-      placa: dto.placa,
-      marca: dto.marca,
-      modelo: dto.modelo,
-      ano: dto.ano,
-      cor: dto.cor,
-    });
+    return this.service.criarOuBuscarPorPlaca(dto);
   }
 
   @Get('consulta-placa/:placa')

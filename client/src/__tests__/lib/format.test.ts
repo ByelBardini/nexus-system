@@ -6,6 +6,8 @@ import {
   formatarCPF,
   formatarCPFCNPJ,
   formatarDataCompleta,
+  formatarDataDeHoje,
+  formatarDataDiaMesAno,
   formatarDataHora,
   formatarDuracao,
   formatarFromNow,
@@ -143,6 +145,30 @@ describe("formatarDataCompleta", () => {
     const result = formatarDataCompleta("2024-04-18");
     expect(result).toMatch(/2024/);
     expect(result.length).toBeGreaterThan(5);
+  });
+});
+
+describe("formatarDataDiaMesAno", () => {
+  it('string vazia → "-"', () => expect(formatarDataDiaMesAno("")).toBe("-"));
+  it("YYYY-MM-DD → dd/mm/aaaa com separador local", () => {
+    const s = formatarDataDiaMesAno("2024-04-18");
+    expect(s).toMatch(/18/);
+    expect(s).toMatch(/2024/);
+  });
+  it("ISO com hora → inclui ano", () => {
+    expect(formatarDataDiaMesAno("2024-04-18T10:00:00.000Z")).toMatch(/2024/);
+  });
+});
+
+describe("formatarDataDeHoje", () => {
+  it("aceita data explícita e formata com pt-BR (dia, mês, ano)", () => {
+    const s = formatarDataDeHoje(new Date(2024, 3, 15));
+    expect(s).toMatch(/2024/);
+    expect(s.length).toBeGreaterThan(4);
+  });
+  it("default = agora, não vazio", () => {
+    const s = formatarDataDeHoje();
+    expect(s).toMatch(/\d/);
   });
 });
 
