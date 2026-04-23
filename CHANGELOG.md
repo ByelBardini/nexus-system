@@ -1,3 +1,11 @@
+## [1.3.1](https://github.com/ByelBardini/nexus-system/compare/v1.3.0...v1.3.1) (2026-04-23)
+
+
+### Bug Fixes
+
+* **client:** build sem tsc em testes e start com serve em produção ([ba349e9](https://github.com/ByelBardini/nexus-system/commit/ba349e9e1d3211451628a39feb033d091c51995b))
+* **server:** isolar compilação de migrate e seed do build ([9ef1bdd](https://github.com/ByelBardini/nexus-system/commit/9ef1bddd30225324f8022aeb14c50cac4257a9bf))
+
 # [1.3.0](https://github.com/ByelBardini/nexus-system/compare/v1.2.0...v1.3.0) (2026-04-23)
 
 
