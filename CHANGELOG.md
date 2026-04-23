@@ -1,3 +1,17 @@
+# [1.3.0](https://github.com/ByelBardini/nexus-system/compare/v1.2.0...v1.3.0) (2026-04-23)
+
+
+### Bug Fixes
+
+* **pedidos:** estabilizar sync de kit no modal de seleção e-kit ([8c87e65](https://github.com/ByelBardini/nexus-system/commit/8c87e65079c51a1b311ea7dacf48f03fa59a40fb))
+* **roles:** importar UsersModule para injeção do UsersService ([4622c8a](https://github.com/ByelBardini/nexus-system/commit/4622c8a74e32a25a6c5094ea6088447bf97b9d44))
+
+
+### Features
+
+* **aparelhos:** implementar listagem e cadastros individual e em lote ([c49fc97](https://github.com/ByelBardini/nexus-system/commit/c49fc97e55db1042fe450bf77566b7f1582fe885))
+* **pedidos:** reorganizar módulo no client e cobrir com testes ([43015e3](https://github.com/ByelBardini/nexus-system/commit/43015e37f4c73f2f050050bdf596a95afd06bff3))
+
 # [1.2.0](https://github.com/ByelBardini/nexus-system/compare/v1.1.0...v1.2.0) (2026-04-21)
 
 
