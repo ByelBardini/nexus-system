@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { tecnicoPrecoToNum } from "@/lib/tecnicos-page";
+import type { Tecnico } from "./tecnicos.types";
 
 export const tecnicoFormSchema = z.object({
   nome: z.string().min(1, "Nome obrigatório"),
@@ -43,6 +45,36 @@ export function emptyTecnicoFormValues(): TecnicoFormData {
     revisao: 0,
     retirada: 0,
     deslocamento: 0,
+  };
+}
+
+/** Converte entidade da API para valores do formulário (preços em centavos). */
+export function tecnicoToFormValues(t: Tecnico): TecnicoFormData {
+  return {
+    nome: t.nome,
+    cpfCnpj: t.cpfCnpj ?? "",
+    telefone: t.telefone ?? "",
+    cidade: t.cidade ?? "",
+    estado: t.estado ?? "",
+    cep: t.cep ?? "",
+    logradouro: t.logradouro ?? "",
+    numero: t.numero ?? "",
+    complemento: t.complemento ?? "",
+    bairro: t.bairro ?? "",
+    cidadeEndereco: t.cidadeEndereco ?? "",
+    estadoEndereco: t.estadoEndereco ?? "",
+    ativo: t.ativo,
+    instalacaoComBloqueio: Math.round(
+      tecnicoPrecoToNum(t.precos?.instalacaoComBloqueio) * 100,
+    ),
+    instalacaoSemBloqueio: Math.round(
+      tecnicoPrecoToNum(t.precos?.instalacaoSemBloqueio) * 100,
+    ),
+    revisao: Math.round(tecnicoPrecoToNum(t.precos?.revisao) * 100),
+    retirada: Math.round(tecnicoPrecoToNum(t.precos?.retirada) * 100),
+    deslocamento: Math.round(
+      tecnicoPrecoToNum(t.precos?.deslocamento) * 100,
+    ),
   };
 }
 
