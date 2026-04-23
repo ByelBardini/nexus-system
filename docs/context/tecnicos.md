@@ -46,25 +46,36 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 
 **Convenção frontend — preços em centavos:**
 
-O frontend armazena e exibe preços em centavos inteiros via `InputPreco`. O corpo JSON de `POST`/`PATCH` é montado por **`buildTecnicoApiBody`** (`client/src/pages/tecnicos/tecnico-form.ts`), que divide cada campo de preço por 100. A API recebe e persiste em reais. Ao carregar para edição, multiplica por 100 (`tecnicoPrecoToNum(t.precos?.campo) * 100`).
+O frontend armazena e exibe preços em centavos inteiros via `InputPreco`. O corpo JSON de `POST`/`PATCH` é montado por **`buildTecnicoApiBody`** (`client/src/pages/tecnicos/lib/tecnico-form.ts`), que divide cada campo de preço por 100. A API recebe e persiste em reais. Ao abrir edição, **`tecnicoToFormValues`** (mesmo módulo) converte a entidade da API para o form usando `tecnicoPrecoToNum(...) * 100` por campo de preço.
 
-**Frontend — arquivos do domínio:**
+**Frontend — arquivos do domínio (`client/src/pages/tecnicos/`):**
 
-| Arquivo | Função |
+| Caminho | Função |
 |---------|--------|
-| `client/src/pages/tecnicos/TecnicosPage.tsx` | Lista + mapa lateral + modal criar/editar; filtros por nome/estado/status; paginação client-side (`PAGE_SIZE=10`); `queryKey: ["tecnicos"]` |
-| `client/src/pages/tecnicos/tecnico-form.ts` | `tecnicoFormSchema` (Zod), tipo `TecnicoFormData`, `emptyTecnicoFormValues()` (defaults do modal + `useForm`), `buildTecnicoApiBody()` (payload único para `createMutation` e `updateMutation`) |
-| `client/src/components/TecnicosMap.tsx` | Mapa Leaflet com marcadores dos técnicos; carregado via `lazy()` |
-| `client/src/lib/tecnicos-page.ts` | `nextMapState`, `tecnicoPrecoToNum`, tipo `MapState` (`'collapsed' \| 'expanded' \| 'fullscreen'`) |
-| `client/src/lib/tecnico-map-marker-html.ts` | Gera HTML do marcador Leaflet por técnico |
-| `client/src/lib/tecnico-map-cluster.ts` | Agrupamento de marcadores próximos |
-| `client/src/lib/tecnico-map-spread.ts` | Espalhamento de marcadores sobrepostos (mesma coordenada) |
+| `TecnicosPage.tsx` | Orquestra lista + mapa + modal; loading/erro; permissões |
+| `lib/tecnicos.types.ts` | Interface `Tecnico` (contrato `GET /tecnicos` no front) |
+| `lib/tecnico-form.ts` | `tecnicoFormSchema`, `TecnicoFormData`, `emptyTecnicoFormValues()`, `tecnicoToFormValues()`, `buildTecnicoApiBody()` |
+| `lib/tecnicos-table.utils.ts` | `filterTecnicos`, `paginateTecnicos`, `totalPagesForCount`, `TECNICOS_PAGE_SIZE` (= 10), tipo `TecnicoFiltroStatus` |
+| `hooks/useTecnicosListQuery.ts` | `useQuery` em `GET /tecnicos`; **`queryKey` igual a `useTecnicosResumoQuery`** (`["tecnicos"]`) — cache compartilhado com pedidos/OS |
+| `hooks/useTecnicosTableState.ts` | Estado de busca/filtros/paginação/expandido + derivados (`filtered`, `paginated`) |
+| `hooks/useTecnicosMutations.ts` | `updateStatusMutation`, `createMutation`, `updateMutation`; invalida `["tecnicos"]`; callbacks opcionais pós create/update (ex.: fechar modal) |
+| `hooks/useTecnicoFormModal.ts` | `useForm` + abrir/fechar modal + `useWatch` para resumo lateral; não contém mutations |
+| `components/TecnicosPageHeader.tsx` | Busca, filtros UF/status, botão novo |
+| `components/TecnicosMapPanel.tsx` | `TecnicosMap` lazy + botões de tamanho do mapa |
+| `components/TecnicosTableSection.tsx` | Tabela, accordion, paginação inferior; toggle de status com **`Switch`** (shadcn) |
+| `components/TecnicoPrecosCards.tsx` | Grade de 5 preços na linha expandida |
+| `components/form/` | `TecnicoFormDialog` + seções 01–03 + `TecnicoFormResumoSidebar`; status no form também via `Switch` |
+| `client/src/components/TecnicosMap.tsx` | Mapa Leaflet; import lazy a partir do painel |
+| `client/src/lib/tecnicos-page.ts` | `nextMapState`, `tecnicoPrecoToNum`, tipo `MapState` |
+| `client/src/lib/tecnico-map-marker-html.ts` | HTML do marcador Leaflet |
+| `client/src/lib/tecnico-map-cluster.ts` | Supercluster |
+| `client/src/lib/tecnico-map-spread.ts` | Espalhamento de coordenadas duplicadas |
 
-Sem hook dedicado `useTecnicos`; página usa `useQuery` do TanStack Query diretamente.
+A lista na página usa **`useTecnicosListQuery`** (tipagem `Tecnico[]` completa); outras telas podem continuar usando **`useTecnicosResumoQuery`** com o mesmo cache.
 
 **Frontend — `TecnicosPage` detalhes:**
 
-**Interface `Tecnico` (frontend):** `id`, `nome`, `cpfCnpj?`, `telefone?`, `cidade?`, `estado?` (atuação), `cep?`, `logradouro?`, `numero?`, `complemento?`, `bairro?`, `cidadeEndereco?`, `estadoEndereco?` (entrega), `latitude?`, `longitude?`, `geocodingPrecision: "EXATO" | "CIDADE" | null`, `ativo`, `precos?: { instalacaoComBloqueio, instalacaoSemBloqueio, revisao, retirada, deslocamento }` (cada campo `number | string` — normalizar com `tecnicoPrecoToNum`).
+**Interface `Tecnico` (frontend):** definida em `lib/tecnicos.types.ts` — `id`, `nome`, `cpfCnpj`, `telefone`, `cidade`, `estado` (atuação), `cep`, `logradouro`, `numero`, `complemento`, `bairro`, `cidadeEndereco`, `estadoEndereco` (entrega), `latitude`, `longitude`, `geocodingPrecision: "EXATO" | "CIDADE" | null`, `ativo`, `precos?` com os cinco valores (`number | string` — normalizar com `tecnicoPrecoToNum`).
 
 **Estado da página:**
 
@@ -79,7 +90,7 @@ Sem hook dedicado `useTecnicos`; página usa `useQuery` do TanStack Query direta
 | `page` | `number` | Página atual (0-indexed); reset para 0 ao mudar filtros |
 | `mapState` | `MapState` | Ciclo collapsed(40%) → expanded(75%) → fullscreen(fixo inset-0 z-40) |
 
-**Filtros e paginação:** todos client-side sobre o array `tecnicos` do `useQuery`. Filtros combinados com AND lógico. `filtered` alimenta o `TecnicosMap` e a tabela paginada.
+**Filtros e paginação:** client-side sobre o array retornado por `useTecnicosListQuery`; lógica em `lib/tecnicos-table.utils.ts` (`filterTecnicos`, `paginateTecnicos`). Filtros combinados com AND lógico. `filtered` alimenta o `TecnicosMap` e a tabela paginada.
 
 **Mutations:**
 
@@ -89,7 +100,7 @@ Sem hook dedicado `useTecnicos`; página usa `useQuery` do TanStack Query direta
 | `createMutation` | `POST /tecnicos` | `JSON.stringify(buildTecnicoApiBody(data))` | Invalida `["tecnicos"]`; fecha modal |
 | `updateMutation` | `PATCH /tecnicos/:id` | idem (`buildTecnicoApiBody`) | Invalida `["tecnicos"]`; fecha modal |
 
-**Formulário:** schema Zod e defaults vêm de `tecnico-form.ts` (`tecnicoFormSchema`, `emptyTecnicoFormValues`). Campos: `nome` (obrigatório ao submeter; default `""` no modal até o usuário preencher), `cpfCnpj?`, `telefone?`, `cidade?`, `estado?`, `cep?`, `logradouro?`, `numero?`, `complemento?`, `bairro?`, `cidadeEndereco?`, `estadoEndereco?`, `ativo: boolean`, cinco preços como `z.coerce.number().min(0)` em centavos. Resolver: `zodResolver(tecnicoFormSchema)`.
+**Formulário:** schema Zod e defaults vêm de `lib/tecnico-form.ts` (`tecnicoFormSchema`, `emptyTecnicoFormValues`). Campos: `nome` (obrigatório ao submeter; default `""` no modal até o usuário preencher), `cpfCnpj?`, `telefone?`, `cidade?`, `estado?`, `cep?`, `logradouro?`, `numero?`, `complemento?`, `bairro?`, `cidadeEndereco?`, `estadoEndereco?`, `ativo: boolean`, cinco preços como `z.coerce.number().min(0)` em centavos. Resolver: `zodResolver(tecnicoFormSchema)`.
 
 **Comportamentos não-óbvios do formulário:**
 - Ao mudar `estado` (atuação), `cidade` é resetada para `""` via `form.setValue("cidade", "")`.
@@ -101,7 +112,7 @@ Sem hook dedicado `useTecnicos`; página usa `useQuery` do TanStack Query direta
 - `canCreate` = `hasPermission("AGENDAMENTO.TECNICO.CRIAR")` — mostra botão "Novo Técnico".
 - `canEdit` = `hasPermission("AGENDAMENTO.TECNICO.EDITAR")` — mostra toggle de status na tabela (habilitado) e botão "Editar Perfil" na linha expandida.
 
-**Linha expandida (accordion):** exibe endereço de entrega completo + tabela de 5 custos operacionais + botão "Editar Perfil" (se `canEdit`). O click na linha alterna `expandedId`; o click no toggle de status usa `e.stopPropagation()`.
+**Linha expandida (accordion):** exibe endereço de entrega completo + `TecnicoPrecosCards` (5 custos) + botão "Editar Perfil" (se `canEdit`). O click na linha alterna `expandedId`; o `Switch` de status na célula usa `e.stopPropagation()` no container da célula.
 
 **Mapa (`TecnicosMap`):** carregado com `lazy()` + `Suspense`; recebe `filtered` (não `paginated`). Tamanho controlado por `mapState`: `collapsed`=`w-[40%]`, `expanded`=`w-[75%]`, `fullscreen`=`fixed inset-0 z-40`. O botão no canto superior direito do mapa avança no ciclo via `nextMapState`; no estado `expanded` aparece segundo botão para recolher direto para `collapsed`.
 
@@ -120,7 +131,7 @@ Sem hook dedicado `useTecnicos`; página usa `useQuery` do TanStack Query direta
 
 **Testes E2E (`server/test/tecnicos.e2e-spec.ts`):** módulo `TecnicosModule` com `GeocodingService` mockado e `PermissionsGuard` relaxado (ou guard customizado no bloco de permissão POST). Inclui: lista com campos de coordenadas; `POST` com endereço persiste geocode; `POST` com geocode `null`; `PATCH` sem mudar endereço não re-chama geocode; `PATCH` mudando CEP chama geocode; **`GET /tecnicos/:id`** com preços após criação; **`GET` 404** para id inexistente; **`POST` sem `precos`** → `precos` null na resposta; **`PATCH` com `precos` parcial** preserva demais valores. Bloco separado valida **403** em `POST` quando o guard nega criação. Limpeza: `cleanupE2eTecnicos` (nomes começando com `E2E`).
 
-**Testes frontend:** `client/src/__tests__/pages/tecnicos/tecnico-form.test.ts` (schema, `buildTecnicoApiBody`, defaults); `TecnicosPage.test.tsx` também cobre POST e PATCH com corpo coerente com o payload compartilhado.
+**Testes frontend:** módulo espelhado em `client/src/__tests__/pages/tecnicos/` — `lib/tecnico-form.test.ts`, `lib/tecnicos-table.utils.test.ts`, `hooks/*.test.tsx`, `components/*.test.tsx`, `components/form/TecnicoFormDialog.test.tsx`; `TecnicosPage.test.tsx` (fluxo integrado, POST/PATCH alinhados a `buildTecnicoApiBody`).
 
 ---
 

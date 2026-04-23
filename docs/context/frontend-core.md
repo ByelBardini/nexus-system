@@ -228,9 +228,9 @@ Helpers de estado da página de técnicos.
 | `nextMapState(s)` | Função | Ciclo: `collapsed → expanded → fullscreen → collapsed` |
 | `tecnicoPrecoToNum(v)` | Função | Normaliza preço de técnico (`string \| number \| undefined`) para `number` |
 
-#### `pages/tecnicos/tecnico-form.ts`
+#### `pages/tecnicos/lib/tecnico-form.ts`
 
-Contrato do formulário da `TecnicosPage`: schema Zod (`tecnicoFormSchema`), tipo `TecnicoFormData`, `emptyTecnicoFormValues()` e `buildTecnicoApiBody()` (payload `POST`/`PATCH` com preços ÷ 100). Ver também `docs/context/tecnicos.md`.
+Contrato do formulário da `TecnicosPage`: schema Zod (`tecnicoFormSchema`), tipo `TecnicoFormData`, `emptyTecnicoFormValues()`, `tecnicoToFormValues()` (API → form, centavos) e `buildTecnicoApiBody()` (payload `POST`/`PATCH` com preços ÷ 100). Tipos da entidade em `pages/tecnicos/lib/tecnicos.types.ts`; filtros/paginação em `pages/tecnicos/lib/tecnicos-table.utils.ts`. UI do modal em `pages/tecnicos/components/form/`. Ver `docs/context/tecnicos.md`.
 
 ---
 
