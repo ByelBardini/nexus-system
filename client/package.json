@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "start": "vite preview",
+    "start": "serve -s dist",
     "preview": "vite preview",
     "lint": "eslint . --fix",
     "lint:check": "eslint .",
@@ -66,6 +66,7 @@
     "react": "^19.2.4",
     "react-colorful": "^5.6.1",
     "react-dom": "^19.2.4",
+    "serve": "^14.2.4",
     "react-hook-form": "^7.71.2",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.13.0",
