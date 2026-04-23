@@ -1,4 +1,7 @@
-import type { ClienteComSubclientes, OpcaoDestinoCliente } from "@/types/pedidos-novo-destino";
+import type {
+  ClienteComSubclientes,
+  OpcaoDestinoCliente,
+} from "@/types/pedidos-novo-destino";
 import type {
   ClienteResumo,
   SubclienteResumo,
@@ -9,7 +12,9 @@ import type { FormNovoPedido } from "./novo-pedido-rastreador.schema";
 export type { ClienteComSubclientes, OpcaoDestinoCliente };
 
 /** Converte o valor do select (ex.: "cliente-1", "subcliente-2") em ids. */
-export function parseDestinoClienteString(destinoCliente: string | undefined):
+export function parseDestinoClienteString(
+  destinoCliente: string | undefined,
+):
   | { clienteId: number; subclienteId?: never }
   | { subclienteId: number; clienteId?: never }
   | Record<string, never> {
@@ -44,23 +49,28 @@ export function buildOpcoesClienteFromList(
   return opts;
 }
 
-export function resolveDestinatarioSelecionado(
-  params: {
-    tipoDestino: FormNovoPedido["tipoDestino"];
-    tecnicoId: number | undefined;
-    clienteId?: number;
-    subclienteId?: number;
-    tecnicos: TecnicoResumo[];
-    clientes: ClienteComSubclientes[];
-    opcoesCliente: OpcaoDestinoCliente[];
-  },
-):
+export function resolveDestinatarioSelecionado(params: {
+  tipoDestino: FormNovoPedido["tipoDestino"];
+  tecnicoId: number | undefined;
+  clienteId?: number;
+  subclienteId?: number;
+  tecnicos: TecnicoResumo[];
+  clientes: ClienteComSubclientes[];
+  opcoesCliente: OpcaoDestinoCliente[];
+}):
   | TecnicoResumo
   | ClienteComSubclientes
   | (SubclienteResumo & { cliente?: ClienteResumo })
   | null {
-  const { tipoDestino, tecnicoId, clienteId, subclienteId, tecnicos, clientes, opcoesCliente } =
-    params;
+  const {
+    tipoDestino,
+    tecnicoId,
+    clienteId,
+    subclienteId,
+    tecnicos,
+    clientes,
+    opcoesCliente,
+  } = params;
   if (tipoDestino === "TECNICO" || tipoDestino === "MISTO") {
     return tecnicos.find((t) => t.id === tecnicoId) ?? null;
   }

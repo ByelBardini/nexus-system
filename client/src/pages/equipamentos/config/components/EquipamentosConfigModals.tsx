@@ -16,7 +16,8 @@ export function EquipamentosConfigModals({
 }: {
   c: EquipamentosConfigController;
 }) {
-  const marcasPending = c.createMarcaMutation.isPending || c.updateMarcaMutation.isPending;
+  const marcasPending =
+    c.createMarcaMutation.isPending || c.updateMarcaMutation.isPending;
   const modelosPending =
     c.createModeloMutation.isPending || c.updateModeloMutation.isPending;
   const operadorasPending =

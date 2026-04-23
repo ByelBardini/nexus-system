@@ -10,9 +10,7 @@ type Options = { enabled?: boolean };
 /**
  * Lista clientes com `subclientes` embutidos. Mesma chave usada no fluxo de criação de ordem de serviço.
  */
-export function useClientesComSubclientesQuery(
-  options?: Options,
-) {
+export function useClientesComSubclientesQuery(options?: Options) {
   const enabled = options?.enabled !== false;
   return useQuery<Cliente[]>({
     queryKey: [...QUERY_KEY],

@@ -87,8 +87,8 @@ export function CargoModalSummary({
             Lógica de Acesso:
           </span>
           Permissões de <strong>Criar</strong> ou <strong>Editar</strong>{" "}
-          habilitam automaticamente a permissão de{" "}
-          <strong>Visualizar</strong> para o recurso correspondente.
+          habilitam automaticamente a permissão de <strong>Visualizar</strong>{" "}
+          para o recurso correspondente.
         </div>
       </div>
     </aside>

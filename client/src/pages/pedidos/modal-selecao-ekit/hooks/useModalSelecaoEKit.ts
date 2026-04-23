@@ -3,7 +3,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import type { ModalSelecaoEKitProps } from "@/types/modal-selecao-ekit";
-import type { KitResumo, AparelhoNoKit, KitDetalhe } from "@/types/pedidos-config";
+import type {
+  KitResumo,
+  AparelhoNoKit,
+  KitDetalhe,
+} from "@/types/pedidos-config";
 import type { AparelhosDestinatariosResponse } from "@/types/pedidos-rastreador";
 import {
   KITS_DETALHES_QUERY_KEY,
@@ -75,10 +79,11 @@ export function useModalSelecaoEKit({
     enabled: open && step === "selecao",
   });
 
-  const { data: kitComAparelhos, refetch: refetchKit } = useKitComAparelhosQuery(
-    kitSelecionado?.id ?? null,
-    open && step === "edicao" && kitSelecionado != null,
-  );
+  const { data: kitComAparelhos, refetch: refetchKit } =
+    useKitComAparelhosQuery(
+      kitSelecionado?.id ?? null,
+      open && step === "edicao" && kitSelecionado != null,
+    );
 
   const { data: destinatariosData } = useQuery<AparelhosDestinatariosResponse>({
     queryKey: ["pedido-aparelhos-destinatarios", pedidoApi?.id],
@@ -223,8 +228,7 @@ export function useModalSelecaoEKit({
   );
 
   const kitsDisponiveis = useMemo(
-    () =>
-      filterKitsDisponiveisParaSelecao(kitsDetalhes, kitIdsEmOutrosPedidos),
+    () => filterKitsDisponiveisParaSelecao(kitsDetalhes, kitIdsEmOutrosPedidos),
     [kitsDetalhes, kitIdsEmOutrosPedidos],
   );
 
@@ -393,6 +397,4 @@ export function useModalSelecaoEKit({
   };
 }
 
-export type ModalSelecaoEKitController = ReturnType<
-  typeof useModalSelecaoEKit
->;
+export type ModalSelecaoEKitController = ReturnType<typeof useModalSelecaoEKit>;

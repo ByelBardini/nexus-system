@@ -1,9 +1,6 @@
 import { MaterialIcon } from "@/components/MaterialIcon";
 import { cn } from "@/lib/utils";
-import {
-  getModuloLabel,
-  getAcaoLabel,
-} from "../lib/permissoes-heranca";
+import { getModuloLabel, getAcaoLabel } from "../lib/permissoes-heranca";
 import type { PermissoesPorModulo } from "@/types/usuarios";
 
 export function PermissoesHerancaSidebar({
@@ -38,10 +35,7 @@ export function PermissoesHerancaSidebar({
                 </p>
               ) : (
                 setoresHabilitados.map((setor) => (
-                  <div
-                    key={setor.modulo}
-                    className="flex items-start gap-3"
-                  >
+                  <div key={setor.modulo} className="flex items-start gap-3">
                     <MaterialIcon
                       name="check_circle"
                       className="text-emerald-500 text-base mt-0.5"
@@ -82,10 +76,7 @@ export function PermissoesHerancaSidebar({
                 </div>
               ) : (
                 acoesAltoRisco.map((acao) => (
-                  <div
-                    key={acao.permissao}
-                    className="flex items-start gap-3"
-                  >
+                  <div key={acao.permissao} className="flex items-start gap-3">
                     <MaterialIcon
                       name="warning"
                       className="text-amber-500 text-base mt-0.5"

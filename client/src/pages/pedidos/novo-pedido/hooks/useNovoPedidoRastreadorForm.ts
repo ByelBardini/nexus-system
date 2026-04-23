@@ -56,11 +56,14 @@ export function useNovoPedidoRastreadorForm({
     defaultValues: getFreshDefaultValues(),
   });
 
-  const { fields: itensMistoFields, append: appendItem, remove: removeItem } =
-    useFieldArray({
-      control: form.control,
-      name: "itensMisto",
-    });
+  const {
+    fields: itensMistoFields,
+    append: appendItem,
+    remove: removeItem,
+  } = useFieldArray({
+    control: form.control,
+    name: "itensMisto",
+  });
 
   useEffect(() => {
     if (open) {
@@ -141,9 +144,7 @@ export function useNovoPedidoRastreadorForm({
       toast.success("Pedido criado com sucesso");
     },
     onError: (err) =>
-      toast.error(
-        err instanceof Error ? err.message : "Erro ao criar pedido",
-      ),
+      toast.error(err instanceof Error ? err.message : "Erro ao criar pedido"),
   });
 
   function handleClose() {

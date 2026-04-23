@@ -8,7 +8,11 @@ import {
   type PedidoRastreadorApi,
   type StatusPedidoKey,
 } from "./shared/pedidos-rastreador.types";
-import type { KitVinculado, KitDetalhe, TipoDespacho } from "./shared/pedidos-config-types";
+import type {
+  KitVinculado,
+  KitDetalhe,
+  TipoDespacho,
+} from "./shared/pedidos-config-types";
 import {
   KITS_DETALHES_QUERY_KEY,
   fetchKitsDetalhes,

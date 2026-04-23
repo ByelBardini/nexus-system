@@ -64,9 +64,7 @@ export function DebitosEquipamentosTable({
                 key={debito.id}
                 debito={debito}
                 isExpanded={isExpanded}
-                onToggle={() =>
-                  onExpandedChange(isExpanded ? null : debito.id)
-                }
+                onToggle={() => onExpandedChange(isExpanded ? null : debito.id)}
               />
             );
           })}

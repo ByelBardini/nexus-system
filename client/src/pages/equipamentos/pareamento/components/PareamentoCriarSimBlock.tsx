@@ -69,9 +69,7 @@ export function PareamentoCriarSimBlock({
   );
   const planos = (marcaSel?.planos ?? []).filter((p) => p.ativo);
   const showPlano =
-    !!marcaSimcardId &&
-    marcaSel?.temPlanos &&
-    planos.length > 0;
+    !!marcaSimcardId && marcaSel?.temPlanos && planos.length > 0;
 
   return (
     <>

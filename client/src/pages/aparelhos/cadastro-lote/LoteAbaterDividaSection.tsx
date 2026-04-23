@@ -135,10 +135,7 @@ export function LoteAbaterDividaSection({
                 Quantidade a Abater{" "}
                 <span className="text-slate-400 normal-case font-normal">
                   (máx:{" "}
-                  {Math.min(
-                    selectedDebito.quantidade,
-                    quantidadeFinal || 9999,
-                  )}
+                  {Math.min(selectedDebito.quantidade, quantidadeFinal || 9999)}
                   )
                 </span>{" "}
                 <span className="text-red-500">*</span>

@@ -42,7 +42,9 @@ export function getAuxilioCopiaItens(ordem: OrdemCadastro): AuxilioCopiaItem[] {
 /**
  * Texto do botão "Copiar todos os dados principais" (Placa, Cliente, IMEIs/ICCIDs preenchidos).
  */
-export function buildTextoCopiarTodosCadastroRast(ordem: OrdemCadastro): string {
+export function buildTextoCopiarTodosCadastroRast(
+  ordem: OrdemCadastro,
+): string {
   const linhas: string[] = [
     `Placa: ${ordem.placa}`,
     `Cliente: ${ordem.cliente}`,

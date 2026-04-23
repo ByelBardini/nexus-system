@@ -1,9 +1,4 @@
-import {
-  Link2,
-  Router,
-  Smartphone,
-  CheckCircle,
-} from "lucide-react";
+import { Link2, Router, Smartphone, CheckCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MaterialIcon } from "@/components/MaterialIcon";

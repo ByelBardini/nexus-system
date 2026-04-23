@@ -2,10 +2,11 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  kitMapFromList,
-} from "@/pages/aparelhos/lista/aparelhos-list.helpers";
-import type { EquipamentoListItem, EquipamentoPipelineFilter } from "./equipamentos-page.shared";
+import { kitMapFromList } from "@/pages/aparelhos/lista/aparelhos-list.helpers";
+import type {
+  EquipamentoListItem,
+  EquipamentoPipelineFilter,
+} from "./equipamentos-page.shared";
 import {
   computeMarcasFromEquipamentos,
   computeOperadorasFromEquipamentos,

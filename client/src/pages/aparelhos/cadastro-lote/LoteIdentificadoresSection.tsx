@@ -28,13 +28,9 @@ export function LoteIdentificadoresSection({
     <div className="bg-white border border-slate-200 rounded-sm p-6">
       <div className="flex items-center justify-between mb-6 pb-2 border-b border-slate-100">
         <div className="flex items-center gap-2">
-          <MaterialIcon
-            name="barcode_reader"
-            className="text-erp-blue"
-          />
+          <MaterialIcon name="barcode_reader" className="text-erp-blue" />
           <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
-            Identificadores (
-            {watchTipo === "RASTREADOR" ? "IMEI" : "ICCID"})
+            Identificadores ({watchTipo === "RASTREADOR" ? "IMEI" : "ICCID"})
           </h3>
         </div>
         <div className="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-sm border border-slate-200">
@@ -82,10 +78,7 @@ export function LoteIdentificadoresSection({
                     field.onChange(parseInt(e.target.value, 10) || 0)
                   }
                   placeholder="0"
-                  className={cn(
-                    "h-9",
-                    fieldState.error && "border-red-500",
-                  )}
+                  className={cn("h-9", fieldState.error && "border-red-500")}
                 />
                 {fieldState.error && (
                   <p className="text-[10px] text-red-600 mt-1">

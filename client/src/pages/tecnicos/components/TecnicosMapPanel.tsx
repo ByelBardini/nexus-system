@@ -1,16 +1,8 @@
-import {
-  Suspense,
-  lazy,
-  type Dispatch,
-  type SetStateAction,
-} from "react";
+import { Suspense, lazy, type Dispatch, type SetStateAction } from "react";
 import { Loader2 } from "lucide-react";
 import { MaterialIcon } from "@/components/MaterialIcon";
 import { cn } from "@/lib/utils";
-import {
-  nextMapState,
-  type MapState,
-} from "@/lib/tecnicos-page";
+import { nextMapState, type MapState } from "@/lib/tecnicos-page";
 import type { Tecnico } from "../lib/tecnicos.types";
 
 const TecnicosMap = lazy(() => import("@/components/TecnicosMap"));

@@ -8,7 +8,9 @@ export function getUrgenciaBadgeClass(urgencia: string | undefined): string {
 }
 
 /** Classes para valor textual (ex.: drawer), alinhadas à semântica do kanban. */
-export function getUrgenciaValueTextClass(urgencia: string | undefined): string {
+export function getUrgenciaValueTextClass(
+  urgencia: string | undefined,
+): string {
   if (!urgencia) return URGENCIA_STYLE[FALLBACK]!.valueText;
   return (
     URGENCIA_STYLE[urgencia]?.valueText ?? URGENCIA_STYLE[FALLBACK]!.valueText

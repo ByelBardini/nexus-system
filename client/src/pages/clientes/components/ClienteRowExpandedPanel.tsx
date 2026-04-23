@@ -17,9 +17,7 @@ export function ClienteRowExpandedPanel({
   canEdit,
   onEdit,
 }: Props) {
-  const temEnderecoCabecalho = Boolean(
-    c.cep || c.logradouro || c.cidade,
-  );
+  const temEnderecoCabecalho = Boolean(c.cep || c.logradouro || c.cidade);
   const enderecoFormatado = formatClienteEnderecoLinhaLista(c);
 
   return (

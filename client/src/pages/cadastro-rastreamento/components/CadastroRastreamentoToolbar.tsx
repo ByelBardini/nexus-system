@@ -50,9 +50,7 @@ export function CadastroRastreamentoToolbar({
               filtroTecnico === "" ? SELECT_CADASTRO_RAST_TODOS : filtroTecnico
             }
             onValueChange={(v) =>
-              setFiltroTecnico(
-                v === SELECT_CADASTRO_RAST_TODOS ? "" : v,
-              )
+              setFiltroTecnico(v === SELECT_CADASTRO_RAST_TODOS ? "" : v)
             }
           >
             <SelectTrigger className="h-9 text-xs w-[180px]">

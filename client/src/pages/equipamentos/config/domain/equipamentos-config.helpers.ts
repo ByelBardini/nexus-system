@@ -1,9 +1,10 @@
-import type { MarcaRastreador, ModeloRastreador, MarcaSimcard } from "./equipamentos-config.types";
+import type {
+  MarcaRastreador,
+  ModeloRastreador,
+  MarcaSimcard,
+} from "./equipamentos-config.types";
 
-export function toggleIdInSet(
-  previous: Set<number>,
-  id: number,
-): Set<number> {
+export function toggleIdInSet(previous: Set<number>, id: number): Set<number> {
   const next = new Set(previous);
   if (next.has(id)) next.delete(id);
   else next.add(id);
@@ -26,9 +27,10 @@ export function filterMarcasByMarcaOrModeloName(
   });
 }
 
-export function filterOperadorasByName<
-  T extends { nome: string },
->(operadoras: T[], searchRaw: string): T[] {
+export function filterOperadorasByName<T extends { nome: string }>(
+  operadoras: T[],
+  searchRaw: string,
+): T[] {
   const q = searchRaw.toLowerCase().trim();
   if (!q) return operadoras;
   return operadoras.filter((o) => o.nome.toLowerCase().includes(q));

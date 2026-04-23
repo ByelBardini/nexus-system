@@ -166,8 +166,8 @@ export function CadastroResumoEntradaPanel({
               <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
               <p className="text-[11px] text-amber-800 font-medium">
                 O {watchTipo === "RASTREADOR" ? "IMEI" : "ICCID"} informado já
-                possui um registro ativo. Registrar novamente criará um histórico
-                de duplicidade.
+                possui um registro ativo. Registrar novamente criará um
+                histórico de duplicidade.
               </p>
             </div>
           </div>

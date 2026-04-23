@@ -5,7 +5,11 @@ import type {
   StatusAparelhoCadastroIndividual,
 } from "@/types/aparelhos-cadastro-individual";
 
-export type { CategoriaFalha, DestinoDefeito, OrigemItem } from "@/types/aparelhos-cadastro-individual";
+export type {
+  CategoriaFalha,
+  DestinoDefeito,
+  OrigemItem,
+} from "@/types/aparelhos-cadastro-individual";
 export type StatusAparelho = StatusAparelhoCadastroIndividual;
 
 export const ORIGENS: { value: OrigemItem; label: string }[] = [

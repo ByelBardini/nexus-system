@@ -69,7 +69,9 @@ export function SidePanelKitResumoAparelhos({ aparelhos, className }: Props) {
         </div>
       )}
       {vazio && (
-        <p className="text-slate-500 italic text-[11px]">Nenhum aparelho no kit.</p>
+        <p className="text-slate-500 italic text-[11px]">
+          Nenhum aparelho no kit.
+        </p>
       )}
     </div>
   );

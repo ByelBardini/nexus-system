@@ -64,7 +64,13 @@ export function useCadastroRastreamento() {
   });
 
   const mutConcluir = useMutation({
-    mutationFn: ({ id, plataforma: p }: { id: number; plataforma: Plataforma }) =>
+    mutationFn: ({
+      id,
+      plataforma: p,
+    }: {
+      id: number;
+      plataforma: Plataforma;
+    }) =>
       api(`/cadastro-rastreamento/${id}/concluir`, {
         method: "PATCH",
         body: JSON.stringify({ plataforma: p }),
@@ -93,9 +99,7 @@ export function useCadastroRastreamento() {
   const statsEmCadastro = ordens.filter(
     (o) => o.status === "EM_CADASTRO",
   ).length;
-  const statsConcluido = ordens.filter(
-    (o) => o.status === "CONCLUIDO",
-  ).length;
+  const statsConcluido = ordens.filter((o) => o.status === "CONCLUIDO").length;
 
   const temFiltroAtivo = Boolean(filtroTecnico || filtroTipo);
   const isMutating = mutIniciar.isPending || mutConcluir.isPending;

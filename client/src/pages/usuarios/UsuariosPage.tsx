@@ -4,9 +4,18 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { schemaCreate, schemaEdit, type FormCreate, type FormEdit } from "./lib/schemas";
+import {
+  schemaCreate,
+  schemaEdit,
+  type FormCreate,
+  type FormEdit,
+} from "./lib/schemas";
 import { groupCargosBySetorNome } from "./lib/groupCargos";
-import { useUsuariosPaginatedQuery, usePermissionsQuery, useCargosComPermissoesQuery } from "./hooks/useUsuariosQueries";
+import {
+  useUsuariosPaginatedQuery,
+  usePermissionsQuery,
+  useCargosComPermissoesQuery,
+} from "./hooks/useUsuariosQueries";
 import { useUsuariosMutations } from "./hooks/useUsuariosMutations";
 import { CriarUsuarioDialog } from "./components/CriarUsuarioDialog";
 import { EditarUsuarioDialog } from "./components/EditarUsuarioDialog";
@@ -210,9 +219,7 @@ export function UsuariosPage() {
         selectedCreateRoleIds={selectedCreateRoleIds}
         onToggleCreateRole={toggleCreateRole}
         showCreateRoleSelector={showCreateRoleSelector}
-        onToggleCreateRoleSelector={() =>
-          setShowCreateRoleSelector((s) => !s)
-        }
+        onToggleCreateRoleSelector={() => setShowCreateRoleSelector((s) => !s)}
         cargosPorSetor={cargosPorSetor}
         cargosComPermissoes={cargosComPermissoes}
         permissoes={permissoes}
@@ -232,9 +239,7 @@ export function UsuariosPage() {
         selectedRoleIds={selectedRoleIds}
         onToggleRole={toggleRole}
         showEditRoleSelector={showEditRoleSelector}
-        onToggleEditRoleSelector={() =>
-          setShowEditRoleSelector((s) => !s)
-        }
+        onToggleEditRoleSelector={() => setShowEditRoleSelector((s) => !s)}
         cargosPorSetor={cargosPorSetor}
         cargosComPermissoes={cargosComPermissoes}
         permissoes={permissoes}

@@ -3,10 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useEquipamentosFullCatalogQueries } from "@/pages/equipamentos/hooks/useEquipamentosCatalogQueries";
 import { pareamentoQueryKeys } from "../domain/query-keys";
-import {
-  filtrarLotesRastreadores,
-  filtrarLotesSims,
-} from "../domain/parsing";
+import { filtrarLotesRastreadores, filtrarLotesSims } from "../domain/parsing";
 import type { ModoPareamento, ProprietarioTipo } from "../domain/types";
 import type { ClientePareamentoLista } from "../domain/types";
 import type { LotePareamentoListItem } from "../domain/types";
@@ -42,17 +39,13 @@ export function usePareamentoRemoteQueries(input: {
     enabled: needsLotes,
   });
 
-  const {
-    marcas,
-    modelos,
-    operadoras,
-    marcasSimcard,
-  } = useEquipamentosFullCatalogQueries<
-    MarcaPareamentoCatalog,
-    ModeloPareamentoCatalog,
-    OperadoraPareamentoCatalog,
-    MarcaSimcardPareamentoCatalog
-  >({ enabled: needsCatalogos });
+  const { marcas, modelos, operadoras, marcasSimcard } =
+    useEquipamentosFullCatalogQueries<
+      MarcaPareamentoCatalog,
+      ModeloPareamentoCatalog,
+      OperadoraPareamentoCatalog,
+      MarcaSimcardPareamentoCatalog
+    >({ enabled: needsCatalogos });
 
   const { data: clientes = [] } = useQuery<ClientePareamentoLista[]>({
     queryKey: ["clientes-lista"],
@@ -61,13 +54,13 @@ export function usePareamentoRemoteQueries(input: {
   });
 
   const lotesRastreadoresFiltrados = useMemo(
-    () => filtrarLotesRastreadores(lotesRastreadores, input.loteBuscaRastreador),
+    () =>
+      filtrarLotesRastreadores(lotesRastreadores, input.loteBuscaRastreador),
     [lotesRastreadores, input.loteBuscaRastreador],
   );
 
   const lotesSimsFiltrados = useMemo(
-    () =>
-      filtrarLotesSims(lotesSims, input.loteBuscaSim, marcasSimcard),
+    () => filtrarLotesSims(lotesSims, input.loteBuscaSim, marcasSimcard),
     [lotesSims, input.loteBuscaSim, marcasSimcard],
   );
 

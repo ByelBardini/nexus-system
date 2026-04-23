@@ -18,7 +18,10 @@ export function subclienteLabel(os: {
 }
 
 /** Filtro da sidebar “Fila de Testes” (número, placa, cliente, subcliente, IMEI). */
-export function filtrarOsTesteNaFila(items: OsTeste[], search: string): OsTeste[] {
+export function filtrarOsTesteNaFila(
+  items: OsTeste[],
+  search: string,
+): OsTeste[] {
   if (!search.trim()) return items;
   const term = search.toLowerCase().trim();
   return items.filter(

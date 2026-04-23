@@ -10,7 +10,9 @@ export interface ModalSelecaoEKitEdicaoStepProps {
   ctl: ModalSelecaoEKitController;
 }
 
-export function ModalSelecaoEKitEdicaoStep({ ctl }: ModalSelecaoEKitEdicaoStepProps) {
+export function ModalSelecaoEKitEdicaoStep({
+  ctl,
+}: ModalSelecaoEKitEdicaoStepProps) {
   const {
     pedido,
     pedidoApi,

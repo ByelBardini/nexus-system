@@ -4,9 +4,7 @@ import type { AparelhoNoKit } from "./pedidos-config-types";
  * Nome de destinatário/empresa para exibição em tabelas e resumos.
  * Mantém o mesmo critério em e-Kit, painel e filtros.
  */
-function rawDestinatarioAparelhoNoKit(
-  a: AparelhoNoKit,
-): string | null {
+function rawDestinatarioAparelhoNoKit(a: AparelhoNoKit): string | null {
   return (
     a.cliente?.nome ??
     a.tecnico?.nome ??

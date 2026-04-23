@@ -15,7 +15,9 @@ export function useEquipamentosConfigModalState() {
   );
 
   const [modalMarcaOpen, setModalMarcaOpen] = useState(false);
-  const [editingMarca, setEditingMarca] = useState<MarcaRastreador | null>(null);
+  const [editingMarca, setEditingMarca] = useState<MarcaRastreador | null>(
+    null,
+  );
   const [nomeMarca, setNomeMarca] = useState("");
 
   const [modalModeloOpen, setModalModeloOpen] = useState(false);

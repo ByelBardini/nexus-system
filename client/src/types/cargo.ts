@@ -52,7 +52,9 @@ export const CATEGORIA_CONFIG: Record<
 export type CategoriaCargoStyle = (typeof CATEGORIA_CONFIG)[CategoriaCargo];
 
 /** Categoria desconhecida da API: exibe rótulo cru e estilo neutro. */
-export function categoriaCargoParaBadge(categoria: string): CategoriaCargoStyle {
+export function categoriaCargoParaBadge(
+  categoria: string,
+): CategoriaCargoStyle {
   if (
     categoria === "OPERACIONAL" ||
     categoria === "ADMINISTRATIVO" ||
@@ -72,7 +74,8 @@ export function categoriaCargoOuOperacional(
   categoria: string,
 ): CategoriaCargoStyle {
   return (
-    CATEGORIA_CONFIG[categoria as CategoriaCargo] ?? CATEGORIA_CONFIG.OPERACIONAL
+    CATEGORIA_CONFIG[categoria as CategoriaCargo] ??
+    CATEGORIA_CONFIG.OPERACIONAL
   );
 }
 

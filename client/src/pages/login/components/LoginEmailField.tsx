@@ -9,7 +9,10 @@ type LoginEmailFieldProps = {
   errorMessage?: string;
 };
 
-export function LoginEmailField({ register, errorMessage }: LoginEmailFieldProps) {
+export function LoginEmailField({
+  register,
+  errorMessage,
+}: LoginEmailFieldProps) {
   return (
     <div>
       <Label

@@ -75,9 +75,7 @@ export function CargosAtribuicaoBlock({
           className="w-full flex items-center justify-between px-4 py-3 border border-slate-300 rounded bg-slate-50 hover:bg-slate-100 transition-colors"
         >
           <span className="text-sm font-medium text-slate-600">
-            {showSelector
-              ? "Fechar seleção de cargos"
-              : "Selecionar cargos"}
+            {showSelector ? "Fechar seleção de cargos" : "Selecionar cargos"}
           </span>
           <MaterialIcon
             name={showSelector ? "expand_less" : "expand_more"}
@@ -119,7 +117,9 @@ export function CargosAtribuicaoBlock({
               </div>
             ))}
             {Object.keys(cargosPorSetor).length === 0 && (
-              <p className="text-sm text-slate-400 italic">Carregando cargos...</p>
+              <p className="text-sm text-slate-400 italic">
+                Carregando cargos...
+              </p>
             )}
           </div>
         )}

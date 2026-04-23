@@ -2,9 +2,15 @@
  * Configuração centralizada de status de aparelho (workflow: estoque → instalado).
  * Usado em AparelhosPage, EquipamentosPage e páginas de aparelhos.
  */
-import type { StatusAparelho, StatusConfigAparelho } from "@/types/aparelho-status";
+import type {
+  StatusAparelho,
+  StatusConfigAparelho,
+} from "@/types/aparelho-status";
 
-export type { StatusAparelho, StatusConfigAparelho } from "@/types/aparelho-status";
+export type {
+  StatusAparelho,
+  StatusConfigAparelho,
+} from "@/types/aparelho-status";
 
 export const STATUS_CONFIG_APARELHO: Record<
   StatusAparelho,

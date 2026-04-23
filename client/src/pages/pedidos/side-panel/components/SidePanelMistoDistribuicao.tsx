@@ -18,10 +18,7 @@ export function SidePanelMistoDistribuicao({ pedido }: Props) {
       </p>
       <div className="space-y-1">
         {pedido.itensMisto.map((item, i) => (
-          <div
-            key={i}
-            className="flex items-center justify-between text-xs"
-          >
+          <div key={i} className="flex items-center justify-between text-xs">
             <span className="text-slate-700">{item.label}</span>
             <span className="font-bold text-slate-800">
               {item.quantidade} un

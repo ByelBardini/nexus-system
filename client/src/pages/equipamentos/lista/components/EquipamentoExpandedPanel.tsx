@@ -1,4 +1,7 @@
-import { STATUS_CONFIG_APARELHO, type StatusAparelho } from "@/lib/aparelho-status";
+import {
+  STATUS_CONFIG_APARELHO,
+  type StatusAparelho,
+} from "@/lib/aparelho-status";
 import { formatarDataHora, formatId } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { EquipamentoListItem } from "../equipamentos-page.shared";
@@ -10,10 +13,7 @@ import {
   resolveKitNomeEquipamento,
   simLinhaDetalheOperadora,
 } from "../equipamentos-page.helpers";
-import {
-  TableCell,
-  TableRow,
-} from "@/components/ui/table";
+import { TableCell, TableRow } from "@/components/ui/table";
 
 type Props = {
   equip: EquipamentoListItem;
@@ -185,7 +185,10 @@ export function EquipamentoExpandedPanel({ equip, kitsPorId }: Props) {
             Histórico
           </div>
           {equip.historico && equip.historico.length > 0 ? (
-            <div className="flex flex-wrap gap-6" data-testid="equipamento-historico">
+            <div
+              className="flex flex-wrap gap-6"
+              data-testid="equipamento-historico"
+            >
               {equip.historico.map((item, idx) => (
                 <div key={idx} className="flex items-start gap-2">
                   <div

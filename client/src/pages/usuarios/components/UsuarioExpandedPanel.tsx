@@ -1,8 +1,6 @@
 import { MaterialIcon } from "@/components/MaterialIcon";
 import { cn } from "@/lib/utils";
-import {
-  categoriaCargoOuOperacional,
-} from "@/types/cargo";
+import { categoriaCargoOuOperacional } from "@/types/cargo";
 import { formatLastLogin } from "../lib/usuarios-format";
 import type { UsuarioExpandedPanelProps } from "@/types/usuarios";
 
@@ -22,10 +20,7 @@ export function UsuarioExpandedPanel({
       <div className="grid grid-cols-12 gap-6">
         <div className="col-span-5 border-r border-slate-200 pr-6">
           <h4 className="text-[10px] font-bold text-slate-400 uppercase mb-3 flex items-center gap-2">
-            <MaterialIcon
-              name="security_update_good"
-              className="text-sm"
-            />
+            <MaterialIcon name="security_update_good" className="text-sm" />
             Audit Trail & Segurança
           </h4>
           <div className="space-y-3">
@@ -50,10 +45,8 @@ export function UsuarioExpandedPanel({
               <span className="text-slate-500">Permissões ativas</span>
               <span className="font-bold text-blue-600">
                 {accessLevel.percent}% (
-                {Math.round(
-                  (accessLevel.percent * totalPermissions) / 100,
-                )}{" "}
-                de {totalPermissions})
+                {Math.round((accessLevel.percent * totalPermissions) / 100)} de{" "}
+                {totalPermissions})
               </span>
             </div>
           </div>

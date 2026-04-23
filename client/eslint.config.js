@@ -23,7 +23,12 @@ export default tseslint.config(
         'warn',
         {
           allowConstantExport: true,
-          allowExportNames: ['useAuth', 'TRACKER_STATUS_LABELS', 'ACTION_LABELS'],
+          allowExportNames: [
+            'useAuth',
+            'TRACKER_STATUS_LABELS',
+            'ACTION_LABELS',
+            'countPareamentoPreviewDuplicateLinhas',
+          ],
         },
       ],
     },

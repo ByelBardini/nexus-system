@@ -96,9 +96,7 @@ export function OrdensServicoCriacaoServicoSection({
                   tipo === "INSTALACAO_SEM_BLOQUEIO" &&
                     "bg-erp-blue hover:bg-blue-700",
                 )}
-                onClick={() =>
-                  form.setValue("tipo", "INSTALACAO_SEM_BLOQUEIO")
-                }
+                onClick={() => form.setValue("tipo", "INSTALACAO_SEM_BLOQUEIO")}
               >
                 Sem bloqueio
               </Button>

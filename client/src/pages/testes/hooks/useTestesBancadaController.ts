@@ -1,10 +1,4 @@
-import {
-  useState,
-  useCallback,
-  useEffect,
-  useRef,
-  useMemo,
-} from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import type { ComunicacaoResult } from "../lib/testes-types";

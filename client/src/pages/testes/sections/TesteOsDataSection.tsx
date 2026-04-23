@@ -11,7 +11,10 @@ interface TesteOsDataSectionProps {
 export function TesteOsDataSection({ os }: TesteOsDataSectionProps) {
   if (!os) {
     return (
-      <TesteSectionShell icon="description" title="01. Dados da Ordem de Serviço">
+      <TesteSectionShell
+        icon="description"
+        title="01. Dados da Ordem de Serviço"
+      >
         <div className="p-6 text-center text-sm text-slate-500">
           Selecione uma OS na fila à direita
         </div>

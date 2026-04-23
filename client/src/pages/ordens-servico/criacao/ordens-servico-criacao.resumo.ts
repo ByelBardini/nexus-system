@@ -1,9 +1,10 @@
 import type { PrecoTecnico, Tecnico } from "./ordens-servico-criacao.types";
 import { tipoToPrecoKey } from "./ordens-servico-criacao.constants";
 
-function parsePreco(
-  valor: number | string | null | undefined,
-): { num: number; temValor: boolean } {
+function parsePreco(valor: number | string | null | undefined): {
+  num: number;
+  temValor: boolean;
+} {
   const n = typeof valor === "string" ? parseFloat(valor) : Number(valor ?? 0);
   if (Number.isNaN(n) || n <= 0) return { num: 0, temValor: false };
   return { num: n, temValor: true };
@@ -50,9 +51,7 @@ export function computeValorTotalAproximado(params: {
 } {
   const { tipo, kmEstimado, tecnico } = params;
   const key = tipo && tipoToPrecoKey[tipo];
-  const rawServico = key
-    ? tecnico?.precos?.[key as keyof PrecoTecnico]
-    : null;
+  const rawServico = key ? tecnico?.precos?.[key as keyof PrecoTecnico] : null;
   const { num: numServico, temValor: temServico } = parsePreco(rawServico);
   const precoServico = temServico ? numServico : null;
 
@@ -62,9 +61,7 @@ export function computeValorTotalAproximado(params: {
   });
 
   const valorTotal =
-    precoServico !== null
-      ? precoServico + (totalDeslocamento ?? 0)
-      : null;
+    precoServico !== null ? precoServico + (totalDeslocamento ?? 0) : null;
 
   return { precoServico, totalDeslocamento, valorTotal };
 }

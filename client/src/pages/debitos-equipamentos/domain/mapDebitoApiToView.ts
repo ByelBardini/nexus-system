@@ -18,7 +18,9 @@ export function buildHistoricoMovimentacaoDescricao(
   return descricao;
 }
 
-export function mapDebitoApiToView(d: DebitoRastreadorListaApi): DebitoEquipamento {
+export function mapDebitoApiToView(
+  d: DebitoRastreadorListaApi,
+): DebitoEquipamento {
   const status: StatusDebito = d.quantidade <= 0 ? "quitado" : "aberto";
   return {
     id: d.id,

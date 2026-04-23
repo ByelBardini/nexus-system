@@ -11,7 +11,10 @@ import {
 } from "@/components/ui/select";
 import { MaterialIcon } from "@/components/MaterialIcon";
 import { SelectClienteSearch } from "@/components/SelectClienteSearch";
-import { PreviewCsvTable, type CsvPreviewResult } from "../preview/PreviewCsvTable";
+import {
+  PreviewCsvTable,
+  type CsvPreviewResult,
+} from "../preview/PreviewCsvTable";
 import type { CsvLinhaInput } from "../domain/types";
 import type { ClientePareamentoLista } from "../domain/types";
 import type { ProprietarioTipo } from "../domain/types";

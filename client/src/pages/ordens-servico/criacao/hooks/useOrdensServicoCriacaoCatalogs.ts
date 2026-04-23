@@ -42,7 +42,7 @@ export function useOrdensServicoCriacaoCatalogs(
 
   const clienteSelecionado =
     ordemInstalacao === "CLIENTE"
-      ? clientes.find((c) => c.id === clienteOrdemId) ?? null
+      ? (clientes.find((c) => c.id === clienteOrdemId) ?? null)
       : null;
 
   const subclientes =

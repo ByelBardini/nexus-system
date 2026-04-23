@@ -1,5 +1,10 @@
 import { Trash2 } from "lucide-react";
-import { Controller, useWatch, type Control, type UseFormSetValue } from "react-hook-form";
+import {
+  Controller,
+  useWatch,
+  type Control,
+  type UseFormSetValue,
+} from "react-hook-form";
 import type { FieldArrayWithId } from "react-hook-form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -153,9 +158,7 @@ export function NovoPedidoMistoItem({
                 value={f.value ? `cliente-${f.value}` : ""}
                 onValueChange={(v) => {
                   if (v.startsWith("cliente-")) {
-                    f.onChange(
-                      parseInt(v.replace("cliente-", ""), 10),
-                    );
+                    f.onChange(parseInt(v.replace("cliente-", ""), 10));
                   }
                 }}
                 disabled={loadingClientes}
@@ -233,7 +236,9 @@ export function NovoPedidoMistoItem({
                   />
                 )}
               />
-              <span className="text-xs font-medium">Marca/modelo específico</span>
+              <span className="text-xs font-medium">
+                Marca/modelo específico
+              </span>
             </div>
             {itemMarcaModelo && (
               <div className="grid grid-cols-2 gap-2">
@@ -310,10 +315,7 @@ export function NovoPedidoMistoItem({
                     onCheckedChange={(checked) => {
                       f.onChange(checked);
                       if (!checked) {
-                        setValue(
-                          `itensMisto.${index}.operadoraId`,
-                          undefined,
-                        );
+                        setValue(`itensMisto.${index}.operadoraId`, undefined);
                       }
                     }}
                   />

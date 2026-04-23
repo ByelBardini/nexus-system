@@ -12,7 +12,10 @@ type LoteValoresSectionProps = {
   valorTotal: number;
 };
 
-export function LoteValoresSection({ form, valorTotal }: LoteValoresSectionProps) {
+export function LoteValoresSection({
+  form,
+  valorTotal,
+}: LoteValoresSectionProps) {
   return (
     <div className="bg-white border border-slate-200 rounded-sm p-6">
       <div className="flex items-center gap-2 mb-6 pb-2 border-b border-slate-100">

@@ -19,8 +19,7 @@ const STAGES: StageDef[] = [
     count: (r) => totalOrdensFromResumo(r),
     itemClass:
       "pipeline-item flex-1 bg-slate-50 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors",
-    labelClass:
-      "text-[10px] font-bold text-slate-500 uppercase font-condensed",
+    labelClass: "text-[10px] font-bold text-slate-500 uppercase font-condensed",
     borderBarClass: "border-l-4 border-erp-blue pl-2",
     activeBorderClass:
       "border-t-2 border-b-2 border-t-blue-500 border-b-blue-500",
@@ -31,8 +30,7 @@ const STAGES: StageDef[] = [
     count: (r) => r?.agendado ?? 0,
     itemClass:
       "pipeline-item flex-1 bg-yellow-50 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors",
-    labelClass:
-      "text-[10px] font-bold text-slate-500 uppercase font-condensed",
+    labelClass: "text-[10px] font-bold text-slate-500 uppercase font-condensed",
     borderBarClass: "border-l-4 border-erp-yellow pl-2",
     activeBorderClass:
       "border-t-2 border-b-2 border-t-yellow-500 border-b-yellow-500",
@@ -43,8 +41,7 @@ const STAGES: StageDef[] = [
     count: (r) => r?.emTestes ?? 0,
     itemClass:
       "pipeline-item flex-1 bg-blue-100 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors",
-    labelClass:
-      "text-[10px] font-bold text-slate-600 uppercase font-condensed",
+    labelClass: "text-[10px] font-bold text-slate-600 uppercase font-condensed",
     borderBarClass: "border-l-4 border-erp-blue pl-2",
     activeBorderClass:
       "border-t-2 border-b-2 border-t-blue-500 border-b-blue-500",
@@ -55,8 +52,7 @@ const STAGES: StageDef[] = [
     count: (r) => r?.testesRealizados ?? 0,
     itemClass:
       "pipeline-item flex-1 bg-purple-100 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors",
-    labelClass:
-      "text-[10px] font-bold text-slate-600 uppercase font-condensed",
+    labelClass: "text-[10px] font-bold text-slate-600 uppercase font-condensed",
     borderBarClass: "border-l-4 border-erp-purple pl-2",
     activeBorderClass:
       "border-t-2 border-b-2 border-t-purple-500 border-b-purple-500",
@@ -67,8 +63,7 @@ const STAGES: StageDef[] = [
     count: (r) => r?.aguardandoCadastro ?? 0,
     itemClass:
       "pipeline-item flex-1 bg-orange-100 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors",
-    labelClass:
-      "text-[10px] font-bold text-slate-600 uppercase font-condensed",
+    labelClass: "text-[10px] font-bold text-slate-600 uppercase font-condensed",
     borderBarClass: "border-l-4 border-erp-orange pl-2",
     activeBorderClass:
       "border-t-2 border-b-2 border-t-orange-500 border-b-orange-500",
@@ -79,8 +74,7 @@ const STAGES: StageDef[] = [
     count: (r) => r?.finalizado ?? 0,
     itemClass:
       "pipeline-item flex-1 bg-green-100 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors",
-    labelClass:
-      "text-[10px] font-bold text-slate-600 uppercase font-condensed",
+    labelClass: "text-[10px] font-bold text-slate-600 uppercase font-condensed",
     borderBarClass: "border-l-4 border-erp-green pl-2",
     activeBorderClass:
       "border-t-2 border-b-2 border-t-green-500 border-b-green-500",

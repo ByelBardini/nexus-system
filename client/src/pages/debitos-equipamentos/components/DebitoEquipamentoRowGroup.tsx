@@ -2,10 +2,7 @@ import { Fragment } from "react";
 import { toast } from "sonner";
 import { MaterialIcon } from "@/components/MaterialIcon";
 import { Button } from "@/components/ui/button";
-import {
-  TableCell,
-  TableRow,
-} from "@/components/ui/table";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { formatarDataDiaMesAno, formatarDataHora } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import {
@@ -147,7 +144,9 @@ export function DebitoEquipamentoRowGroup({
                 </div>
                 <div className="text-lg font-black text-slate-800 leading-none">
                   {totalUnidades}{" "}
-                  <span className="text-xs font-normal text-slate-400">un.</span>
+                  <span className="text-xs font-normal text-slate-400">
+                    un.
+                  </span>
                 </div>
               </div>
             </div>

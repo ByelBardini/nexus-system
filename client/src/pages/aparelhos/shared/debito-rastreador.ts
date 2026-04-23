@@ -3,7 +3,10 @@ import type {
   ProprietarioDebitoFilter,
 } from "@/types/aparelhos-debito-rastreador";
 
-export type { DebitoRastreadorApi, ProprietarioDebitoFilter } from "@/types/aparelhos-debito-rastreador";
+export type {
+  DebitoRastreadorApi,
+  ProprietarioDebitoFilter,
+} from "@/types/aparelhos-debito-rastreador";
 
 export function formatDebitoLabel(d: DebitoRastreadorApi): string {
   const devedor = d.devedorCliente?.nome ?? "Infinity";
@@ -28,8 +31,7 @@ export function filterDebitosRastreadores(
       opts.proprietario === "INFINITY"
         ? d.devedorTipo === "INFINITY"
         : opts.clienteId
-          ? d.devedorTipo === "CLIENTE" &&
-            d.devedorClienteId === opts.clienteId
+          ? d.devedorTipo === "CLIENTE" && d.devedorClienteId === opts.clienteId
           : false;
     if (!isDevedor) return false;
     if (opts.marcaModelo) {

@@ -37,24 +37,14 @@ export const ORDEM_SETORES = [
 export const ORDEM_ITENS: Record<string, string[]> = {
   ADMINISTRATIVO: ["CARGO", "USUARIO"],
   CONFIGURACAO: ["APARELHO", "EQUIPAMENTO"],
-  AGENDAMENTO: [
-    "CLIENTE",
-    "OS",
-    "TESTES",
-    "PEDIDO_RASTREADOR",
-    "TECNICO",
-  ],
+  AGENDAMENTO: ["CLIENTE", "OS", "TESTES", "PEDIDO_RASTREADOR", "TECNICO"],
 };
 
-export const ORDEM_ACOES = [
-  "LISTAR",
-  "CRIAR",
-  "EDITAR",
-  "EXCLUIR",
-  "EXECUTAR",
-];
+export const ORDEM_ACOES = ["LISTAR", "CRIAR", "EDITAR", "EXCLUIR", "EXECUTAR"];
 
-export function agruparPermissoes(permissoes: Permission[]): EstruturaPermissoes {
+export function agruparPermissoes(
+  permissoes: Permission[],
+): EstruturaPermissoes {
   const estrutura: EstruturaPermissoes = {};
   for (const p of permissoes) {
     const [setor, item, acao] = p.code.split(".");

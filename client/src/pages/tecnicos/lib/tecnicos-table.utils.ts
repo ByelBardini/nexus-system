@@ -15,8 +15,7 @@ export function filterTecnicos(
 ): Tecnico[] {
   const q = opts.busca.trim().toLowerCase();
   return tecnicos.filter((t) => {
-    const matchBusca =
-      !q || t.nome.toLowerCase().includes(q);
+    const matchBusca = !q || t.nome.toLowerCase().includes(q);
     const matchEstado =
       opts.filtroEstado === "todos" || (t.estado ?? "") === opts.filtroEstado;
     const matchStatus =

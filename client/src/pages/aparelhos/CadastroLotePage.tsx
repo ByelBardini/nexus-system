@@ -15,7 +15,10 @@ export function CadastroLotePage() {
   return (
     <div className="-m-4 min-h-[100dvh] bg-slate-100">
       <form
-        onSubmit={lote.form.handleSubmit(lote.onSubmit, toastLoteFormValidationErrors)}
+        onSubmit={lote.form.handleSubmit(
+          lote.onSubmit,
+          toastLoteFormValidationErrors,
+        )}
         className="contents"
       >
         <CadastroLoteHeader />

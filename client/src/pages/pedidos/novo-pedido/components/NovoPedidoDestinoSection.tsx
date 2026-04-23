@@ -74,9 +74,7 @@ export function NovoPedidoDestinoSection({
   itensMistoValues,
 }: NovoPedidoDestinoSectionProps) {
   const { control, setValue, formState } = form;
-  const nomeDestinatario = getDestinatarioDisplayNome(
-    destinatarioSelecionado,
-  );
+  const nomeDestinatario = getDestinatarioDisplayNome(destinatarioSelecionado);
 
   return (
     <div className="space-y-4">
@@ -171,32 +169,32 @@ export function NovoPedidoDestinoSection({
               name="destinoCliente"
               control={control}
               render={({ field }) => (
-              <div className="relative">
-                <MaterialIcon
-                  name="search"
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"
-                />
-                <Select
-                  value={String(field.value ?? "")}
-                  onValueChange={(v) => field.onChange(v ?? "")}
-                  disabled={loadingClientes}
-                >
-                  <SelectTrigger className="pl-9 h-9 text-xs">
-                    <SelectValue placeholder="Selecione o destinatário" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {opcoesCliente.map((o) => (
-                      <SelectItem
-                        key={`${o.tipo}-${o.id}`}
-                        value={`${o.tipo}-${o.id}`}
-                      >
-                        {o.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+                <div className="relative">
+                  <MaterialIcon
+                    name="search"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"
+                  />
+                  <Select
+                    value={String(field.value ?? "")}
+                    onValueChange={(v) => field.onChange(v ?? "")}
+                    disabled={loadingClientes}
+                  >
+                    <SelectTrigger className="pl-9 h-9 text-xs">
+                      <SelectValue placeholder="Selecione o destinatário" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {opcoesCliente.map((o) => (
+                        <SelectItem
+                          key={`${o.tipo}-${o.id}`}
+                          value={`${o.tipo}-${o.id}`}
+                        >
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             />
           </Fragment>
         )}
@@ -217,9 +215,7 @@ export function NovoPedidoDestinoSection({
         <div className="bg-slate-50 border border-slate-200 rounded p-4 flex items-start gap-4">
           <div className="bg-blue-100 text-blue-600 p-2 rounded shrink-0">
             <MaterialIcon
-              name={
-                tipoDestino === "CLIENTE" ? "business" : "engineering"
-              }
+              name={tipoDestino === "CLIENTE" ? "business" : "engineering"}
               className="text-lg"
             />
           </div>
@@ -230,19 +226,13 @@ export function NovoPedidoDestinoSection({
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
               {cidadeDisplay && (
                 <span className="flex items-center gap-1">
-                  <MaterialIcon
-                    name="location_on"
-                    className="text-[14px]"
-                  />
+                  <MaterialIcon name="location_on" className="text-[14px]" />
                   {cidadeDisplay}
                 </span>
               )}
               {filialDisplay && (
                 <span className="flex items-center gap-1">
-                  <MaterialIcon
-                    name="apartment"
-                    className="text-[14px]"
-                  />
+                  <MaterialIcon name="apartment" className="text-[14px]" />
                   {filialDisplay}
                 </span>
               )}
@@ -286,9 +276,7 @@ export function NovoPedidoDestinoSection({
                 render={({ field }) => (
                   <Select
                     value={field.value ? String(field.value) : ""}
-                    onValueChange={(v) =>
-                      field.onChange(v ? +v : undefined)
-                    }
+                    onValueChange={(v) => field.onChange(v ? +v : undefined)}
                     disabled={loadingClientes}
                   >
                     <SelectTrigger className="h-9 text-xs">
@@ -373,9 +361,7 @@ export function NovoPedidoDestinoSection({
                     {...field}
                     onChange={(e) => {
                       const v = parseInt(e.target.value, 10);
-                      field.onChange(
-                        Number.isNaN(v) ? 1 : Math.max(1, v),
-                      );
+                      field.onChange(Number.isNaN(v) ? 1 : Math.max(1, v));
                     }}
                   />
                 )}

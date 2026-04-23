@@ -73,7 +73,10 @@ export function TesteComunicacaoSection({
   const showNovoLocal = value === "COMUNICANDO";
 
   return (
-    <TesteSectionShell icon="wifi" title="03. Validação de Comunicação GPRS/GPS">
+    <TesteSectionShell
+      icon="wifi"
+      title="03. Validação de Comunicação GPRS/GPS"
+    >
       <div className="p-6 space-y-6">
         <div className="grid grid-cols-3 gap-4">
           {OPTIONS.map((opt) => {

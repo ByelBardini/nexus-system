@@ -1,5 +1,8 @@
 import { api } from "@/lib/api";
-import type { KitComAparelhos, KitDetalhe } from "../../shared/pedidos-config-types";
+import type {
+  KitComAparelhos,
+  KitDetalhe,
+} from "../../shared/pedidos-config-types";
 
 export const KITS_DETALHES_QUERY_KEY = [
   "aparelhos",

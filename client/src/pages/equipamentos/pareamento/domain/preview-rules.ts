@@ -47,8 +47,7 @@ export function computePodeConfirmarIndividual(
   const iccid = iccidIndividual.replace(/\D/g, "");
   if (imei.length < 1 || iccid.length < 1) return false;
   if (minImeiIndividual > 0 && imei.length < minImeiIndividual) return false;
-  if (minIccidIndividual > 0 && iccid.length < minIccidIndividual)
-    return false;
+  if (minIccidIndividual > 0 && iccid.length < minIccidIndividual) return false;
   return true;
 }
 
@@ -86,8 +85,7 @@ export function computeProgressoVinculoIndividual(input: {
   const iccid = input.iccidIndividual.replace(/\D/g, "");
   const imeiOk =
     imei.length >= 1 &&
-    (input.minImeiIndividual === 0 ||
-      imei.length >= input.minImeiIndividual);
+    (input.minImeiIndividual === 0 || imei.length >= input.minImeiIndividual);
   const iccidOk =
     iccid.length >= 1 &&
     (input.minIccidIndividual === 0 ||
@@ -132,9 +130,7 @@ export function computePodeConfirmarPareamentoIndividual(
     const needTracker = preview.linhas.some(
       (l) => l.tracker_status === "NEEDS_CREATE",
     );
-    const needSim = preview.linhas.some(
-      (l) => l.sim_status === "NEEDS_CREATE",
-    );
+    const needSim = preview.linhas.some((l) => l.sim_status === "NEEDS_CREATE");
     if (needTracker) {
       if (!input.criarNovoRastreador) return false;
       const temLote = input.pertenceLoteRastreador && input.loteRastreadorId;
@@ -184,9 +180,7 @@ export function computePodeConfirmarMassa(
     const needTracker = preview.linhas.some(
       (l) => l.tracker_status === "NEEDS_CREATE",
     );
-    const needSim = preview.linhas.some(
-      (l) => l.sim_status === "NEEDS_CREATE",
-    );
+    const needSim = preview.linhas.some((l) => l.sim_status === "NEEDS_CREATE");
     if (needTracker) {
       if (!input.criarNovoRastreadorMassa) return false;
       const temLote =

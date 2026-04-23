@@ -217,8 +217,7 @@ export function useEquipamentosConfigCrudMutations(
       closeModalMarcaSimcard();
       toast.success("Marca de simcard criada com sucesso");
     },
-    onError: (err) =>
-      toastApiError(err, "Erro ao criar marca de simcard"),
+    onError: (err) => toastApiError(err, "Erro ao criar marca de simcard"),
   });
 
   const updateMarcaSimcardMutation = useMutation({
@@ -244,8 +243,7 @@ export function useEquipamentosConfigCrudMutations(
       closeModalMarcaSimcard();
       toast.success("Marca de simcard atualizada com sucesso");
     },
-    onError: (err) =>
-      toastApiError(err, "Erro ao atualizar marca de simcard"),
+    onError: (err) => toastApiError(err, "Erro ao atualizar marca de simcard"),
   });
 
   const deleteMarcaSimcardMutation = useMutation({
@@ -257,8 +255,7 @@ export function useEquipamentosConfigCrudMutations(
       });
       toast.success("Marca de simcard excluída com sucesso");
     },
-    onError: (err) =>
-      toastApiError(err, "Erro ao excluir marca de simcard"),
+    onError: (err) => toastApiError(err, "Erro ao excluir marca de simcard"),
   });
 
   const createPlanoSimcardMutation = useMutation({

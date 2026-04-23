@@ -243,31 +243,30 @@ export function PareamentoMassaPanel(p: PareamentoMassaPanelProps) {
 
           <div className="mt-6">
             <PareamentoProprietarioInfinityClienteCard
-            proprietario={p.proprietarioMassa}
-            onInfinity={() => {
-              p.setProprietarioMassa("INFINITY");
-              p.setClienteIdMassa(null);
-            }}
-            onCliente={() => p.setProprietarioMassa("CLIENTE")}
-            clientes={p.clientes}
-            clienteId={p.clienteIdMassa}
-            onClienteIdChange={p.setClienteIdMassa}
-          />
+              proprietario={p.proprietarioMassa}
+              onInfinity={() => {
+                p.setProprietarioMassa("INFINITY");
+                p.setClienteIdMassa(null);
+              }}
+              onCliente={() => p.setProprietarioMassa("CLIENTE")}
+              clientes={p.clientes}
+              clienteId={p.clienteIdMassa}
+              onClienteIdChange={p.setClienteIdMassa}
+            />
           </div>
 
-          {!p.quantidadeBate &&
-            (p.imeisLen > 0 || p.iccidsLen > 0) && (
-              <div className="mt-4 flex items-center gap-2 rounded-sm border border-amber-200 bg-amber-50 p-3">
-                <AlertCircle className="h-5 w-5 text-amber-600" />
-                <p className="text-sm font-bold text-amber-800">
-                  Quantidade não confere: {p.imeisLen} IMEIs x {p.iccidsLen}{" "}
-                  ICCIDs.
-                  {p.imeisLen > p.iccidsLen
-                    ? ` Faltam ${p.imeisLen - p.iccidsLen} ICCID(s).`
-                    : ` Faltam ${p.iccidsLen - p.imeisLen} IMEI(s).`}
-                </p>
-              </div>
-            )}
+          {!p.quantidadeBate && (p.imeisLen > 0 || p.iccidsLen > 0) && (
+            <div className="mt-4 flex items-center gap-2 rounded-sm border border-amber-200 bg-amber-50 p-3">
+              <AlertCircle className="h-5 w-5 text-amber-600" />
+              <p className="text-sm font-bold text-amber-800">
+                Quantidade não confere: {p.imeisLen} IMEIs x {p.iccidsLen}{" "}
+                ICCIDs.
+                {p.imeisLen > p.iccidsLen
+                  ? ` Faltam ${p.imeisLen - p.iccidsLen} ICCID(s).`
+                  : ` Faltam ${p.iccidsLen - p.imeisLen} IMEI(s).`}
+              </p>
+            </div>
+          )}
         </div>
 
         {p.preview && <PreviewPareamentoTable preview={p.preview} />}

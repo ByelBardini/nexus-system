@@ -6,7 +6,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { MaterialIcon } from "@/components/MaterialIcon";
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { cn } from "@/lib/utils";
-import type { PedidoRastreadorView, PedidoRastreadorApi, AparelhosDestinatariosResponse } from "../../shared/pedidos-rastreador.types";
+import type {
+  PedidoRastreadorView,
+  PedidoRastreadorApi,
+  AparelhosDestinatariosResponse,
+} from "../../shared/pedidos-rastreador.types";
 import type { AparelhoNoKit } from "../../shared/pedidos-config-types";
 import { getDestinatarioExibicaoAparelhoNoKit } from "../../shared/aparelho-destinatario";
 
@@ -134,9 +138,7 @@ export function ModalSelecaoEKitPanelNovosRastreadores({
                     ? "Infinity"
                     : (item.cliente?.nome ?? `Cliente #${item.clienteId}`),
               }))}
-              value={
-                destinatarioLote ? JSON.stringify(destinatarioLote) : ""
-              }
+              value={destinatarioLote ? JSON.stringify(destinatarioLote) : ""}
               onChange={(val) => {
                 if (!val) {
                   setDestinatarioLote(null);
@@ -177,8 +179,7 @@ export function ModalSelecaoEKitPanelNovosRastreadores({
           size="sm"
           onClick={onAdicionarSelecionados}
           disabled={
-            aparelhosSelecionados.size === 0 ||
-            (isMisto && !destinatarioLote)
+            aparelhosSelecionados.size === 0 || (isMisto && !destinatarioLote)
           }
         >
           <MaterialIcon name="add" className="text-sm" /> Adicionar ao Kit

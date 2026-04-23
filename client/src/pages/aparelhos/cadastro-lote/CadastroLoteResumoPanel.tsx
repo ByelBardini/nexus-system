@@ -60,9 +60,7 @@ export function CadastroLoteResumoPanel({
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
                 Referência
               </label>
-              <p className="text-lg font-bold">
-                {watchReferencia || "—"}
-              </p>
+              <p className="text-lg font-bold">{watchReferencia || "—"}</p>
             </div>
             <div>
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
@@ -79,9 +77,7 @@ export function CadastroLoteResumoPanel({
                 Tipo
               </label>
               <p className="text-sm font-medium">
-                {watchTipo === "RASTREADOR"
-                  ? "📡 Rastreador"
-                  : "📶 Simcard"}
+                {watchTipo === "RASTREADOR" ? "📡 Rastreador" : "📶 Simcard"}
               </p>
             </div>
             <div>
@@ -109,9 +105,8 @@ export function CadastroLoteResumoPanel({
                   Modelo
                 </label>
                 <p className="text-sm font-medium">
-                  {modelosDisponiveis.find(
-                    (m) => m.id === Number(watchModelo),
-                  )?.nome || "—"}
+                  {modelosDisponiveis.find((m) => m.id === Number(watchModelo))
+                    ?.nome || "—"}
                 </p>
               </div>
             </div>
@@ -121,9 +116,8 @@ export function CadastroLoteResumoPanel({
                 Operadora
               </label>
               <p className="text-sm font-medium">
-                {operadorasAtivas.find(
-                  (o) => o.id === Number(watchOperadora),
-                )?.nome || "—"}
+                {operadorasAtivas.find((o) => o.id === Number(watchOperadora))
+                  ?.nome || "—"}
               </p>
             </div>
           )}

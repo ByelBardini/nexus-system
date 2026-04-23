@@ -11,7 +11,10 @@ import {
 } from "@/components/ui/select";
 import { InputPlaca } from "@/components/InputPlaca";
 import { MaterialIcon } from "@/components/MaterialIcon";
-import { VEICULO_TIPOS, veiculoTipoIconMap } from "../ordens-servico-criacao.constants";
+import {
+  VEICULO_TIPOS,
+  veiculoTipoIconMap,
+} from "../ordens-servico-criacao.constants";
 import type { CriacaoOsFormData } from "../ordens-servico-criacao.schema";
 
 type Props = {
@@ -115,9 +118,8 @@ export function OrdensServicoCriacaoVeiculoSection({
                     {field.value && (
                       <MaterialIcon
                         name={
-                          veiculoTipoIconMap[
-                            field.value.toUpperCase()
-                          ] ?? "directions_car"
+                          veiculoTipoIconMap[field.value.toUpperCase()] ??
+                          "directions_car"
                         }
                         className="text-slate-500 text-lg shrink-0"
                       />

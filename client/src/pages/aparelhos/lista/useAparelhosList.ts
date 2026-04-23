@@ -3,7 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type { StatusAparelho } from "@/lib/aparelho-status";
 import { useAuth } from "@/contexts/AuthContext";
-import type { Aparelho, ProprietarioTipo, TipoAparelho } from "./aparelhos-page.shared";
+import type {
+  Aparelho,
+  ProprietarioTipo,
+  TipoAparelho,
+} from "./aparelhos-page.shared";
 import { PAGE_SIZE } from "./aparelhos-page.shared";
 import {
   computeMarcasDisponiveis,

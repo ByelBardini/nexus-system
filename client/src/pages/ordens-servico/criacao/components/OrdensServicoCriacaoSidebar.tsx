@@ -101,7 +101,11 @@ export function OrdensServicoCriacaoSidebar({
             </span>
             <p className="text-xs font-black text-slate-800 uppercase">
               {watched.veiculoPlaca
-                ? [watched.veiculoPlaca, watched.veiculoMarca, watched.veiculoModelo]
+                ? [
+                    watched.veiculoPlaca,
+                    watched.veiculoMarca,
+                    watched.veiculoModelo,
+                  ]
                     .filter(Boolean)
                     .join(" • ") || "—"
                 : "—"}
@@ -181,16 +185,15 @@ export function OrdensServicoCriacaoSidebar({
             Valor total aproximado
           </span>
           <p className="text-2xl font-black text-slate-800">
-            {resumo.valorTotal !== null
-              ? formatBrl(resumo.valorTotal)
-              : "—"}
+            {resumo.valorTotal !== null ? formatBrl(resumo.valorTotal) : "—"}
           </p>
-          {resumo.totalDeslocamento !== null && resumo.precoServico !== null && (
-            <p className="text-[10px] text-slate-400 mt-0.5">
-              serviço {formatBrl(resumo.precoServico)} + deslocamento{" "}
-              {formatBrl(resumo.totalDeslocamento)}
-            </p>
-          )}
+          {resumo.totalDeslocamento !== null &&
+            resumo.precoServico !== null && (
+              <p className="text-[10px] text-slate-400 mt-0.5">
+                serviço {formatBrl(resumo.precoServico)} + deslocamento{" "}
+                {formatBrl(resumo.totalDeslocamento)}
+              </p>
+            )}
         </div>
       </div>
       <div className="p-5 bg-slate-50 border-t border-slate-200 shrink-0">

@@ -3,10 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import type { Cargo, CategoriaCargo, Permission, Setor } from "@/types/cargo";
-import {
-  agruparPermissoes,
-  rotulosPermissoesAtivas,
-} from "./permissionMatrix";
+import { agruparPermissoes, rotulosPermissoesAtivas } from "./permissionMatrix";
 
 const DEFAULT_EXPANDED = ["ADMINISTRATIVO", "CONFIGURACAO", "AGENDAMENTO"];
 

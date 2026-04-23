@@ -44,8 +44,7 @@ export function SidePanelDespachoCarga({
       <div
         className={cn(
           "space-y-3",
-          (estaConcluido || !podeDespachar) &&
-            "opacity-75 pointer-events-none",
+          (estaConcluido || !podeDespachar) && "opacity-75 pointer-events-none",
         )}
       >
         <div>

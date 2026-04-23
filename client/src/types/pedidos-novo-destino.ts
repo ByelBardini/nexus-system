@@ -1,4 +1,7 @@
-import type { ClienteResumo, SubclienteResumo } from "@/types/pedidos-rastreador";
+import type {
+  ClienteResumo,
+  SubclienteResumo,
+} from "@/types/pedidos-rastreador";
 
 export type ClienteComSubclientes = ClienteResumo & {
   subclientes?: SubclienteResumo[];

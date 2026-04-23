@@ -185,8 +185,7 @@ export function PareamentoPage() {
   );
 
   const minIccidIndividual = useMemo(
-    () =>
-      computeMinIccidSim(pertenceLoteSim, marcaSimcardIdSim, marcasSimcard),
+    () => computeMinIccidSim(pertenceLoteSim, marcaSimcardIdSim, marcasSimcard),
     [pertenceLoteSim, marcaSimcardIdSim, marcasSimcard],
   );
 
@@ -197,11 +196,7 @@ export function PareamentoPage() {
         modeloRastreadorMassa,
         modelosPorMarcaMassa,
       ),
-    [
-      pertenceLoteRastreadorMassa,
-      modeloRastreadorMassa,
-      modelosPorMarcaMassa,
-    ],
+    [pertenceLoteRastreadorMassa, modeloRastreadorMassa, modelosPorMarcaMassa],
   );
 
   const minIccidMassa = useMemo(
@@ -222,12 +217,7 @@ export function PareamentoPage() {
         minImeiIndividual,
         minIccidIndividual,
       ),
-    [
-      imeiIndividual,
-      iccidIndividual,
-      minImeiIndividual,
-      minIccidIndividual,
-    ],
+    [imeiIndividual, iccidIndividual, minImeiIndividual, minIccidIndividual],
   );
 
   const podeConfirmarIndividual = useMemo(
@@ -238,12 +228,7 @@ export function PareamentoPage() {
         minImeiIndividual,
         minIccidIndividual,
       ),
-    [
-      imeiIndividual,
-      iccidIndividual,
-      minImeiIndividual,
-      minIccidIndividual,
-    ],
+    [imeiIndividual, iccidIndividual, minImeiIndividual, minIccidIndividual],
   );
 
   const {
@@ -277,8 +262,7 @@ export function PareamentoPage() {
   );
 
   const loteSimSelecionado = useMemo(
-    () =>
-      loteIdValidoSelecionado(criarNovoSim, pertenceLoteSim, loteSimId),
+    () => loteIdValidoSelecionado(criarNovoSim, pertenceLoteSim, loteSimId),
     [criarNovoSim, pertenceLoteSim, loteSimId],
   );
 
@@ -392,8 +376,7 @@ export function PareamentoPage() {
       preview,
       proprietario:
         modo === "individual" ? proprietarioIndividual : proprietarioMassa,
-      clienteId:
-        modo === "individual" ? clienteIdIndividual : clienteIdMassa,
+      clienteId: modo === "individual" ? clienteIdIndividual : clienteIdMassa,
       loteRastreadorId,
       loteSimId,
       criarNovoRastreador,
@@ -512,15 +495,16 @@ export function PareamentoPage() {
     ],
   );
 
-  const { csvPreviewMutation, csvImportarMutation } =
-    usePareamentoCsvMutations({
+  const { csvPreviewMutation, csvImportarMutation } = usePareamentoCsvMutations(
+    {
       csvLinhas,
       proprietarioCsv,
       clienteIdCsv,
       setCsvPreview,
       onImportSuccess: limparCsv,
       queryClient,
-    });
+    },
+  );
 
   const limparIndividual = useCallback(
     () =>
@@ -787,9 +771,7 @@ export function PareamentoPage() {
               clientes={clientes}
               onBaixarTemplate={handleBaixarTemplateCsv}
               onFileSelected={handleUploadCsv}
-              onEscolherArquivoClick={() =>
-                csvFileInputRef.current?.click()
-              }
+              onEscolherArquivoClick={() => csvFileInputRef.current?.click()}
             />
           )}
         </div>
@@ -807,9 +789,7 @@ export function PareamentoPage() {
         podeConfirmarIndividual={podeConfirmarIndividual}
         quantidadeBate={quantidadeBate}
         paresMassaLength={paresMassa.length}
-        podeConfirmarPareamentoIndividual={
-          podeConfirmarPareamentoIndividual
-        }
+        podeConfirmarPareamentoIndividual={podeConfirmarPareamentoIndividual}
         podeConfirmarMassa={podeConfirmarMassa}
         previewMutationPending={previewMutation.isPending}
         pareamentoMutationPending={pareamentoMutation.isPending}

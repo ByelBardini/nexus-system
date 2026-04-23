@@ -1,4 +1,7 @@
-import type { PedidoRastreadorView, StatusPedidoKey } from "@/pages/pedidos/shared/pedidos-rastreador.types";
+import type {
+  PedidoRastreadorView,
+  StatusPedidoKey,
+} from "@/pages/pedidos/shared/pedidos-rastreador.types";
 import { PedidosKanbanColumnEmptyState } from "@/pages/pedidos/lista/components/PedidosKanbanColumnEmptyState";
 import { KanbanCardConfig } from "@/pages/pedidos/lista/kanban/KanbanCardConfig";
 import { PedidosKanbanColumnShell } from "@/pages/pedidos/lista/components/PedidosKanbanColumnShell";

@@ -1,4 +1,8 @@
-import type { AparelhoNoKit, KitVinculado, TipoDespacho } from "../shared/pedidos-config-types";
+import type {
+  AparelhoNoKit,
+  KitVinculado,
+  TipoDespacho,
+} from "../shared/pedidos-config-types";
 import {
   collectMarcasModelosLabelsFromAparelhos,
   collectOperadorasLabelsFromAparelhos,
@@ -10,7 +14,10 @@ import type {
   StatusPedidoKey,
   StatusPedidoRastreador,
 } from "../shared/pedidos-rastreador.types";
-import { STATUS_ORDER, STATUS_TO_API } from "../shared/pedidos-rastreador.types";
+import {
+  STATUS_ORDER,
+  STATUS_TO_API,
+} from "../shared/pedidos-rastreador.types";
 import type {
   ResumoAparelhosDoKit,
   SidePanelDerivations,
@@ -60,7 +67,10 @@ export function getSidePanelDerivations(
   }
 
   const podeRetroceder =
-    statusIdx > 0 && podeEditar && !estaConcluido && pedido.status !== "despachado";
+    statusIdx > 0 &&
+    podeEditar &&
+    !estaConcluido &&
+    pedido.status !== "despachado";
   const statusAnterior = podeRetroceder ? STATUS_ORDER[statusIdx - 1]! : null;
 
   let proximoStatus: StatusPedidoKey | null = null;
@@ -121,7 +131,11 @@ export function buildRetrocederStatusPayload(
   const novoStatus = STATUS_TO_API[statusAnterior];
   const precisaKitIds =
     pedido.status === "despachado" || pedido.status === "entregue";
-  const payload: { id: number; status: StatusPedidoRastreador; kitIds?: number[] } = {
+  const payload: {
+    id: number;
+    status: StatusPedidoRastreador;
+    kitIds?: number[];
+  } = {
     id: pedido.id,
     status: novoStatus,
   };

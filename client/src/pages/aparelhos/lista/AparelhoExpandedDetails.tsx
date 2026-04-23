@@ -117,7 +117,9 @@ export function AparelhoExpandedDetails({ aparelho, kitsPorId }: Props) {
               <span
                 className={cn(
                   "font-bold",
-                  vinculado ? "text-blue-600 font-mono" : "text-slate-400 italic",
+                  vinculado
+                    ? "text-blue-600 font-mono"
+                    : "text-slate-400 italic",
                 )}
                 data-testid="aparelho-expanded-vinculo-id"
               >

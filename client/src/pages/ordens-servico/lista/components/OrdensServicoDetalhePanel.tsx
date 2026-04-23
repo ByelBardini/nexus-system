@@ -42,9 +42,7 @@ export function OrdensServicoDetalhePanel({
   onEnviarParaCadastro,
 }: OrdensServicoDetalhePanelProps) {
   const staleDetail =
-    !!osDetalhe &&
-    expandedOsId === rowOsId &&
-    osDetalhe.id !== rowOsId;
+    !!osDetalhe && expandedOsId === rowOsId && osDetalhe.id !== rowOsId;
 
   if (loadingDetalhe || staleDetail) {
     return (
@@ -403,7 +401,10 @@ export function OrdensServicoDetalhePanel({
 
       <section className="bg-white border border-slate-300 shadow-sm overflow-hidden">
         <div className="bg-slate-50 border-b border-slate-300 px-3 py-1.5 flex items-center gap-2">
-          <MaterialIcon name="person_add" className="text-slate-400 text-base" />
+          <MaterialIcon
+            name="person_add"
+            className="text-slate-400 text-base"
+          />
           <h2 className="text-xs font-bold text-slate-700 font-condensed uppercase">
             Dados de Cadastro
           </h2>

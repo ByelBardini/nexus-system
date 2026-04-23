@@ -76,11 +76,7 @@ export function CadastroRastreamentoWorkPanel({
       ) : (
         <div className="p-4 space-y-5">
           <PanelBlock icon="info" title="Dados da Ordem">
-            <PanelRow
-              label="Cliente"
-              value={selectedOrdem.cliente}
-              highlight
-            />
+            <PanelRow label="Cliente" value={selectedOrdem.cliente} highlight />
             <PanelRow
               label="Subcliente"
               value={selectedOrdem.subcliente ?? "—"}

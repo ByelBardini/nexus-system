@@ -1,5 +1,11 @@
 import { Fragment } from "react";
-import { Pencil, ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
+import {
+  Pencil,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -67,22 +73,20 @@ export function TecnicosTableSection({
           <TableBody>
             {paginated.map((t) => {
               const isExpanded = expandedId === t.id;
-              const valorBase = tecnicoPrecoToNum(t.precos?.instalacaoSemBloqueio);
+              const valorBase = tecnicoPrecoToNum(
+                t.precos?.instalacaoSemBloqueio,
+              );
               return (
                 <Fragment key={t.id}>
                   <TableRow
                     className="cursor-pointer border-slate-200 hover:bg-slate-50"
-                    onClick={() =>
-                      onExpandedChange(isExpanded ? null : t.id)
-                    }
+                    onClick={() => onExpandedChange(isExpanded ? null : t.id)}
                   >
                     <TableCell className="px-4 py-3 text-sm font-semibold text-slate-800">
                       {t.nome}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-sm text-slate-600">
-                      {t.cidade && t.estado
-                        ? `${t.cidade} / ${t.estado}`
-                        : "-"}
+                      {t.cidade && t.estado ? `${t.cidade} / ${t.estado}` : "-"}
                     </TableCell>
                     <TableCell className="px-4 py-3 text-sm text-slate-600">
                       {t.telefone ? formatarTelefone(t.telefone) : "-"}
@@ -203,9 +207,7 @@ export function TecnicosTableSection({
             size="icon"
             className="h-7 w-7"
             disabled={page >= totalPages - 1}
-            onClick={() =>
-              onPageChange(Math.min(totalPages - 1, page + 1))
-            }
+            onClick={() => onPageChange(Math.min(totalPages - 1, page + 1))}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>

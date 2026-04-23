@@ -100,9 +100,7 @@ export function ClientesPage() {
             page={page}
             totalPages={totalPages}
             onPrevPage={() => setPage((p) => Math.max(0, p - 1))}
-            onNextPage={() =>
-              setPage((p) => Math.min(totalPages - 1, p + 1))
-            }
+            onNextPage={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
           />
         </div>
       </div>

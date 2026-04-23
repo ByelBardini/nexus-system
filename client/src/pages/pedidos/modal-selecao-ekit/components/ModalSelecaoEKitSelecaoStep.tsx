@@ -191,7 +191,9 @@ export function ModalSelecaoEKitSelecaoStep({
                 ? "s"
                 : ""}{" "}
               oculto
-              {kitsDisponiveis.length - kitsCompativeis.length > 1 ? "s" : ""}{" "}
+              {kitsDisponiveis.length - kitsCompativeis.length > 1
+                ? "s"
+                : ""}{" "}
               por incompatibilidade
             </span>
           )}

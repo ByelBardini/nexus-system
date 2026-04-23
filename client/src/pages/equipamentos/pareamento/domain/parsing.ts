@@ -103,8 +103,7 @@ export function processCsvRowsFromPapa(
   if (linhasParsed.length === 0) {
     return {
       ok: false,
-      error:
-        "Nenhuma linha válida encontrada. Verifique o cabeçalho do CSV.",
+      error: "Nenhuma linha válida encontrada. Verifique o cabeçalho do CSV.",
     };
   }
   return { ok: true, linhas: linhasParsed };

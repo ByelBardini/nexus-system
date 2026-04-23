@@ -7,11 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  formatarDataHoraCurta,
-  formatId,
-  TIPO_OS_LABELS,
-} from "@/lib/format";
+import { formatarDataHoraCurta, formatId, TIPO_OS_LABELS } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { MaterialIcon } from "@/components/MaterialIcon";
 import {
@@ -117,15 +113,11 @@ export function OrdensServicoTable({
                         isExpanded &&
                           "bg-slate-100/50 border-l-4 border-erp-blue",
                       )}
-                      onClick={() =>
-                        setExpandedOsId(isExpanded ? null : os.id)
-                      }
+                      onClick={() => setExpandedOsId(isExpanded ? null : os.id)}
                     >
                       <td>
                         <MaterialIcon
-                          name={
-                            isExpanded ? "expand_more" : "chevron_right"
-                          }
+                          name={isExpanded ? "expand_more" : "chevron_right"}
                           className={cn(
                             "text-base",
                             isExpanded ? "text-erp-blue" : "text-slate-400",
@@ -146,9 +138,7 @@ export function OrdensServicoTable({
                           os.subcliente?.nome ??
                           "-"}
                       </td>
-                      <td className="font-bold">
-                        {os.veiculo?.placa ?? "-"}
-                      </td>
+                      <td className="font-bold">{os.veiculo?.placa ?? "-"}</td>
                       <td>{os.tecnico?.nome ?? "-"}</td>
                       <td>{TIPO_OS_LABELS[os.tipo] ?? os.tipo}</td>
                       <td>
@@ -158,8 +148,7 @@ export function OrdensServicoTable({
                             "bg-slate-100 text-slate-600"
                           }`}
                         >
-                          {ORDENS_SERVICO_STATUS_LABELS[os.status] ??
-                            os.status}
+                          {ORDENS_SERVICO_STATUS_LABELS[os.status] ?? os.status}
                         </span>
                       </td>
                       <td className="text-slate-500">
@@ -251,9 +240,7 @@ export function OrdensServicoTable({
           data-testid="ordens-servico-pagination-info"
         >
           Exibindo{" "}
-          {(lista?.page ?? 1) * (lista?.limit ?? 15) -
-            (lista?.limit ?? 15) +
-            1}
+          {(lista?.page ?? 1) * (lista?.limit ?? 15) - (lista?.limit ?? 15) + 1}
           -
           {Math.min(
             (lista?.page ?? 1) * (lista?.limit ?? 15),

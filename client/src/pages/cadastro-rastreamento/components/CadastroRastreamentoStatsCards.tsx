@@ -64,7 +64,9 @@ export function CadastroRastreamentoStatsCards({
         </div>
         <div className="flex items-center gap-1.5">
           <MaterialIcon name="verified" className="text-slate-400 text-sm" />
-          <span className="text-[10px] text-slate-400">registros concluídos</span>
+          <span className="text-[10px] text-slate-400">
+            registros concluídos
+          </span>
         </div>
       </div>
     </div>

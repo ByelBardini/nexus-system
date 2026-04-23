@@ -74,7 +74,8 @@ export function useEquipamentosConfig() {
   );
 
   const filteredMarcas = useMemo(
-    () => filterMarcasByMarcaOrModeloName(marcas, modelos, debouncedSearchMarcas),
+    () =>
+      filterMarcasByMarcaOrModeloName(marcas, modelos, debouncedSearchMarcas),
     [marcas, modelos, debouncedSearchMarcas],
   );
 
@@ -84,14 +85,15 @@ export function useEquipamentosConfig() {
   );
 
   const filteredMarcasSimcard = useMemo(
-    () => filterMarcasSimcardByNomeOuOperadora(marcasSimcard, debouncedSearchMarcasSimcard),
+    () =>
+      filterMarcasSimcardByNomeOuOperadora(
+        marcasSimcard,
+        debouncedSearchMarcasSimcard,
+      ),
     [marcasSimcard, debouncedSearchMarcasSimcard],
   );
 
-  const modelosByMarca = useMemo(
-    () => buildModelosByMarca(modelos),
-    [modelos],
-  );
+  const modelosByMarca = useMemo(() => buildModelosByMarca(modelos), [modelos]);
 
   const totalModelos = modelos.length;
 

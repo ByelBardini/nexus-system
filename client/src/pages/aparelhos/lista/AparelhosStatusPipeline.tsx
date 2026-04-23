@@ -33,7 +33,9 @@ export function AparelhosStatusPipeline({
           <span className="text-[10px] font-bold text-slate-500 uppercase font-condensed">
             Total
           </span>
-          <span className="text-lg font-black text-slate-800">{totalCount}</span>
+          <span className="text-lg font-black text-slate-800">
+            {totalCount}
+          </span>
         </div>
       </button>
       <button

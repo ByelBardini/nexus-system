@@ -1,4 +1,7 @@
-import type { StatusPedidoKey, StatusPedidoRastreador } from "@/types/pedidos-rastreador";
+import type {
+  StatusPedidoKey,
+  StatusPedidoRastreador,
+} from "@/types/pedidos-rastreador";
 
 export type { StatusPedidoKey } from "@/types/pedidos-rastreador";
 

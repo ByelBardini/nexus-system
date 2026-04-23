@@ -58,7 +58,8 @@ export function OrdensServicoCriacaoClienteSection({
               size="sm"
               className={cn(
                 "h-9 text-[11px] font-bold uppercase",
-                ordemInstalacao === "INFINITY" && "bg-erp-blue hover:bg-blue-700",
+                ordemInstalacao === "INFINITY" &&
+                  "bg-erp-blue hover:bg-blue-700",
               )}
               onClick={() => {
                 form.setValue("ordemInstalacao", "INFINITY");
@@ -75,7 +76,8 @@ export function OrdensServicoCriacaoClienteSection({
               size="sm"
               className={cn(
                 "h-9 text-[11px] font-bold uppercase",
-                ordemInstalacao === "CLIENTE" && "bg-erp-blue hover:bg-blue-700",
+                ordemInstalacao === "CLIENTE" &&
+                  "bg-erp-blue hover:bg-blue-700",
               )}
               onClick={() => {
                 form.setValue("ordemInstalacao", "CLIENTE");

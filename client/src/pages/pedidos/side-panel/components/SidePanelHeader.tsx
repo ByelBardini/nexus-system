@@ -62,9 +62,7 @@ export function SidePanelHeader({ pedido }: Props) {
             {pedido.endereco && (
               <div>
                 <p className="text-slate-500 mb-1">Endereço</p>
-                <p className="font-medium text-slate-700">
-                  {pedido.endereco}
-                </p>
+                <p className="font-medium text-slate-700">{pedido.endereco}</p>
               </div>
             )}
             {pedido.cpfCnpj && (

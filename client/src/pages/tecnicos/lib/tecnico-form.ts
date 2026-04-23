@@ -72,9 +72,7 @@ export function tecnicoToFormValues(t: Tecnico): TecnicoFormData {
     ),
     revisao: Math.round(tecnicoPrecoToNum(t.precos?.revisao) * 100),
     retirada: Math.round(tecnicoPrecoToNum(t.precos?.retirada) * 100),
-    deslocamento: Math.round(
-      tecnicoPrecoToNum(t.precos?.deslocamento) * 100,
-    ),
+    deslocamento: Math.round(tecnicoPrecoToNum(t.precos?.deslocamento) * 100),
   };
 }
 

@@ -3,7 +3,10 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MaterialIcon } from "@/components/MaterialIcon";
 import { cn } from "@/lib/utils";
-import type { KitComAparelhos, KitVinculado } from "../../shared/pedidos-config-types";
+import type {
+  KitComAparelhos,
+  KitVinculado,
+} from "../../shared/pedidos-config-types";
 import { SidePanelKitResumoAparelhos } from "./SidePanelKitResumoAparelhos";
 
 type Props = {
@@ -113,10 +116,7 @@ export function SidePanelKitsVinculados({
                           className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100"
                           aria-label="Remover kit"
                         >
-                          <MaterialIcon
-                            name="delete"
-                            className="text-base"
-                          />
+                          <MaterialIcon name="delete" className="text-base" />
                         </button>
                       )}
                     </div>

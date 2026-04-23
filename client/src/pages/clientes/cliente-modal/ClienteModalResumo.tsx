@@ -56,9 +56,7 @@ export function ClienteModalResumo({ resumoForm, resumoTipoContrato }: Props) {
             {TIPO_CONTRATO_LABEL[resumoTipoContrato]}
           </span>
         </div>
-        {(resumoForm.cep ||
-          resumoForm.logradouro ||
-          resumoForm.cidade) &&
+        {(resumoForm.cep || resumoForm.logradouro || resumoForm.cidade) &&
           enderecoTexto && (
             <div>
               <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
@@ -77,8 +75,8 @@ export function ClienteModalResumo({ resumoForm, resumoTipoContrato }: Props) {
         </div>
         <div className="mt-8 p-3 bg-blue-50 border border-blue-100 rounded-sm">
           <p className="text-[10px] text-blue-700 leading-tight">
-            Os contatos cadastrados serão utilizados para comunicação sobre ordens
-            de serviço.
+            Os contatos cadastrados serão utilizados para comunicação sobre
+            ordens de serviço.
           </p>
         </div>
       </div>

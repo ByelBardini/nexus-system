@@ -9,11 +9,7 @@ import {
 } from "@/components/ui/select";
 import { MaterialIcon } from "@/components/MaterialIcon";
 import { cn } from "@/lib/utils";
-import {
-  CATEGORIAS_FALHA,
-  DESTINOS_DEFEITO,
-  STATUS_CONFIG,
-} from "./constants";
+import { CATEGORIAS_FALHA, DESTINOS_DEFEITO, STATUS_CONFIG } from "./constants";
 import type { FormDataCadastroIndividual } from "./schema";
 import type { StatusAparelho } from "./constants";
 
@@ -31,10 +27,7 @@ export function DefinicaoStatusSection({
   return (
     <div className="bg-white border border-slate-200 rounded-sm p-6">
       <div className="flex items-center gap-2 mb-6 pb-2 border-b border-slate-100">
-        <MaterialIcon
-          name="settings_suggest"
-          className="text-erp-blue"
-        />
+        <MaterialIcon name="settings_suggest" className="text-erp-blue" />
         <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
           Definição de Status
         </h3>
@@ -60,18 +53,12 @@ export function DefinicaoStatusSection({
                             config.borderColor,
                             config.bgColor,
                             "ring-1",
-                            config.borderColor.replace(
-                              "border-",
-                              "ring-",
-                            ),
+                            config.borderColor.replace("border-", "ring-"),
                           )
                         : "border-slate-200 bg-slate-50 opacity-60 hover:opacity-80",
                     )}
                   >
-                    <MaterialIcon
-                      name={config.icon}
-                      className={config.color}
-                    />
+                    <MaterialIcon name={config.icon} className={config.color} />
                     <span
                       className={cn(
                         "text-[10px] font-bold uppercase",
@@ -95,10 +82,7 @@ export function DefinicaoStatusSection({
           <div className="p-4 bg-red-50 border border-red-100 rounded-sm grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <p className="text-[10px] font-bold text-red-800 uppercase mb-3 flex items-center gap-2">
-                <MaterialIcon
-                  name="report_problem"
-                  className="text-sm"
-                />
+                <MaterialIcon name="report_problem" className="text-sm" />
                 Detalhamento de Defeito Requerido
               </p>
             </div>
@@ -110,10 +94,7 @@ export function DefinicaoStatusSection({
                 name="categoriaFalha"
                 control={form.control}
                 render={({ field }) => (
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                  >
+                  <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger className="h-9 border-red-200">
                       <SelectValue />
                     </SelectTrigger>
@@ -136,10 +117,7 @@ export function DefinicaoStatusSection({
                 name="destinoDefeito"
                 control={form.control}
                 render={({ field }) => (
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                  >
+                  <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger className="h-9 border-red-200">
                       <SelectValue />
                     </SelectTrigger>

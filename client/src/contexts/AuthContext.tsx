@@ -7,7 +7,11 @@ import {
   type ReactNode,
 } from "react";
 import { api, setOnUnauthorized } from "@/lib/api";
-import type { AuthLoginApiResponse, AuthState, LoginResponse } from "@/types/auth";
+import type {
+  AuthLoginApiResponse,
+  AuthState,
+  LoginResponse,
+} from "@/types/auth";
 
 export type { AuthState, LoginResponse, User } from "@/types/auth";
 

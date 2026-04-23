@@ -1,9 +1,6 @@
 import { Fragment } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
-import {
-  TableCell,
-  TableRow,
-} from "@/components/ui/table";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { STATUS_CONFIG_APARELHO } from "@/lib/aparelho-status";
 import { parseDataLocal } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -132,9 +129,7 @@ export function AparelhoTableRow({
             <span className="font-mono text-xs text-blue-600">{vinculado}</span>
           ) : (
             <span className="text-xs text-slate-400 italic">
-              {aparelho.tipo === "RASTREADOR"
-                ? "Não vinculado"
-                : "Disponível"}
+              {aparelho.tipo === "RASTREADOR" ? "Não vinculado" : "Disponível"}
             </span>
           )}
         </TableCell>
@@ -177,10 +172,7 @@ export function AparelhoTableRow({
 
       {isExpanded && (
         <TableRow className="bg-slate-50">
-          <TableCell
-            colSpan={12}
-            className="border-b border-slate-200 p-0"
-          >
+          <TableCell colSpan={12} className="border-b border-slate-200 p-0">
             <AparelhoExpandedDetails
               aparelho={aparelho}
               kitsPorId={kitsPorId}

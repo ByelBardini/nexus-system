@@ -86,9 +86,7 @@ export function AparelhosPage() {
         totalPages={totalPages}
         kitsPorId={kitsPorId}
         expandedId={expandedId}
-        onToggleRow={(id) =>
-          setExpandedId((cur) => (cur === id ? null : id))
-        }
+        onToggleRow={(id) => setExpandedId((cur) => (cur === id ? null : id))}
         onPageChange={setPage}
       />
     </div>

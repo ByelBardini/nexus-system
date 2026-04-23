@@ -97,9 +97,7 @@ export function OperadorasTablePanel({
                     <span
                       className={cn(
                         "text-xs font-bold",
-                        operadora.ativo
-                          ? "text-slate-800"
-                          : "text-slate-500",
+                        operadora.ativo ? "text-slate-800" : "text-slate-500",
                       )}
                     >
                       {operadora.nome}
@@ -116,9 +114,7 @@ export function OperadorasTablePanel({
                       <span
                         className={cn(
                           "text-[10px] font-bold uppercase",
-                          operadora.ativo
-                            ? "text-slate-600"
-                            : "text-slate-400",
+                          operadora.ativo ? "text-slate-600" : "text-slate-400",
                         )}
                       >
                         {operadora.ativo ? "Ativo" : "Inativo"}
@@ -133,10 +129,7 @@ export function OperadorasTablePanel({
                             type="button"
                             className="text-slate-400 hover:text-slate-600"
                           >
-                            <MaterialIcon
-                              name="settings"
-                              className="text-lg"
-                            />
+                            <MaterialIcon name="settings" className="text-lg" />
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">

@@ -1,10 +1,5 @@
 import { Fragment } from "react";
-import {
-  CheckCircle,
-  ChevronDown,
-  ChevronUp,
-  X,
-} from "lucide-react";
+import { CheckCircle, ChevronDown, ChevronUp, X } from "lucide-react";
 import {
   Table,
   TableBody,

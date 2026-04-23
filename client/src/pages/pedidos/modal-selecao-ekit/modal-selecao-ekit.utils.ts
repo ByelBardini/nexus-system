@@ -1,4 +1,7 @@
-import type { PedidoRastreadorView, PedidoRastreadorApi } from "../shared/pedidos-rastreador.types";
+import type {
+  PedidoRastreadorView,
+  PedidoRastreadorApi,
+} from "../shared/pedidos-rastreador.types";
 import type {
   AparelhoNoKit,
   KitDetalhe,
@@ -124,10 +127,7 @@ export function buildAparelhosDisponiveisApiPath(
       String(filtrosPedido.modeloEquipamentoId),
     );
   if (filtrosPedido?.marcaEquipamentoId)
-    params.set(
-      "marcaEquipamentoId",
-      String(filtrosPedido.marcaEquipamentoId),
-    );
+    params.set("marcaEquipamentoId", String(filtrosPedido.marcaEquipamentoId));
   if (filtrosPedido?.operadoraId)
     params.set("operadoraId", String(filtrosPedido.operadoraId));
   const qs = params.toString();

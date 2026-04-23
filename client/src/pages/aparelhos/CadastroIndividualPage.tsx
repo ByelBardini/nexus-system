@@ -32,7 +32,9 @@ export function CadastroIndividualPage() {
   const canCreate = hasPermission("CONFIGURACAO.APARELHO.CRIAR");
 
   const form = useForm<FormDataCadastroIndividual>({
-    resolver: zodResolver(cadastroIndividualSchema) as Resolver<FormDataCadastroIndividual>,
+    resolver: zodResolver(
+      cadastroIndividualSchema,
+    ) as Resolver<FormDataCadastroIndividual>,
     defaultValues: cadastroIndividualDefaultValues,
   });
 
@@ -64,11 +66,8 @@ export function CadastroIndividualPage() {
     debitosQueryEnabled: watchTipo === "RASTREADOR",
   });
 
-  const {
-    createAparelhoMutation,
-    quantidadeCadastrada,
-    limparFormulario,
-  } = useCadastroIndividualAparelhoMutation(form, clientes);
+  const { createAparelhoMutation, quantidadeCadastrada, limparFormulario } =
+    useCadastroIndividualAparelhoMutation(form, clientes);
 
   const modelosDisponiveis = useMemo(
     () => getModelosDisponiveisPorMarcaNome(modelos, marcasAtivas, watchMarca),
@@ -78,9 +77,7 @@ export function CadastroIndividualPage() {
   const idJaExiste = useMemo(() => {
     if (!watchIdentificador.trim()) return null;
     const cleanId = watchIdentificador.replace(/\D/g, "");
-    const found = aparelhosExistentes.find(
-      (a) => a.identificador === cleanId,
-    );
+    const found = aparelhosExistentes.find((a) => a.identificador === cleanId);
     return found || null;
   }, [watchIdentificador, aparelhosExistentes]);
 

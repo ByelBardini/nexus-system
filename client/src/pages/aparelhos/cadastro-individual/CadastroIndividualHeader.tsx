@@ -27,7 +27,9 @@ export function CadastroIndividualHeader({
             <h1 className="text-lg font-bold text-slate-800">
               Cadastro Manual de Rastreador/Simcard
             </h1>
-            <p className="text-xs text-slate-500">Entrada individual de equipamentos</p>
+            <p className="text-xs text-slate-500">
+              Entrada individual de equipamentos
+            </p>
           </div>
         </div>
       </div>

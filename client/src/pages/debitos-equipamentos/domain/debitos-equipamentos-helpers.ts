@@ -75,7 +75,9 @@ export interface DebitosEquipamentosFilters {
 }
 
 export function buildOpcoesDevedorCredor(debitos: DebitoEquipamento[]) {
-  const nomes = new Set(debitos.flatMap((d) => [d.devedor.nome, d.credor.nome]));
+  const nomes = new Set(
+    debitos.flatMap((d) => [d.devedor.nome, d.credor.nome]),
+  );
   return [
     { value: "", label: "Todos" },
     ...[...nomes].map((n) => ({ value: n, label: n })),
@@ -114,9 +116,6 @@ export function filterDebitosEquipamentos(
 
 export function hasFiltrosAtivos(f: DebitosEquipamentosFilters): boolean {
   return Boolean(
-    f.busca ||
-      f.filtroDevedor ||
-      f.filtroModelo ||
-      f.filtroStatus !== "todos",
+    f.busca || f.filtroDevedor || f.filtroModelo || f.filtroStatus !== "todos",
   );
 }

@@ -1,7 +1,4 @@
-import type {
-  EquipamentoListItem,
-  EquipamentoPipelineFilter,
-} from "@/types/equipamentos-lista";
+import type { EquipamentoListItem } from "@/types/equipamentos-lista";
 
 export type {
   EquipamentoListItem,

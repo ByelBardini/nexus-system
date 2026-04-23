@@ -124,7 +124,10 @@ export function EquipamentosPageToolbar({
         </div>
         {canCreate && (
           <>
-            <Link to="/equipamentos/pareamento" data-testid="equipamentos-link-montar">
+            <Link
+              to="/equipamentos/pareamento"
+              data-testid="equipamentos-link-montar"
+            >
               <Button
                 variant="outline"
                 className="text-[11px] font-bold uppercase"

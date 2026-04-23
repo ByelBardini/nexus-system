@@ -1,4 +1,7 @@
-import type { PedidoRastreadorApi, PedidoRastreadorView } from "@/types/pedidos-rastreador";
+import type {
+  PedidoRastreadorApi,
+  PedidoRastreadorView,
+} from "@/types/pedidos-rastreador";
 import { URGENCIA_LABELS, STATUS_TO_KEY } from "./pedidos-rastreador-kanban";
 
 export function mapPedidoToView(p: PedidoRastreadorApi): PedidoRastreadorView {

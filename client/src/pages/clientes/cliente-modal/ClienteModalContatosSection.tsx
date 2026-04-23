@@ -41,7 +41,8 @@ export function ClienteModalContatosSection({
         <div className="bg-slate-100 border border-dashed border-slate-300 rounded p-6 text-center">
           <p className="text-sm text-slate-500">Nenhum contato adicionado</p>
           <p className="text-xs text-slate-400 mt-1">
-            Clique em &quot;Adicionar Contato&quot; para incluir meios de contato
+            Clique em &quot;Adicionar Contato&quot; para incluir meios de
+            contato
           </p>
         </div>
       ) : (

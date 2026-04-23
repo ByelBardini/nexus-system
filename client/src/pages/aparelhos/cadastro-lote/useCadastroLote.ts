@@ -14,7 +14,11 @@ import {
 } from "@/pages/aparelhos/shared/catalog.helpers";
 import { filterDebitosRastreadores } from "@/pages/aparelhos/shared/debito-rastreador";
 import { buildLotePostBody } from "./build-lote-post-body";
-import { loteFormDefaultValues, loteFormSchema, type LoteFormValues } from "./schema";
+import {
+  loteFormDefaultValues,
+  loteFormSchema,
+  type LoteFormValues,
+} from "./schema";
 import { validateLoteIds } from "./validate-lote-ids";
 
 export function useCadastroLote() {

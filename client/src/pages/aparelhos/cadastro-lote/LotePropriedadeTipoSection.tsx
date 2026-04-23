@@ -197,13 +197,17 @@ export function LotePropriedadeTipoSection({
                     name="sim_card"
                     className={cn(
                       "text-3xl",
-                      field.value === "SIM" ? "text-erp-blue" : "text-slate-400",
+                      field.value === "SIM"
+                        ? "text-erp-blue"
+                        : "text-slate-400",
                     )}
                   />
                   <span
                     className={cn(
                       "text-xs font-bold uppercase",
-                      field.value === "SIM" ? "text-blue-800" : "text-slate-500",
+                      field.value === "SIM"
+                        ? "text-blue-800"
+                        : "text-slate-500",
                     )}
                   >
                     Simcard

@@ -29,12 +29,11 @@ export function useOrdensServicoPage() {
   const canCreate = hasPermission("AGENDAMENTO.OS.CRIAR");
   const canEditOs = hasPermission("AGENDAMENTO.OS.EDITAR");
 
-  const { data: resumo, isLoading: loadingResumo } = useQuery<OrdensServicoResumo>(
-    {
+  const { data: resumo, isLoading: loadingResumo } =
+    useQuery<OrdensServicoResumo>({
       queryKey: ["ordens-servico", "resumo"],
       queryFn: () => api("/ordens-servico/resumo"),
-    },
-  );
+    });
 
   const { data: lista, isLoading: loadingLista } =
     useQuery<OrdensServicoPaginatedResult>({

@@ -56,10 +56,7 @@ export function OrigemRastreabilidadeSection({
                   form.setValue("clienteId", null);
                   form.setValue("notaFiscal", "");
                   const currentStatus = form.getValues("status");
-                  if (
-                    v === "COMPRA_AVULSA" &&
-                    currentStatus !== "NOVO_OK"
-                  )
+                  if (v === "COMPRA_AVULSA" && currentStatus !== "NOVO_OK")
                     form.setValue("status", "NOVO_OK");
                   if (
                     (v === "RETIRADA_CLIENTE" || v === "DEVOLUCAO_TECNICO") &&
@@ -135,10 +132,7 @@ export function OrigemRastreabilidadeSection({
                           : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100",
                       )}
                     >
-                      <MaterialIcon
-                        name="business"
-                        className="text-sm"
-                      />
+                      <MaterialIcon name="business" className="text-sm" />
                       Infinity
                     </button>
                     <button
@@ -181,10 +175,7 @@ export function OrigemRastreabilidadeSection({
             </>
           ) : (
             <div className="flex items-center gap-2 p-3 bg-slate-50 border border-slate-200 rounded-sm">
-              <MaterialIcon
-                name="info"
-                className="text-slate-400 text-sm"
-              />
+              <MaterialIcon name="info" className="text-slate-400 text-sm" />
               <span className="text-xs text-slate-500">
                 Simcards são sempre registrados no estoque da Infinity
               </span>

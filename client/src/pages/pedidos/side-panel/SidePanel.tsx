@@ -1,8 +1,5 @@
 import { useState } from "react";
-import {
-  Sheet,
-  SheetContent,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
 import type { KitResumo, KitVinculado } from "../shared/pedidos-config-types";
 import { ModalSelecaoEKit } from "../modal-selecao-ekit/ModalSelecaoEKit";
@@ -47,9 +44,8 @@ export function SidePanel({
 
   const { hasPermission } = useAuth();
   const podeEditar = hasPermission("AGENDAMENTO.PEDIDO_RASTREADOR.EDITAR");
-  const { kitIdsMutation, statusMutation } = useSidePanelMutations(
-    onStatusUpdated,
-  );
+  const { kitIdsMutation, statusMutation } =
+    useSidePanelMutations(onStatusUpdated);
 
   const { data: kitDetalhes, isLoading: carregandoDetalhes } =
     useKitComAparelhosQuery(detalhesKitId, open && detalhesKitId != null);
@@ -67,11 +63,7 @@ export function SidePanel({
   function handleAvançar() {
     if (!deriv.proximoStatus) return;
     statusMutation.mutate(
-      buildAvançarStatusPayload(
-        p,
-        deriv.proximoStatus,
-        kitsVinculados,
-      ),
+      buildAvançarStatusPayload(p, deriv.proximoStatus, kitsVinculados),
     );
   }
 

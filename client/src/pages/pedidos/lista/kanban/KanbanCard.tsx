@@ -103,10 +103,7 @@ export function KanbanCard({
         )}
       </div>
       {pedido.tipo === "misto" && pedido.itensMisto && (
-        <PedidoMistoChips
-          itens={pedido.itensMisto}
-          className="mb-2"
-        />
+        <PedidoMistoChips itens={pedido.itensMisto} className="mb-2" />
       )}
       {pedido.endereco && (
         <p

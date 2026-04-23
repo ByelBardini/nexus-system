@@ -104,11 +104,7 @@ export function filterAparelhos(
       (a.tipo === "SIM" && a.operadora === f.marcaFilter);
 
     return (
-      matchBusca &&
-      matchStatus &&
-      matchTipo &&
-      matchProprietario &&
-      matchMarca
+      matchBusca && matchStatus && matchTipo && matchProprietario && matchMarca
     );
   });
 }

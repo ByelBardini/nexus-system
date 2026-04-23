@@ -77,9 +77,7 @@ export function filterEquipamentosList(
     const matchBusca =
       !buscaNorm ||
       e.identificador?.toLowerCase().includes(buscaNorm) ||
-      e.simVinculado?.identificador
-        ?.toLowerCase()
-        .includes(buscaNorm) ||
+      e.simVinculado?.identificador?.toLowerCase().includes(buscaNorm) ||
       e.tecnico?.nome?.toLowerCase().includes(buscaNorm) ||
       e.kitId?.toString().includes(buscaRaw) ||
       e.lote?.referencia?.toLowerCase().includes(buscaNorm);
@@ -109,7 +107,7 @@ export function resolveKitNomeEquipamento(
   e: EquipamentoListItem,
   kitsPorId: Map<number, string>,
 ): string | null {
-  return e.kit?.nome ?? (e.kitId ? kitsPorId.get(e.kitId) ?? null : null);
+  return e.kit?.nome ?? (e.kitId ? (kitsPorId.get(e.kitId) ?? null) : null);
 }
 
 export function formatMarcaModeloEquipamento(e: EquipamentoListItem): string {
@@ -117,9 +115,7 @@ export function formatMarcaModeloEquipamento(e: EquipamentoListItem): string {
 }
 
 export function proprietarioLabelEquipamento(e: EquipamentoListItem): string {
-  return (
-    e.cliente?.nome ?? (e.proprietario === "INFINITY" ? "Infinity" : "-")
-  );
+  return e.cliente?.nome ?? (e.proprietario === "INFINITY" ? "Infinity" : "-");
 }
 
 /** Texto operadora · marca sim · plano (para colunas e painel). */
@@ -150,8 +146,7 @@ export function getEquipamentoStatusPresentation(
       kind: "em_kit",
       label: "Em Kit",
       dotClass: "bg-purple-500",
-      badgeClass:
-        "bg-purple-50 text-purple-700 border-purple-200",
+      badgeClass: "bg-purple-50 text-purple-700 border-purple-200",
       headerIcon: "🟣",
     };
   }

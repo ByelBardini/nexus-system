@@ -30,8 +30,7 @@ export function usePareamentoCatalogDerivados(input: {
   } = input;
 
   const modelosPorMarca = useMemo(
-    () =>
-      filterModelosPorNomeMarca(marcaRastreador, marcasAtivas, modelos),
+    () => filterModelosPorNomeMarca(marcaRastreador, marcasAtivas, modelos),
     [marcaRastreador, marcasAtivas, modelos],
   );
 

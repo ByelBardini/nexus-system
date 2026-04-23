@@ -25,13 +25,12 @@ export function useOrdensServicoCriacaoDerivedState(
   );
 }
 
-export function useCriacaoOsWatchedForSidebar(control: Control<CriacaoOsFormData>) {
+export function useCriacaoOsWatchedForSidebar(
+  control: Control<CriacaoOsFormData>,
+) {
   const watchedFields = useWatch({
     control,
     name: [...criacaoOsWatchFieldList],
   });
-  return useMemo(
-    () => mapCriacaoOsWatchFields(watchedFields),
-    [watchedFields],
-  );
+  return useMemo(() => mapCriacaoOsWatchFields(watchedFields), [watchedFields]);
 }

@@ -1,9 +1,6 @@
 import { Fragment } from "react";
 import { MaterialIcon } from "@/components/MaterialIcon";
-import {
-  TableCell,
-  TableRow,
-} from "@/components/ui/table";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { formatarDataHora } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { EquipamentoListItem } from "../equipamentos-page.shared";

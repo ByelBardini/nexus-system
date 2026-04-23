@@ -61,20 +61,15 @@ export function useEquipamentosMarcasSimcardListQuery<TMarcaSim = unknown>(
 ) {
   const { operadoraId, queryEnabled } = options;
 
-  const { data: marcasSimcard = [], isLoading: loadingMarcasSimcard } = useQuery<
-    TMarcaSim[]
-  >({
-    queryKey: equipamentosQueryKeys.marcasSimcardScoped(
-      operadoraId ?? "all",
-    ),
-    queryFn: () =>
-      operadoraId
-        ? api(
-            `/equipamentos/marcas-simcard?operadoraId=${operadoraId}`,
-          )
-        : api("/equipamentos/marcas-simcard"),
-    enabled: queryEnabled,
-  });
+  const { data: marcasSimcard = [], isLoading: loadingMarcasSimcard } =
+    useQuery<TMarcaSim[]>({
+      queryKey: equipamentosQueryKeys.marcasSimcardScoped(operadoraId ?? "all"),
+      queryFn: () =>
+        operadoraId
+          ? api(`/equipamentos/marcas-simcard?operadoraId=${operadoraId}`)
+          : api("/equipamentos/marcas-simcard"),
+      enabled: queryEnabled,
+    });
 
   return { marcasSimcard, loadingMarcasSimcard };
 }
@@ -115,16 +110,18 @@ export function useEquipamentosFullCatalogQueries<
     enabled,
   });
 
-  const { data: marcasSimcard = [], isLoading: loadingMarcasSimcard } = useQuery<
-    TMarcaSim[]
-  >({
-    queryKey: equipamentosQueryKeys.marcasSimcard,
-    queryFn: () => api("/equipamentos/marcas-simcard"),
-    enabled,
-  });
+  const { data: marcasSimcard = [], isLoading: loadingMarcasSimcard } =
+    useQuery<TMarcaSim[]>({
+      queryKey: equipamentosQueryKeys.marcasSimcard,
+      queryFn: () => api("/equipamentos/marcas-simcard"),
+      enabled,
+    });
 
   const isLoading =
-    loadingMarcas || loadingModelos || loadingOperadoras || loadingMarcasSimcard;
+    loadingMarcas ||
+    loadingModelos ||
+    loadingOperadoras ||
+    loadingMarcasSimcard;
 
   return {
     marcas,

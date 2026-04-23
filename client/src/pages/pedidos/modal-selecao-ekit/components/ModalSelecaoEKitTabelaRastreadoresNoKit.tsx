@@ -1,5 +1,11 @@
-import type { PedidoRastreadorApi, AparelhosDestinatariosResponse } from "../../shared/pedidos-rastreador.types";
-import type { AparelhoNoKit, KitComAparelhos } from "../../shared/pedidos-config-types";
+import type {
+  PedidoRastreadorApi,
+  AparelhosDestinatariosResponse,
+} from "../../shared/pedidos-rastreador.types";
+import type {
+  AparelhoNoKit,
+  KitComAparelhos,
+} from "../../shared/pedidos-config-types";
 import { getDestinatarioExibicaoAparelhoNoKit } from "../../shared/aparelho-destinatario";
 
 export interface ModalSelecaoEKitTabelaRastreadoresNoKitProps {
@@ -94,8 +100,8 @@ export function ModalSelecaoEKitTabelaRastreadoresNoKit({
                   ? asg.destinatarioProprietario === "INFINITY"
                     ? "Infinity"
                     : (pedidoApi?.itens?.find(
-                      (i) => i.clienteId === asg.destinatarioClienteId,
-                    )?.cliente?.nome ?? `#${asg.destinatarioClienteId}`)
+                        (i) => i.clienteId === asg.destinatarioClienteId,
+                      )?.cliente?.nome ?? `#${asg.destinatarioClienteId}`)
                   : null;
                 return (
                   <tr key={a.id} className="border-b border-slate-100">

@@ -1,4 +1,8 @@
-import type { MarcaCatalog, MarcaModeloCatalog, MarcaSimcardRow } from "./catalog.types";
+import type {
+  MarcaCatalog,
+  MarcaModeloCatalog,
+  MarcaSimcardRow,
+} from "./catalog.types";
 
 /**
  * Rastreadores: marca e modelo no form são **nomes**; obtém o par de ids para filtro de débito.
@@ -36,9 +40,7 @@ export function getModelosDisponiveisPorMarcaNome(
   if (!watchMarca) return [];
   const marcaEncontrada = marcasAtivas.find((m) => m.nome === watchMarca);
   if (!marcaEncontrada) return [];
-  return modelos.filter(
-    (m) => m.marca.id === marcaEncontrada.id && m.ativo,
-  );
+  return modelos.filter((m) => m.marca.id === marcaEncontrada.id && m.ativo);
 }
 
 export function getModelosDisponiveisPorMarcaId(

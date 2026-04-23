@@ -35,7 +35,9 @@ export function ExcluirPedidoConfirmDialog({
               name="delete_forever"
               className="text-red-600 text-lg"
             />
-            <h2 className="text-base font-bold text-slate-800">Excluir pedido</h2>
+            <h2 className="text-base font-bold text-slate-800">
+              Excluir pedido
+            </h2>
           </div>
           <button
             type="button"

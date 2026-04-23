@@ -1,4 +1,7 @@
-import type { PedidoRastreadorApi, PedidoRastreadorView } from "@/types/pedidos-rastreador";
+import type {
+  PedidoRastreadorApi,
+  PedidoRastreadorView,
+} from "@/types/pedidos-rastreador";
 import type { KitResumo, KitVinculado } from "@/types/pedidos-config";
 
 export interface ModalSelecaoEKitFiltrosPedido {

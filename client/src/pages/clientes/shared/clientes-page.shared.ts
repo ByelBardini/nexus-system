@@ -20,7 +20,10 @@ export type {
 /** Tamanho da página na listagem de clientes. */
 export const CLIENTES_PAGE_SIZE = 10;
 
-export const TIPO_CONTRATO_VALUES = ["COMODATO", "AQUISICAO"] as const satisfies readonly TipoContrato[];
+export const TIPO_CONTRATO_VALUES = [
+  "COMODATO",
+  "AQUISICAO",
+] as const satisfies readonly TipoContrato[];
 
 export const STATUS_CLIENTE_VALUES = [
   "ATIVO",
@@ -53,11 +56,10 @@ export const TIPO_CONTRATO_BADGE_CLASS: Record<TipoContrato, string> = {
 };
 
 /** Quadrado da legenda do rodapé (cores alinhadas ao badge). */
-export const TIPO_CONTRATO_LEGEND_SWATCH_CLASS: Record<TipoContrato, string> =
-  {
-    COMODATO: "bg-amber-100 border-amber-300",
-    AQUISICAO: "bg-indigo-100 border-indigo-300",
-  };
+export const TIPO_CONTRATO_LEGEND_SWATCH_CLASS: Record<TipoContrato, string> = {
+  COMODATO: "bg-amber-100 border-amber-300",
+  AQUISICAO: "bg-indigo-100 border-indigo-300",
+};
 
 export const FILTRO_TIPO_CONTRATO_OPTIONS: { value: string; label: string }[] =
   [
@@ -80,11 +82,13 @@ export const STATUS_FORM_OPTIONS: { value: StatusCliente; label: string }[] =
     label: STATUS_CLIENTE_LABEL[v],
   }));
 
-export const TIPO_CONTRATO_SELECT_OPTIONS: { value: TipoContrato; label: string }[] =
-  TIPO_CONTRATO_VALUES.map((v) => ({
-    value: v,
-    label: TIPO_CONTRATO_LABEL[v],
-  }));
+export const TIPO_CONTRATO_SELECT_OPTIONS: {
+  value: TipoContrato;
+  label: string;
+}[] = TIPO_CONTRATO_VALUES.map((v) => ({
+  value: v,
+  label: TIPO_CONTRATO_LABEL[v],
+}));
 
 export const contatoSchema = z.object({
   id: z.number().optional(),
@@ -238,9 +242,7 @@ export function formatClienteEnderecoLinhaLista(
 ): string {
   let s = [
     c.logradouro,
-    c.numero != null && String(c.numero).trim() !== ""
-      ? `nº ${c.numero}`
-      : "",
+    c.numero != null && String(c.numero).trim() !== "" ? `nº ${c.numero}` : "",
     c.complemento,
   ]
     .filter(Boolean)

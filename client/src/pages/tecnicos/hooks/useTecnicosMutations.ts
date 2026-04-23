@@ -4,10 +4,7 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { tecnicosResumoQueryKey } from "@/hooks/useTecnicosResumoQuery";
 import type { TecnicoMutationsCallbacks } from "@/types/tecnicos";
-import {
-  buildTecnicoApiBody,
-  type TecnicoFormData,
-} from "../lib/tecnico-form";
+import { buildTecnicoApiBody, type TecnicoFormData } from "../lib/tecnico-form";
 
 export type { TecnicoMutationsCallbacks };
 
@@ -26,8 +23,7 @@ export function useTecnicosMutations(options?: TecnicoMutationsCallbacks) {
       queryClient.invalidateQueries({ queryKey: [...tecnicosResumoQueryKey] });
       toast.success("Status atualizado");
     },
-    onError: (err) =>
-      toast.error(err instanceof Error ? err.message : "Erro"),
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Erro"),
   });
 
   const createMutation = useMutation({
@@ -42,9 +38,7 @@ export function useTecnicosMutations(options?: TecnicoMutationsCallbacks) {
       toast.success("Técnico criado com sucesso");
     },
     onError: (err) =>
-      toast.error(
-        err instanceof Error ? err.message : "Erro ao criar técnico",
-      ),
+      toast.error(err instanceof Error ? err.message : "Erro ao criar técnico"),
   });
 
   const updateMutation = useMutation({

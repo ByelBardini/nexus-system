@@ -1,6 +1,9 @@
 import { placaApenasAlfanumericos, telefoneApenasDigitos } from "@/lib/format";
 import type { PrecheckCriacaoOsResult } from "@/types/ordens-servico-criacao";
-import type { CriarOrdemServicoPayload, SubclienteEnderecoInput } from "./ordens-servico-criacao.types";
+import type {
+  CriarOrdemServicoPayload,
+  SubclienteEnderecoInput,
+} from "./ordens-servico-criacao.types";
 import type { CriacaoOsFormData } from "./ordens-servico-criacao.schema";
 
 export type { PrecheckCriacaoOsResult };
@@ -23,9 +26,7 @@ export function resolveSubclienteIdFromForm(
     : undefined;
 }
 
-function cobrancaFromForm(
-  data: CriacaoOsFormData,
-): string | undefined {
+function cobrancaFromForm(data: CriacaoOsFormData): string | undefined {
   return data.ordemInstalacao === "INFINITY"
     ? "INFINITY"
     : data.subclienteCobranca || undefined;
@@ -136,7 +137,9 @@ export function buildCriarOrdemServicoPayload(
   };
 }
 
-export function hasVeiculoDataCompletoParaApi(data: CriacaoOsFormData): boolean {
+export function hasVeiculoDataCompletoParaApi(
+  data: CriacaoOsFormData,
+): boolean {
   const placa = placaApenasAlfanumericos(data.veiculoPlaca ?? "");
   return (
     placa.length >= 7 &&

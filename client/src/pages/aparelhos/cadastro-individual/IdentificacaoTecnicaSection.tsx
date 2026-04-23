@@ -24,7 +24,10 @@ type IdentificacaoTecnicaSectionProps = {
   watchMarca: string;
   watchOperadora: string;
   watchIdentificador: string;
-  idJaExiste: { identificador: string; lote?: { referencia: string } | null } | null;
+  idJaExiste: {
+    identificador: string;
+    lote?: { referencia: string } | null;
+  } | null;
   idValido: boolean;
   marcasAtivas: MarcaCatalog[];
   modelosDisponiveis: MarcaModeloCatalog[];
@@ -306,10 +309,7 @@ export function IdentificacaoTecnicaSection({
                           </SelectTrigger>
                           <SelectContent>
                             {planos.map((p) => (
-                              <SelectItem
-                                key={p.id}
-                                value={String(p.id)}
-                              >
+                              <SelectItem key={p.id} value={String(p.id)}>
                                 {p.planoMb} MB
                               </SelectItem>
                             ))}

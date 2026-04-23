@@ -18,12 +18,11 @@ export function useNovoPedidoRastreadorCatalogs(open: boolean) {
     useClientesComSubclientesQuery({ enabled: open });
   const clientes = clientesData as ClienteComSubclientes[];
 
-  const { marcas, modelos, operadoras } =
-    useEquipamentosTrioCatalogQueries<
-      { id: number; nome: string },
-      ModeloItem,
-      { id: number; nome: string }
-    >({ enabled: open });
+  const { marcas, modelos, operadoras } = useEquipamentosTrioCatalogQueries<
+    { id: number; nome: string },
+    ModeloItem,
+    { id: number; nome: string }
+  >({ enabled: open });
 
   const modelosRaw = modelos;
   return {

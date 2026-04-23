@@ -3,7 +3,9 @@ import type { FormNovoPedido } from "./novo-pedido-rastreador.schema";
 /**
  * Corpo JSON para POST /pedidos-rastreadores (alinhado ao que o modal enviava).
  */
-export function buildNovoPedidoRastreadorPostJson(data: FormNovoPedido): object {
+export function buildNovoPedidoRastreadorPostJson(
+  data: FormNovoPedido,
+): object {
   if (data.tipoDestino === "MISTO") {
     return {
       tipoDestino: "MISTO",
@@ -13,8 +15,7 @@ export function buildNovoPedidoRastreadorPostJson(data: FormNovoPedido): object 
       observacao: data.observacao ?? undefined,
       itens: data.itensMisto?.map((item) => ({
         proprietario: item.proprietario,
-        clienteId:
-          item.proprietario === "CLIENTE" ? item.clienteId : undefined,
+        clienteId: item.proprietario === "CLIENTE" ? item.clienteId : undefined,
         quantidade: item.quantidade,
         marcaEquipamentoId: data.marcaModeloEspecifico
           ? data.marcaEquipamentoId
@@ -42,8 +43,7 @@ export function buildNovoPedidoRastreadorPostJson(data: FormNovoPedido): object 
   return {
     tipoDestino: data.tipoDestino,
     tecnicoId: data.tipoDestino === "TECNICO" ? data.tecnicoId : undefined,
-    clienteId:
-      data.tipoDestino === "CLIENTE" && isCliente ? id : undefined,
+    clienteId: data.tipoDestino === "CLIENTE" && isCliente ? id : undefined,
     subclienteId:
       data.tipoDestino === "CLIENTE" && isSubcliente ? id : undefined,
     dataSolicitacao: data.dataSolicitacao,

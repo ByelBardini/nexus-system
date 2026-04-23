@@ -29,7 +29,8 @@ const STAGES: StageDef[] = [
       "pipeline-item flex-1 bg-slate-50 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors",
     labelClass: "text-[10px] font-bold text-slate-500 uppercase font-condensed",
     borderBarClass: "border-l-4 border-erp-blue pl-2",
-    activeBorderClass: "border-t-2 border-b-2 border-t-blue-500 border-b-blue-500",
+    activeBorderClass:
+      "border-t-2 border-b-2 border-t-blue-500 border-b-blue-500",
   },
   {
     filter: "CONFIGURADO",
@@ -39,7 +40,8 @@ const STAGES: StageDef[] = [
       "pipeline-item flex-1 bg-blue-100 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors",
     labelClass: "text-[10px] font-bold text-slate-600 uppercase font-condensed",
     borderBarClass: "border-l-4 border-erp-blue pl-2",
-    activeBorderClass: "border-t-2 border-b-2 border-t-blue-500 border-b-blue-500",
+    activeBorderClass:
+      "border-t-2 border-b-2 border-t-blue-500 border-b-blue-500",
   },
   {
     filter: "EM_KIT",

@@ -72,7 +72,9 @@ export function TecnicosPage() {
   if (isError) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-12">
-        <p className="text-destructive font-medium">Erro ao carregar técnicos</p>
+        <p className="text-destructive font-medium">
+          Erro ao carregar técnicos
+        </p>
         <p className="text-sm text-muted-foreground text-center max-w-md">
           {error instanceof Error ? error.message : "Erro desconhecido."}
         </p>

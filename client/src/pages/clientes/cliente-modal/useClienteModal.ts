@@ -55,7 +55,7 @@ export function useClienteModal({
     } else {
       form.reset(getDefaultClienteFormValues());
     }
-  }, [open, resetKey, editingCliente, form.reset]);
+  }, [open, resetKey, editingCliente, form]);
 
   useEffect(() => {
     if (!open) {

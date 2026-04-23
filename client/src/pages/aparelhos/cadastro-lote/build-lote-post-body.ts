@@ -56,7 +56,8 @@ export function buildLotePostBody(
     clienteId: data.clienteId,
     tipo: data.tipo,
     marca: data.tipo === "RASTREADOR" ? (marcaSelecionada?.nome ?? null) : null,
-    modelo: data.tipo === "RASTREADOR" ? (modeloSelecionado?.nome ?? null) : null,
+    modelo:
+      data.tipo === "RASTREADOR" ? (modeloSelecionado?.nome ?? null) : null,
     operadora:
       data.tipo === "SIM" ? (operadoraSelecionada?.nome ?? null) : null,
     marcaSimcardId:

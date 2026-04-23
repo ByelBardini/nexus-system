@@ -54,10 +54,7 @@ export function NovoPedidoResumosInformativos({
                 {quantidade} unidades
               </span>{" "}
               para{" "}
-              <span className="font-bold">
-                {nomeDestinatario ?? "..."}
-              </span>
-              .
+              <span className="font-bold">{nomeDestinatario ?? "..."}</span>.
             </p>
           </div>
         )}

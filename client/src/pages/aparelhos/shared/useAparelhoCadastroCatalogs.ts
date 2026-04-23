@@ -26,20 +26,18 @@ export function useAparelhoCadastroCatalogs(options: {
   operadora: OperadoraSelecionadaInput;
   debitosQueryEnabled: boolean;
 }) {
-  const { marcasSimcardQueryEnabled, operadora, debitosQueryEnabled } =
-    options;
+  const { marcasSimcardQueryEnabled, operadora, debitosQueryEnabled } = options;
 
   const { data: clientes = [] } = useQuery<ClienteLista[]>({
     queryKey: ["clientes-lista"],
     queryFn: () => api("/clientes"),
   });
 
-  const { marcas, modelos, operadoras } =
-    useEquipamentosTrioCatalogQueries<
-      MarcaCatalog,
-      MarcaModeloCatalog,
-      OperadoraCatalog
-    >();
+  const { marcas, modelos, operadoras } = useEquipamentosTrioCatalogQueries<
+    MarcaCatalog,
+    MarcaModeloCatalog,
+    OperadoraCatalog
+  >();
 
   const operadoraIdParaMarcasSimcard = useMemo(
     () =>
@@ -51,10 +49,11 @@ export function useAparelhoCadastroCatalogs(options: {
     [operadoras, operadora.value, operadora.idMode],
   );
 
-  const { marcasSimcard } = useEquipamentosMarcasSimcardListQuery<MarcaSimcardRow>({
-    operadoraId: operadoraIdParaMarcasSimcard,
-    queryEnabled: marcasSimcardQueryEnabled,
-  });
+  const { marcasSimcard } =
+    useEquipamentosMarcasSimcardListQuery<MarcaSimcardRow>({
+      operadoraId: operadoraIdParaMarcasSimcard,
+      queryEnabled: marcasSimcardQueryEnabled,
+    });
 
   const { data: debitosData } = useQuery<{ data: DebitoRastreadorApi[] }>({
     queryKey: ["debitos-rastreadores", "aberto"],

@@ -59,7 +59,10 @@ export function useClientesPageList() {
     });
   }, [clientes, busca, filtroTipoContrato, filtroEstoque]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / CLIENTES_PAGE_SIZE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filtered.length / CLIENTES_PAGE_SIZE),
+  );
 
   const paginated = useMemo(() => {
     const start = page * CLIENTES_PAGE_SIZE;

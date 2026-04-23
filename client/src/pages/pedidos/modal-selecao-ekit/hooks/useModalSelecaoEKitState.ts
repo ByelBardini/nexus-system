@@ -13,11 +13,11 @@ export function useModalSelecaoEKitState(
     () =>
       open && kitParaEditar
         ? {
-          id: kitParaEditar.id,
-          nome: kitParaEditar.nome,
-          criadoEm: "",
-          aparelhos: [],
-        }
+            id: kitParaEditar.id,
+            nome: kitParaEditar.nome,
+            criadoEm: "",
+            aparelhos: [],
+          }
         : null,
   );
   const [filtroBusca, setFiltroBusca] = useState("");
@@ -54,7 +54,7 @@ export function useModalSelecaoEKitState(
         aparelhos: [],
       };
     });
-  }, [open, kitParaEditar?.id, kitParaEditar?.nome]);
+  }, [open, kitParaEditar]);
 
   function limparFiltrosListaAparelhos() {
     setBuscaAparelho("");

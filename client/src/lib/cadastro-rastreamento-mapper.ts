@@ -2,7 +2,11 @@ import {
   labelTipoServico,
   mapTipoOsParaRegistro,
 } from "@/lib/cadastro-rastreamento-tipo-mappers";
-import type { AparelhoCadastroRastreamentoResposta, OSResponse, OrdemCadastro } from "@/types/cadastro-rastreamento";
+import type {
+  AparelhoCadastroRastreamentoResposta,
+  OSResponse,
+  OrdemCadastro,
+} from "@/types/cadastro-rastreamento";
 import { formatarDataHoraCurta } from "@/lib/format";
 import { getCadastroMapDeviceFields } from "@/lib/os-revisao-display";
 

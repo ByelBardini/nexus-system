@@ -13,7 +13,10 @@ import {
   type DebitosEquipamentosFilters,
 } from "../domain/debitos-equipamentos-helpers";
 import { mapDebitoApiToView } from "../domain/mapDebitoApiToView";
-import type { DebitosEquipamentosApiResponse, StatusDebito } from "../domain/types";
+import type {
+  DebitosEquipamentosApiResponse,
+  StatusDebito,
+} from "../domain/types";
 
 export function useDebitosEquipamentos() {
   const [expandedId, setExpandedId] = useState<number | null>(null);

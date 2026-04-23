@@ -9,7 +9,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MaterialIcon } from "@/components/MaterialIcon";
 import { cn } from "@/lib/utils";
-import type { MarcaRastreador, ModeloRastreador } from "../domain/equipamentos-config.types";
+import type {
+  MarcaRastreador,
+  ModeloRastreador,
+} from "../domain/equipamentos-config.types";
 import type { UseMutationResult } from "@tanstack/react-query";
 
 type MarcaM = MarcaRastreador;
@@ -151,9 +154,7 @@ export function MarcasModelosPanel({
                           onClick={() => onToggleAtivoMarca(marca)}
                         >
                           <MaterialIcon
-                            name={
-                              marca.ativo ? "visibility_off" : "visibility"
-                            }
+                            name={marca.ativo ? "visibility_off" : "visibility"}
                             className="mr-2 text-base"
                           />
                           {marca.ativo ? "Desativar" : "Ativar"}
@@ -189,10 +190,7 @@ export function MarcasModelosPanel({
                             onOpenCreateModelo(marca.id);
                           }}
                         >
-                          <MaterialIcon
-                            name="add"
-                            className="text-sm mr-1"
-                          />
+                          <MaterialIcon name="add" className="text-sm mr-1" />
                           Novo Modelo
                         </Button>
                       </div>
@@ -284,10 +282,7 @@ export function MarcasModelosPanel({
                             onOpenCreateModelo(marca.id);
                           }}
                         >
-                          <MaterialIcon
-                            name="add"
-                            className="text-sm mr-1"
-                          />
+                          <MaterialIcon name="add" className="text-sm mr-1" />
                           Novo Modelo
                         </Button>
                       </div>

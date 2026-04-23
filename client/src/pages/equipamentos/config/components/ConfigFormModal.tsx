@@ -40,10 +40,7 @@ export function ConfigFormModal({
       >
         <header className="bg-white border-b border-slate-200 p-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <MaterialIcon
-              name={headerIcon}
-              className="text-blue-600"
-            />
+            <MaterialIcon name={headerIcon} className="text-blue-600" />
             <h2 className="text-lg font-bold text-slate-800">{title}</h2>
           </div>
           <button

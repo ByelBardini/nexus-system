@@ -41,10 +41,7 @@ export function TecnicosPageHeader({
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div className="flex items-center gap-3">
-          <MaterialIcon
-            name="engineering"
-            className="text-erp-blue text-xl"
-          />
+          <MaterialIcon name="engineering" className="text-erp-blue text-xl" />
           <div>
             <h1 className="text-lg font-bold text-slate-800">Técnicos</h1>
             <p className="text-xs text-slate-500">

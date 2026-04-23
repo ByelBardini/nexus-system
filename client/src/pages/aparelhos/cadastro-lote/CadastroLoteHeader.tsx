@@ -13,10 +13,7 @@ export function CadastroLoteHeader() {
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div className="flex items-center gap-3">
-          <MaterialIcon
-            name="inventory_2"
-            className="text-erp-blue text-xl"
-          />
+          <MaterialIcon name="inventory_2" className="text-erp-blue text-xl" />
           <div>
             <h1 className="text-lg font-bold text-slate-800">
               Entrada de Rastreador/Simcard

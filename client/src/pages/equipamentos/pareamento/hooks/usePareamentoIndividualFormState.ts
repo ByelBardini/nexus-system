@@ -13,9 +13,9 @@ export function usePareamentoIndividualFormState() {
   const [planoSimcardIdSim, setPlanoSimcardIdSim] = useState("");
   const [proprietarioIndividual, setProprietarioIndividual] =
     useState<ProprietarioTipo>("INFINITY");
-  const [clienteIdIndividual, setClienteIdIndividual] = useState<
-    number | null
-  >(null);
+  const [clienteIdIndividual, setClienteIdIndividual] = useState<number | null>(
+    null,
+  );
   const [quantidadeCriada, setQuantidadeCriada] = useState(0);
   const [criarNovoRastreador, setCriarNovoRastreador] = useState(false);
   const [criarNovoSim, setCriarNovoSim] = useState(false);

@@ -9,7 +9,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MaterialIcon } from "@/components/MaterialIcon";
 import { cn } from "@/lib/utils";
-import type { MarcaSimcard, PlanoSimcard } from "../domain/equipamentos-config.types";
+import type {
+  MarcaSimcard,
+  PlanoSimcard,
+} from "../domain/equipamentos-config.types";
 import type { UseMutationResult } from "@tanstack/react-query";
 
 type MarcasSimcardPanelProps = {
@@ -26,8 +29,18 @@ type MarcasSimcardPanelProps = {
   onOpenCreatePlano: (marcaId: number) => void;
   onOpenEditPlano: (p: PlanoSimcard) => void;
   onDeletePlano: (id: number) => void;
-  deleteMarcaSimcardMutation: UseMutationResult<unknown, Error, number, unknown>;
-  deletePlanoSimcardMutation: UseMutationResult<unknown, Error, number, unknown>;
+  deleteMarcaSimcardMutation: UseMutationResult<
+    unknown,
+    Error,
+    number,
+    unknown
+  >;
+  deletePlanoSimcardMutation: UseMutationResult<
+    unknown,
+    Error,
+    number,
+    unknown
+  >;
 };
 
 export function MarcasSimcardPanel({
@@ -141,28 +154,21 @@ export function MarcasSimcardPanel({
                           onClick={(e) => e.stopPropagation()}
                           className="text-slate-400 hover:text-slate-600"
                         >
-                          <MaterialIcon
-                            name="settings"
-                            className="text-lg"
-                          />
+                          <MaterialIcon name="settings" className="text-lg" />
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
                         align="end"
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <DropdownMenuItem
-                          onClick={() => onOpenEditMarca(m)}
-                        >
+                        <DropdownMenuItem onClick={() => onOpenEditMarca(m)}>
                           <MaterialIcon
                             name="edit"
                             className="mr-2 text-base"
                           />
                           Editar
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => onToggleAtivo(m)}
-                        >
+                        <DropdownMenuItem onClick={() => onToggleAtivo(m)}>
                           <MaterialIcon
                             name={m.ativo ? "visibility_off" : "visibility"}
                             className="mr-2 text-base"
@@ -242,7 +248,9 @@ export function MarcasSimcardPanel({
                                     <DropdownMenuItem
                                       onClick={() => onDeletePlano(plano.id)}
                                       className="text-red-600"
-                                      disabled={deletePlanoSimcardMutation.isPending}
+                                      disabled={
+                                        deletePlanoSimcardMutation.isPending
+                                      }
                                     >
                                       <MaterialIcon
                                         name="delete"

@@ -54,13 +54,9 @@ export function PareamentoCriarRastreadorBlock({
   modelosPorMarca,
 }: Props) {
   const marcaLabel =
-    variant === "individual"
-      ? "Marca (se criar novo)"
-      : "Marca";
+    variant === "individual" ? "Marca (se criar novo)" : "Marca";
   const modeloLabel =
-    variant === "individual"
-      ? "Modelo (se criar novo)"
-      : "Modelo";
+    variant === "individual" ? "Modelo (se criar novo)" : "Modelo";
   const marcaFieldClass =
     variant === "individual"
       ? "mb-1.5 block text-[10px] font-bold uppercase text-slate-600"
@@ -135,9 +131,7 @@ export function PareamentoCriarRastreadorBlock({
                 >
                   <SelectTrigger className="h-9">
                     <SelectValue
-                      placeholder={
-                        marca ? "Selecione..." : "Marca primeiro"
-                      }
+                      placeholder={marca ? "Selecione..." : "Marca primeiro"}
                     />
                   </SelectTrigger>
                   <SelectContent>

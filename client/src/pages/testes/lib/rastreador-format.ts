@@ -5,8 +5,7 @@ export function rastreadorTextoBusca(r: RastreadorParaTeste): string {
   const imei = (r.identificador ?? "").trim();
   const iccid = (r.simVinculado?.identificador ?? "").trim();
   const marcaModelo = [r.marca, r.modelo].filter(Boolean).join(" ");
-  const operadora =
-    r.marcaSimcard?.operadora?.nome ?? r.operadora ?? "";
+  const operadora = r.marcaSimcard?.operadora?.nome ?? r.operadora ?? "";
   const marcaSim = r.marcaSimcard?.nome ?? "";
   const plano =
     r.planoSimcard?.planoMb ?? r.simVinculado?.planoSimcard?.planoMb;
@@ -26,9 +25,7 @@ export function rastreadorOperadoraNome(r: RastreadorParaTeste): string | null {
 }
 
 export function rastreadorMarcaSimNome(r: RastreadorParaTeste): string | null {
-  return (
-    r.marcaSimcard?.nome ?? r.simVinculado?.marcaSimcard?.nome ?? null
-  );
+  return r.marcaSimcard?.nome ?? r.simVinculado?.marcaSimcard?.nome ?? null;
 }
 
 export function rastreadorPlanoMb(r: RastreadorParaTeste): number | null {
@@ -77,9 +74,6 @@ export function findRastreadorPorIdentificador(
   const t = identificador.trim().toLowerCase();
   if (!t) return null;
   return (
-    list.find(
-      (r) =>
-        (r.identificador ?? "").trim().toLowerCase() === t,
-    ) ?? null
+    list.find((r) => (r.identificador ?? "").trim().toLowerCase() === t) ?? null
   );
 }
