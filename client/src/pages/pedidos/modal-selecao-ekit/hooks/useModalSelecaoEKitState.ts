@@ -36,25 +36,24 @@ export function useModalSelecaoEKitState(
   } | null>(null);
   const [showAllClientes, setShowAllClientes] = useState(false);
 
+  const kitId = kitParaEditar?.id;
+  const kitNome = kitParaEditar?.nome;
+
   useEffect(() => {
-    if (!open || !kitParaEditar) return;
+    if (!open || kitId == null || !kitNome) return;
     setStep("edicao");
     setKitSelecionado((prev) => {
-      if (
-        prev &&
-        prev.id === kitParaEditar.id &&
-        prev.nome === kitParaEditar.nome
-      ) {
+      if (prev && prev.id === kitId && prev.nome === kitNome) {
         return prev;
       }
       return {
-        id: kitParaEditar.id,
-        nome: kitParaEditar.nome,
+        id: kitId,
+        nome: kitNome,
         criadoEm: "",
         aparelhos: [],
       };
     });
-  }, [open, kitParaEditar]);
+  }, [open, kitId, kitNome]);
 
   function limparFiltrosListaAparelhos() {
     setBuscaAparelho("");
