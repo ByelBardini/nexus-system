@@ -64,6 +64,23 @@ npm run dev
 
 Inicia o server (Nest) e o client (Vite) em paralelo. Server em http://localhost:3000, client em http://localhost:5173.
 
+## Produção
+
+Para build e deploy em produção, utilize os seguintes comandos na raiz:
+
+**Comando Único (Start):**
+- `npm start`: Inicia ambos (server e client) em modo de produção simultaneamente.
+
+**Frontend (Client):**
+- Build: `npm run build:client` (executa `cd client && npm install && npm run build`)
+- Deploy: `npm run start:client` (executa `cd client && npm run start`)
+
+**Backend (Server):**
+- Build: `npm run build:server` (executa `cd server && npm install && npm run build`)
+- Deploy: `npm run start:server` (executa `cd server && npm run start:prod`)
+
+---
+
 ## Server (Backend)
 
 ```bash
