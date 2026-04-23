@@ -317,7 +317,8 @@ export class PedidosRastreadoresService {
     const statusAnterior = pedido.status;
     if (statusAnterior === dto.status) return this.findOne(id);
 
-    const indiceAnterior = ORDEM_STATUS_PEDIDO_RASTREADOR.indexOf(statusAnterior);
+    const indiceAnterior =
+      ORDEM_STATUS_PEDIDO_RASTREADOR.indexOf(statusAnterior);
     const indiceNovo = ORDEM_STATUS_PEDIDO_RASTREADOR.indexOf(dto.status);
     if (
       statusAnterior === StatusPedidoRastreador.DESPACHADO &&

@@ -116,7 +116,10 @@ export class PareamentoService {
           planoSimcardId?: number;
         }
       | undefined,
-  ): { planoRastreador: PlanoRastreadorPareamentoTx; planoSim: PlanoSimPareamentoTx } {
+  ): {
+    planoRastreador: PlanoRastreadorPareamentoTx;
+    planoSim: PlanoSimPareamentoTx;
+  } {
     let planoRastreador: PlanoRastreadorPareamentoTx = { kind: 'PULAR' };
     if (linha.tracker_status === 'FOUND_AVAILABLE' && linha.trackerId) {
       planoRastreador = { kind: 'EXISTENTE', trackerId: linha.trackerId };
@@ -890,7 +893,8 @@ export class PareamentoService {
       );
     }
 
-    const proprietarioFinal = (input.proprietario ?? 'INFINITY') as ProprietarioTipo;
+    const proprietarioFinal = (input.proprietario ??
+      'INFINITY') as ProprietarioTipo;
     const clienteId = input.clienteId;
     const tecnicoId = input.tecnicoId;
 

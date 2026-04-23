@@ -23,9 +23,7 @@ export type OrdemServicoContextoTestesRealizados = {
 
 @Injectable()
 export class OrdemServicoStatusSideEffectsService {
-  constructor(
-    private readonly debitosService: DebitosRastreadoresService,
-  ) {}
+  constructor(private readonly debitosService: DebitosRastreadoresService) {}
 
   /**
    * Efeitos após gravar histórico + update da OS: desvinculação do aparelho de
@@ -99,9 +97,7 @@ export class OrdemServicoStatusSideEffectsService {
       os.tipo === TipoOS.INSTALACAO_COM_BLOQUEIO ||
       os.tipo === TipoOS.INSTALACAO_SEM_BLOQUEIO;
     const identificadorRastreadorNovo =
-      os.tipo === TipoOS.REVISAO
-        ? os.idEntrada?.trim()
-        : os.idAparelho?.trim();
+      os.tipo === TipoOS.REVISAO ? os.idEntrada?.trim() : os.idAparelho?.trim();
     if (!tipoInstalaNovoAparelho || !identificadorRastreadorNovo) return;
 
     const aparelho = await tx.aparelho.findFirst({

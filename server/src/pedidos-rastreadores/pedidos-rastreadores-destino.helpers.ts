@@ -19,7 +19,9 @@ export function resolveTargetClienteId(
   );
 }
 
-export function resolveNonMistoClienteDestino(pedido: PedidoDestinoClienteFields): {
+export function resolveNonMistoClienteDestino(
+  pedido: PedidoDestinoClienteFields,
+): {
   proprietario: ProprietarioTipo;
   clienteId: number | null;
 } {
@@ -38,7 +40,9 @@ export function resolveNonMistoTecnicoDestino(
 ): { proprietario: ProprietarioTipo; clienteId: number | null } {
   const empresaId = dtoDeClienteId ?? pedidoDeClienteId ?? null;
   return {
-    proprietario: empresaId ? ProprietarioTipo.CLIENTE : ProprietarioTipo.INFINITY,
+    proprietario: empresaId
+      ? ProprietarioTipo.CLIENTE
+      : ProprietarioTipo.INFINITY,
     clienteId: empresaId,
   };
 }

@@ -98,10 +98,7 @@ export class OrdensServicoService {
   async findTestando(search?: string) {
     const where: Prisma.OrdemServicoWhereInput = { status: StatusOS.EM_TESTES };
     if (search?.trim()) {
-      where.OR = buildOrdemServicoSearchOrClauses(
-        search.trim(),
-        'emTestes',
-      );
+      where.OR = buildOrdemServicoSearchOrClauses(search.trim(), 'emTestes');
     }
 
     const items = await this.prisma.ordemServico.findMany({

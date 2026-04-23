@@ -63,8 +63,7 @@ export function precoTecnicoMergedRowForUpsert(
       Number(existingPrecos?.instalacaoSemBloqueio ?? 0),
     revisao: p.revisao ?? Number(existingPrecos?.revisao ?? 0),
     retirada: p.retirada ?? Number(existingPrecos?.retirada ?? 0),
-    deslocamento:
-      p.deslocamento ?? Number(existingPrecos?.deslocamento ?? 0),
+    deslocamento: p.deslocamento ?? Number(existingPrecos?.deslocamento ?? 0),
   };
   return { data, hadExisting: Boolean(existingPrecos) };
 }

@@ -63,7 +63,10 @@ export class EquipamentosController {
   @Patch('marcas/:id')
   @RequirePermissions('CONFIGURACAO.EQUIPAMENTO.EDITAR')
   @ApiOperation({ summary: 'Atualizar marca' })
-  updateMarca(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateMarcaDto) {
+  updateMarca(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateMarcaDto,
+  ) {
     return this.equipamentosService.updateMarca(id, dto);
   }
 
