@@ -46,7 +46,7 @@ Ver índice em `AGENTS.md`. Páginas de aparelhos/equipamentos (detalhe de UI).
 | `client/src/__tests__/pages/PreviewPareamentoTable.test.tsx` | Vitest/RTL: `countPareamentoPreviewDuplicateLinhas` (trim, vazios, IMEI/ICCID repetidos) e valor exibido no card **Duplicados** (`within` sobre o card ancestral do rótulo; `closest` assertado como `HTMLElement` para compatibilidade com os typings do Testing Library) |
 | `client/src/pages/equipamentos/pareamento/preview/PreviewCsvTable.tsx` | Preview exclusivo do modo CSV (ações VINCULAR/CRIAR/ERRO + erros mapeados) |
 | `client/src/__tests__/pages/equipamentos/pareamento/` | Domínio (`pareamento.domain.test.ts`, `pareamento.payload.test.ts`, `pareamento.preview-logic.test.ts`, `pareamento.query-keys.test.ts`, `domain/catalog-helpers.test.ts`, `domain/pareamento-form-reset.test.ts`), hooks (`usePareamentoModoFromSearchParams`, `usePareamentoRemoteQueries`, `usePareamentoCatalogDerivados`, `usePareamentoIndividualFormState`, `usePareamentoMassaFormState`, `usePareamentoCsvState`, `usePareamentoSharedLotesState`, `usePareamentoMainPreview`, `usePareamentoSubmitMutation`, `usePareamentoCsvMutations`) e componentes (`PareamentoPageHeader`, `PareamentoCriarRastreadorBlock`) |
-| `client/src/pages/testes/TestesPage.tsx` | `/aparelhos/para-testes` + PATCH status |
+| `client/src/pages/testes/TestesPage.tsx` | Bancada de testes (`hooks/useTestesQueries` → `/aparelhos/para-testes`; mutations em `hooks/useTestesMutations`) |
 | `client/src/lib/aparelho-status.ts` | Labels/cores por `StatusAparelho` (`STATUS_CONFIG_APARELHO`) |
 | `client/src/components/IdAparelhoSearch.tsx` | Busca de IMEI em rastreadores |
 

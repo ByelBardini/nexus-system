@@ -9,21 +9,35 @@ Ver índice em `AGENTS.md`.
 
 #### Estrutura de arquivos
 
-| Arquivo | Responsabilidade |
-|---------|-----------------|
-| `TestesPage.tsx` | Orquestrador: todo o estado e mutations; renderiza `TesteBancada` + `TesteFilaSidebar` + modais |
-| `testes-types.ts` | Tipos compartilhados: `OsTeste`, `RastreadorParaTeste`, `ComunicacaoResult` |
-| `TesteBancada.tsx` | Área principal (flex-1 à esquerda); recebe tudo via props; compõe as seções |
-| `TesteFilaSidebar.tsx` | Sidebar direita (w-80); lista de OS em testes com busca client-side |
-| `TesteFilaCard.tsx` | Card individual na fila; mostra OS#, cliente, técnico, placa, IMEI e tempo |
-| `SelectRastreadorTeste.tsx` | Dropdown portal para seleção de rastreador por IMEI/ICCID/serial |
-| `sections/TesteOsDataSection.tsx` | Seção "01. Dados da Ordem de Serviço" |
-| `sections/TesteEquipamentoSection.tsx` | Seção "02. Identificação do Equipamento" (usa `SelectRastreadorTeste`) |
-| `sections/TesteComunicacaoSection.tsx` | Seção "03. Validação de Comunicação GPRS/GPS" |
-| `sections/TesteRetiradaSection.tsx` | Seção "02. Dados da Retirada" (substituí Equipamento quando `tipo=RETIRADA`) |
-| `sections/TesteObservacoesSection.tsx` | Seção "Observações Adicionais" (textarea) |
+Na pasta `client/src/pages/testes/`, **só** o ponto de entrada da rota fica na raiz; o restante em subpastas.
 
-#### Tipos principais (`testes-types.ts`)
+| Caminho | Responsabilidade |
+|---------|------------------|
+| **`TestesPage.tsx`** (raiz) | Orquestração mínima: chama `useTestesBancadaController()` e renderiza `TesteBancada`, `TesteFilaSidebar`, modais |
+| **`hooks/useTestesBancadaController.ts`** | Estado local, efeitos (seleção, sincronização IMEI, auto-vínculo), handlers que usam as mutations |
+| **`hooks/useTestesQueries.ts`** | `useQuery` da fila `GET /ordens-servico/testando` e de `GET /aparelhos/para-testes` |
+| **`hooks/useTestesMutations.ts`** | Mutations de status da OS, vínculo de aparelho e PATCH de status do aparelho + invalidação + `toast` |
+| **`lib/testes-types.ts`** | Tipos: `OsTeste`, `RastreadorParaTeste`, `ComunicacaoResult` |
+| **`lib/testes-utils.ts`** | `imeiVinculadoNaBancadaTestes`, `subclienteLabel`, `filtrarOsTesteNaFila` (filtro da sidebar) |
+| **`lib/rastreador-format.ts`** | Texto de busca / resumo de rastreador (`rastreadorTextoBusca`, `formatRastreadorOperadoraMarcaIccidPlano`, `findRastreadorPorIdentificador`, etc.) — usado por `SelectRastreadorTeste` e `TesteEquipamentoSection` |
+| **`components/TesteBancada.tsx`** | Área principal (flex-1 à esquerda); recebe props; compõe as seções |
+| **`components/TesteFilaSidebar.tsx`** | Sidebar direita (w-80); `filtrarOsTesteNaFila` + renderiza `TesteFilaCard` por item |
+| **`components/TesteFilaCard.tsx`** | Card na fila; usa `subclienteLabel` |
+| **`components/SelectRastreadorTeste.tsx`** | Dropdown em portal para IMEI/ICCID/serial |
+| **`components/TesteSectionShell.tsx`** | Cabeçalho reutilizável (ícone + título + slot direito) das seções em cartão |
+| **`components/RetiradaRealizadaDialog.tsx`** | Modal “Retirada realizada” (Sim/Não) |
+| **`components/CancelarOperacaoTesteDialog.tsx`** | Modal “Cancelar operação” (Voltar / Reagendar / Cancelar OS) |
+| **`sections/TesteOsDataSection.tsx`** | Seção "01. Dados da Ordem de Serviço" |
+| **`sections/TesteEquipamentoSection.tsx`** | Seção "02. Identificação do Equipamento" (`SelectRastreadorTeste` + resumo via `rastreador-format`) |
+| **`sections/TesteComunicacaoSection.tsx`** | Seção "03. Validação de Comunicação GPRS/GPS" |
+| **`sections/TesteRetiradaSection.tsx`** | Seção "02. Dados da Retirada" (quando `tipo=RETIRADA`) |
+| **`sections/TesteObservacoesSection.tsx`** | Seção "Observações Adicionais" (textarea) |
+
+**Imports:** no mesmo módulo, caminhos relativos (`../lib/…`, `./sections/…`) são usados à vontade; para alguns pares de componentes irmãos em `components/`, o alias `@/` do `tsconfig` é preferível (ex.: `TesteFilaSidebar` importa `TesteFilaCard` de `@/pages/testes/components/TesteFilaCard`) para evitar **TS2307** / resolução instável no IDE com `./OutroComponente` entre ficheiros `.tsx`.
+
+**Testes (Vitest + RTL):** `client/src/__tests__/pages/testes/` — libs, hooks, componentes, fluxo da página (`TestesPage.e2e.test.tsx` com API mockada).
+
+#### Tipos principais (`lib/testes-types.ts`)
 
 ```ts
 type ComunicacaoResult = "COMUNICANDO" | "AGUARDANDO" | "NAO_COMUNICOU";
@@ -51,7 +65,7 @@ interface RastreadorParaTeste {
 - **Esquerda:** `TesteBancada` (flex-1, overflow-y-auto com padding)
 - **Direita:** `TesteFilaSidebar` (w-80, shrink-0, fixed height)
 
-#### Estado (todos em `TestesPage`)
+#### Estado (em `useTestesBancadaController`)
 
 | Estado | Tipo | Valor inicial | Notas |
 |--------|------|--------------|-------|
@@ -80,13 +94,13 @@ interface RastreadorParaTeste {
 
 Quando `imeiSearch` muda e encontra match exato (case-insensitive) em `rastreadores`, chama `vincularAparelhoMutation` automaticamente — sem precisar o usuário clicar em confirmar. `pendingLinkRef` guarda `{ osId, imei }` para evitar chamada repetida enquanto o servidor não confirma.
 
-Helper `imeiVinculadoNosTestes(os)`: retorna `os.idEntrada` para tipo `REVISAO`, `os.idAparelho` para os demais.
+Helper **`imeiVinculadoNaBancadaTestes(os)`** (`lib/testes-utils.ts`): retorna `os.idEntrada` para tipo `REVISAO`, `os.idAparelho` para os demais (inclui `RETIRADA`).
 
 #### Condição `canFinalizar`
 
 ```ts
 canFinalizar =
-  !!imeiVinculadoNosTestes(selectedOs) &&
+  !!imeiVinculadoNaBancadaTestes(selectedOs) &&
   comunicacaoResult === "COMUNICANDO" &&
   !!novoLocalInstalacao.trim()
 ```
@@ -111,12 +125,12 @@ canFinalizar =
 
 **Auto-seleção:** se nenhuma OS está selecionada, não há `?osId` na URL e a lista carrega com itens → seleciona automaticamente o primeiro. Se a OS selecionada sai da lista (foi finalizada por outro usuário) → `selectedOsId = null`.
 
-**Sincronização `imeiSearch` ↔ OS:** ao mudar `selectedOs`, `imeiSearch` é atualizado com `imeiVinculadoNosTestes(selectedOs)` via `useEffect`.
+**Sincronização `imeiSearch` ↔ OS:** ao mudar `selectedOs`, `imeiSearch` é atualizado com `imeiVinculadoNaBancadaTestes(selectedOs)` via `useEffect`.
 
 #### `SelectRastreadorTeste` — detalhes
 
 - Portal em `document.body` (não dialog-aware — a bancada não usa modais para esse campo).
-- Filtro: concatena `imei + iccid + marcaModelo + operadora + marcaSim + planoMB` em lowercase.
+- Filtro: função **`rastreadorTextoBusca`** em `lib/rastreador-format.ts` (concatena IMEI, ICCID, marca/modelo, operadora, chip, plano em lowercase).
 - Sem filtro: exibe os primeiros 15 rastreadores.
 - Largura mínima do dropdown: `max(triggerWidth, 420px)`.
 - Rastreador de "outro cliente" (proprietário Infinity ou cliente diferente da OS): destaque em `text-amber-600`.
@@ -127,7 +141,11 @@ canFinalizar =
 
 - Tempo > 30 min: número em `text-red-600` + bolinha `bg-red-500`.
 - OS selecionada: borda esquerda `border-l-4 border-erp-blue bg-erp-blue/5`.
-- Exibe: OS#, nome do cliente, técnico • placa, subcliente (snapshot como fallback), IMEI.
+- Exibe: OS#, nome do cliente, técnico • placa, subcliente via **`subclienteLabel`** (`lib/testes-utils.ts`), IMEI.
+
+#### Sidebar — filtro
+
+A busca da fila usa **`filtrarOsTesteNaFila(items, search)`** (`lib/testes-utils.ts`): número da OS, placa, nome do cliente, nome do subcliente e `idAparelho` (case-insensitive no texto digitado).
 
 ---
 

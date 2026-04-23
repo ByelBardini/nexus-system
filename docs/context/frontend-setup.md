@@ -82,7 +82,7 @@ Todas as páginas são carregadas com `lazy()` + `Suspense` (exceto `Login`). Ro
 | `/ordens-servico/nova` | `OrdensServicoCriacaoPage` | Ponto de entrada: `pages/ordens-servico/OrdensServicoCriacaoPage.tsx`; módulo em `pages/ordens-servico/criacao/*` (schema, hooks, componentes) — ver `docs/context/ordens-servico.md` |
 | `/pedidos-rastreadores` | `PedidosRastreadoresPage` | — |
 | `/pedidos-config` | `PedidosConfigPage` | — |
-| `/testes` | `TestesPage` | — |
+| `/testes` | `TestesPage` | Entrada: `pages/testes/TestesPage.tsx`; módulo em `pages/testes/components/`, `hooks/`, `lib/`, `sections/` — ver `docs/context/frontend-agendamento.md` |
 | `/configuracoes` | `ConfiguracoesPage` | — |
 | `/debitos-equipamentos` | `DebitosEquipamentosPage` | — |
 | `/cadastro-rastreamento` | `CadastroRastreamentoPage` | — |
@@ -131,6 +131,7 @@ Helper compartilhado de testes: exporta wrapper com providers (QueryClient, Rout
 | `pages/` (raiz de testes) | `equipamentos-page.shared.test.ts`, `EquipamentosConfigPage.test.tsx`, `PreviewPareamentoTable.test.tsx`, `PreviewCsvTable.test.tsx`, `PareamentoPage.test.tsx` (fonte em `src/pages/equipamentos/pareamento/` — módulo com `domain/`, `preview/`, `hooks/`, `components/`, `panels/`) |
 | `components/` | `ClientSideTableFooter.test.tsx` (paginação compartilhada com lista de equipamentos e aparelhos) |
 | `pages/clientes/` | `ClientesPage.integration.test.tsx`, `ClienteModal.integration.test.tsx`, `useClientesPageList.test.tsx`, `useClienteModal.test.tsx`, `clientes-page.shared.test.ts` (formatadores), testes dos componentes `ClientesPageHeader`, `ClientesTable`, `ClientesTableFooter`, `ClienteRowExpandedPanel` |
+| `pages/testes/` | Bancada de testes: `lib/*.test.ts`, `hooks/*.test.tsx`, `components/*.test.tsx`, `SelectRastreadorTeste.test.tsx`, `TestesPage.e2e.test.tsx`, `fixtures.ts` — fonte em `pages/testes/` (ver `docs/context/frontend-agendamento.md`) |
 
 Comando: `cd client && npm run test` (watch) ou `npm run test:ci` (CI).
 

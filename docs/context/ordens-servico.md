@@ -143,7 +143,7 @@ Todos os campos abaixo são gravados no momento da criação da OS e não se alt
 | `hooks/useOrdensServicoPage.ts` | Estado, queries, mutation de status, PDF e handlers da listagem |
 | `lista/components/` | UI só da listagem: pipeline, toolbar, tabela, painel expandido, diálogos (confirmar testes, retirada) |
 | `criacao/` | Schema, payload, resumo, derived, hooks e componentes da tela de criação (ver tabela abaixo) |
-| `client/src/pages/testes/TestesPage.tsx` | Bancada de testes; ver `docs/context/frontend-agendamento.md` |
+| `client/src/pages/testes/TestesPage.tsx` | Bancada de testes (módulo em `pages/testes/{components,hooks,lib,sections}/`); ver `docs/context/frontend-agendamento.md` |
 
 **Testes de frontend (Vitest) — listagem:** `client/src/__tests__/pages/ordens-servico/` — integração da página, hook `useOrdensServicoPage`, componentes de `lista/components/`, e testes unitários de `shared/` (`ordens-servico-page.display.test.ts`, `ordens-servico-page.constants.test.ts`).
 
