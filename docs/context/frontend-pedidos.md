@@ -4,117 +4,84 @@ Ver índice em `AGENTS.md`.
 
 ### Páginas: Pedidos Rastreadores (`client/src/pages/pedidos/`)
 
-Duas rotas distintas compartilham o mesmo diretório:
+Duas rotas distintas; **na raiz do módulo existem apenas dois ficheiros `.tsx`** (entradas de página). O restante vive em subpastas por domínio.
 
 | Rota | Componente | Propósito |
 |------|-----------|-----------|
 | `/pedidos-rastreadores` | `PedidosRastreadoresPage` | Kanban read-only + criação |
 | `/pedidos-config` | `PedidosConfigPage` | Kanban operacional com gestão de kits e status |
 
-#### Arquivos e responsabilidades
+#### Estrutura de pastas (resumo)
 
-| Arquivo | Responsabilidade |
-|---------|-----------------|
-| `types.ts` | Tipos da API (`PedidoRastreadorApi`, `PedidoRastreadorView`, enums); constantes visuais (`STATUS_CONFIG`, `URGENCIA_STYLE`, `STATUS_ORDER`); função `mapPedidoToView` |
-| `pedidos-config-types.ts` | Tipos de kit (`KitResumo`, `KitDetalhe`, `KitComAparelhos`, `KitVinculado`, `AparelhoNoKit`) e `TipoDespacho` |
-| `PedidosRastreadoresPage.tsx` | Kanban de leitura; busca global; abre `DrawerDetalhes` e `ModalNovoPedido` |
-| `PedidosConfigPage.tsx` | Kanban operacional; workspace de kits/despacho persistido em `sessionStorage` (`nexus-pedidos-config-workspace`); abre `SidePanel` |
-| `KanbanColumn.tsx` | Coluna kanban com header de status + lista de `KanbanCard` |
-| `KanbanCard.tsx` | Card individual: borda de urgência (`URGENCIA_STYLE`), código, destinatário, tipo, endereço, quantidade, duração (se entregue) |
-| `DrawerDetalhes.tsx` | `Sheet` lateral read-only (450 px); exibe detalhes + histórico; botão excluir (`AGENDAMENTO.PEDIDO_RASTREADOR.EXCLUIR`) com confirmação via `Dialog` |
-| `SidePanel.tsx` | `Sheet` operacional (580 px); avança/retrocede status; gerencia kits vinculados; seleção de tipo de despacho; abre `ModalSelecaoEKit` |
-| `ModalNovoPedido.tsx` | `Dialog` de criação; form react-hook-form + zod; suporte a tipos TECNICO / CLIENTE / MISTO; campos de marca/modelo/operadora opcionais |
-| `ModalSelecaoEKit.tsx` | `Dialog` de seleção e edição de kits; 2 steps: seleção de kit e edição de aparelhos; cria kits novos inline; gerencia destinatários MISTO via `/aparelhos-destinatarios` |
+| Pasta / ficheiros raiz | Conteúdo |
+|------------------------|----------|
+| `PedidosRastreadoresPage.tsx`, `PedidosConfigPage.tsx` | Únicos ficheiros na raiz (apenas `.tsx`) — páginas exportadas pelas rotas em `App.tsx` |
+| `shared/pedidos-rastreador.types.ts` | Tipos da API e do view model (`PedidoRastreadorApi`, `PedidoRastreadorView`, etc.); **reexporta** constantes de kanban/urgência e `mapPedidoToView` definidos em ficheiros irmãos em `shared/` |
+| `shared/pedidos-config-types.ts` | Tipos de kit (`KitResumo`, `KitDetalhe`, `KitComAparelhos`, `KitVinculado`, `AparelhoNoKit`) e `TipoDespacho` |
+| `shared/` (resto) | `pedidos-rastreador-api-enums.ts` (`StatusPedidoRastreador`); `pedidos-rastreador-kanban.ts` (`STATUS_ORDER`, `STATUS_CONFIG`, `URGENCIA_LABELS`, `URGENCIA_STYLE` com `bar` / `badge` / `valueText`, `STATUS_TO_KEY`, …); `map-pedido-rastreador-to-view.ts`; `aparelho-destinatario.ts` (rótulo único de destinatário para aparelho em e-Kit, painel e filtros); `aparelho-no-kit-aggregates.ts` (marcas/modelos e operadoras únicas a partir de `AparelhoNoKit`); `pedidos-urgencia-ui.ts` (`getUrgenciaBadgeClass`, `getUrgenciaValueTextClass` sobre `URGENCIA_STYLE`) |
+| `lista/hooks/` | `usePedidosRastreadoresListQuery`, `pedidos-rastreadores-list.query-keys` — listagem partilhada pelas duas páginas |
+| `lista/components/` | Toolbar (`PedidosRastreadoresListToolbar`), shell do kanban (`PedidosKanbanColumnShell`), placeholder de coluna vazia (`PedidosKanbanColumnEmptyState`), chips Misto (`PedidoMistoChips`), `ExcluirPedidoConfirmDialog`, `DrawerDetalhes` |
+| `lista/kanban/` | `KanbanColumn`, `KanbanColumnConfig`, `KanbanCard`, `KanbanCardConfig` — imports internos preferem alias `@/pages/pedidos/...` |
+| `novo-pedido/` | Mesmo padrão: `ModalNovoPedido.tsx` na raiz; `components/`, `hooks/`; ficheiros `novo-pedido-rastreador.*` na raiz |
+| `modal-selecao-ekit/` | **Padrão alinhado ao `novo-pedido/`:** `ModalSelecaoEKit.tsx` na raiz; `modal-selecao-ekit.types.ts`, `modal-selecao-ekit.utils.ts`; `components/` (passos, tabela, painel de aparelhos); `hooks/` (`useModalSelecaoEKit`, `useModalSelecaoEKitState`, `pareamento-kits.queries.ts`). O hook do modal usa `useKitComAparelhosQuery` do side-panel para cache alinhado ao painel. |
+| `side-panel/` | **Mesmo padrão:** `SidePanel.tsx` na raiz; `side-panel.types.ts`, `side-panel.utils.ts`; `components/` (header, kits, despacho, histórico, …); `hooks/` (`useSidePanelMutations`, `useKitComAparelhosQuery`) |
 
-#### Tipos principais (`types.ts`)
+Imports públicos típicos (sem barrels): páginas/modal raiz — `@/pages/pedidos/novo-pedido/ModalNovoPedido`, `@/pages/pedidos/modal-selecao-ekit/ModalSelecaoEKit`, `@/pages/pedidos/side-panel/SidePanel`. Submódulos e testes importam caminhos explícitos, p.ex. `@/pages/pedidos/modal-selecao-ekit/hooks/useModalSelecaoEKit`, `@/pages/pedidos/side-panel/components/SidePanelHeader`.
 
-**Enums de API (string union):**
-- `TipoDestinoPedido`: `"TECNICO" | "CLIENTE" | "MISTO"`
-- `StatusPedidoRastreador`: `"SOLICITADO" | "EM_CONFIGURACAO" | "CONFIGURADO" | "DESPACHADO" | "ENTREGUE"`
-- `UrgenciaPedido`: `"BAIXA" | "MEDIA" | "ALTA" | "URGENTE"`
+#### Ficheiros principais e responsabilidades
 
-**`StatusPedidoKey`** (minúsculo, usado no kanban): `"solicitado" | "em_configuracao" | "configurado" | "despachado" | "entregue"`
+| Local | Responsabilidade |
+|-------|------------------|
+| `PedidosRastreadoresPage.tsx` | Kanban de leitura; `usePedidosRastreadoresListQuery` (`scope: "lista"`); toolbar; abre `lista/components/DrawerDetalhes` e `novo-pedido/ModalNovoPedido` |
+| `PedidosConfigPage.tsx` | Kanban operacional; `scope: "config"` na mesma API; workspace em `sessionStorage` (`nexus-pedidos-config-workspace`); abre `side-panel/SidePanel` |
+| `lista/kanban/*` | Colunas e cards; colunas vazias usam `PedidosKanbanColumnEmptyState`; cards de config alinham badge de urgência a `URGENCIA_STYLE` / `pedidos-urgencia-ui` |
+| `lista/components/DrawerDetalhes.tsx` | `Sheet` read-only; valor textual de urgência via `getUrgenciaValueTextClass`; exclusão com `ExcluirPedidoConfirmDialog` |
+| `side-panel/SidePanel.tsx` | Painel operacional na raiz da pasta; `ModalSelecaoEKit` de `../modal-selecao-ekit/ModalSelecaoEKit`; subcomponentes em `side-panel/components/` (imports para `shared/` em `../../shared/…`) |
+| `novo-pedido/ModalNovoPedido.tsx` | `Dialog` de criação; RHF + Zod; TECNICO / CLIENTE / MISTO |
 
-**Constantes visuais:**
-- `STATUS_ORDER: StatusPedidoKey[]` — ordem das colunas (5 colunas)
-- `STATUS_CONFIG` — `{ label, color, dotColor }` por status
-- `STATUS_TO_API` — converte `StatusPedidoKey` → `StatusPedidoRastreador`
-- `URGENCIA_LABELS` — `{ BAIXA→"Baixa", MEDIA→"Média", ALTA→"Alta", URGENTE→"Urgente" }`
-- `URGENCIA_STYLE` — `{ bar: string, badge: string }` por label de urgência (borda esquerda do card)
+#### Tipos principais (`shared/pedidos-rastreador.types.ts` e `shared/*`)
 
-**`mapPedidoToView(p: PedidoRastreadorApi): PedidoRastreadorView`** — transforma a resposta da API no view model do kanban. Regras importantes:
-- `destinatario`: nome do técnico se `TECNICO/MISTO`; subcliente > cliente > subcliente.cliente se `CLIENTE`
-- `itensMisto`: apenas para `MISTO`; item `INFINITY` → label `"Infinity"`, item `CLIENTE` → `cliente.nome`
-- `cidadeEstado`: prioriza `cidadeEndereco/estadoEndereco` do técnico; cai para `cidade/estado`
-- `endereco`: compila logradouro + número + complemento + bairro + cidade/estado + CEP do técnico
-- `contato`: técnico só tem `nome` + `telefone`; subcliente tem `nome` + `telefone` + `email`
+**Enums de API:** ver `shared/pedidos-rastreador-api-enums.ts` e reexport em `shared/pedidos-rastreador.types.ts`.
 
-#### QueryKeys e endpoints consumidos (frontend)
+**`StatusPedidoKey`** (minúsculo, kanban): exportado a partir de `shared/pedidos-rastreador-kanban.ts` e reexportado por `shared/pedidos-rastreador.types.ts`.
+
+**Constantes visuais:** `STATUS_ORDER`, `STATUS_CONFIG`, `STATUS_TO_API`, `URGENCIA_LABELS`, `URGENCIA_STYLE` — definidas em `shared/pedidos-rastreador-kanban.ts` (`URGENCIA_STYLE` inclui `valueText` para cor de texto em detalhes/drawer).
+
+**`mapPedidoToView`:** implementação em `shared/map-pedido-rastreador-to-view.ts`; reexport em `shared/pedidos-rastreador.types.ts`. Regras de mapeamento (destinatário, MISTO, endereço, contato) inalteradas em relação à descrição anterior.
+
+**Destinatário de aparelho (e-Kit / resumo do painel):** `shared/aparelho-destinatario.ts` — `getDestinatarioExibicaoAparelhoNoKit`, `getDestinatarioFiltroAparelhoNoKit`, `collectDestinatariosEmpresasAparelhos`. UI do modal e-Kit deve importar estes helpers (não usar wrapper duplicado).
+
+**Agregação marca/modelo/operadora:** `shared/aparelho-no-kit-aggregates.ts` — reutilizado por `modal-selecao-ekit.utils` e `side-panel.utils` (`aggregateResumoAparelhosDoKit`).
+
+#### QueryKeys e listagem (frontend)
+
+A listagem usa **um hook** com escopos distintos para cache:
+
+| Escopo | QueryKey (resumo) | Uso |
+|--------|-------------------|-----|
+| `lista` | `["pedidos-rastreadores", buscaTrim]` | `PedidosRastreadoresPage` |
+| `config` | `["pedidos-rastreadores", "config", buscaTrim]` | `PedidosConfigPage` |
+
+**API:** `GET /pedidos-rastreadores?limit=500&search=...` (search só se `busca.trim()` não for vazio).  
+Invalidação ampla com `queryKey: ["pedidos-rastreadores"]` cobre ambos os escopos.
+
+Outras chaves relevantes (sem mudança de regra de negócio):
 
 | QueryKey | Endpoint | Onde |
 |----------|----------|------|
-| `["pedidos-rastreadores", busca]` | `GET /pedidos-rastreadores?limit=500&search=...` | `PedidosRastreadoresPage`, `PedidosConfigPage` |
-| `["tecnicos"]` | `GET /tecnicos` | `ModalNovoPedido` |
-| `["clientes", "com-subclientes"]` | `GET /clientes?subclientes=true` | `ModalNovoPedido` |
-| `["equipamentos", "marcas"]` | `GET /equipamentos/marcas` | `ModalNovoPedido` |
-| `["equipamentos", "modelos", marcaId]` | `GET /equipamentos/modelos?marcaId=...` | `ModalNovoPedido` |
-| `["equipamentos", "operadoras"]` | `GET /equipamentos/operadoras` | `ModalNovoPedido` |
-| `["kit", kitId]` | `GET /aparelhos/pareamento/kits/:id` | `SidePanel` (expand de kit) |
-| `["kits"]` / `["aparelhos"]` | invalidados em mudança de status | `SidePanel` |
+| `["tecnicos"]` | `GET /tecnicos` | hooks globais + `novo-pedido` |
+| `["clientes", "subclientes"]` | `GET /clientes?subclientes=1` | idem |
+| `["aparelhos","pareamento","kits","detalhes"]` | detalhes de kits | `modal-selecao-ekit/hooks/pareamento-kits.queries.ts` (modal + `PedidosConfigPage` pré-busca) |
+| `["kit", kitId]` | `GET /aparelhos/pareamento/kits/:id` | `useKitComAparelhosQuery` (painel e `useModalSelecaoEKit`) |
 
-#### Mutations e endpoints de escrita
+#### Mutations e permissões
 
-| Mutation | Endpoint | Payload |
-|---------|----------|---------|
-| Criar pedido TECNICO/CLIENTE | `POST /pedidos-rastreadores` | `{ tipoDestino, tecnicoId?, clienteId?, subclienteId?, dataSolicitacao, quantidade, urgencia, ... }` |
-| Criar pedido MISTO | `POST /pedidos-rastreadores` | `{ tipoDestino: "MISTO", tecnicoId, itens: [{ proprietario, clienteId?, quantidade, ... }] }` |
-| Atualizar status | `PATCH /pedidos-rastreadores/:id/status` | `{ status: StatusPedidoRastreador, kitIds?: number[] }` |
-| Vincular kits | `PATCH /pedidos-rastreadores/:id/kits` | `{ kitIds: number[] }` |
-| Excluir | `DELETE /pedidos-rastreadores/:id` | — |
-
-#### Fluxo de status no `SidePanel`
-
-```
-SOLICITADO → EM_CONFIGURACAO → CONFIGURADO → DESPACHADO → ENTREGUE
-```
-
-- Avançar para `CONFIGURADO` exige `progress >= total` (kits vinculados cobrem toda a quantidade).
-- `tipoDespacho === "EM_MAOS"`: pula `DESPACHADO` e vai direto para `ENTREGUE`.
-- Retroceder bloqueado quando `status === "despachado"` (não pode voltar de despachado via UI).
-- `kitIds` é enviado junto com a mudança de status para `CONFIGURADO`, `DESPACHADO` e `ENTREGUE`.
-- Ao mudar status, invalida também `["aparelhos"]`, `["kit"]` e `["kits"]`.
+Tabela de mutations/rotas e permissões mantém-se alinhada ao backend (`docs/context/pedidos-rastreadores.md`).
 
 #### Workspace persistido (`PedidosConfigPage`)
 
-Estado de configuração local (não vai para a API) salvo em `sessionStorage["nexus-pedidos-config-workspace"]`:
+Inalterado: `sessionStorage["nexus-pedidos-config-workspace"]` com `kitsPorPedido`, `tipoDespachoPorPedido`, `transportadoraPorPedido`, `numeroNfPorPedido`.
 
-```ts
-interface WorkspacePersisted {
-  kitsPorPedido: Record<string, KitVinculado[]>;
-  tipoDespachoPorPedido: Record<string, TipoDespacho>;
-  transportadoraPorPedido: Record<string, string>;
-  numeroNfPorPedido: Record<string, string>;
-}
-```
+#### Formulário `ModalNovoPedido`
 
-Chaves são `string(pedidoId)`. `TipoDespacho`: `"TRANSPORTADORA" | "CORREIOS" | "EM_MAOS"`.
-
-#### Formulário `ModalNovoPedido` — schema zod
-
-Campo `destinoCliente` codifica o destino como `"cliente-{id}"` ou `"subcliente-{id}"` — parseado no submit.  
-Campo `itensMisto` é `useFieldArray`; cada item tem `proprietario`, `quantidade`, e flags opcionais `marcaModeloEspecifico` / `operadoraEspecifica`.  
-Regras cross-field (`.refine`):
-- `TECNICO` ou `MISTO`: `tecnicoId` obrigatório
-- `CLIENTE`: `destinoCliente` obrigatório
-
-#### Permissões usadas
-
-| Ação | Código |
-|------|--------|
-| Excluir pedido | `AGENDAMENTO.PEDIDO_RASTREADOR.EXCLUIR` |
-| Editar status / kits | `AGENDAMENTO.PEDIDO_RASTREADOR.EDITAR` |
-
-#### KanbanColumnConfig / KanbanCardConfig
-
-`PedidosConfigPage` usa `KanbanColumnConfig` e `KanbanCardConfig` (variantes com interações de configuração), separados de `KanbanColumn` / `KanbanCard` usados na `PedidosRastreadoresPage`.
-
+Comportamento do schema e destinos mantido; código em `novo-pedido/` (ver ficheiros `novo-pedido-rastreador.schema.ts`, hooks e componentes).
