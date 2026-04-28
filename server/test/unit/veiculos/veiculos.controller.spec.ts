@@ -56,7 +56,7 @@ describe('VeiculosController', () => {
         ano: '2020',
         cor: 'Branco',
       };
-      const retorno = { id: 1, placa: 'ABC1D23', ...dto, ano: 2020 };
+      const retorno = { id: 1, ...dto, placa: 'ABC1D23', ano: 2020 };
       (service.criarOuBuscarPorPlaca as jest.Mock).mockResolvedValue(retorno);
 
       const result = await controller.criarOuBuscar(dto);
