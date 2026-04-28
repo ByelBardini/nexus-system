@@ -84,7 +84,7 @@ Shell da aplicação para rotas autenticadas. Renderiza sidebar fixa + `<Outlet 
 | Seção | Itens (path → label) |
 |-------|---------------------|
 | Agendamento | `/` → Ordens de Serviço; `/testes` → Bancada de Testes; `/pedidos-rastreadores` → Pedidos |
-| Configuração | `/pedidos-config`, `/equipamentos`, `/aparelhos`, `/debitos-equipamentos`, `/cadastro-rastreamento` |
+| Configuração | `/aparelhos`, `/equipamentos`, `/pedidos-config`, `/cadastro-rastreamento`, `/debitos-equipamentos` |
 | Rodapé | `/configuracoes` → Configurações |
 
 **Lógica de `isActive`:**
