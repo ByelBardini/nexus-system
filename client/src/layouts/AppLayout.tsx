@@ -15,26 +15,26 @@ const navSections = [
   {
     title: "Configuração",
     items: [
+      { to: "/aparelhos", label: "Rastreadores/Simcards", icon: "router" },
+      {
+        to: "/equipamentos",
+        label: "Equipamentos",
+        icon: "settings_input_component",
+      },
       {
         to: "/pedidos-config",
         label: "Config. Pedidos",
         icon: "settings_suggest",
       },
       {
-        to: "/equipamentos",
-        label: "Equipamentos",
-        icon: "settings_input_component",
+        to: "/cadastro-rastreamento",
+        label: "Cadastro",
+        icon: "add_location_alt",
       },
-      { to: "/aparelhos", label: "Rastreadores/Simcards", icon: "router" },
       {
         to: "/debitos-equipamentos",
         label: "Débitos",
         icon: "account_balance",
-      },
-      {
-        to: "/cadastro-rastreamento",
-        label: "Cadastro",
-        icon: "add_location_alt",
       },
     ],
   },
