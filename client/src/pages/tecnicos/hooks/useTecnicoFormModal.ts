@@ -23,6 +23,7 @@ export function useTecnicoFormModal() {
   const form = useForm<TecnicoFormData>({
     resolver: zodResolver(tecnicoFormSchema) as Resolver<TecnicoFormData>,
     defaultValues: emptyTecnicoFormValues(),
+    mode: "onChange",
   });
 
   const estadoAtuacao = form.watch("estado");

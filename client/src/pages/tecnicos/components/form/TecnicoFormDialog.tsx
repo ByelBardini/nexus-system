@@ -111,7 +111,7 @@ export function TecnicoFormDialog({
             type="submit"
             form="tecnico-form"
             className="bg-erp-blue hover:bg-blue-700"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !form.formState.isValid}
           >
             {isSubmitting ? "Salvando..." : "Salvar Técnico"}
           </Button>

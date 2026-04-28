@@ -37,8 +37,11 @@ export function TecnicosPage() {
       onUpdateSuccess: formModal.closeModal,
     });
 
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+
   const handleFormSubmit = useCallback(
     (data: TecnicoFormData) => {
+      if (isSubmitting) return;
       if (formModal.editingTecnico) {
         updateMutation.mutate({
           id: formModal.editingTecnico.id,
@@ -48,7 +51,7 @@ export function TecnicosPage() {
         createMutation.mutate(data);
       }
     },
-    [formModal.editingTecnico, createMutation, updateMutation],
+    [isSubmitting, formModal.editingTecnico, createMutation, updateMutation],
   );
 
   const toggleStatus = useCallback(
@@ -58,8 +61,6 @@ export function TecnicosPage() {
     },
     [canEdit, updateStatusMutation],
   );
-
-  const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   if (isLoading) {
     return (
