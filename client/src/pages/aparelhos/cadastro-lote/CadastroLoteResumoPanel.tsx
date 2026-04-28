@@ -14,6 +14,7 @@ type CadastroLoteResumoPanelProps = {
   watchReferencia: string;
   watchNotaFiscal: string | undefined;
   watchTipo: LoteFormValues["tipo"];
+  watchProprietario: LoteFormValues["proprietarioTipo"];
   watchMarca: string;
   watchModelo: string;
   watchOperadora: string;
@@ -32,6 +33,7 @@ export function CadastroLoteResumoPanel({
   watchReferencia,
   watchNotaFiscal,
   watchTipo,
+  watchProprietario,
   watchMarca,
   watchModelo,
   watchOperadora,
@@ -85,7 +87,9 @@ export function CadastroLoteResumoPanel({
                 Proprietário
               </label>
               <p className="text-sm font-medium">
-                {clienteSelecionado?.nome ?? "—"}
+                {watchProprietario === "INFINITY"
+                  ? "Infinity"
+                  : (clienteSelecionado?.nome ?? "—")}
               </p>
             </div>
           </div>
