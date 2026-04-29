@@ -6,6 +6,32 @@ import type { StatusPedidoRastreador } from "@/types/pedidos-rastreador";
 export function useSidePanelMutations(onStatusUpdated: () => void) {
   const queryClient = useQueryClient();
 
+  const despachoCargaMutation = useMutation({
+    mutationFn: ({
+      id,
+      tipoDespacho,
+      transportadora,
+      numeroNf,
+    }: {
+      id: number;
+      tipoDespacho: string;
+      transportadora: string;
+      numeroNf: string;
+    }) =>
+      api(`/pedidos-rastreadores/${id}/despacho`, {
+        method: "PATCH",
+        body: JSON.stringify({ tipoDespacho, transportadora, numeroNf }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pedidos-rastreadores"] });
+      toast.success("Dados de despacho salvos");
+    },
+    onError: (err) =>
+      toast.error(
+        err instanceof Error ? err.message : "Erro ao salvar dados de despacho",
+      ),
+  });
+
   const kitIdsMutation = useMutation({
     mutationFn: ({ id, kitIds }: { id: number; kitIds: number[] }) =>
       api(`/pedidos-rastreadores/${id}/kits`, {
@@ -56,5 +82,5 @@ export function useSidePanelMutations(onStatusUpdated: () => void) {
       ),
   });
 
-  return { kitIdsMutation, statusMutation };
+  return { kitIdsMutation, statusMutation, despachoCargaMutation };
 }

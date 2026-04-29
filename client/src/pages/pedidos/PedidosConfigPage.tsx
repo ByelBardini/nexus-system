@@ -213,6 +213,29 @@ export function PedidosConfigPage() {
     setPedidoSelecionado(pedido);
     setPedidoApiSelecionado(raw ?? null);
     setPanelOpen(true);
+
+    if (raw) {
+      const id = raw.id;
+      if (!tipoDespachoPorPedido[id] && raw.tipoDespacho) {
+        const tipo = raw.tipoDespacho as TipoDespacho;
+        if (
+          tipo === "TRANSPORTADORA" ||
+          tipo === "CORREIOS" ||
+          tipo === "EM_MAOS"
+        ) {
+          setTipoDespachoPorPedido((prev) => ({ ...prev, [id]: tipo }));
+        }
+      }
+      if (!transportadoraPorPedido[id] && raw.transportadora) {
+        setTransportadoraPorPedido((prev) => ({
+          ...prev,
+          [id]: raw.transportadora!,
+        }));
+      }
+      if (!numeroNfPorPedido[id] && raw.numeroNf) {
+        setNumeroNfPorPedido((prev) => ({ ...prev, [id]: raw.numeroNf! }));
+      }
+    }
   }
 
   if (isLoading) {
@@ -304,6 +327,17 @@ export function PedidosConfigPage() {
               [pedidoSelecionado.id]: valor,
             }));
           }
+        }}
+        onSaveDespacho={(data) => {
+          if (!pedidoSelecionado) return;
+          const id = pedidoSelecionado.id;
+          const tipo = data.tipoDespacho as TipoDespacho;
+          setTipoDespachoPorPedido((prev) => ({ ...prev, [id]: tipo }));
+          setTransportadoraPorPedido((prev) => ({
+            ...prev,
+            [id]: data.transportadora,
+          }));
+          setNumeroNfPorPedido((prev) => ({ ...prev, [id]: data.numeroNf }));
         }}
       />
     </div>

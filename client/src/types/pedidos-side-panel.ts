@@ -22,6 +22,7 @@ export type SidePanelDerivations = {
   progressPct: number;
   podeDespachar: boolean;
   bloqueiaAvançoParaConfigurado: boolean;
+  bloqueiaAvançoParaDespacho: boolean;
   podeAvançar: boolean;
   mostraConcluir: boolean;
 };
@@ -41,4 +42,9 @@ export type SidePanelProps = {
   numeroNf: string;
   onTransportadoraChange: (valor: string) => void;
   onNumeroNfChange: (valor: string) => void;
+  onSaveDespacho: (data: {
+    tipoDespacho: string;
+    transportadora: string;
+    numeroNf: string;
+  }) => void;
 };

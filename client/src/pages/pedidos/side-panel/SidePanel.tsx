@@ -33,6 +33,7 @@ export function SidePanel({
   numeroNf,
   onTransportadoraChange,
   onNumeroNfChange,
+  onSaveDespacho,
 }: SidePanelProps) {
   const [kitExpandidoId, setKitExpandidoId] = useState<number | null>(null);
   const [detalhesKitId, setDetalhesKitId] = useState<number | null>(null);
@@ -44,7 +45,7 @@ export function SidePanel({
 
   const { hasPermission } = useAuth();
   const podeEditar = hasPermission("AGENDAMENTO.PEDIDO_RASTREADOR.EDITAR");
-  const { kitIdsMutation, statusMutation } =
+  const { kitIdsMutation, statusMutation, despachoCargaMutation } =
     useSidePanelMutations(onStatusUpdated);
 
   const { data: kitDetalhes, isLoading: carregandoDetalhes } =
@@ -58,7 +59,12 @@ export function SidePanel({
     kitsVinculados,
     tipoDespacho,
     podeEditar,
+    transportadora,
+    numeroNf,
   );
+
+  const estaDespachadoOuEntregue =
+    p.status === "despachado" || p.status === "entregue";
 
   function handleAvançar() {
     if (!deriv.proximoStatus) return;
@@ -77,6 +83,15 @@ export function SidePanel({
         pedidoApi,
       ),
     );
+  }
+
+  function handleSaveDespacho(data: {
+    tipoDespacho: string;
+    transportadora: string;
+    numeroNf: string;
+  }) {
+    onSaveDespacho(data);
+    despachoCargaMutation.mutate({ id: p.id, ...data });
   }
 
   function handleVincularKit(kit: KitResumo, qtd: number) {
@@ -148,16 +163,20 @@ export function SidePanel({
           onRemoverKit={handleRemoverKit}
           onEditarKit={handleEditarKit}
         />
-        <SidePanelDespachoCarga
-          estaConcluido={deriv.estaConcluido}
-          podeDespachar={deriv.podeDespachar}
-          tipoDespacho={tipoDespacho}
-          onTipoDespachoChange={onTipoDespachoChange}
-          transportadora={transportadora}
-          numeroNf={numeroNf}
-          onTransportadoraChange={onTransportadoraChange}
-          onNumeroNfChange={onNumeroNfChange}
-        />
+        {deriv.statusIdx >= 2 && (
+          <SidePanelDespachoCarga
+            bloqueado={estaDespachadoOuEntregue}
+            podeDespachar={deriv.podeDespachar}
+            bloqueiaAvançoParaDespacho={deriv.bloqueiaAvançoParaDespacho}
+            tipoDespacho={tipoDespacho}
+            onTipoDespachoChange={onTipoDespachoChange}
+            transportadora={transportadora}
+            numeroNf={numeroNf}
+            onTransportadoraChange={onTransportadoraChange}
+            onNumeroNfChange={onNumeroNfChange}
+            onSave={handleSaveDespacho}
+          />
+        )}
         {p.historico && p.historico.length > 0 && (
           <SidePanelHistoricoPedido historico={p.historico} />
         )}

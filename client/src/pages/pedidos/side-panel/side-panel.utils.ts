@@ -41,6 +41,8 @@ export function getSidePanelDerivations(
   kitsVinculados: KitVinculado[],
   tipoDespacho: TipoDespacho,
   podeEditar: boolean,
+  transportadora: string,
+  numeroNf: string,
 ): SidePanelDerivations {
   const estaConcluido = pedido.status === "entregue";
   const statusIdx = STATUS_ORDER.indexOf(pedido.status);
@@ -61,6 +63,7 @@ export function getSidePanelDerivations(
       progressPct,
       podeDespachar,
       bloqueiaAvançoParaConfigurado: false,
+      bloqueiaAvançoParaDespacho: false,
       podeAvançar: false,
       mostraConcluir: false,
     };
@@ -83,7 +86,17 @@ export function getSidePanelDerivations(
 
   const bloqueiaAvançoParaConfigurado =
     proximoStatus === "configurado" && progress < total;
-  const podeAvançar = proximoStatus != null && !bloqueiaAvançoParaConfigurado;
+
+  const bloqueiaAvançoParaDespacho =
+    proximoStatus === "despachado" &&
+    ((tipoDespacho === "TRANSPORTADORA" &&
+      (!transportadora.trim() || !numeroNf.trim())) ||
+      (tipoDespacho === "CORREIOS" && !numeroNf.trim()));
+
+  const podeAvançar =
+    proximoStatus != null &&
+    !bloqueiaAvançoParaConfigurado &&
+    !bloqueiaAvançoParaDespacho;
   const mostraConcluir = proximoStatus === "entregue";
 
   return {
@@ -97,6 +110,7 @@ export function getSidePanelDerivations(
     progressPct,
     podeDespachar,
     bloqueiaAvançoParaConfigurado,
+    bloqueiaAvançoParaDespacho,
     podeAvançar,
     mostraConcluir,
   };

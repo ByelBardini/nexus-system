@@ -15,36 +15,73 @@ const OPCOES_TIPO_DESPACHO: {
 ];
 
 type Props = {
-  estaConcluido: boolean;
+  bloqueado: boolean;
   podeDespachar: boolean;
+  bloqueiaAvançoParaDespacho: boolean;
   tipoDespacho: TipoDespacho;
   onTipoDespachoChange: (tipo: TipoDespacho) => void;
   transportadora: string;
   numeroNf: string;
   onTransportadoraChange: (valor: string) => void;
   onNumeroNfChange: (valor: string) => void;
+  onSave: (data: {
+    tipoDespacho: TipoDespacho;
+    transportadora: string;
+    numeroNf: string;
+  }) => void;
 };
 
 export function SidePanelDespachoCarga({
-  estaConcluido,
+  bloqueado,
   podeDespachar,
+  bloqueiaAvançoParaDespacho,
   tipoDespacho,
   onTipoDespachoChange,
   transportadora,
   numeroNf,
   onTransportadoraChange,
   onNumeroNfChange,
+  onSave,
 }: Props) {
+  function handleTipoDespachoChange(tipo: TipoDespacho) {
+    onTipoDespachoChange(tipo);
+    onSave({ tipoDespacho: tipo, transportadora, numeroNf });
+  }
+
+  function handleTransportadoraBlur(e: React.FocusEvent<HTMLInputElement>) {
+    const trimmed = e.target.value.trim();
+    onTransportadoraChange(trimmed);
+    onSave({ tipoDespacho, transportadora: trimmed, numeroNf });
+  }
+
+  function handleNumeroNfBlur(e: React.FocusEvent<HTMLInputElement>) {
+    const trimmed = e.target.value.trim();
+    onNumeroNfChange(trimmed);
+    onSave({ tipoDespacho, transportadora, numeroNf: trimmed });
+  }
+
+  const faltaTransportadora =
+    tipoDespacho === "TRANSPORTADORA" && !transportadora.trim();
+  const faltaNumeroNf =
+    (tipoDespacho === "TRANSPORTADORA" || tipoDespacho === "CORREIOS") &&
+    !numeroNf.trim();
+
   return (
     <div className="p-6 border-t-2 border-t-blue-100 bg-blue-50/20">
       <h3 className="text-xs font-bold text-slate-700 uppercase mb-4 flex items-center gap-2">
         <MaterialIcon name="local_shipping" className="text-erp-blue" />
         Despacho de Carga
+        {bloqueado && (
+          <span className="ml-auto flex items-center gap-1 text-[10px] font-normal text-slate-400 normal-case">
+            <MaterialIcon name="lock" className="text-xs" />
+            Bloqueado
+          </span>
+        )}
       </h3>
       <div
         className={cn(
           "space-y-3",
-          (estaConcluido || !podeDespachar) && "opacity-75 pointer-events-none",
+          (bloqueado || !podeDespachar) && "opacity-75 pointer-events-none",
         )}
       >
         <div>
@@ -56,7 +93,7 @@ export function SidePanelDespachoCarga({
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => onTipoDespachoChange(opt.value)}
+                onClick={() => handleTipoDespachoChange(opt.value)}
                 className={cn(
                   "flex items-center justify-center gap-1.5 px-3 py-2 rounded-sm text-[11px] font-bold uppercase border transition-colors w-full",
                   tipoDespacho === opt.value
@@ -80,9 +117,14 @@ export function SidePanelDespachoCarga({
                 <Input
                   value={transportadora}
                   onChange={(e) => onTransportadoraChange(e.target.value)}
-                  onBlur={(e) => onTransportadoraChange(e.target.value.trim())}
+                  onBlur={handleTransportadoraBlur}
                   placeholder="Ex: Braspress"
-                  className="text-[11px] h-9"
+                  className={cn(
+                    "text-[11px] h-9",
+                    bloqueiaAvançoParaDespacho &&
+                      faltaTransportadora &&
+                      "border-amber-400 focus-visible:ring-amber-400",
+                  )}
                 />
               </div>
             )}
@@ -93,14 +135,26 @@ export function SidePanelDespachoCarga({
               <Input
                 value={numeroNf}
                 onChange={(e) => onNumeroNfChange(e.target.value)}
-                onBlur={(e) => onNumeroNfChange(e.target.value.trim())}
+                onBlur={handleNumeroNfBlur}
                 placeholder={
                   tipoDespacho === "CORREIOS" ? "BR12345678" : "Ex: 12345"
                 }
-                className="text-[11px] h-9"
+                className={cn(
+                  "text-[11px] h-9",
+                  bloqueiaAvançoParaDespacho &&
+                    faltaNumeroNf &&
+                    "border-amber-400 focus-visible:ring-amber-400",
+                )}
               />
             </div>
           </div>
+        )}
+        {bloqueiaAvançoParaDespacho && (
+          <p className="text-[10px] text-amber-600 mt-1">
+            {tipoDespacho === "TRANSPORTADORA"
+              ? "Preencha a transportadora e o Nº NF para despachar"
+              : "Preencha o código de rastreio para despachar"}
+          </p>
         )}
       </div>
     </div>
