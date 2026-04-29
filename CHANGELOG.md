@@ -1,3 +1,17 @@
+# [1.5.0](https://github.com/ByelBardini/nexus-system/compare/v1.4.0...v1.5.0) (2026-04-29)
+
+
+### Bug Fixes
+
+* **aparelhos:** corrige proprietário exibindo '—' no painel de resumo do cadastro em lote ([becfd2f](https://github.com/ByelBardini/nexus-system/commit/becfd2f2419052b807b9678ef0dc1a167b0955ec))
+
+
+### Features
+
+* **pedidos-rastreadores:** adiciona campos de despacho ao PedidoRastreador e endpoint PATCH :id/despacho ([131fcca](https://github.com/ByelBardini/nexus-system/commit/131fcca3c30de7121021b191e18c5fed311e35b0))
+* **pedidos:** persiste dados de despacho e bloqueia avanço quando campos obrigatórios estão ausentes ([cf85725](https://github.com/ByelBardini/nexus-system/commit/cf85725a2c593bf1e46b678f0f3bbff6192e5145))
+* **tecnicos:** desabilita botão enquanto form inválido e guard de double-submit ([b69ee26](https://github.com/ByelBardini/nexus-system/commit/b69ee266611509c9afd78d1da48975105c2fecc9))
+
 # [1.4.0](https://github.com/ByelBardini/nexus-system/compare/v1.3.1...v1.4.0) (2026-04-23)
 
 
