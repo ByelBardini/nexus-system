@@ -1260,4 +1260,98 @@ describe("CadastroLoteResumoPanel", () => {
     expect(screen.getByText("Operadora B")).toBeInTheDocument();
     expect(screen.getByText(/1 identificadores/i)).toBeInTheDocument();
   });
+
+  it("exibe 'Infinity' como proprietário quando watchProprietario é INFINITY", () => {
+    render(
+      <CadastroLoteResumoPanel
+        watchReferencia="R"
+        watchNotaFiscal=""
+        watchTipo="RASTREADOR"
+        watchProprietario="INFINITY"
+        watchMarca=""
+        watchModelo=""
+        watchOperadora=""
+        watchValorUnitario={0}
+        watchDefinirIds={false}
+        clienteSelecionado={undefined}
+        marcasAtivas={[]}
+        modelosDisponiveis={[]}
+        operadorasAtivas={[]}
+        quantidadeFinal={1}
+        valorTotal={0}
+        idValidation={{
+          validos: [],
+          duplicados: [],
+          invalidos: [],
+          jaExistentes: [],
+        }}
+      />,
+    );
+    const label = screen.getByText(/^Proprietário$/i);
+    expect(
+      within(label.closest("div")!).getByText("Infinity"),
+    ).toBeInTheDocument();
+  });
+
+  it("exibe '—' como proprietário quando watchProprietario é CLIENTE mas nenhum cliente está selecionado", () => {
+    render(
+      <CadastroLoteResumoPanel
+        watchReferencia="R"
+        watchNotaFiscal=""
+        watchTipo="RASTREADOR"
+        watchProprietario="CLIENTE"
+        watchMarca=""
+        watchModelo=""
+        watchOperadora=""
+        watchValorUnitario={0}
+        watchDefinirIds={false}
+        clienteSelecionado={undefined}
+        marcasAtivas={[]}
+        modelosDisponiveis={[]}
+        operadorasAtivas={[]}
+        quantidadeFinal={1}
+        valorTotal={0}
+        idValidation={{
+          validos: [],
+          duplicados: [],
+          invalidos: [],
+          jaExistentes: [],
+        }}
+      />,
+    );
+    const label = screen.getByText(/^Proprietário$/i);
+    expect(within(label.closest("div")!).getByText("—")).toBeInTheDocument();
+  });
+
+  it("exibe nome do cliente como proprietário quando watchProprietario é CLIENTE e há cliente selecionado", () => {
+    render(
+      <CadastroLoteResumoPanel
+        watchReferencia="R"
+        watchNotaFiscal=""
+        watchTipo="RASTREADOR"
+        watchProprietario="CLIENTE"
+        watchMarca=""
+        watchModelo=""
+        watchOperadora=""
+        watchValorUnitario={0}
+        watchDefinirIds={false}
+        clienteSelecionado={{ id: 5, nome: "Empresa XYZ" }}
+        marcasAtivas={[]}
+        modelosDisponiveis={[]}
+        operadorasAtivas={[]}
+        quantidadeFinal={1}
+        valorTotal={0}
+        idValidation={{
+          validos: [],
+          duplicados: [],
+          invalidos: [],
+          jaExistentes: [],
+        }}
+      />,
+    );
+    const label = screen.getByText(/^Proprietário$/i);
+    expect(
+      within(label.closest("div")!).getByText("Empresa XYZ"),
+    ).toBeInTheDocument();
+  });
 });
