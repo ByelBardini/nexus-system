@@ -50,7 +50,7 @@ function DespachoEmMaosCenario() {
   return (
     <TestApp>
       <SidePanel
-        pedido={buildPedidoView({ quantidade: 5, status: "em_configuracao" })}
+        pedido={buildPedidoView({ quantidade: 5, status: "configurado" })}
         pedidoApi={pedidoApi()}
         open
         onClose={vi.fn()}
@@ -64,6 +64,7 @@ function DespachoEmMaosCenario() {
         numeroNf="1"
         onTransportadoraChange={vi.fn()}
         onNumeroNfChange={vi.fn()}
+        onSaveDespacho={vi.fn()}
       />
     </TestApp>
   );

@@ -113,6 +113,9 @@ export interface PedidoRastreadorApi {
   deCliente?: ClienteResumo | null;
   criadoPor?: { id: number; nome: string } | null;
   kitIds?: number[] | null;
+  tipoDespacho?: string | null;
+  transportadora?: string | null;
+  numeroNf?: string | null;
   itens?: PedidoRastreadorItemApi[];
   historico?: Array<{
     statusAnterior: StatusPedidoRastreador;

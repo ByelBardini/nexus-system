@@ -64,6 +64,7 @@ export function CadastroLotePage() {
             watchReferencia={lote.watchReferencia}
             watchNotaFiscal={lote.watchNotaFiscal}
             watchTipo={lote.watchTipo}
+            watchProprietario={lote.watchProprietario}
             watchMarca={lote.watchMarca}
             watchModelo={lote.watchModelo}
             watchOperadora={lote.watchOperadora}

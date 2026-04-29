@@ -155,6 +155,7 @@ function DialogHarness({
   const [open, setOpen] = useState(true);
   const form = useForm<TecnicoFormData>({
     resolver: zodResolver(tecnicoFormSchema) as Resolver<TecnicoFormData>,
+    mode: "onChange",
     defaultValues: {
       ...emptyTecnicoFormValues(),
       nome: "X",
@@ -307,8 +308,7 @@ describe("TecnicoFormDialog", () => {
     });
   });
 
-  it("não chama onSubmit quando o nome fica vazio; exibe o erro de validação do schema", async () => {
-    const user = userEvent.setup();
+  it("botão de salvar fica desativado quando nome está vazio (mode onChange)", async () => {
     const onSubmit = vi.fn();
     render(
       <DialogHarness
@@ -318,15 +318,15 @@ describe("TecnicoFormDialog", () => {
       />,
     );
 
-    const nomeInput = screen.getByPlaceholderText("Ex: Ricardo Silva");
-    expect(nomeInput).toHaveValue("");
-
-    await user.click(screen.getByRole("button", { name: /Salvar Técnico/i }));
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /Salvar Técnico/i }),
+      ).toBeDisabled();
+    });
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(await screen.findByText("Nome obrigatório")).toBeInTheDocument();
   });
 
-  it("se o usuário corrigir o nome após erro, a submissão volta a ser aceita", async () => {
+  it("ao preencher nome, botão é reativado e submissão é aceita", async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
     render(
@@ -337,13 +337,23 @@ describe("TecnicoFormDialog", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: /Salvar Técnico/i }));
-    expect(await screen.findByText("Nome obrigatório")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /Salvar Técnico/i }),
+      ).toBeDisabled();
+    });
 
     await user.type(
       screen.getByPlaceholderText("Ex: Ricardo Silva"),
       "Maria Técnica",
     );
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /Salvar Técnico/i }),
+      ).toBeEnabled();
+    });
+
     await user.click(screen.getByRole("button", { name: /Salvar Técnico/i }));
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(onSubmit.mock.calls[0]![0].nome).toBe("Maria Técnica");

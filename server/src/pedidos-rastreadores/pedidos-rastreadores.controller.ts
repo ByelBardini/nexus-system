@@ -20,6 +20,7 @@ import { CreatePedidoRastreadorDto } from './dto/create-pedido-rastreador.dto';
 import { UpdateStatusPedidoDto } from './dto/update-status-pedido.dto';
 import { UpdateKitIdsDto } from './dto/update-kit-ids.dto';
 import { BulkAparelhoDestinatarioDto } from './dto/bulk-aparelho-destinatario.dto';
+import { UpdateDespachoPedidoDto } from './dto/update-despacho-pedido.dto';
 import { StatusPedidoRastreador } from '@prisma/client';
 
 @ApiTags('pedidos-rastreadores')
@@ -70,6 +71,16 @@ export class PedidosRastreadoresController {
   @ApiOperation({ summary: 'Atualizar status do pedido de rastreador' })
   updateStatus(@Param('id') id: string, @Body() dto: UpdateStatusPedidoDto) {
     return this.service.updateStatus(+id, dto);
+  }
+
+  @Patch(':id/despacho')
+  @RequirePermissions('AGENDAMENTO.PEDIDO_RASTREADOR.EDITAR')
+  @ApiOperation({ summary: 'Atualizar dados de despacho do pedido' })
+  updateDespacho(
+    @Param('id') id: string,
+    @Body() dto: UpdateDespachoPedidoDto,
+  ) {
+    return this.service.updateDespacho(+id, dto);
   }
 
   @Patch(':id/kits')

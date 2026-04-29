@@ -100,9 +100,11 @@ A lista na página usa **`useTecnicosListQuery`** (tipagem `Tecnico[]` completa)
 | `createMutation` | `POST /tecnicos` | `JSON.stringify(buildTecnicoApiBody(data))` | Invalida `["tecnicos"]`; fecha modal |
 | `updateMutation` | `PATCH /tecnicos/:id` | idem (`buildTecnicoApiBody`) | Invalida `["tecnicos"]`; fecha modal |
 
-**Formulário:** schema Zod e defaults vêm de `lib/tecnico-form.ts` (`tecnicoFormSchema`, `emptyTecnicoFormValues`). Campos: `nome` (obrigatório ao submeter; default `""` no modal até o usuário preencher), `cpfCnpj?`, `telefone?`, `cidade?`, `estado?`, `cep?`, `logradouro?`, `numero?`, `complemento?`, `bairro?`, `cidadeEndereco?`, `estadoEndereco?`, `ativo: boolean`, cinco preços como `z.coerce.number().min(0)` em centavos. Resolver: `zodResolver(tecnicoFormSchema)`.
+**Formulário:** schema Zod e defaults vêm de `lib/tecnico-form.ts` (`tecnicoFormSchema`, `emptyTecnicoFormValues`). Campos: `nome` (obrigatório ao submeter; default `""` no modal até o usuário preencher), `cpfCnpj?`, `telefone?`, `cidade?`, `estado?`, `cep?`, `logradouro?`, `numero?`, `complemento?`, `bairro?`, `cidadeEndereco?`, `estadoEndereco?`, `ativo: boolean`, cinco preços como `z.coerce.number().min(0)` em centavos. Resolver: `zodResolver(tecnicoFormSchema)`. **`mode: "onChange"`** — validação dispara a cada keystroke; `formState.isValid` é reativo.
 
 **Comportamentos não-óbvios do formulário:**
+- Botão "Salvar Técnico" fica desabilitado enquanto `isSubmitting || !form.formState.isValid`; como o form usa `mode: "onChange"`, o botão fica habilitado só após o schema Zod ser satisfeito.
+- `handleFormSubmit` retorna early se `isSubmitting` for verdadeiro (guard contra double-submit).
 - Ao mudar `estado` (atuação), `cidade` é resetada para `""` via `form.setValue("cidade", "")`.
 - `InputCEP.onAddressFound` preenche automaticamente `logradouro`, `bairro`, `cidadeEndereco`, `estadoEndereco` (e `complemento` se existir).
 - Sidebar "Resumo do Técnico" usa `useWatch` em `nome`, `cidade`, `estado`, `instalacaoSemBloqueio`, `revisao`, `deslocamento` — atualiza em tempo real sem rerenderizar o form inteiro.
