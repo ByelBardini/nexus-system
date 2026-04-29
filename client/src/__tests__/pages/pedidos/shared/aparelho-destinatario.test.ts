@@ -20,10 +20,11 @@ function base(over: Partial<AparelhoNoKit> = {}): AparelhoNoKit {
 }
 
 describe("aparelho-destinatario", () => {
-  it("exibição: prioriza cliente sobre técnico quando ambos existem", () => {
+  it("exibição: prioriza cliente sobre técnico quando ambos existem (proprietario CLIENTE)", () => {
     expect(
       getDestinatarioExibicaoAparelhoNoKit(
         base({
+          proprietario: "CLIENTE",
           cliente: { id: 1, nome: "ClienteFirst" },
           tecnico: { id: 2, nome: "TecnicoSecond" },
         }),
@@ -31,23 +32,39 @@ describe("aparelho-destinatario", () => {
     ).toBe("ClienteFirst");
   });
 
-  it("exibição: prioriza cliente, depois técnico, depois Infinity, senão '-'", () => {
+  it("exibição: INFINITY vence mesmo quando cliente está populado", () => {
     expect(
       getDestinatarioExibicaoAparelhoNoKit(
-        base({ cliente: { id: 1, nome: "C" } }),
+        base({
+          proprietario: "INFINITY",
+          cliente: { id: 1, nome: "ClienteIgnorado" },
+          tecnico: {
+            id: 2,
+            nome: "TecnicoIgnorado",
+          } as AparelhoNoKit["tecnico"],
+        }),
+      ),
+    ).toBe("Infinity");
+  });
+
+  it("exibição: prioriza Infinity, depois cliente, depois técnico, senão '-'", () => {
+    expect(
+      getDestinatarioExibicaoAparelhoNoKit(base({ proprietario: "INFINITY" })),
+    ).toBe("Infinity");
+    expect(
+      getDestinatarioExibicaoAparelhoNoKit(
+        base({ proprietario: "CLIENTE", cliente: { id: 1, nome: "C" } }),
       ),
     ).toBe("C");
     expect(
       getDestinatarioExibicaoAparelhoNoKit(
         base({
+          proprietario: "CLIENTE",
           cliente: null,
           tecnico: { id: 1, nome: "T" } as AparelhoNoKit["tecnico"],
         }),
       ),
     ).toBe("T");
-    expect(
-      getDestinatarioExibicaoAparelhoNoKit(base({ proprietario: "INFINITY" })),
-    ).toBe("Infinity");
     expect(
       getDestinatarioExibicaoAparelhoNoKit(
         base({ proprietario: "CLIENTE", cliente: null, tecnico: null }),
@@ -64,8 +81,16 @@ describe("aparelho-destinatario", () => {
   });
 
   it("collectDestinatariosEmpresasAparelhos: ignora nulos, dedup e sort", () => {
-    const a1 = base({ id: 1, cliente: { id: 1, nome: "B" } });
-    const a2 = base({ id: 2, cliente: { id: 2, nome: "A" } });
+    const a1 = base({
+      id: 1,
+      proprietario: "CLIENTE",
+      cliente: { id: 1, nome: "B" },
+    });
+    const a2 = base({
+      id: 2,
+      proprietario: "CLIENTE",
+      cliente: { id: 2, nome: "A" },
+    });
     const a3 = base({
       id: 3,
       proprietario: "CLIENTE",
