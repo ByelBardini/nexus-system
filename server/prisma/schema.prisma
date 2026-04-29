@@ -582,6 +582,9 @@ model PedidoRastreador {
   atualizadoEm         DateTime                @updatedAt @map("atualizado_em")
   entregueEm           DateTime?               @map("entregue_em")
   kitIds               Json?                   @map("kit_ids")
+  tipoDespacho         String?                 @map("tipo_despacho") @db.VarChar(20)
+  transportadora       String?                 @map("transportadora") @db.VarChar(200)
+  numeroNf             String?                 @map("numero_nf") @db.VarChar(100)
 
   tecnico              Tecnico?                @relation(fields: [tecnicoId], references: [id])
   cliente              Cliente?                @relation("ClienteDestino", fields: [clienteId], references: [id])

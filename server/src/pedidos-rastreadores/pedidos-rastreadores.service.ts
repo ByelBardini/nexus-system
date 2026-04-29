@@ -329,6 +329,23 @@ export class PedidosRastreadoresService {
       );
     }
 
+    if (dto.status === StatusPedidoRastreador.DESPACHADO) {
+      const tipo = pedido.tipoDespacho;
+      if (tipo === 'TRANSPORTADORA') {
+        if (!pedido.transportadora?.trim() || !pedido.numeroNf?.trim()) {
+          throw new BadRequestException(
+            'Para despacho por transportadora, informe a transportadora e o número da NF.',
+          );
+        }
+      } else if (tipo === 'CORREIOS') {
+        if (!pedido.numeroNf?.trim()) {
+          throw new BadRequestException(
+            'Para despacho pelos Correios, informe o código de rastreio.',
+          );
+        }
+      }
+    }
+
     const dataUpdate: Prisma.PedidoRastreadorUncheckedUpdateInput = {
       status: dto.status,
     };
@@ -649,6 +666,28 @@ export class PedidosRastreadoresService {
     });
 
     return this.findOne(id);
+  }
+
+  async updateDespacho(
+    id: number,
+    dto: { tipoDespacho?: string; transportadora?: string; numeroNf?: string },
+  ) {
+    await this.findOne(id);
+    return this.prisma.pedidoRastreador.update({
+      where: { id },
+      data: {
+        ...(dto.tipoDespacho !== undefined && {
+          tipoDespacho: dto.tipoDespacho,
+        }),
+        ...(dto.transportadora !== undefined && {
+          transportadora: dto.transportadora.trim() || null,
+        }),
+        ...(dto.numeroNf !== undefined && {
+          numeroNf: dto.numeroNf.trim() || null,
+        }),
+      },
+      include: PEDIDO_RASTREADOR_INCLUDE_BASE,
+    });
   }
 
   async updateKitIds(id: number, kitIds: number[]) {
