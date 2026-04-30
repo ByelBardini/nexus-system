@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -19,14 +19,28 @@ type ModalState =
 
 const QUERY_KEY = ["tabelas-config", "categorias-falha"] as const;
 
+function normalizar(s: string) {
+  return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+}
+
 export function useCategoriasFalhaConfig() {
   const queryClient = useQueryClient();
   const [modal, setModal] = useState<ModalState>({ open: false });
+  const [searchCategoria, setSearchCategoria] = useState("");
 
   const { data: categorias = [], isLoading } = useQuery<CategoriaFalha[]>({
     queryKey: QUERY_KEY,
     queryFn: () => api("/tabelas-config/categorias-falha"),
   });
+
+  const categoriasFiltradas = useMemo(() => {
+    const q = normalizar(searchCategoria.trim());
+    if (!q) return categorias;
+    return categorias.filter((c) => normalizar(c.nome).includes(q));
+  }, [categorias, searchCategoria]);
 
   const invalidar = () =>
     queryClient.invalidateQueries({ queryKey: QUERY_KEY });
@@ -86,6 +100,9 @@ export function useCategoriasFalhaConfig() {
 
   return {
     categorias,
+    categoriasFiltradas,
+    searchCategoria,
+    setSearchCategoria,
     isLoading,
     modal,
     abrirCriar: () => setModal({ open: true, modo: "criar" }),
