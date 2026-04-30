@@ -519,6 +519,76 @@ describe("useCadastroIndividualAparelhoMutation", () => {
     });
   });
 
+  describe("motivoDefeito", () => {
+    it("CANCELADO_DEFEITO + OUTRO envia motivoDefeito no payload", async () => {
+      const qc = newMutationClient();
+      const form = mockForm();
+      const { result } = renderHook(
+        () => useCadastroIndividualAparelhoMutation(form, clientes),
+        { wrapper: wrapper(qc) },
+      );
+
+      act(() => {
+        result.current.createAparelhoMutation.mutate(
+          baseRastreador({
+            status: "CANCELADO_DEFEITO",
+            categoriaFalha: "OUTRO",
+            destinoDefeito: "SUCATA",
+            motivoDefeito: "Chip danificado",
+          }),
+        );
+      });
+      await waitFor(() => expect(api).toHaveBeenCalled());
+
+      const body = assertLastIndividualPost();
+      expect(body.motivoDefeito).toBe("Chip danificado");
+    });
+
+    it("CANCELADO_DEFEITO + outra categoria envia motivoDefeito null", async () => {
+      const qc = newMutationClient();
+      const form = mockForm();
+      const { result } = renderHook(
+        () => useCadastroIndividualAparelhoMutation(form, clientes),
+        { wrapper: wrapper(qc) },
+      );
+
+      act(() => {
+        result.current.createAparelhoMutation.mutate(
+          baseRastreador({
+            status: "CANCELADO_DEFEITO",
+            categoriaFalha: "DANO_FISICO",
+            destinoDefeito: "SUCATA",
+            motivoDefeito: "ignorado",
+          }),
+        );
+      });
+      await waitFor(() => expect(api).toHaveBeenCalled());
+
+      expect(assertLastIndividualPost().motivoDefeito).toBeNull();
+    });
+
+    it("status diferente de CANCELADO_DEFEITO envia motivoDefeito null", async () => {
+      const qc = newMutationClient();
+      const form = mockForm();
+      const { result } = renderHook(
+        () => useCadastroIndividualAparelhoMutation(form, clientes),
+        { wrapper: wrapper(qc) },
+      );
+
+      act(() => {
+        result.current.createAparelhoMutation.mutate(
+          baseRastreador({
+            status: "EM_MANUTENCAO",
+            motivoDefeito: "ignorado",
+          }),
+        );
+      });
+      await waitFor(() => expect(api).toHaveBeenCalled());
+
+      expect(assertLastIndividualPost().motivoDefeito).toBeNull();
+    });
+  });
+
   describe("status de entrada", () => {
     it("NOVO_OK força categoriaFalha e destinoDefeito null mesmo com valores no form", async () => {
       const qc = newMutationClient();

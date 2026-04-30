@@ -101,12 +101,10 @@ describe("DefinicaoStatusSection", () => {
     await user.click(screen.getByRole("button", { name: /Novo.*OK/i }));
     expect(f.getValues("status")).toBe("NOVO_OK");
 
-    await user.click(screen.getByRole("button", { name: /Em Manutenção/i }));
+    await user.click(screen.getByRole("button", { name: /^Usado$/i }));
     expect(f.getValues("status")).toBe("EM_MANUTENCAO");
 
-    await user.click(
-      screen.getByRole("button", { name: /Cancelado.*Defeito/i }),
-    );
+    await user.click(screen.getByRole("button", { name: /^Defeito$/i }));
     expect(f.getValues("status")).toBe("CANCELADO_DEFEITO");
   });
 
@@ -134,15 +132,11 @@ describe("DefinicaoStatusSection", () => {
       );
     }
     render(<H />);
-    const cancelBefore = screen.getByRole("button", {
-      name: /Cancelado.*Defeito/i,
-    });
+    const cancelBefore = screen.getByRole("button", { name: /^Defeito$/i });
     expect(cancelBefore.className).toMatch(/opacity-60/);
     await user.click(cancelBefore);
     expect(formRef.current!.getValues("status")).toBe("CANCELADO_DEFEITO");
-    const cancelAfter = screen.getByRole("button", {
-      name: /Cancelado.*Defeito/i,
-    });
+    const cancelAfter = screen.getByRole("button", { name: /^Defeito$/i });
     expect(cancelAfter.className).toMatch(/ring-1/);
     expect(cancelAfter.className).toMatch(/border-red/);
   });
@@ -185,7 +179,7 @@ describe("DefinicaoStatusSection", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("com subconjunto de status (só Novo e Em manutenção), não oferece botão Cancelado e não mostra defeito", () => {
+  it("com subconjunto de status (só Novo e Usado), não oferece botão Defeito e não mostra defeito", () => {
     render(
       <DefinicaoHarness
         watchStatus="EM_MANUTENCAO"
@@ -193,11 +187,32 @@ describe("DefinicaoStatusSection", () => {
       />,
     );
     expect(
-      screen.queryByRole("button", { name: /Cancelado.*Defeito/i }),
+      screen.queryByRole("button", { name: /^Defeito$/i }),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByText(/Detalhamento de Defeito Requerido/i),
     ).not.toBeInTheDocument();
+  });
+
+  it("categoriaFalha OUTRO exibe textarea de motivo; outra categoria não exibe", async () => {
+    const user = userEvent.setup();
+    render(
+      <DefinicaoHarness
+        defaultStatus="CANCELADO_DEFEITO"
+        watchStatus="CANCELADO_DEFEITO"
+      />,
+    );
+    expect(
+      screen.queryByPlaceholderText(/Descreva o motivo do defeito/i),
+    ).not.toBeInTheDocument();
+
+    const [catCombo] = screen.getAllByRole("combobox");
+    await user.click(catCombo!);
+    await user.click(await screen.findByRole("option", { name: /^Outro$/i }));
+
+    expect(
+      screen.getByPlaceholderText(/Descreva o motivo do defeito/i),
+    ).toBeInTheDocument();
   });
 
   it("com watch CANCELADO_DEFEITO, mostra o bloco vermelho com rótulos dos selects", () => {
