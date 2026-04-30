@@ -349,12 +349,16 @@ export class AparelhosService {
 
     // SIMs always belong to Infinity — no client ownership, no debt abatement
     if (tipo === 'SIM') {
+      const statusSim: StatusAparelho =
+        statusEntrada === 'CANCELADO_DEFEITO' && destinoDefeito === 'DESCARTADO'
+          ? 'DESCARTADO'
+          : 'EM_ESTOQUE';
       return this.prisma.$transaction(async (tx) => {
         const aparelho = await tx.aparelho.create({
           data: {
             tipo: 'SIM',
             identificador,
-            status: 'EM_ESTOQUE',
+            status: statusSim,
             proprietario: 'INFINITY',
             clienteId: null,
             operadora: operadoraSim ?? null,
@@ -420,7 +424,10 @@ export class AparelhosService {
       };
     }
 
-    const statusAparelho: StatusAparelho = 'EM_ESTOQUE';
+    const statusAparelho: StatusAparelho =
+      statusEntrada === 'CANCELADO_DEFEITO' && destinoDefeito === 'DESCARTADO'
+        ? 'DESCARTADO'
+        : 'EM_ESTOQUE';
 
     return this.prisma.$transaction(async (tx) => {
       const aparelho = await tx.aparelho.create({
@@ -458,7 +465,7 @@ export class AparelhosService {
                 ? `Vinculado ao cliente ID ${finalClienteId}`
                 : 'Vinculado à Infinity',
             statusEntrada === 'CANCELADO_DEFEITO'
-              ? `Status: Defeito - ${categoriaFalha}${categoriaFalha === 'OUTRO' && motivoDefeito ? ` (${motivoDefeito})` : ''} - Destino: ${destinoDefeito}`
+              ? `Status: Defeito - ${categoriaFalha}${motivoDefeito ? ` (${motivoDefeito})` : ''} - Destino: ${destinoDefeito === 'DESCARTADO' ? 'Descartado' : 'Em Estoque (defeito)'}`
               : statusEntrada === 'EM_MANUTENCAO'
                 ? 'Status: Usado'
                 : 'Status: Novo/OK',
