@@ -10,7 +10,7 @@ Módulo de configuração de tabelas de suporte ao domínio de aparelhos. Atualm
 
 | Arquivo | Responsabilidade |
 |---------|-----------------|
-| `tabelas-config.module.ts` | Registra controller + service; sem importações extras (`PrismaModule` é global) |
+| `tabelas-config.module.ts` | Registra controller + service; importa `UsersModule` (necessário para `PermissionsGuard`) |
 | `tabelas-config.controller.ts` | Rotas em `/tabelas-config`; `@UseGuards(PermissionsGuard)` no controller |
 | `tabelas-config.service.ts` | CRUD de categorias de falha; soft-delete via `ativo = false` |
 | `dto/create-categoria-falha.dto.ts` | `nome: string`, `motivaTexto?: boolean` |
@@ -70,10 +70,12 @@ Categorias padrão inseridas via `upsert` (não duplicam em re-runs):
 
 | Arquivo | Responsabilidade |
 |---------|-----------------|
-| `TabelasConfigPage.tsx` | Página principal; usa `hasPermission("CONFIGURACAO.APARELHO.EDITAR")` para exibir botões de edição |
-| `categorias-falha/useCategoriasFalhaConfig.ts` | React Query + estado do modal (abrir/fechar, criar/editar) |
-| `categorias-falha/CategoriasFalhaTable.tsx` | Tabela: Nome, Exige Descrição, Ativo, Ações (editar / desativar) |
+| `TabelasConfigPage.tsx` | Layout full-screen (`-m-4 flex min-h-[100dvh] flex-col bg-slate-100`); header h-20 com back-link para `/configuracoes`; passa `categoriasFiltradas`, `searchCategoria`, `setSearchCategoria` para `CategoriasFalhaTable` |
+| `categorias-falha/useCategoriasFalhaConfig.ts` | React Query + estado do modal (abrir/fechar, criar/editar) + `searchCategoria`/`setSearchCategoria` + `categoriasFiltradas` (filtro case-insensitive sem acentos) |
+| `categorias-falha/CategoriasFalhaTable.tsx` | Fragment: campo de busca (props `search`/`onSearch`) + `<table>` inline + footer total; ações via `DropdownMenu` (Editar / Desativar); prop `onToggleAtivo(cat)` substituiu `onDesativar(id)` |
 | `categorias-falha/CategoriaFalhaModal.tsx` | Dialog com campo `nome` (Input) e `motivaTexto` (Switch) |
+
+**Mockup estático:** `docs/telas/tabelas-config.html`
 
 **Hook de consumo compartilhado (`client/src/pages/aparelhos/shared/`):**
 
