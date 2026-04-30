@@ -4,11 +4,23 @@
       "Bash(npx tsc *)",
       "Bash(npx eslint . --quiet *)",
       "Bash(npm run test *)",
+      "Bash(npm run *)",
       "Bash(npx jest *)",
       "Bash(npx --prefix * jest *)",
+      "Bash(npx prisma *)",
       "Bash(npm show *)",
+      "Bash(npm audit *)",
       "Bash(./node_modules/.bin/tsc *)",
-      "Bash(npm audit *)"
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(xargs grep *)",
+      "Bash(rm -rf node_modules*)",
+      "Bash(rm -rf dist*)",
+      "Bash(rm -rf .next*)",
+      "Bash(rm -rf coverage*)"
     ]
   },
   "hooks": {
