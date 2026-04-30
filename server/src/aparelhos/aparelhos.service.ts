@@ -319,6 +319,7 @@ export class AparelhosService {
       statusEntrada,
       categoriaFalha,
       destinoDefeito,
+      motivoDefeito,
       proprietario,
       clienteId,
       notaFiscal,
@@ -360,6 +361,7 @@ export class AparelhosService {
             marcaSimcardId: marcaSimcardId ?? null,
             planoSimcardId: planoSimcardId ?? null,
             tecnicoId: tecnicoId || null,
+            observacao: statusEntrada === 'EM_MANUTENCAO' ? 'Usado' : null,
           },
           include: {
             tecnico: { select: { id: true, nome: true } },
@@ -434,6 +436,7 @@ export class AparelhosService {
           marcaSimcardId: null,
           planoSimcardId: null,
           tecnicoId: tecnicoId || null,
+          observacao: statusEntrada === 'EM_MANUTENCAO' ? 'Usado' : null,
         },
         include: {
           tecnico: { select: { id: true, nome: true } },
@@ -455,9 +458,9 @@ export class AparelhosService {
                 ? `Vinculado ao cliente ID ${finalClienteId}`
                 : 'Vinculado à Infinity',
             statusEntrada === 'CANCELADO_DEFEITO'
-              ? `Status: Defeito - ${categoriaFalha} - Destino: ${destinoDefeito}`
+              ? `Status: Defeito - ${categoriaFalha}${categoriaFalha === 'OUTRO' && motivoDefeito ? ` (${motivoDefeito})` : ''} - Destino: ${destinoDefeito}`
               : statusEntrada === 'EM_MANUTENCAO'
-                ? 'Status: Em manutenção'
+                ? 'Status: Usado'
                 : 'Status: Novo/OK',
             observacoes ? `Obs: ${observacoes}` : null,
           ]
