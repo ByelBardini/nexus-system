@@ -104,6 +104,16 @@ export function ConfiguracoesPage() {
                   className="text-slate-300 group-hover:text-slate-600"
                 />
               </Link>
+              <Link to="/tabelas" className={navTileClasses}>
+                <div className="flex items-center gap-3">
+                  <MaterialIcon name="table_chart" className="text-slate-400" />
+                  <span>Tabelas</span>
+                </div>
+                <MaterialIcon
+                  name="chevron_right"
+                  className="text-slate-300 group-hover:text-slate-600"
+                />
+              </Link>
             </div>
           </section>
         </div>
