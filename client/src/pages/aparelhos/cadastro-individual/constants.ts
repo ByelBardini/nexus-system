@@ -50,14 +50,14 @@ export const STATUS_CONFIG: Record<
     borderColor: "border-emerald-500",
   },
   EM_MANUTENCAO: {
-    label: "Em Manutenção",
+    label: "Usado",
     icon: "build",
     color: "text-blue-600",
     bgColor: "bg-blue-50",
     borderColor: "border-blue-500",
   },
   CANCELADO_DEFEITO: {
-    label: "Cancelado / Defeito",
+    label: "Defeito",
     icon: "cancel",
     color: "text-red-600",
     bgColor: "bg-red-50",

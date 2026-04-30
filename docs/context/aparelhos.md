@@ -35,6 +35,7 @@ Ver índice em `AGENTS.md`.
 | `notaFiscal` | `string?` | |
 | `categoriaFalha` | `string?` | Só quando defeito |
 | `destinoDefeito` | `string?` | Só quando defeito |
+| `motivoDefeito` | `string?` | Só quando `categoriaFalha === 'OUTRO'` |
 | `abaterDebitoId` | `number?` | ID do `DebitoRastreador` a decrementar |
 
 **`CreateLoteDto` — campos adicionais:**

@@ -27,6 +27,7 @@ const schema = z
       "OUTRO",
     ]),
     destinoDefeito: z.enum(["SUCATA", "GARANTIA", "LABORATORIO"]),
+    motivoDefeito: z.preprocess((v) => v ?? "", z.string().optional()),
     abaterDivida: z.boolean(),
     abaterDebitoId: z.number().nullable(),
   })
@@ -59,6 +60,17 @@ const schema = z
         path: ["clienteId"],
       });
     }
+    if (
+      data.status === "CANCELADO_DEFEITO" &&
+      data.categoriaFalha === "OUTRO" &&
+      !data.motivoDefeito?.trim()
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Descreva o motivo do defeito",
+        path: ["motivoDefeito"],
+      });
+    }
   });
 
 export type FormDataCadastroIndividual = z.infer<typeof schema>;
@@ -82,6 +94,7 @@ export const cadastroIndividualDefaultValues: FormDataCadastroIndividual = {
   status: "EM_MANUTENCAO",
   categoriaFalha: "FALHA_COMUNICACAO",
   destinoDefeito: "LABORATORIO",
+  motivoDefeito: "",
   abaterDivida: false,
   abaterDebitoId: null,
 };

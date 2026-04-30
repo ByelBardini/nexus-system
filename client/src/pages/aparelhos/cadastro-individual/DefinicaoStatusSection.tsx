@@ -24,6 +24,7 @@ export function DefinicaoStatusSection({
   statusDisponiveis,
   watchStatus,
 }: DefinicaoStatusSectionProps) {
+  const categoriaFalha = form.watch("categoriaFalha");
   return (
     <div className="bg-white border border-slate-200 rounded-sm p-6">
       <div className="flex items-center gap-2 mb-6 pb-2 border-b border-slate-100">
@@ -132,6 +133,38 @@ export function DefinicaoStatusSection({
                 )}
               />
             </div>
+            {categoriaFalha === "OUTRO" && (
+              <div className="col-span-2">
+                <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                  Motivo do Defeito
+                </Label>
+                <Controller
+                  name="motivoDefeito"
+                  control={form.control}
+                  render={({ field, fieldState }) => (
+                    <>
+                      <textarea
+                        {...field}
+                        rows={3}
+                        placeholder="Descreva o motivo do defeito..."
+                        className={cn(
+                          "w-full rounded-sm border bg-white px-3 py-2 text-sm resize-none",
+                          "placeholder:text-slate-400 focus:outline-none focus:ring-1",
+                          fieldState.error
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-red-200 focus:ring-red-400",
+                        )}
+                      />
+                      {fieldState.error && (
+                        <p className="text-[10px] text-red-600 mt-1">
+                          {fieldState.error.message}
+                        </p>
+                      )}
+                    </>
+                  )}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>
