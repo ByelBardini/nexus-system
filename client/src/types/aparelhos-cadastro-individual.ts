@@ -9,11 +9,4 @@ export type OrigemItem =
   | "DEVOLUCAO_TECNICO"
   | "COMPRA_AVULSA";
 
-export type CategoriaFalha =
-  | "FALHA_COMUNICACAO"
-  | "PROBLEMA_ALIMENTACAO"
-  | "DANO_FISICO"
-  | "CURTO_CIRCUITO"
-  | "OUTRO";
-
-export type DestinoDefeito = "SUCATA" | "GARANTIA" | "LABORATORIO";
+export type DestinoDefeito = "DESCARTADO" | "EM_ESTOQUE_DEFEITO";

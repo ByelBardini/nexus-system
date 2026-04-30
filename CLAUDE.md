@@ -38,7 +38,8 @@
 - Structured JSON for debug/observability. Plain text for CLI output.
 
 ## Agent Behavior
-- Before exploring the repo broadly, read the relevant `docs/context/<area>.md` from the table in `AGENTS.md`.
+- **Always** read the relevant `docs/context/<area>.md` **before** opening any source file. This is the primary way to understand the domain — reading source first wastes tokens and misses intent.
+- After any change that affects a domain's API contract, data model, endpoints, DTOs, or component behavior: update the corresponding `docs/context/<area>.md` to reflect the new state. The doc is the source of truth for future tasks.
 - Re-read files before editing after 10+ messages (compaction risk).
 - Files >500 LOC: read in chunks with offset/limit.
 - On rename/signature change: grep for calls, types, imports, re-exports.

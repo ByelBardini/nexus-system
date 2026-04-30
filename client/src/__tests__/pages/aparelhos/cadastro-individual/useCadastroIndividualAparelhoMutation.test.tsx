@@ -367,8 +367,8 @@ describe("useCadastroIndividualAparelhoMutation", () => {
             origem: "COMPRA_AVULSA",
             notaFiscal: "NF-1",
             status: "CANCELADO_DEFEITO",
-            categoriaFalha: "DANO_FISICO",
-            destinoDefeito: "SUCATA",
+            categoriaFalha: "Dano Físico / Carcaça",
+            destinoDefeito: "DESCARTADO",
             observacoes: "  obs  ",
             identificador: "12-34-56",
           }),
@@ -381,8 +381,8 @@ describe("useCadastroIndividualAparelhoMutation", () => {
       expect(body.responsavelEntrega).toBe("NF-1");
       expect(body.notaFiscal).toBe("NF-1");
       expect(body.observacoes).toBe("obs");
-      expect(body.categoriaFalha).toBe("DANO_FISICO");
-      expect(body.destinoDefeito).toBe("SUCATA");
+      expect(body.categoriaFalha).toBe("Dano Físico / Carcaça");
+      expect(body.destinoDefeito).toBe("DESCARTADO");
     });
 
     it("COMPRA_AVULSA sem nota fiscal: responsavelEntrega e notaFiscal null", async () => {
@@ -519,6 +519,78 @@ describe("useCadastroIndividualAparelhoMutation", () => {
     });
   });
 
+  describe("motivoDefeito", () => {
+    it("CANCELADO_DEFEITO + categoriaFalhaMotiva true envia motivoDefeito no payload", async () => {
+      const qc = newMutationClient();
+      const form = mockForm();
+      const { result } = renderHook(
+        () => useCadastroIndividualAparelhoMutation(form, clientes),
+        { wrapper: wrapper(qc) },
+      );
+
+      act(() => {
+        result.current.createAparelhoMutation.mutate(
+          baseRastreador({
+            status: "CANCELADO_DEFEITO",
+            categoriaFalha: "Outro",
+            categoriaFalhaMotiva: true,
+            destinoDefeito: "DESCARTADO",
+            motivoDefeito: "Chip danificado",
+          }),
+        );
+      });
+      await waitFor(() => expect(api).toHaveBeenCalled());
+
+      const body = assertLastIndividualPost();
+      expect(body.motivoDefeito).toBe("Chip danificado");
+    });
+
+    it("CANCELADO_DEFEITO + categoriaFalhaMotiva false envia motivoDefeito null", async () => {
+      const qc = newMutationClient();
+      const form = mockForm();
+      const { result } = renderHook(
+        () => useCadastroIndividualAparelhoMutation(form, clientes),
+        { wrapper: wrapper(qc) },
+      );
+
+      act(() => {
+        result.current.createAparelhoMutation.mutate(
+          baseRastreador({
+            status: "CANCELADO_DEFEITO",
+            categoriaFalha: "Dano Físico / Carcaça",
+            categoriaFalhaMotiva: false,
+            destinoDefeito: "DESCARTADO",
+            motivoDefeito: "ignorado",
+          }),
+        );
+      });
+      await waitFor(() => expect(api).toHaveBeenCalled());
+
+      expect(assertLastIndividualPost().motivoDefeito).toBeNull();
+    });
+
+    it("status diferente de CANCELADO_DEFEITO envia motivoDefeito null", async () => {
+      const qc = newMutationClient();
+      const form = mockForm();
+      const { result } = renderHook(
+        () => useCadastroIndividualAparelhoMutation(form, clientes),
+        { wrapper: wrapper(qc) },
+      );
+
+      act(() => {
+        result.current.createAparelhoMutation.mutate(
+          baseRastreador({
+            status: "EM_MANUTENCAO",
+            motivoDefeito: "ignorado",
+          }),
+        );
+      });
+      await waitFor(() => expect(api).toHaveBeenCalled());
+
+      expect(assertLastIndividualPost().motivoDefeito).toBeNull();
+    });
+  });
+
   describe("status de entrada", () => {
     it("NOVO_OK força categoriaFalha e destinoDefeito null mesmo com valores no form", async () => {
       const qc = newMutationClient();
@@ -532,8 +604,8 @@ describe("useCadastroIndividualAparelhoMutation", () => {
         result.current.createAparelhoMutation.mutate(
           baseRastreador({
             status: "NOVO_OK",
-            categoriaFalha: "CURTO_CIRCUITO",
-            destinoDefeito: "GARANTIA",
+            categoriaFalha: "Curto Circuito",
+            destinoDefeito: "DESCARTADO",
           }),
         );
       });

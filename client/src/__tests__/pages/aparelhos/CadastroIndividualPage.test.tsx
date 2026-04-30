@@ -77,6 +77,8 @@ function defaultApiResponse(url: string, init?: RequestInit): Promise<unknown> {
     return Promise.resolve({ data: [] });
   if (url === "/aparelhos")
     return Promise.resolve([{ identificador: "999", lote: null }]);
+  if (url === "/tabelas-config/categorias-falha/ativas")
+    return Promise.resolve([]);
   return Promise.resolve(null);
 }
 
@@ -197,7 +199,7 @@ describe("CadastroIndividualPage (integrado, APIs mockadas)", () => {
     expect(statusCard).toBeTruthy();
     expect(
       within(statusCard!.parentElement!).getByRole("button", {
-        name: /Em Manutenção/i,
+        name: /Usado/i,
       }),
     ).toBeInTheDocument();
 
@@ -216,7 +218,7 @@ describe("CadastroIndividualPage (integrado, APIs mockadas)", () => {
     ).toBeInTheDocument();
     expect(
       within(statusCard!.parentElement!).queryByRole("button", {
-        name: /Em Manutenção/i,
+        name: /Usado/i,
       }),
     ).not.toBeInTheDocument();
   });

@@ -34,6 +34,7 @@ Ao trabalhar em uma área:
 | Domínio `users` + página Usuários | [`docs/context/users.md`](docs/context/users.md) |
 | Domínio `roles` + página Cargos | [`docs/context/roles.md`](docs/context/roles.md) |
 | Domínio `aparelhos` (API) | [`docs/context/aparelhos.md`](docs/context/aparelhos.md) |
+| Domínio `tabelas-config` (categorias de falha, API + UI) | [`docs/context/tabelas-config.md`](docs/context/tabelas-config.md) |
 | Domínio `clientes` + página Clientes | [`docs/context/clientes.md`](docs/context/clientes.md) |
 | Domínio `tecnicos` + página Técnicos | [`docs/context/tecnicos.md`](docs/context/tecnicos.md) |
 | Domínio `veiculos` | [`docs/context/veiculos.md`](docs/context/veiculos.md) |

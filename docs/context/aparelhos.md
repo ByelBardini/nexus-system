@@ -35,6 +35,7 @@ Ver índice em `AGENTS.md`.
 | `notaFiscal` | `string?` | |
 | `categoriaFalha` | `string?` | Só quando defeito |
 | `destinoDefeito` | `string?` | Só quando defeito |
+| `motivoDefeito` | `string?` | Só quando a categoria selecionada tiver `motivaTexto === true` |
 | `abaterDebitoId` | `number?` | ID do `DebitoRastreador` a decrementar |
 
 **`CreateLoteDto` — campos adicionais:**
@@ -74,7 +75,7 @@ Ver índice em `AGENTS.md`.
 **Enums relevantes:**
 
 - `TipoAparelho`: `RASTREADOR` | `SIM`
-- `StatusAparelho`: `EM_ESTOQUE` | `CONFIGURADO` | `DESPACHADO` | `COM_TECNICO` | `INSTALADO`
+- `StatusAparelho`: `EM_ESTOQUE` | `CONFIGURADO` | `DESPACHADO` | `COM_TECNICO` | `INSTALADO` | `DESCARTADO`
 - `ProprietarioTipo`: `INFINITY` | `CLIENTE`
 - `Plataforma`: `GETRAK` | `GEOMAPS` | `SELSYN` (domínio de equipamentos/plataformas)
 
@@ -87,6 +88,7 @@ Ver índice em `AGENTS.md`.
 
 **Regras de negócio críticas:**
 
+- `createIndividual` com `statusEntrada === 'CANCELADO_DEFEITO'`: o `statusAparelho` gravado depende de `destinoDefeito` — `'DESCARTADO'` → `StatusAparelho.DESCARTADO`; `'EM_ESTOQUE_DEFEITO'` → `StatusAparelho.EM_ESTOQUE`. Outros statuses sempre resultam em `EM_ESTOQUE`.
 - SIM é **sempre** proprietário `INFINITY` — `clienteId` e abate de débito são ignorados na criação.
 - `identificador` deve ser único (validado via `findFirst` antes de criar avulso).
 - `updateStatus` em rastreador com `simVinculadoId` **replica** status e histórico no SIM vinculado (mesma transação).

@@ -93,6 +93,11 @@ const CadastroRastreamentoPage = lazy(() =>
     }),
   ),
 );
+const TabelasConfigPage = lazy(() =>
+  import("@/pages/tabelas-config/TabelasConfigPage").then((m) => ({
+    default: m.TabelasConfigPage,
+  })),
+);
 
 function PageLoader() {
   return (
@@ -255,6 +260,14 @@ function App() {
           element={
             <Suspense fallback={<PageLoader />}>
               <PareamentoPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="tabelas"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <TabelasConfigPage />
             </Suspense>
           }
         />

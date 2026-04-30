@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  CATEGORIAS_FALHA,
-  DESTINOS_DEFEITO,
+  DESTINOS_SWITCH,
   ORIGENS,
   STATUS_CONFIG,
 } from "@/pages/aparelhos/cadastro-individual/constants";
@@ -20,8 +19,9 @@ describe("cadastro-individual constants", () => {
     expect(STATUS_CONFIG.CANCELADO_DEFEITO.label).toBeTruthy();
   });
 
-  it("CATEGORIAS e DESTINOS têm o mesmo tamanho que os enums de formulário (smoke)", () => {
-    expect(CATEGORIAS_FALHA.length).toBe(5);
-    expect(DESTINOS_DEFEITO.length).toBe(3);
+  it("DESTINOS_SWITCH cobre os dois destinos de defeito", () => {
+    const vals = new Set(DESTINOS_SWITCH.map((d) => d.value));
+    expect(vals.has("DESCARTADO")).toBe(true);
+    expect(vals.has("EM_ESTOQUE_DEFEITO")).toBe(true);
   });
 });

@@ -60,6 +60,55 @@ describe("cadastroIndividualSchema", () => {
     expect(r.success).toBe(true);
   });
 
+  it("falha CANCELADO_DEFEITO + categoriaFalhaMotiva true sem motivoDefeito", () => {
+    const r = cadastroIndividualSchema.safeParse({
+      ...cadastroIndividualDefaultValues,
+      identificador: "1",
+      tipo: "RASTREADOR",
+      marca: "A",
+      modelo: "B",
+      status: "CANCELADO_DEFEITO",
+      categoriaFalha: "Outro",
+      categoriaFalhaMotiva: true,
+      motivoDefeito: "",
+    });
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      const paths = r.error.issues.map((i) => i.path[0]);
+      expect(paths).toContain("motivoDefeito");
+    }
+  });
+
+  it("aceita CANCELADO_DEFEITO + categoriaFalhaMotiva true com motivoDefeito preenchido", () => {
+    const r = cadastroIndividualSchema.safeParse({
+      ...cadastroIndividualDefaultValues,
+      identificador: "1",
+      tipo: "RASTREADOR",
+      marca: "A",
+      modelo: "B",
+      status: "CANCELADO_DEFEITO",
+      categoriaFalha: "Outro",
+      categoriaFalhaMotiva: true,
+      motivoDefeito: "Componente queimado",
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("aceita CANCELADO_DEFEITO + categoriaFalhaMotiva false sem motivoDefeito", () => {
+    const r = cadastroIndividualSchema.safeParse({
+      ...cadastroIndividualDefaultValues,
+      identificador: "1",
+      tipo: "RASTREADOR",
+      marca: "A",
+      modelo: "B",
+      status: "CANCELADO_DEFEITO",
+      categoriaFalha: "Dano Físico / Carcaça",
+      categoriaFalhaMotiva: false,
+      motivoDefeito: "",
+    });
+    expect(r.success).toBe(true);
+  });
+
   it("aceita string vazia no identificador após preprocess como falha (refine mínimo 1 caractere)", () => {
     const r = cadastroIndividualSchema.safeParse({
       ...cadastroIndividualDefaultValues,

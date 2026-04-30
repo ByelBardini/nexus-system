@@ -5,16 +5,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DefinicaoStatusSection } from "@/pages/aparelhos/cadastro-individual/DefinicaoStatusSection";
 import { cadastroIndividualDefaultValues } from "@/pages/aparelhos/cadastro-individual/schema";
 import type { FormDataCadastroIndividual } from "@/pages/aparelhos/cadastro-individual/schema";
-import {
-  CATEGORIAS_FALHA,
-  DESTINOS_DEFEITO,
-} from "@/pages/aparelhos/cadastro-individual/constants";
 import type { StatusAparelho } from "@/pages/aparelhos/cadastro-individual/constants";
 
 vi.mock("@/components/MaterialIcon", () => ({
   MaterialIcon: ({ name }: { name: string }) => (
     <span data-icon={name} aria-hidden="true" />
   ),
+}));
+
+vi.mock("@/pages/aparelhos/shared/useCategoriasFalhaAtivas", () => ({
+  useCategoriasFalhaAtivas: () => ({
+    data: [
+      { id: 1, nome: "Dano Físico / Carcaça", motivaTexto: false },
+      { id: 2, nome: "Outro", motivaTexto: true },
+    ],
+  }),
 }));
 
 const allStatuses: StatusAparelho[] = [
@@ -40,8 +45,6 @@ function DefinicaoHarness({
     defaultValues: {
       ...cadastroIndividualDefaultValues,
       status: defaultStatus,
-      categoriaFalha: "FALHA_COMUNICACAO",
-      destinoDefeito: "LABORATORIO",
     },
   });
   onFormReady?.(form);
@@ -101,12 +104,10 @@ describe("DefinicaoStatusSection", () => {
     await user.click(screen.getByRole("button", { name: /Novo.*OK/i }));
     expect(f.getValues("status")).toBe("NOVO_OK");
 
-    await user.click(screen.getByRole("button", { name: /Em Manutenção/i }));
+    await user.click(screen.getByRole("button", { name: /^Usado$/i }));
     expect(f.getValues("status")).toBe("EM_MANUTENCAO");
 
-    await user.click(
-      screen.getByRole("button", { name: /Cancelado.*Defeito/i }),
-    );
+    await user.click(screen.getByRole("button", { name: /^Defeito$/i }));
     expect(f.getValues("status")).toBe("CANCELADO_DEFEITO");
   });
 
@@ -134,43 +135,34 @@ describe("DefinicaoStatusSection", () => {
       );
     }
     render(<H />);
-    const cancelBefore = screen.getByRole("button", {
-      name: /Cancelado.*Defeito/i,
-    });
+    const cancelBefore = screen.getByRole("button", { name: /^Defeito$/i });
     expect(cancelBefore.className).toMatch(/opacity-60/);
     await user.click(cancelBefore);
     expect(formRef.current!.getValues("status")).toBe("CANCELADO_DEFEITO");
-    const cancelAfter = screen.getByRole("button", {
-      name: /Cancelado.*Defeito/i,
-    });
+    const cancelAfter = screen.getByRole("button", { name: /^Defeito$/i });
     expect(cancelAfter.className).toMatch(/ring-1/);
     expect(cancelAfter.className).toMatch(/border-red/);
   });
 
-  it("persiste categoriaFalha e destinoDefeito no formulário após escolha nos selects", async () => {
+  it("toggle de destino altera destinoDefeito no formulário", async () => {
     const user = userEvent.setup();
-    let api: ReturnType<typeof useForm<FormDataCadastroIndividual>> | null =
+    let formApi: ReturnType<typeof useForm<FormDataCadastroIndividual>> | null =
       null;
     render(
       <DefinicaoHarness
         defaultStatus="CANCELADO_DEFEITO"
         watchStatus="CANCELADO_DEFEITO"
         onFormReady={(f) => {
-          api = f;
+          formApi = f;
         }}
       />,
     );
-    const cat = CATEGORIAS_FALHA[2]!;
-    const dest = DESTINOS_DEFEITO[1]!;
-    const [catCombo, destCombo] = screen.getAllByRole("combobox");
+    // default é DESCARTADO — clicar em "Em Estoque (defeito)" muda o valor
+    await user.click(screen.getByRole("button", { name: /Em Estoque/i }));
+    expect(formApi!.getValues("destinoDefeito")).toBe("EM_ESTOQUE_DEFEITO");
 
-    await user.click(catCombo!);
-    await user.click(await screen.findByRole("option", { name: cat.label }));
-    expect(api!.getValues("categoriaFalha")).toBe(cat.value);
-
-    await user.click(destCombo!);
-    await user.click(await screen.findByRole("option", { name: dest.label }));
-    expect(api!.getValues("destinoDefeito")).toBe(dest.value);
+    await user.click(screen.getByRole("button", { name: /^Descartado$/i }));
+    expect(formApi!.getValues("destinoDefeito")).toBe("DESCARTADO");
   });
 
   it("exige watchStatus === CANCELADO_DEFEITO para o bloco de defeito: ignora desincronização se o form ainda está em cancelado mas o pai ainda não acompanhou", () => {
@@ -185,7 +177,7 @@ describe("DefinicaoStatusSection", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("com subconjunto de status (só Novo e Em manutenção), não oferece botão Cancelado e não mostra defeito", () => {
+  it("com subconjunto de status (só Novo e Usado), não oferece botão Defeito e não mostra defeito", () => {
     render(
       <DefinicaoHarness
         watchStatus="EM_MANUTENCAO"
@@ -193,14 +185,35 @@ describe("DefinicaoStatusSection", () => {
       />,
     );
     expect(
-      screen.queryByRole("button", { name: /Cancelado.*Defeito/i }),
+      screen.queryByRole("button", { name: /^Defeito$/i }),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByText(/Detalhamento de Defeito Requerido/i),
     ).not.toBeInTheDocument();
   });
 
-  it("com watch CANCELADO_DEFEITO, mostra o bloco vermelho com rótulos dos selects", () => {
+  it("selecionando categoria com motivaTexto=true exibe textarea de motivo; outra não exibe", async () => {
+    const user = userEvent.setup();
+    render(
+      <DefinicaoHarness
+        defaultStatus="CANCELADO_DEFEITO"
+        watchStatus="CANCELADO_DEFEITO"
+      />,
+    );
+    expect(
+      screen.queryByPlaceholderText(/Descreva o motivo do defeito/i),
+    ).not.toBeInTheDocument();
+
+    const [catCombo] = screen.getAllByRole("combobox");
+    await user.click(catCombo!);
+    await user.click(await screen.findByRole("option", { name: /^Outro$/i }));
+
+    expect(
+      screen.getByPlaceholderText(/Descreva o motivo do defeito/i),
+    ).toBeInTheDocument();
+  });
+
+  it("com watch CANCELADO_DEFEITO, mostra o bloco vermelho com rótulos dos campos", () => {
     render(
       <DefinicaoHarness
         defaultStatus="CANCELADO_DEFEITO"
