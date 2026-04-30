@@ -9,9 +9,10 @@ import {
 } from "@/components/ui/select";
 import { MaterialIcon } from "@/components/MaterialIcon";
 import { cn } from "@/lib/utils";
-import { CATEGORIAS_FALHA, DESTINOS_DEFEITO, STATUS_CONFIG } from "./constants";
+import { DESTINOS_SWITCH, STATUS_CONFIG } from "./constants";
 import type { FormDataCadastroIndividual } from "./schema";
 import type { StatusAparelho } from "./constants";
+import { useCategoriasFalhaAtivas } from "@/pages/aparelhos/shared/useCategoriasFalhaAtivas";
 
 type DefinicaoStatusSectionProps = {
   form: UseFormReturn<FormDataCadastroIndividual>;
@@ -25,6 +26,9 @@ export function DefinicaoStatusSection({
   watchStatus,
 }: DefinicaoStatusSectionProps) {
   const categoriaFalha = form.watch("categoriaFalha");
+  const destinoDefeito = form.watch("destinoDefeito");
+  const { data: categorias = [] } = useCategoriasFalhaAtivas();
+
   return (
     <div className="bg-white border border-slate-200 rounded-sm p-6">
       <div className="flex items-center gap-2 mb-6 pb-2 border-b border-slate-100">
@@ -95,14 +99,24 @@ export function DefinicaoStatusSection({
                 name="categoriaFalha"
                 control={form.control}
                 render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
+                  <Select
+                    value={field.value}
+                    onValueChange={(val) => {
+                      field.onChange(val);
+                      const cat = categorias.find((c) => String(c.id) === val);
+                      form.setValue(
+                        "categoriaFalhaMotiva",
+                        cat?.motivaTexto ?? false,
+                      );
+                    }}
+                  >
                     <SelectTrigger className="h-9 border-red-200">
-                      <SelectValue />
+                      <SelectValue placeholder="Selecione..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {CATEGORIAS_FALHA.map((c) => (
-                        <SelectItem key={c.value} value={c.value}>
-                          {c.label}
+                      {categorias.map((c) => (
+                        <SelectItem key={c.id} value={String(c.id)}>
+                          {c.nome}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -114,26 +128,28 @@ export function DefinicaoStatusSection({
               <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
                 Destino Imediato
               </Label>
-              <Controller
-                name="destinoDefeito"
-                control={form.control}
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className="h-9 border-red-200">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {DESTINOS_DEFEITO.map((d) => (
-                        <SelectItem key={d.value} value={d.value}>
-                          {d.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
+              <div className="flex gap-2 h-9">
+                {DESTINOS_SWITCH.map((d) => {
+                  const isSelected = destinoDefeito === d.value;
+                  return (
+                    <button
+                      key={d.value}
+                      type="button"
+                      onClick={() => form.setValue("destinoDefeito", d.value)}
+                      className={cn(
+                        "flex-1 text-xs font-semibold rounded-sm border transition-all cursor-pointer",
+                        isSelected
+                          ? "bg-red-600 border-red-600 text-white"
+                          : "bg-white border-red-200 text-slate-600 hover:bg-red-50",
+                      )}
+                    >
+                      {d.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            {categoriaFalha === "OUTRO" && (
+            {categoriaFalha && form.watch("categoriaFalhaMotiva") && (
               <div className="col-span-2">
                 <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
                   Motivo do Defeito
