@@ -20,10 +20,7 @@ type ModalState =
 const QUERY_KEY = ["tabelas-config", "categorias-falha"] as const;
 
 function normalizar(s: string) {
-  return s
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase();
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 }
 
 export function useCategoriasFalhaConfig() {

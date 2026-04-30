@@ -233,10 +233,7 @@ describe("useCategoriasFalhaConfig", () => {
 
   describe("search e categoriasFiltradas", () => {
     it("searchCategoria começa vazio e categoriasFiltradas retorna tudo", async () => {
-      const cats = [
-        catBase,
-        { ...catBase, id: 2, nome: "Outro" },
-      ];
+      const cats = [catBase, { ...catBase, id: 2, nome: "Outro" }];
       api.mockResolvedValue(cats);
       const qc = makeQC();
       const { result } = renderHook(() => useCategoriasFalhaConfig(), {
@@ -249,10 +246,7 @@ describe("useCategoriasFalhaConfig", () => {
     });
 
     it("setSearchCategoria filtra pelo nome (case-insensitive)", async () => {
-      const cats = [
-        catBase,
-        { ...catBase, id: 2, nome: "Outro" },
-      ];
+      const cats = [catBase, { ...catBase, id: 2, nome: "Outro" }];
       api.mockResolvedValue(cats);
       const qc = makeQC();
       const { result } = renderHook(() => useCategoriasFalhaConfig(), {

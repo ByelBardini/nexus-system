@@ -34,7 +34,9 @@ const inativa: CategoriaFalha = {
   criadoEm: "2026-01-01T00:00:00.000Z",
 };
 
-function defaultProps(overrides: Partial<Parameters<typeof CategoriasFalhaTable>[0]> = {}) {
+function defaultProps(
+  overrides: Partial<Parameters<typeof CategoriasFalhaTable>[0]> = {},
+) {
   return {
     categorias: [] as CategoriaFalha[],
     canEdit: false,
@@ -92,9 +94,7 @@ describe("CategoriasFalhaTable", () => {
   });
 
   it("canEdit=false: não exibe botão de ações (dropdown trigger)", () => {
-    render(
-      <CategoriasFalhaTable {...defaultProps({ categorias: [ativa] })} />,
-    );
+    render(<CategoriasFalhaTable {...defaultProps({ categorias: [ativa] })} />);
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 

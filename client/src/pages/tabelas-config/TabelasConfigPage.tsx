@@ -46,7 +46,10 @@ export function TabelasConfigPage() {
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div className="flex items-center gap-3">
-            <MaterialIcon name="table_chart" className="text-erp-blue text-xl" />
+            <MaterialIcon
+              name="table_chart"
+              className="text-erp-blue text-xl"
+            />
             <div>
               <h1 className="text-lg font-bold text-slate-800 uppercase tracking-tight">
                 Tabelas de Configuração

@@ -124,7 +124,10 @@ export function CategoriasFalhaTable({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => onEditar(cat)}>
-                          <MaterialIcon name="edit" className="mr-2 text-base" />
+                          <MaterialIcon
+                            name="edit"
+                            className="mr-2 text-base"
+                          />
                           Editar
                         </DropdownMenuItem>
                         {cat.ativo && (
