@@ -20,7 +20,11 @@
       "Bash(rm -rf node_modules*)",
       "Bash(rm -rf dist*)",
       "Bash(rm -rf .next*)",
-      "Bash(rm -rf coverage*)"
+      "Bash(rm -rf coverage*)",
+      "Bash(npx prettier *)"
+    ],
+    "additionalDirectories": [
+      "d:\\nexus-system\\.claude\\plans"
     ]
   },
   "hooks": {
