@@ -372,73 +372,87 @@ describe('AparelhosService', () => {
     });
   });
 
-    it('cria rastreador com status DESCARTADO quando destinoDefeito=DESCARTADO', async () => {
-      prisma.aparelho.findFirst.mockResolvedValue(null);
-      const aparelho = { id: 10, identificador: 'IMEI999', tipo: 'RASTREADOR', tecnico: null };
-      prisma.aparelho.create.mockResolvedValue(aparelho);
-      prisma.aparelhoHistorico.create.mockResolvedValue({});
+  it('cria rastreador com status DESCARTADO quando destinoDefeito=DESCARTADO', async () => {
+    prisma.aparelho.findFirst.mockResolvedValue(null);
+    const aparelho = {
+      id: 10,
+      identificador: 'IMEI999',
+      tipo: 'RASTREADOR',
+      tecnico: null,
+    };
+    prisma.aparelho.create.mockResolvedValue(aparelho);
+    prisma.aparelhoHistorico.create.mockResolvedValue({});
 
-      const result = await service.createIndividual({
-        identificador: 'IMEI999',
-        tipo: 'RASTREADOR',
-        origem: 'DEVOLUCAO_TECNICO',
-        statusEntrada: 'CANCELADO_DEFEITO',
-        categoriaFalha: '1',
-        destinoDefeito: 'DESCARTADO',
-      });
-
-      expect(prisma.aparelho.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({ status: 'DESCARTADO' }),
-        }),
-      );
-      expect(result).toEqual(aparelho);
+    const result = await service.createIndividual({
+      identificador: 'IMEI999',
+      tipo: 'RASTREADOR',
+      origem: 'DEVOLUCAO_TECNICO',
+      statusEntrada: 'CANCELADO_DEFEITO',
+      categoriaFalha: '1',
+      destinoDefeito: 'DESCARTADO',
     });
 
-    it('cria rastreador com status EM_ESTOQUE quando destinoDefeito=EM_ESTOQUE_DEFEITO', async () => {
-      prisma.aparelho.findFirst.mockResolvedValue(null);
-      const aparelho = { id: 11, identificador: 'IMEI998', tipo: 'RASTREADOR', tecnico: null };
-      prisma.aparelho.create.mockResolvedValue(aparelho);
-      prisma.aparelhoHistorico.create.mockResolvedValue({});
+    expect(prisma.aparelho.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ status: 'DESCARTADO' }),
+      }),
+    );
+    expect(result).toEqual(aparelho);
+  });
 
-      await service.createIndividual({
-        identificador: 'IMEI998',
-        tipo: 'RASTREADOR',
-        origem: 'DEVOLUCAO_TECNICO',
-        statusEntrada: 'CANCELADO_DEFEITO',
-        categoriaFalha: '1',
-        destinoDefeito: 'EM_ESTOQUE_DEFEITO',
-      });
+  it('cria rastreador com status EM_ESTOQUE quando destinoDefeito=EM_ESTOQUE_DEFEITO', async () => {
+    prisma.aparelho.findFirst.mockResolvedValue(null);
+    const aparelho = {
+      id: 11,
+      identificador: 'IMEI998',
+      tipo: 'RASTREADOR',
+      tecnico: null,
+    };
+    prisma.aparelho.create.mockResolvedValue(aparelho);
+    prisma.aparelhoHistorico.create.mockResolvedValue({});
 
-      expect(prisma.aparelho.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({ status: 'EM_ESTOQUE' }),
-        }),
-      );
+    await service.createIndividual({
+      identificador: 'IMEI998',
+      tipo: 'RASTREADOR',
+      origem: 'DEVOLUCAO_TECNICO',
+      statusEntrada: 'CANCELADO_DEFEITO',
+      categoriaFalha: '1',
+      destinoDefeito: 'EM_ESTOQUE_DEFEITO',
     });
 
-    it('historico inclui label "Descartado" quando destinoDefeito=DESCARTADO', async () => {
-      prisma.aparelho.findFirst.mockResolvedValue(null);
-      prisma.aparelho.create.mockResolvedValue({ id: 12, tipo: 'RASTREADOR', tecnico: null });
-      prisma.aparelhoHistorico.create.mockResolvedValue({});
+    expect(prisma.aparelho.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ status: 'EM_ESTOQUE' }),
+      }),
+    );
+  });
 
-      await service.createIndividual({
-        identificador: 'IMEI997',
-        tipo: 'RASTREADOR',
-        origem: 'DEVOLUCAO_TECNICO',
-        statusEntrada: 'CANCELADO_DEFEITO',
-        categoriaFalha: '1',
-        destinoDefeito: 'DESCARTADO',
-      });
-
-      expect(prisma.aparelhoHistorico.create).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({
-            observacao: expect.stringContaining('Descartado'),
-          }),
-        }),
-      );
+  it('historico inclui label "Descartado" quando destinoDefeito=DESCARTADO', async () => {
+    prisma.aparelho.findFirst.mockResolvedValue(null);
+    prisma.aparelho.create.mockResolvedValue({
+      id: 12,
+      tipo: 'RASTREADOR',
+      tecnico: null,
     });
+    prisma.aparelhoHistorico.create.mockResolvedValue({});
+
+    await service.createIndividual({
+      identificador: 'IMEI997',
+      tipo: 'RASTREADOR',
+      origem: 'DEVOLUCAO_TECNICO',
+      statusEntrada: 'CANCELADO_DEFEITO',
+      categoriaFalha: '1',
+      destinoDefeito: 'DESCARTADO',
+    });
+
+    expect(prisma.aparelhoHistorico.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          observacao: expect.stringContaining('Descartado'),
+        }),
+      }),
+    );
+  });
 
   describe('updateStatus', () => {
     it('lança NotFoundException quando aparelho não existe', async () => {

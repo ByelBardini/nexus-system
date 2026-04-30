@@ -22,7 +22,9 @@ describe('TabelasConfigService', () => {
 
   describe('listarCategoriasFalha', () => {
     it('delega ao Prisma com orderBy nome asc', async () => {
-      const categorias = [{ id: 1, nome: 'Dano Físico', ativo: true, motivaTexto: false }];
+      const categorias = [
+        { id: 1, nome: 'Dano Físico', ativo: true, motivaTexto: false },
+      ];
       prisma.categoriaFalhaRastreador.findMany.mockResolvedValue(categorias);
 
       const result = await service.listarCategoriasFalha();
@@ -62,7 +64,10 @@ describe('TabelasConfigService', () => {
     });
 
     it('lança BadRequestException quando nome já existe', async () => {
-      prisma.categoriaFalhaRastreador.findUnique.mockResolvedValue({ id: 1, nome: 'Dano Físico' });
+      prisma.categoriaFalhaRastreador.findUnique.mockResolvedValue({
+        id: 1,
+        nome: 'Dano Físico',
+      });
 
       await expect(
         service.criarCategoriaFalha({ nome: 'Dano Físico' }),
@@ -83,11 +88,21 @@ describe('TabelasConfigService', () => {
 
   describe('atualizarCategoriaFalha', () => {
     it('atualiza categoria existente', async () => {
-      const existente = { id: 1, nome: 'Dano Físico', ativo: true, motivaTexto: false };
+      const existente = {
+        id: 1,
+        nome: 'Dano Físico',
+        ativo: true,
+        motivaTexto: false,
+      };
       prisma.categoriaFalhaRastreador.findUnique.mockResolvedValue(existente);
-      prisma.categoriaFalhaRastreador.update.mockResolvedValue({ ...existente, nome: 'Dano Físico Atualizado' });
+      prisma.categoriaFalhaRastreador.update.mockResolvedValue({
+        ...existente,
+        nome: 'Dano Físico Atualizado',
+      });
 
-      const result = await service.atualizarCategoriaFalha(1, { nome: 'Dano Físico Atualizado' });
+      const result = await service.atualizarCategoriaFalha(1, {
+        nome: 'Dano Físico Atualizado',
+      });
 
       expect(prisma.categoriaFalhaRastreador.update).toHaveBeenCalledWith({
         where: { id: 1 },
@@ -107,9 +122,17 @@ describe('TabelasConfigService', () => {
 
   describe('desativarCategoriaFalha', () => {
     it('seta ativo=false na categoria existente', async () => {
-      const existente = { id: 1, nome: 'Dano Físico', ativo: true, motivaTexto: false };
+      const existente = {
+        id: 1,
+        nome: 'Dano Físico',
+        ativo: true,
+        motivaTexto: false,
+      };
       prisma.categoriaFalhaRastreador.findUnique.mockResolvedValue(existente);
-      prisma.categoriaFalhaRastreador.update.mockResolvedValue({ ...existente, ativo: false });
+      prisma.categoriaFalhaRastreador.update.mockResolvedValue({
+        ...existente,
+        ativo: false,
+      });
 
       await service.desativarCategoriaFalha(1);
 
@@ -122,7 +145,9 @@ describe('TabelasConfigService', () => {
     it('lança NotFoundException quando categoria não existe', async () => {
       prisma.categoriaFalhaRastreador.findUnique.mockResolvedValue(null);
 
-      await expect(service.desativarCategoriaFalha(999)).rejects.toThrow(NotFoundException);
+      await expect(service.desativarCategoriaFalha(999)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });
