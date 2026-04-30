@@ -126,7 +126,10 @@ describe("useCategoriasFalhaConfig", () => {
 
   describe("criarMutation", () => {
     it("sucesso: POST correto, invalida queries e fecha modal", async () => {
-      api.mockResolvedValueOnce([]).mockResolvedValueOnce({}).mockResolvedValue([]);
+      api
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce({})
+        .mockResolvedValue([]);
       const qc = makeQC();
       const inv = vi.spyOn(qc, "invalidateQueries");
       const { result } = renderHook(() => useCategoriasFalhaConfig(), {
@@ -135,13 +138,22 @@ describe("useCategoriasFalhaConfig", () => {
 
       act(() => result.current.abrirCriar());
       act(() =>
-        result.current.criarMutation.mutate({ nome: "Nova", motivaTexto: true }),
+        result.current.criarMutation.mutate({
+          nome: "Nova",
+          motivaTexto: true,
+        }),
       );
 
-      await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith("Categoria criada com sucesso!"));
+      await waitFor(() =>
+        expect(toastSuccess).toHaveBeenCalledWith(
+          "Categoria criada com sucesso!",
+        ),
+      );
 
       const postCall = api.mock.calls.find(
-        (c) => c[0] === "/tabelas-config/categorias-falha" && c[1]?.method === "POST",
+        (c) =>
+          c[0] === "/tabelas-config/categorias-falha" &&
+          c[1]?.method === "POST",
       );
       expect(postCall).toBeDefined();
       expect(JSON.parse(postCall![1].body)).toEqual({
@@ -168,17 +180,25 @@ describe("useCategoriasFalhaConfig", () => {
 
       act(() => result.current.abrirCriar());
       act(() =>
-        result.current.criarMutation.mutate({ nome: "Dup", motivaTexto: false }),
+        result.current.criarMutation.mutate({
+          nome: "Dup",
+          motivaTexto: false,
+        }),
       );
 
-      await waitFor(() => expect(toastError).toHaveBeenCalledWith("nome duplicado"));
+      await waitFor(() =>
+        expect(toastError).toHaveBeenCalledWith("nome duplicado"),
+      );
       expect(result.current.modal.open).toBe(true);
     });
   });
 
   describe("atualizarMutation", () => {
     it("sucesso: PATCH no endpoint correto, invalida queries e fecha modal", async () => {
-      api.mockResolvedValueOnce([]).mockResolvedValueOnce({}).mockResolvedValue([]);
+      api
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce({})
+        .mockResolvedValue([]);
       const qc = makeQC();
       const inv = vi.spyOn(qc, "invalidateQueries");
       const { result } = renderHook(() => useCategoriasFalhaConfig(), {
@@ -193,10 +213,14 @@ describe("useCategoriasFalhaConfig", () => {
         }),
       );
 
-      await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith("Categoria atualizada!"));
+      await waitFor(() =>
+        expect(toastSuccess).toHaveBeenCalledWith("Categoria atualizada!"),
+      );
 
       const patchCall = api.mock.calls.find(
-        (c) => c[0] === "/tabelas-config/categorias-falha/1" && c[1]?.method === "PATCH",
+        (c) =>
+          c[0] === "/tabelas-config/categorias-falha/1" &&
+          c[1]?.method === "PATCH",
       );
       expect(patchCall).toBeDefined();
       expect(JSON.parse(patchCall![1].body)).toEqual({ nome: "Atualizado" });
@@ -207,9 +231,78 @@ describe("useCategoriasFalhaConfig", () => {
     });
   });
 
+  describe("search e categoriasFiltradas", () => {
+    it("searchCategoria começa vazio e categoriasFiltradas retorna tudo", async () => {
+      const cats = [
+        catBase,
+        { ...catBase, id: 2, nome: "Outro" },
+      ];
+      api.mockResolvedValue(cats);
+      const qc = makeQC();
+      const { result } = renderHook(() => useCategoriasFalhaConfig(), {
+        wrapper: wrapper(qc),
+      });
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+      expect(result.current.searchCategoria).toBe("");
+      expect(result.current.categoriasFiltradas).toEqual(cats);
+    });
+
+    it("setSearchCategoria filtra pelo nome (case-insensitive)", async () => {
+      const cats = [
+        catBase,
+        { ...catBase, id: 2, nome: "Outro" },
+      ];
+      api.mockResolvedValue(cats);
+      const qc = makeQC();
+      const { result } = renderHook(() => useCategoriasFalhaConfig(), {
+        wrapper: wrapper(qc),
+      });
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+      act(() => result.current.setSearchCategoria("DANO"));
+      expect(result.current.categoriasFiltradas).toEqual([catBase]);
+    });
+
+    it("filtra ignorando acentos", async () => {
+      const cats = [
+        { ...catBase, nome: "Dano Físico" },
+        { ...catBase, id: 2, nome: "Outro" },
+      ];
+      api.mockResolvedValue(cats);
+      const qc = makeQC();
+      const { result } = renderHook(() => useCategoriasFalhaConfig(), {
+        wrapper: wrapper(qc),
+      });
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+      act(() => result.current.setSearchCategoria("fisico"));
+      expect(result.current.categoriasFiltradas).toHaveLength(1);
+      expect(result.current.categoriasFiltradas[0]!.nome).toBe("Dano Físico");
+    });
+
+    it("busca vazia retorna todas as categorias", async () => {
+      const cats = [catBase, { ...catBase, id: 2, nome: "Outro" }];
+      api.mockResolvedValue(cats);
+      const qc = makeQC();
+      const { result } = renderHook(() => useCategoriasFalhaConfig(), {
+        wrapper: wrapper(qc),
+      });
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+      act(() => result.current.setSearchCategoria("xyz"));
+      expect(result.current.categoriasFiltradas).toHaveLength(0);
+      act(() => result.current.setSearchCategoria(""));
+      expect(result.current.categoriasFiltradas).toEqual(cats);
+    });
+  });
+
   describe("desativarMutation", () => {
     it("sucesso: DELETE no endpoint correto e invalida queries", async () => {
-      api.mockResolvedValueOnce([]).mockResolvedValueOnce({}).mockResolvedValue([]);
+      api
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce({})
+        .mockResolvedValue([]);
       const qc = makeQC();
       const inv = vi.spyOn(qc, "invalidateQueries");
       const { result } = renderHook(() => useCategoriasFalhaConfig(), {
@@ -218,10 +311,14 @@ describe("useCategoriasFalhaConfig", () => {
 
       act(() => result.current.desativarMutation.mutate(1));
 
-      await waitFor(() => expect(toastSuccess).toHaveBeenCalledWith("Categoria desativada!"));
+      await waitFor(() =>
+        expect(toastSuccess).toHaveBeenCalledWith("Categoria desativada!"),
+      );
 
       const deleteCall = api.mock.calls.find(
-        (c) => c[0] === "/tabelas-config/categorias-falha/1" && c[1]?.method === "DELETE",
+        (c) =>
+          c[0] === "/tabelas-config/categorias-falha/1" &&
+          c[1]?.method === "DELETE",
       );
       expect(deleteCall).toBeDefined();
       expect(inv).toHaveBeenCalledWith({
@@ -243,7 +340,9 @@ describe("useCategoriasFalhaConfig", () => {
 
       act(() => result.current.desativarMutation.mutate(99));
 
-      await waitFor(() => expect(toastError).toHaveBeenCalledWith("não encontrado"));
+      await waitFor(() =>
+        expect(toastError).toHaveBeenCalledWith("não encontrado"),
+      );
     });
   });
 });

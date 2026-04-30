@@ -84,7 +84,10 @@ describe("CategoriaFalhaModal", () => {
       );
       await user.type(screen.getByLabelText(/nome/i), "  Nova Cat  ");
       await user.click(screen.getByRole("button", { name: /^salvar$/i }));
-      expect(onSalvar).toHaveBeenCalledWith({ nome: "Nova Cat", motivaTexto: false });
+      expect(onSalvar).toHaveBeenCalledWith({
+        nome: "Nova Cat",
+        motivaTexto: false,
+      });
     });
 
     it("ativar switch e salvar envia motivaTexto=true", async () => {
@@ -102,7 +105,10 @@ describe("CategoriaFalhaModal", () => {
       await user.type(screen.getByLabelText(/nome/i), "Outro");
       await user.click(screen.getByRole("switch"));
       await user.click(screen.getByRole("button", { name: /^salvar$/i }));
-      expect(onSalvar).toHaveBeenCalledWith({ nome: "Outro", motivaTexto: true });
+      expect(onSalvar).toHaveBeenCalledWith({
+        nome: "Outro",
+        motivaTexto: true,
+      });
     });
 
     it("clicar Cancelar chama onFechar sem chamar onSalvar", async () => {

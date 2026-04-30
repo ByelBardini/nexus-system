@@ -146,12 +146,15 @@ describe("DefinicaoStatusSection", () => {
 
   it("toggle de destino altera destinoDefeito no formulário", async () => {
     const user = userEvent.setup();
-    let formApi: ReturnType<typeof useForm<FormDataCadastroIndividual>> | null = null;
+    let formApi: ReturnType<typeof useForm<FormDataCadastroIndividual>> | null =
+      null;
     render(
       <DefinicaoHarness
         defaultStatus="CANCELADO_DEFEITO"
         watchStatus="CANCELADO_DEFEITO"
-        onFormReady={(f) => { formApi = f; }}
+        onFormReady={(f) => {
+          formApi = f;
+        }}
       />,
     );
     // default é DESCARTADO — clicar em "Em Estoque (defeito)" muda o valor

@@ -34,28 +34,31 @@ const inativa: CategoriaFalha = {
   criadoEm: "2026-01-01T00:00:00.000Z",
 };
 
+function defaultProps(overrides: Partial<Parameters<typeof CategoriasFalhaTable>[0]> = {}) {
+  return {
+    categorias: [] as CategoriaFalha[],
+    canEdit: false,
+    onEditar: vi.fn(),
+    onToggleAtivo: vi.fn(),
+    isDesativando: false,
+    search: "",
+    onSearch: vi.fn(),
+    ...overrides,
+  };
+}
+
 describe("CategoriasFalhaTable", () => {
   it("sem categorias exibe placeholder", () => {
-    render(
-      <CategoriasFalhaTable
-        categorias={[]}
-        canEdit={false}
-        onEditar={vi.fn()}
-        onDesativar={vi.fn()}
-        isDesativando={false}
-      />,
-    );
-    expect(screen.getByText(/nenhuma categoria cadastrada/i)).toBeInTheDocument();
+    render(<CategoriasFalhaTable {...defaultProps()} />);
+    expect(
+      screen.getByText(/nenhuma categoria cadastrada/i),
+    ).toBeInTheDocument();
   });
 
   it("renderiza o nome de cada categoria", () => {
     render(
       <CategoriasFalhaTable
-        categorias={[ativa, comTexto]}
-        canEdit={false}
-        onEditar={vi.fn()}
-        onDesativar={vi.fn()}
-        isDesativando={false}
+        {...defaultProps({ categorias: [ativa, comTexto] })}
       />,
     );
     expect(screen.getByText("Dano Físico / Carcaça")).toBeInTheDocument();
@@ -65,11 +68,7 @@ describe("CategoriasFalhaTable", () => {
   it("motivaTexto=true exibe badge 'Sim'; false exibe 'Não'", () => {
     render(
       <CategoriasFalhaTable
-        categorias={[ativa, comTexto]}
-        canEdit={false}
-        onEditar={vi.fn()}
-        onDesativar={vi.fn()}
-        isDesativando={false}
+        {...defaultProps({ categorias: [ativa, comTexto] })}
       />,
     );
     const rows = screen.getAllByRole("row").slice(1);
@@ -77,93 +76,110 @@ describe("CategoriasFalhaTable", () => {
     expect(within(rows[1]!).getByText("Sim")).toBeInTheDocument();
   });
 
-  it("categoria inativa exibe 'Inativo' e tem classe opacity-50", () => {
+  it("categoria inativa exibe 'Inativo'", () => {
     render(
-      <CategoriasFalhaTable
-        categorias={[inativa]}
-        canEdit={false}
-        onEditar={vi.fn()}
-        onDesativar={vi.fn()}
-        isDesativando={false}
-      />,
+      <CategoriasFalhaTable {...defaultProps({ categorias: [inativa] })} />,
     );
     expect(screen.getByText("Inativo")).toBeInTheDocument();
-    const row = screen.getAllByRole("row")[1]!;
-    expect(row.className).toMatch(/opacity-50/);
   });
 
-  it("canEdit=false: coluna Ações não aparece e não há botões", () => {
+  it("categoria inativa tem classe opacity-60 na linha", () => {
     render(
-      <CategoriasFalhaTable
-        categorias={[ativa]}
-        canEdit={false}
-        onEditar={vi.fn()}
-        onDesativar={vi.fn()}
-        isDesativando={false}
-      />,
+      <CategoriasFalhaTable {...defaultProps({ categorias: [inativa] })} />,
     );
-    expect(screen.queryByText("Ações")).not.toBeInTheDocument();
+    const row = screen.getAllByRole("row")[1]!;
+    expect(row.className).toMatch(/opacity-60/);
+  });
+
+  it("canEdit=false: não exibe botão de ações (dropdown trigger)", () => {
+    render(
+      <CategoriasFalhaTable {...defaultProps({ categorias: [ativa] })} />,
+    );
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
-  it("canEdit=true: botão Editar chama onEditar com a categoria correta", async () => {
+  it("canEdit=true: abre dropdown e clica Editar → chama onEditar com a categoria", async () => {
     const onEditar = vi.fn();
     const user = userEvent.setup();
     render(
       <CategoriasFalhaTable
-        categorias={[ativa]}
-        canEdit={true}
-        onEditar={onEditar}
-        onDesativar={vi.fn()}
-        isDesativando={false}
+        {...defaultProps({ categorias: [ativa], canEdit: true, onEditar })}
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: /editar/i }));
+    await user.click(screen.getByRole("button", { name: /ações/i }));
+    await user.click(screen.getByRole("menuitem", { name: /editar/i }));
     expect(onEditar).toHaveBeenCalledWith(ativa);
   });
 
-  it("botão Desativar chama onDesativar com o id correto", async () => {
-    const onDesativar = vi.fn();
+  it("dropdown Desativar → chama onToggleAtivo com a categoria correta", async () => {
+    const onToggleAtivo = vi.fn();
     const user = userEvent.setup();
     render(
       <CategoriasFalhaTable
-        categorias={[ativa]}
-        canEdit={true}
-        onEditar={vi.fn()}
-        onDesativar={onDesativar}
-        isDesativando={false}
+        {...defaultProps({
+          categorias: [ativa],
+          canEdit: true,
+          onToggleAtivo,
+        })}
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: /desativar/i }));
-    expect(onDesativar).toHaveBeenCalledWith(1);
+    await user.click(screen.getByRole("button", { name: /ações/i }));
+    await user.click(screen.getByRole("menuitem", { name: /desativar/i }));
+    expect(onToggleAtivo).toHaveBeenCalledWith(ativa);
   });
 
-  it("categoria inativa não exibe botão Desativar", () => {
+  it("categoria inativa não exibe item Desativar no dropdown", async () => {
+    const user = userEvent.setup();
     render(
       <CategoriasFalhaTable
-        categorias={[inativa]}
-        canEdit={true}
-        onEditar={vi.fn()}
-        onDesativar={vi.fn()}
-        isDesativando={false}
+        {...defaultProps({ categorias: [inativa], canEdit: true })}
       />,
     );
-    expect(screen.queryByRole("button", { name: /desativar/i })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /editar/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /ações/i }));
+    expect(
+      screen.queryByRole("menuitem", { name: /desativar/i }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("menuitem", { name: /editar/i }),
+    ).toBeInTheDocument();
   });
 
-  it("isDesativando=true: botão Desativar fica desabilitado", () => {
+  it("isDesativando=true: item Desativar está desabilitado no dropdown", async () => {
+    const user = userEvent.setup();
     render(
       <CategoriasFalhaTable
-        categorias={[ativa]}
-        canEdit={true}
-        onEditar={vi.fn()}
-        onDesativar={vi.fn()}
-        isDesativando={true}
+        {...defaultProps({
+          categorias: [ativa],
+          canEdit: true,
+          isDesativando: true,
+        })}
       />,
     );
-    expect(screen.getByRole("button", { name: /desativar/i })).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: /ações/i }));
+    const item = screen.getByRole("menuitem", { name: /desativar/i });
+    expect(item).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("exibe campo de busca e chama onSearch ao digitar", async () => {
+    const onSearch = vi.fn();
+    const user = userEvent.setup();
+    render(<CategoriasFalhaTable {...defaultProps({ onSearch })} />);
+
+    const input = screen.getByPlaceholderText(/filtrar categorias/i);
+    await user.type(input, "dan");
+    expect(onSearch).toHaveBeenCalled();
+  });
+
+  it("footer exibe total de categorias", () => {
+    render(
+      <CategoriasFalhaTable
+        {...defaultProps({ categorias: [ativa, comTexto] })}
+      />,
+    );
+    expect(screen.getByText(/total.*2.*categori/i)).toBeInTheDocument();
   });
 });
