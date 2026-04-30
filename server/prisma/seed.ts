@@ -147,6 +147,19 @@ async function main() {
     console.log('Cliente Infinity (id 1) criado');
   }
 
+  // Categorias de falha de rastreadores
+  const categoriasFalha = [
+    { nome: 'Dano Físico / Carcaça', ativo: true, motivaTexto: false },
+    { nome: 'Outro', ativo: true, motivaTexto: true },
+  ];
+  for (const cat of categoriasFalha) {
+    await prisma.categoriaFalhaRastreador.upsert({
+      where: { nome: cat.nome },
+      update: {},
+      create: cat,
+    });
+  }
+
   console.log('Seed concluído: admin@admin.com / 12345');
 }
 
