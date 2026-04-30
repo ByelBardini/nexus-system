@@ -19,14 +19,9 @@ const schema = z
     notaFiscal: z.preprocess((v) => v ?? "", z.string().optional()),
     observacoes: z.preprocess((v) => v ?? "", z.string().optional()),
     status: z.enum(["NOVO_OK", "EM_MANUTENCAO", "CANCELADO_DEFEITO"]),
-    categoriaFalha: z.enum([
-      "FALHA_COMUNICACAO",
-      "PROBLEMA_ALIMENTACAO",
-      "DANO_FISICO",
-      "CURTO_CIRCUITO",
-      "OUTRO",
-    ]),
-    destinoDefeito: z.enum(["SUCATA", "GARANTIA", "LABORATORIO"]),
+    categoriaFalha: z.preprocess((v) => v ?? "", z.string()),
+    categoriaFalhaMotiva: z.boolean().default(false),
+    destinoDefeito: z.enum(["DESCARTADO", "EM_ESTOQUE_DEFEITO"]),
     motivoDefeito: z.preprocess((v) => v ?? "", z.string().optional()),
     abaterDivida: z.boolean(),
     abaterDebitoId: z.number().nullable(),
@@ -62,7 +57,7 @@ const schema = z
     }
     if (
       data.status === "CANCELADO_DEFEITO" &&
-      data.categoriaFalha === "OUTRO" &&
+      data.categoriaFalhaMotiva &&
       !data.motivoDefeito?.trim()
     ) {
       ctx.addIssue({
@@ -92,8 +87,9 @@ export const cadastroIndividualDefaultValues: FormDataCadastroIndividual = {
   notaFiscal: "",
   observacoes: "",
   status: "EM_MANUTENCAO",
-  categoriaFalha: "FALHA_COMUNICACAO",
-  destinoDefeito: "LABORATORIO",
+  categoriaFalha: "",
+  categoriaFalhaMotiva: false,
+  destinoDefeito: "DESCARTADO",
   motivoDefeito: "",
   abaterDivida: false,
   abaterDebitoId: null,

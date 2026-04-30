@@ -1,12 +1,10 @@
 import type {
-  CategoriaFalha,
   DestinoDefeito,
   OrigemItem,
   StatusAparelhoCadastroIndividual,
 } from "@/types/aparelhos-cadastro-individual";
 
 export type {
-  CategoriaFalha,
   DestinoDefeito,
   OrigemItem,
 } from "@/types/aparelhos-cadastro-individual";
@@ -18,18 +16,9 @@ export const ORIGENS: { value: OrigemItem; label: string }[] = [
   { value: "COMPRA_AVULSA", label: "Compra Avulsa" },
 ];
 
-export const CATEGORIAS_FALHA: { value: CategoriaFalha; label: string }[] = [
-  { value: "FALHA_COMUNICACAO", label: "Falha de Comunicação (GPRS)" },
-  { value: "PROBLEMA_ALIMENTACAO", label: "Problema de Alimentação" },
-  { value: "DANO_FISICO", label: "Dano Físico / Carcaça" },
-  { value: "CURTO_CIRCUITO", label: "Curto-circuito Interno" },
-  { value: "OUTRO", label: "Outro" },
-];
-
-export const DESTINOS_DEFEITO: { value: DestinoDefeito; label: string }[] = [
-  { value: "SUCATA", label: "Sucata / Descarte" },
-  { value: "GARANTIA", label: "Envio para Garantia" },
-  { value: "LABORATORIO", label: "Laboratório Interno" },
+export const DESTINOS_SWITCH: { value: DestinoDefeito; label: string }[] = [
+  { value: "DESCARTADO", label: "Descartado" },
+  { value: "EM_ESTOQUE_DEFEITO", label: "Em Estoque (defeito)" },
 ];
 
 export const STATUS_CONFIG: Record<

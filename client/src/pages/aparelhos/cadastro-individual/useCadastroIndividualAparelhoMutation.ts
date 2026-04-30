@@ -60,8 +60,7 @@ export function useCadastroIndividualAparelhoMutation(
         destinoDefeito:
           data.status === "CANCELADO_DEFEITO" ? data.destinoDefeito : null,
         motivoDefeito:
-          data.status === "CANCELADO_DEFEITO" &&
-          data.categoriaFalha === "OUTRO"
+          data.status === "CANCELADO_DEFEITO" && data.categoriaFalhaMotiva
             ? (data.motivoDefeito ?? null)
             : null,
       };
