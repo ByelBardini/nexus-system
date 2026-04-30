@@ -60,7 +60,7 @@ describe("cadastroIndividualSchema", () => {
     expect(r.success).toBe(true);
   });
 
-  it("falha CANCELADO_DEFEITO + categoriaFalha OUTRO sem motivoDefeito", () => {
+  it("falha CANCELADO_DEFEITO + categoriaFalhaMotiva true sem motivoDefeito", () => {
     const r = cadastroIndividualSchema.safeParse({
       ...cadastroIndividualDefaultValues,
       identificador: "1",
@@ -68,7 +68,8 @@ describe("cadastroIndividualSchema", () => {
       marca: "A",
       modelo: "B",
       status: "CANCELADO_DEFEITO",
-      categoriaFalha: "OUTRO",
+      categoriaFalha: "Outro",
+      categoriaFalhaMotiva: true,
       motivoDefeito: "",
     });
     expect(r.success).toBe(false);
@@ -78,7 +79,7 @@ describe("cadastroIndividualSchema", () => {
     }
   });
 
-  it("aceita CANCELADO_DEFEITO + categoriaFalha OUTRO com motivoDefeito preenchido", () => {
+  it("aceita CANCELADO_DEFEITO + categoriaFalhaMotiva true com motivoDefeito preenchido", () => {
     const r = cadastroIndividualSchema.safeParse({
       ...cadastroIndividualDefaultValues,
       identificador: "1",
@@ -86,13 +87,14 @@ describe("cadastroIndividualSchema", () => {
       marca: "A",
       modelo: "B",
       status: "CANCELADO_DEFEITO",
-      categoriaFalha: "OUTRO",
+      categoriaFalha: "Outro",
+      categoriaFalhaMotiva: true,
       motivoDefeito: "Componente queimado",
     });
     expect(r.success).toBe(true);
   });
 
-  it("aceita CANCELADO_DEFEITO + outra categoriaFalha sem motivoDefeito", () => {
+  it("aceita CANCELADO_DEFEITO + categoriaFalhaMotiva false sem motivoDefeito", () => {
     const r = cadastroIndividualSchema.safeParse({
       ...cadastroIndividualDefaultValues,
       identificador: "1",
@@ -100,7 +102,8 @@ describe("cadastroIndividualSchema", () => {
       marca: "A",
       modelo: "B",
       status: "CANCELADO_DEFEITO",
-      categoriaFalha: "DANO_FISICO",
+      categoriaFalha: "Dano Físico / Carcaça",
+      categoriaFalhaMotiva: false,
       motivoDefeito: "",
     });
     expect(r.success).toBe(true);

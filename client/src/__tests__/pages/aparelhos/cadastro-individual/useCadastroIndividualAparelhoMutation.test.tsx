@@ -367,8 +367,8 @@ describe("useCadastroIndividualAparelhoMutation", () => {
             origem: "COMPRA_AVULSA",
             notaFiscal: "NF-1",
             status: "CANCELADO_DEFEITO",
-            categoriaFalha: "DANO_FISICO",
-            destinoDefeito: "SUCATA",
+            categoriaFalha: "Dano Físico / Carcaça",
+            destinoDefeito: "DESCARTADO",
             observacoes: "  obs  ",
             identificador: "12-34-56",
           }),
@@ -381,8 +381,8 @@ describe("useCadastroIndividualAparelhoMutation", () => {
       expect(body.responsavelEntrega).toBe("NF-1");
       expect(body.notaFiscal).toBe("NF-1");
       expect(body.observacoes).toBe("obs");
-      expect(body.categoriaFalha).toBe("DANO_FISICO");
-      expect(body.destinoDefeito).toBe("SUCATA");
+      expect(body.categoriaFalha).toBe("Dano Físico / Carcaça");
+      expect(body.destinoDefeito).toBe("DESCARTADO");
     });
 
     it("COMPRA_AVULSA sem nota fiscal: responsavelEntrega e notaFiscal null", async () => {
@@ -520,7 +520,7 @@ describe("useCadastroIndividualAparelhoMutation", () => {
   });
 
   describe("motivoDefeito", () => {
-    it("CANCELADO_DEFEITO + OUTRO envia motivoDefeito no payload", async () => {
+    it("CANCELADO_DEFEITO + categoriaFalhaMotiva true envia motivoDefeito no payload", async () => {
       const qc = newMutationClient();
       const form = mockForm();
       const { result } = renderHook(
@@ -532,8 +532,9 @@ describe("useCadastroIndividualAparelhoMutation", () => {
         result.current.createAparelhoMutation.mutate(
           baseRastreador({
             status: "CANCELADO_DEFEITO",
-            categoriaFalha: "OUTRO",
-            destinoDefeito: "SUCATA",
+            categoriaFalha: "Outro",
+            categoriaFalhaMotiva: true,
+            destinoDefeito: "DESCARTADO",
             motivoDefeito: "Chip danificado",
           }),
         );
@@ -544,7 +545,7 @@ describe("useCadastroIndividualAparelhoMutation", () => {
       expect(body.motivoDefeito).toBe("Chip danificado");
     });
 
-    it("CANCELADO_DEFEITO + outra categoria envia motivoDefeito null", async () => {
+    it("CANCELADO_DEFEITO + categoriaFalhaMotiva false envia motivoDefeito null", async () => {
       const qc = newMutationClient();
       const form = mockForm();
       const { result } = renderHook(
@@ -556,8 +557,9 @@ describe("useCadastroIndividualAparelhoMutation", () => {
         result.current.createAparelhoMutation.mutate(
           baseRastreador({
             status: "CANCELADO_DEFEITO",
-            categoriaFalha: "DANO_FISICO",
-            destinoDefeito: "SUCATA",
+            categoriaFalha: "Dano Físico / Carcaça",
+            categoriaFalhaMotiva: false,
+            destinoDefeito: "DESCARTADO",
             motivoDefeito: "ignorado",
           }),
         );
@@ -602,8 +604,8 @@ describe("useCadastroIndividualAparelhoMutation", () => {
         result.current.createAparelhoMutation.mutate(
           baseRastreador({
             status: "NOVO_OK",
-            categoriaFalha: "CURTO_CIRCUITO",
-            destinoDefeito: "GARANTIA",
+            categoriaFalha: "Curto Circuito",
+            destinoDefeito: "DESCARTADO",
           }),
         );
       });
