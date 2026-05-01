@@ -21,6 +21,7 @@ import {
 export function useAparelhosList() {
   const { hasPermission } = useAuth();
   const canCreate = hasPermission("CONFIGURACAO.APARELHO.CRIAR");
+  const canList = hasPermission("CONFIGURACAO.APARELHO.LISTAR");
 
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [busca, setBusca] = useState("");
@@ -90,6 +91,7 @@ export function useAparelhosList() {
 
   return {
     canCreate,
+    canList,
     isLoading,
     expandedId,
     setExpandedId,

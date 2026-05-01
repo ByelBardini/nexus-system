@@ -7,6 +7,7 @@ import { useAparelhosList } from "./lista/useAparelhosList";
 export function AparelhosPage() {
   const {
     canCreate,
+    canList,
     isLoading,
     expandedId,
     setExpandedId,
@@ -51,6 +52,7 @@ export function AparelhosPage() {
 
       <AparelhosToolbar
         canCreate={canCreate}
+        canList={canList}
         busca={busca}
         onBuscaChange={(v) => {
           setBusca(v);

@@ -16,6 +16,7 @@ import {
 
 type Props = {
   canCreate: boolean;
+  canList: boolean;
   busca: string;
   onBuscaChange: (v: string) => void;
   statusFilter: StatusAparelho | "TODOS";
@@ -31,6 +32,7 @@ type Props = {
 
 export function AparelhosToolbar({
   canCreate,
+  canList,
   busca,
   onBuscaChange,
   statusFilter,
@@ -136,26 +138,40 @@ export function AparelhosToolbar({
           />
         </div>
         {canCreate && (
-          <>
-            <Link to="/aparelhos/lote" data-testid="aparelhos-link-lote">
-              <Button
-                variant="outline"
-                className="text-[11px] font-bold uppercase"
-              >
-                <MaterialIcon name="inventory_2" className="text-sm mr-1" />
-                Entrada de Lote
-              </Button>
-            </Link>
-            <Link
-              to="/aparelhos/individual"
-              data-testid="aparelhos-link-individual"
+          <Link to="/aparelhos/lote" data-testid="aparelhos-link-lote">
+            <Button
+              variant="outline"
+              className="text-[11px] font-bold uppercase"
             >
-              <Button className="bg-erp-blue hover:bg-blue-700 text-[11px] font-bold uppercase">
-                <MaterialIcon name="add" className="text-sm mr-1" />
-                Criar Manual
-              </Button>
-            </Link>
-          </>
+              <MaterialIcon name="inventory_2" className="text-sm mr-1" />
+              Entrada de Lote
+            </Button>
+          </Link>
+        )}
+        {(canCreate || canList) && (
+          <div className="flex flex-col items-end gap-1">
+            {canList && (
+              <Link
+                to="/equipamentos/descartados"
+                data-testid="aparelhos-link-descartados"
+                className="flex items-center gap-0.5 text-[10px] text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <MaterialIcon name="delete_sweep" className="text-xs" />
+                Descartados
+              </Link>
+            )}
+            {canCreate && (
+              <Link
+                to="/aparelhos/individual"
+                data-testid="aparelhos-link-individual"
+              >
+                <Button className="bg-erp-blue hover:bg-blue-700 text-[11px] font-bold uppercase">
+                  <MaterialIcon name="add" className="text-sm mr-1" />
+                  Criar Manual
+                </Button>
+              </Link>
+            )}
+          </div>
         )}
       </div>
     </div>

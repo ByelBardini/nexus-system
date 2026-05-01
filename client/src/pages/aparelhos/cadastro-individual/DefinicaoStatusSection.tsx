@@ -18,16 +18,21 @@ type DefinicaoStatusSectionProps = {
   form: UseFormReturn<FormDataCadastroIndividual>;
   statusDisponiveis: StatusAparelho[];
   watchStatus: string;
+  canExcluir: boolean;
 };
 
 export function DefinicaoStatusSection({
   form,
   statusDisponiveis,
   watchStatus,
+  canExcluir,
 }: DefinicaoStatusSectionProps) {
   const categoriaFalha = form.watch("categoriaFalha");
   const destinoDefeito = form.watch("destinoDefeito");
   const { data: categorias = [] } = useCategoriasFalhaAtivas();
+  const destinosDisponiveis = DESTINOS_SWITCH.filter(
+    (d) => d.value !== "DESCARTADO" || canExcluir,
+  );
 
   return (
     <div className="bg-white border border-slate-200 rounded-sm p-6">
@@ -129,7 +134,7 @@ export function DefinicaoStatusSection({
                 Destino Imediato
               </Label>
               <div className="flex gap-2 h-9">
-                {DESTINOS_SWITCH.map((d) => {
+                {destinosDisponiveis.map((d) => {
                   const isSelected = destinoDefeito === d.value;
                   return (
                     <button

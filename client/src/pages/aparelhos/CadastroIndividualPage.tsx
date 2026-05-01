@@ -38,6 +38,7 @@ export function CadastroIndividualPage() {
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
   const canCreate = hasPermission("CONFIGURACAO.APARELHO.CRIAR");
+  const canExcluir = hasPermission("CONFIGURACAO.APARELHO.EXCLUIR");
   const [mostrarConfirmacaoDescarte, setMostrarConfirmacaoDescarte] =
     useState(false);
   const pendingActionRef = useRef<(() => void) | null>(null);
@@ -182,7 +183,9 @@ export function CadastroIndividualPage() {
   ]);
 
   const isDescarte = (data: FormDataCadastroIndividual) =>
-    data.status === "CANCELADO_DEFEITO" && data.destinoDefeito === "DESCARTADO";
+    canExcluir &&
+    data.status === "CANCELADO_DEFEITO" &&
+    data.destinoDefeito === "DESCARTADO";
 
   const handleCadastrarEFinalizar = () => {
     form.handleSubmit(
@@ -274,6 +277,7 @@ export function CadastroIndividualPage() {
               form={form}
               statusDisponiveis={statusDisponiveis}
               watchStatus={watchStatus}
+              canExcluir={canExcluir}
             />
 
             {watchTipo === "RASTREADOR" && (
