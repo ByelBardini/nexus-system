@@ -159,6 +159,8 @@ describe("AparelhosToolbar", () => {
   it("link Descartados aparece mesmo sem canCreate", () => {
     renderToolbar({ canCreate: false, canList: true });
     expect(screen.queryByTestId("aparelhos-link-lote")).toBeNull();
-    expect(screen.getByTestId("aparelhos-link-descartados")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("aparelhos-link-descartados"),
+    ).toBeInTheDocument();
   });
 });
