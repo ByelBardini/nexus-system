@@ -1,3 +1,13 @@
+# [1.7.0](https://github.com/ByelBardini/nexus-system/compare/v1.6.0...v1.7.0) (2026-05-01)
+
+
+### Features
+
+* **aparelhos:** criar modelo AparelhoDescartado e endpoints para descarte de aparelhos ([3277e04](https://github.com/ByelBardini/nexus-system/commit/3277e046fa3f1256ad3e2617555ae39666f9f836))
+* **aparelhos:** mover acesso a Descartados para toolbar de aparelhos e restringir descarte por permissão ([8c13063](https://github.com/ByelBardini/nexus-system/commit/8c13063c91644160c1b73250fabb363f12d86f05))
+* **aparelhos:** verificar permissão EXCLUIR no controller ao descartar aparelho ([660dad9](https://github.com/ByelBardini/nexus-system/commit/660dad9dd3d2fb416387b92eca1ca8dca5ea0cfc))
+* **descartados:** criar tela /equipamentos/descartados e dialog de confirmação de descarte ([131ec0b](https://github.com/ByelBardini/nexus-system/commit/131ec0bdc688077e3f361e9fe0b2905a1fe5e3c4))
+
 # [1.6.0](https://github.com/ByelBardini/nexus-system/compare/v1.5.0...v1.6.0) (2026-04-30)
 
 
