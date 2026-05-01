@@ -22,6 +22,11 @@ const navSections = [
         icon: "settings_input_component",
       },
       {
+        to: "/equipamentos/descartados",
+        label: "Descartados",
+        icon: "delete_sweep",
+      },
+      {
         to: "/pedidos-config",
         label: "Config. Pedidos",
         icon: "settings_suggest",
