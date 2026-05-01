@@ -47,6 +47,7 @@ function renderToolbar(
     <MemoryRouter>
       <AparelhosToolbar
         canCreate
+        canList
         busca=""
         onBuscaChange={onBuscaChange}
         statusFilter="TODOS"
@@ -83,6 +84,7 @@ describe("AparelhosToolbar", () => {
         <MemoryRouter>
           <AparelhosToolbar
             canCreate
+            canList
             busca={busca}
             onBuscaChange={(v) => {
               onBuscaChange(v);
@@ -140,5 +142,25 @@ describe("AparelhosToolbar", () => {
       .getByTestId("aparelhos-filter-marca")
       .querySelector("select");
     expect(marcaSelect).toBeTruthy();
+  });
+
+  it("exibe link Descartados quando canList é true", () => {
+    renderToolbar({ canList: true });
+    const link = screen.getByTestId("aparelhos-link-descartados");
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute("href", "/equipamentos/descartados");
+  });
+
+  it("oculta link Descartados quando canList é false", () => {
+    renderToolbar({ canList: false });
+    expect(screen.queryByTestId("aparelhos-link-descartados")).toBeNull();
+  });
+
+  it("link Descartados aparece mesmo sem canCreate", () => {
+    renderToolbar({ canCreate: false, canList: true });
+    expect(screen.queryByTestId("aparelhos-link-lote")).toBeNull();
+    expect(
+      screen.getByTestId("aparelhos-link-descartados"),
+    ).toBeInTheDocument();
   });
 });

@@ -49,6 +49,7 @@ export function createPrismaMock() {
     debitoRastreador: createTableMock(),
     historicoDebitoRastreador: createTableMock(),
     categoriaFalhaRastreador: createTableMock(),
+    aparelhoDescartado: createTableMock(),
     $transaction: jest.fn(),
   };
 

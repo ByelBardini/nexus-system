@@ -124,6 +124,7 @@ function findLastPostIndividualBody(): unknown {
 describe("CadastroIndividualPage (integrado, APIs mockadas)", () => {
   beforeEach(() => {
     setupApi();
+    apiMock.mockClear();
     hasPermissionMock.mockImplementation(() => true);
     navigateMock.mockClear();
     vi.mocked(toast.error).mockClear();
@@ -397,6 +398,167 @@ describe("CadastroIndividualPage (integrado, APIs mockadas)", () => {
     ).toBeInTheDocument();
     expect(vi.mocked(toast.success)).toHaveBeenCalled();
   }, 15_000);
+
+  describe("dialog de confirmação de descarte", () => {
+    async function preencherFormParaDescarte(
+      user: ReturnType<typeof userEvent.setup>,
+    ) {
+      renderPage();
+      await screen.findByText(/Identificação Técnica/i);
+      const imei = screen.getByPlaceholderText(
+        "Digite o identificador único...",
+      );
+      await user.type(imei, "123456789012345");
+      const combos = comboboxesIdentificacaoTecnica();
+      await user.click(combos[1]!);
+      await user.click(await screen.findByRole("option", { name: "M" }));
+      await user.click(combos[2]!);
+      await user.click(await screen.findByRole("option", { name: "X" }));
+
+      // Trocar origem para DEVOLUCAO_TECNICO e status para CANCELADO_DEFEITO
+      const origemSection = screen.getByText(/Origem e Rastreabilidade/i)
+        .parentElement?.parentElement;
+      const origemCombo = within(origemSection!).getAllByRole("combobox")[0]!;
+      await user.click(origemCombo);
+      await user.click(
+        await screen.findByRole("option", { name: /Devolução de Técnico/i }),
+      );
+
+      // Clicar em Defeito para mudar status
+      const defeito = await screen.findByRole("button", { name: /Defeito/i });
+      await user.click(defeito);
+    }
+
+    it("ao clicar Finalizar com destinoDefeito=DESCARTADO abre o dialog", async () => {
+      const user = userEvent.setup({ delay: null });
+      await preencherFormParaDescarte(user);
+
+      const finalizar = await screen.findByRole("button", {
+        name: /Finalizar Cadastro/i,
+      });
+      await waitFor(() => expect(finalizar).not.toBeDisabled());
+      await user.click(finalizar);
+
+      expect(
+        await screen.findByRole("heading", { name: /Confirmar Descarte/i }),
+      ).toBeInTheDocument();
+      expect(screen.getByText(/irreversível/i)).toBeInTheDocument();
+    }, 20_000);
+
+    it("Cancelar no dialog não chama a API", async () => {
+      const user = userEvent.setup({ delay: null });
+      await preencherFormParaDescarte(user);
+
+      const finalizar = await screen.findByRole("button", {
+        name: /Finalizar Cadastro/i,
+      });
+      await waitFor(() => expect(finalizar).not.toBeDisabled());
+      await user.click(finalizar);
+
+      await screen.findByRole("heading", { name: /Confirmar Descarte/i });
+      await user.click(screen.getByRole("button", { name: /^Cancelar$/i }));
+
+      await waitFor(() => {
+        expect(
+          screen.queryByRole("heading", { name: /Confirmar Descarte/i }),
+        ).not.toBeInTheDocument();
+      });
+      expect(apiMock).not.toHaveBeenCalledWith(
+        "/aparelhos/individual",
+        expect.objectContaining({ method: "POST" }),
+      );
+    }, 20_000);
+
+    it("Confirmar Descarte chama a API e navega", async () => {
+      const user = userEvent.setup({ delay: null });
+      await preencherFormParaDescarte(user);
+
+      const finalizar = await screen.findByRole("button", {
+        name: /Finalizar Cadastro/i,
+      });
+      await waitFor(() => expect(finalizar).not.toBeDisabled());
+      await user.click(finalizar);
+
+      await screen.findByRole("heading", { name: /Confirmar Descarte/i });
+      await user.click(screen.getByTestId("confirmar-descarte-btn"));
+
+      await waitFor(() => {
+        expect(apiMock).toHaveBeenCalledWith(
+          "/aparelhos/individual",
+          expect.objectContaining({ method: "POST" }),
+        );
+      });
+      expect(navigateMock).toHaveBeenCalledWith("/aparelhos");
+    }, 20_000);
+  });
+
+  describe("permissão CONFIGURACAO.APARELHO.EXCLUIR", () => {
+    it("sem EXCLUIR: opção Descartado não aparece no destino do defeito", async () => {
+      hasPermissionMock.mockImplementation(
+        (p) => p !== "CONFIGURACAO.APARELHO.EXCLUIR",
+      );
+      const user = userEvent.setup({ delay: null });
+      renderPage();
+
+      const defeito = await screen.findByRole("button", { name: /Defeito/i });
+      await user.click(defeito);
+
+      expect(screen.queryByRole("button", { name: /Descartado/i })).toBeNull();
+      expect(
+        screen.getByRole("button", { name: /Em Estoque \(defeito\)/i }),
+      ).toBeInTheDocument();
+    }, 15_000);
+
+    it("com EXCLUIR: opção Descartado aparece no destino do defeito", async () => {
+      hasPermissionMock.mockImplementation(() => true);
+      const user = userEvent.setup({ delay: null });
+      renderPage();
+
+      const defeito = await screen.findByRole("button", { name: /Defeito/i });
+      await user.click(defeito);
+
+      expect(
+        screen.getByRole("button", { name: /Descartado/i }),
+      ).toBeInTheDocument();
+    }, 15_000);
+
+    it("sem EXCLUIR: dialog de confirmação não abre ao submeter com status CANCELADO_DEFEITO", async () => {
+      hasPermissionMock.mockImplementation(
+        (p) => p !== "CONFIGURACAO.APARELHO.EXCLUIR",
+      );
+      const user = userEvent.setup({ delay: null });
+      renderPage();
+      await screen.findByText(/Identificação Técnica/i);
+      await user.type(
+        screen.getByPlaceholderText("Digite o identificador único..."),
+        "123456789012345",
+      );
+      const combos = comboboxesIdentificacaoTecnica();
+      await user.click(combos[1]!);
+      await user.click(await screen.findByRole("option", { name: "M" }));
+      await user.click(combos[2]!);
+      await user.click(await screen.findByRole("option", { name: "X" }));
+
+      const defeito = await screen.findByRole("button", { name: /Defeito/i });
+      await user.click(defeito);
+
+      const finalizar = await screen.findByRole("button", {
+        name: /Finalizar Cadastro/i,
+      });
+      await waitFor(() => expect(finalizar).not.toBeDisabled());
+      await user.click(finalizar);
+
+      await waitFor(() => {
+        expect(apiMock).toHaveBeenCalledWith(
+          "/aparelhos/individual",
+          expect.objectContaining({ method: "POST" }),
+        );
+      });
+      expect(
+        screen.queryByRole("heading", { name: /Confirmar Descarte/i }),
+      ).not.toBeInTheDocument();
+    }, 20_000);
+  });
 
   it("Limpar campos: zera identificador e remove marca selecionada (volta ao padrão)", async () => {
     const user = userEvent.setup({ delay: null });

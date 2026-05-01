@@ -32,11 +32,13 @@ function DefinicaoHarness({
   defaultStatus = "EM_MANUTENCAO" as StatusAparelho,
   watchStatus,
   statusDisponiveis = allStatuses,
+  canExcluir = true,
   onFormReady,
 }: {
   defaultStatus?: StatusAparelho;
   watchStatus: string;
   statusDisponiveis?: StatusAparelho[];
+  canExcluir?: boolean;
   onFormReady?: (
     f: ReturnType<typeof useForm<FormDataCadastroIndividual>>,
   ) => void;
@@ -53,6 +55,7 @@ function DefinicaoHarness({
       form={form}
       statusDisponiveis={statusDisponiveis}
       watchStatus={watchStatus}
+      canExcluir={canExcluir}
     />
   );
 }

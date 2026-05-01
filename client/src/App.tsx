@@ -98,6 +98,11 @@ const TabelasConfigPage = lazy(() =>
     default: m.TabelasConfigPage,
   })),
 );
+const DescartadosPage = lazy(() =>
+  import("@/pages/aparelhos/descartados/DescartadosPage").then((m) => ({
+    default: m.DescartadosPage,
+  })),
+);
 
 function PageLoader() {
   return (
@@ -252,6 +257,14 @@ function App() {
           element={
             <Suspense fallback={<PageLoader />}>
               <EquipamentosConfigPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="equipamentos/descartados"
+          element={
+            <Suspense fallback={<PageLoader />}>
+              <DescartadosPage />
             </Suspense>
           }
         />

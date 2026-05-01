@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useState, useRef } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
@@ -25,11 +25,23 @@ import { DefinicaoStatusSection } from "@/pages/aparelhos/cadastro-individual/De
 import { IdentificacaoTecnicaSection } from "@/pages/aparelhos/cadastro-individual/IdentificacaoTecnicaSection";
 import { OrigemRastreabilidadeSection } from "@/pages/aparelhos/cadastro-individual/OrigemRastreabilidadeSection";
 import { useCadastroIndividualAparelhoMutation } from "@/pages/aparelhos/cadastro-individual/useCadastroIndividualAparelhoMutation";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 export function CadastroIndividualPage() {
   const navigate = useNavigate();
   const { hasPermission } = useAuth();
   const canCreate = hasPermission("CONFIGURACAO.APARELHO.CRIAR");
+  const canExcluir = hasPermission("CONFIGURACAO.APARELHO.EXCLUIR");
+  const [mostrarConfirmacaoDescarte, setMostrarConfirmacaoDescarte] =
+    useState(false);
+  const pendingActionRef = useRef<(() => void) | null>(null);
 
   const form = useForm<FormDataCadastroIndividual>({
     resolver: zodResolver(
@@ -170,9 +182,22 @@ export function CadastroIndividualPage() {
     watchClienteId,
   ]);
 
+  const isDescarte = (data: FormDataCadastroIndividual) =>
+    canExcluir &&
+    data.status === "CANCELADO_DEFEITO" &&
+    data.destinoDefeito === "DESCARTADO";
+
   const handleCadastrarEFinalizar = () => {
     form.handleSubmit(
       (data) => {
+        if (isDescarte(data)) {
+          pendingActionRef.current = () =>
+            createAparelhoMutation.mutate(data, {
+              onSuccess: () => navigate("/aparelhos"),
+            });
+          setMostrarConfirmacaoDescarte(true);
+          return;
+        }
         createAparelhoMutation.mutate(data, {
           onSuccess: () => navigate("/aparelhos"),
         });
@@ -187,6 +212,14 @@ export function CadastroIndividualPage() {
   const handleCadastrarOutro = () => {
     form.handleSubmit(
       (data) => {
+        if (isDescarte(data)) {
+          pendingActionRef.current = () =>
+            createAparelhoMutation.mutate(data, {
+              onSuccess: () => limparFormulario(true),
+            });
+          setMostrarConfirmacaoDescarte(true);
+          return;
+        }
         createAparelhoMutation.mutate(data, {
           onSuccess: () => limparFormulario(true),
         });
@@ -196,6 +229,12 @@ export function CadastroIndividualPage() {
         toast.error(firstError ?? "Verifique os campos do formulário");
       },
     )();
+  };
+
+  const handleConfirmarDescarte = () => {
+    setMostrarConfirmacaoDescarte(false);
+    pendingActionRef.current?.();
+    pendingActionRef.current = null;
   };
 
   const statusRevisao = useMemo(() => {
@@ -238,6 +277,7 @@ export function CadastroIndividualPage() {
               form={form}
               statusDisponiveis={statusDisponiveis}
               watchStatus={watchStatus}
+              canExcluir={canExcluir}
             />
 
             {watchTipo === "RASTREADOR" && (
@@ -276,6 +316,45 @@ export function CadastroIndividualPage() {
         onCadastrarOutro={handleCadastrarOutro}
         onFinalizar={handleCadastrarEFinalizar}
       />
+
+      <Dialog
+        open={mostrarConfirmacaoDescarte}
+        onOpenChange={(open) => {
+          if (!open) {
+            setMostrarConfirmacaoDescarte(false);
+            pendingActionRef.current = null;
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Descarte</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-slate-600">
+            Esta ação é <strong>irreversível</strong>. O equipamento será
+            registrado como descartado e não poderá ser recuperado para o
+            estoque.
+          </p>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setMostrarConfirmacaoDescarte(false);
+                pendingActionRef.current = null;
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmarDescarte}
+              data-testid="confirmar-descarte-btn"
+            >
+              Confirmar Descarte
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
