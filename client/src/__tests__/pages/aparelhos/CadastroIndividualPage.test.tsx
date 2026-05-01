@@ -492,6 +492,74 @@ describe("CadastroIndividualPage (integrado, APIs mockadas)", () => {
     }, 20_000);
   });
 
+  describe("permissão CONFIGURACAO.APARELHO.EXCLUIR", () => {
+    it("sem EXCLUIR: opção Descartado não aparece no destino do defeito", async () => {
+      hasPermissionMock.mockImplementation(
+        (p) => p !== "CONFIGURACAO.APARELHO.EXCLUIR",
+      );
+      const user = userEvent.setup({ delay: null });
+      renderPage();
+
+      const defeito = await screen.findByRole("button", { name: /Defeito/i });
+      await user.click(defeito);
+
+      expect(screen.queryByRole("button", { name: /Descartado/i })).toBeNull();
+      expect(
+        screen.getByRole("button", { name: /Em Estoque \(defeito\)/i }),
+      ).toBeInTheDocument();
+    }, 15_000);
+
+    it("com EXCLUIR: opção Descartado aparece no destino do defeito", async () => {
+      hasPermissionMock.mockImplementation(() => true);
+      const user = userEvent.setup({ delay: null });
+      renderPage();
+
+      const defeito = await screen.findByRole("button", { name: /Defeito/i });
+      await user.click(defeito);
+
+      expect(
+        screen.getByRole("button", { name: /Descartado/i }),
+      ).toBeInTheDocument();
+    }, 15_000);
+
+    it("sem EXCLUIR: dialog de confirmação não abre ao submeter com status CANCELADO_DEFEITO", async () => {
+      hasPermissionMock.mockImplementation(
+        (p) => p !== "CONFIGURACAO.APARELHO.EXCLUIR",
+      );
+      const user = userEvent.setup({ delay: null });
+      renderPage();
+      await screen.findByText(/Identificação Técnica/i);
+      await user.type(
+        screen.getByPlaceholderText("Digite o identificador único..."),
+        "123456789012345",
+      );
+      const combos = comboboxesIdentificacaoTecnica();
+      await user.click(combos[1]!);
+      await user.click(await screen.findByRole("option", { name: "M" }));
+      await user.click(combos[2]!);
+      await user.click(await screen.findByRole("option", { name: "X" }));
+
+      const defeito = await screen.findByRole("button", { name: /Defeito/i });
+      await user.click(defeito);
+
+      const finalizar = await screen.findByRole("button", {
+        name: /Finalizar Cadastro/i,
+      });
+      await waitFor(() => expect(finalizar).not.toBeDisabled());
+      await user.click(finalizar);
+
+      await waitFor(() => {
+        expect(apiMock).toHaveBeenCalledWith(
+          "/aparelhos/individual",
+          expect.objectContaining({ method: "POST" }),
+        );
+      });
+      expect(
+        screen.queryByRole("heading", { name: /Confirmar Descarte/i }),
+      ).not.toBeInTheDocument();
+    }, 20_000);
+  });
+
   it("Limpar campos: zera identificador e remove marca selecionada (volta ao padrão)", async () => {
     const user = userEvent.setup({ delay: null });
     renderPage();
