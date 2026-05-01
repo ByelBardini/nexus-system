@@ -52,6 +52,7 @@ Ver índice em `AGENTS.md`.
 | Método | Path | Permissões |
 |--------|------|------------|
 | GET | `/aparelhos` | `CONFIGURACAO.APARELHO.LISTAR` |
+| GET | `/aparelhos/descartados` | `CONFIGURACAO.APARELHO.LISTAR` |
 | GET | `/aparelhos/resumo` | `CONFIGURACAO.APARELHO.LISTAR` |
 | GET | `/aparelhos/para-testes` | `AGENDAMENTO.TESTES.LISTAR` **+** `AGENDAMENTO.OS.LISTAR` |
 | GET | `/aparelhos/pareamento/lotes-rastreadores` | `CONFIGURACAO.APARELHO.LISTAR` |
@@ -75,20 +76,23 @@ Ver índice em `AGENTS.md`.
 **Enums relevantes:**
 
 - `TipoAparelho`: `RASTREADOR` | `SIM`
-- `StatusAparelho`: `EM_ESTOQUE` | `CONFIGURADO` | `DESPACHADO` | `COM_TECNICO` | `INSTALADO` | `DESCARTADO`
+- `StatusAparelho`: `EM_ESTOQUE` | `CONFIGURADO` | `DESPACHADO` | `COM_TECNICO` | `INSTALADO` (**DESCARTADO removido** — migrado para `AparelhoDescartado`)
 - `ProprietarioTipo`: `INFINITY` | `CLIENTE`
 - `Plataforma`: `GETRAK` | `GEOMAPS` | `SELSYN` (domínio de equipamentos/plataformas)
 
 **Modelos Prisma (campos-chave):**
 
 - `Aparelho`: `id`, `tipo` (`TipoAparelho`), `identificador`, `status` (`StatusAparelho`), `proprietario` (`ProprietarioTipo`), `clienteId`, `marca`, `modelo`, `operadora`, `marcaSimcardId`, `planoSimcardId`, `loteId`, `valorUnitario`, `tecnicoId`, `kitId`, `simVinculadoId`, `observacao`, `subclienteId`, `veiculoId`, `criadoEm`, `atualizadoEm`.
+- `AparelhoDescartado` (`aparelhos_descartados`): snapshot histórico de aparelhos descartados. Campos: `id`, `aparelhoOrigemId?` (ID original em `Aparelho`, informativo), todos os campos de `Aparelho` (FKs como `Int?` sem `@relation`), `categoriaFalha?`, `motivoDefeito?`, `responsavel?`, `criadoEm` (data original), `descartadoEm?` (null para registros migrados sem data conhecida). Sem relações Prisma — snapshot imune a deleções de clientes/técnicos/lotes.
 - `LoteAparelho`: `id`, `referencia`, `notaFiscal`, `dataChegada`, `tipo`, `proprietario`, `clienteId`, `marca`, `modelo`, `operadora`, `marcaSimcardId`, `planoSimcardId`, `quantidade`, `valorUnitario`, `valorTotal`, `criadoEm`.
 - `AparelhoHistorico`: `id`, `aparelhoId`, `statusAnterior`, `statusNovo`, `observacao`, `criadoEm`.
 - `Kit`: `id`, `nome` (unique), `criadoEm`, `kitConcluido`, relação `aparelhos`.
 
 **Regras de negócio críticas:**
 
-- `createIndividual` com `statusEntrada === 'CANCELADO_DEFEITO'`: o `statusAparelho` gravado depende de `destinoDefeito` — `'DESCARTADO'` → `StatusAparelho.DESCARTADO`; `'EM_ESTOQUE_DEFEITO'` → `StatusAparelho.EM_ESTOQUE`. Outros statuses sempre resultam em `EM_ESTOQUE`.
+- `createIndividual` com `statusEntrada === 'CANCELADO_DEFEITO'` e `destinoDefeito === 'DESCARTADO'`: **grava diretamente em `AparelhoDescartado`** (sem criar registro em `Aparelho`). `destinoDefeito === 'EM_ESTOQUE_DEFEITO'` → `StatusAparelho.EM_ESTOQUE` em `Aparelho`. Outros statuses sempre resultam em `EM_ESTOQUE`.
+- `descartarAparelho(aparelhoId, dados)`: usado para mover um `Aparelho` existente para `AparelhoDescartado`. Transação: cria em `AparelhoDescartado` com `aparelhoOrigemId` + `descartadoEm = now()`, depois deleta o `Aparelho`. Lança `NotFoundException` se aparelho não existe.
+- `listarDescartados()`: retorna todos os registros de `AparelhoDescartado` ordenados por `descartadoEm desc`.
 - SIM é **sempre** proprietário `INFINITY` — `clienteId` e abate de débito são ignorados na criação.
 - `identificador` deve ser único (validado via `findFirst` antes de criar avulso).
 - `updateStatus` em rastreador com `simVinculadoId` **replica** status e histórico no SIM vinculado (mesma transação).

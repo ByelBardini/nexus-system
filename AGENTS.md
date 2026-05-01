@@ -47,6 +47,7 @@ Ao trabalhar em uma área:
 | Scripts Vite, Tailwind, rotas `App.tsx`, testes frontend | [`docs/context/frontend-setup.md`](docs/context/frontend-setup.md) |
 | Login, dashboard OS, bancada de testes, cadastro rastreamento (UI) | [`docs/context/frontend-agendamento.md`](docs/context/frontend-agendamento.md) |
 | Aparelhos, equipamentos, pareamento (UI) | [`docs/context/frontend-aparelhos.md`](docs/context/frontend-aparelhos.md) |
+| Tela Descartados + dialog de descarte (UI) | [`docs/context/frontend-descartados.md`](docs/context/frontend-descartados.md) |
 | Configurações (hub), débitos equipamentos (UI) | [`docs/context/frontend-admin.md`](docs/context/frontend-admin.md) |
 | Pedidos / pedidos-config (UI) | [`docs/context/frontend-pedidos.md`](docs/context/frontend-pedidos.md) |
 
