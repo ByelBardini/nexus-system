@@ -20,6 +20,7 @@ describe('AparelhosController', () => {
     getResumo: jest.fn(),
     createIndividual: jest.fn(),
     updateStatus: jest.fn(),
+    listarDescartados: jest.fn(),
   };
 
   const lotesMock = {
@@ -71,6 +72,16 @@ describe('AparelhosController', () => {
       await controller.findAll();
 
       expect(aparelhosService.findAll).toHaveBeenCalled();
+    });
+  });
+
+  describe('listarDescartados', () => {
+    it('delega para aparelhosService.listarDescartados', async () => {
+      (aparelhosService.listarDescartados as jest.Mock).mockResolvedValue([]);
+
+      await controller.listarDescartados();
+
+      expect(aparelhosService.listarDescartados).toHaveBeenCalled();
     });
   });
 
