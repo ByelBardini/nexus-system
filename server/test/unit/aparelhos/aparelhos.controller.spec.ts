@@ -1,9 +1,11 @@
+import { ForbiddenException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AparelhosController } from 'src/aparelhos/aparelhos.controller';
 import { AparelhosService } from 'src/aparelhos/aparelhos.service';
 import { LotesService } from 'src/aparelhos/lotes.service';
 import { KitsService } from 'src/aparelhos/kits.service';
 import { PareamentoService } from 'src/aparelhos/pareamento.service';
+import { UsersService } from 'src/users/users.service';
 import { PermissionsGuard } from 'src/auth/guards/permissions.guard';
 
 describe('AparelhosController', () => {
@@ -43,6 +45,11 @@ describe('AparelhosController', () => {
     pareamentoCsv: jest.fn(),
   };
 
+  const usersMock = {
+    findByEmail: jest.fn(),
+    getPermissions: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AparelhosController],
@@ -51,6 +58,7 @@ describe('AparelhosController', () => {
         { provide: LotesService, useValue: lotesMock },
         { provide: KitsService, useValue: kitsMock },
         { provide: PareamentoService, useValue: pareamentoMock },
+        { provide: UsersService, useValue: usersMock },
       ],
     })
       .overrideGuard(PermissionsGuard)
@@ -131,15 +139,48 @@ describe('AparelhosController', () => {
   });
 
   describe('createIndividual', () => {
-    it('chama aparelhosService.createIndividual com o DTO', async () => {
-      const dto = { identificador: 'IMEI123', tipo: 'RASTREADOR' } as any;
-      (aparelhosService.createIndividual as jest.Mock).mockResolvedValue({
-        id: 1,
-      });
+    it('chama aparelhosService.createIndividual sem verificar permissão quando destinoDefeito não é DESCARTADO', async () => {
+      const dto = { identificador: 'IMEI123', tipo: 'RASTREADOR', destinoDefeito: 'EM_ESTOQUE_DEFEITO' } as any;
+      (aparelhosService.createIndividual as jest.Mock).mockResolvedValue({ id: 1 });
 
-      await controller.createIndividual(dto);
+      await controller.createIndividual(dto, 'user@test.com');
 
+      expect(usersMock.findByEmail).not.toHaveBeenCalled();
       expect(aparelhosService.createIndividual).toHaveBeenCalledWith(dto);
+    });
+
+    it('com destinoDefeito=DESCARTADO e permissão EXCLUIR: delega ao service', async () => {
+      const dto = { identificador: 'IMEI123', tipo: 'RASTREADOR', destinoDefeito: 'DESCARTADO' } as any;
+      const fakeUser = { id: 1, email: 'user@test.com' };
+      (usersMock.findByEmail as jest.Mock).mockResolvedValue(fakeUser);
+      (usersMock.getPermissions as jest.Mock).mockReturnValue(['CONFIGURACAO.APARELHO.EXCLUIR']);
+      (aparelhosService.createIndividual as jest.Mock).mockResolvedValue({ id: 1 });
+
+      await controller.createIndividual(dto, 'user@test.com');
+
+      expect(usersMock.findByEmail).toHaveBeenCalledWith('user@test.com');
+      expect(aparelhosService.createIndividual).toHaveBeenCalledWith(dto);
+    });
+
+    it('com destinoDefeito=DESCARTADO sem permissão EXCLUIR: lança ForbiddenException', async () => {
+      const dto = { identificador: 'IMEI123', tipo: 'RASTREADOR', destinoDefeito: 'DESCARTADO' } as any;
+      const fakeUser = { id: 1, email: 'user@test.com' };
+      (usersMock.findByEmail as jest.Mock).mockResolvedValue(fakeUser);
+      (usersMock.getPermissions as jest.Mock).mockReturnValue(['CONFIGURACAO.APARELHO.CRIAR']);
+
+      await expect(
+        controller.createIndividual(dto, 'user@test.com'),
+      ).rejects.toThrow(ForbiddenException);
+      expect(aparelhosService.createIndividual).not.toHaveBeenCalled();
+    });
+
+    it('com destinoDefeito=DESCARTADO e usuário não encontrado: lança ForbiddenException', async () => {
+      const dto = { identificador: 'IMEI123', tipo: 'RASTREADOR', destinoDefeito: 'DESCARTADO' } as any;
+      (usersMock.findByEmail as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        controller.createIndividual(dto, 'user@test.com'),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 
