@@ -1,3 +1,23 @@
+# [1.6.0](https://github.com/ByelBardini/nexus-system/compare/v1.5.0...v1.6.0) (2026-04-30)
+
+
+### Bug Fixes
+
+* **tabelas-config:** adicionar UsersModule ao TabelasConfigModule ([f69924b](https://github.com/ByelBardini/nexus-system/commit/f69924be6e75e8be82892a1b785daa3ddbea25c5))
+
+
+### Features
+
+* **aparelhos:** derivar statusAparelho de destinoDefeito na entrada com CANCELADO_DEFEITO ([811d382](https://github.com/ByelBardini/nexus-system/commit/811d38272765e7037f799faef967a31bc5c624ab))
+* **aparelhos:** renomeia status EM_MANUTENCAO→Usado e adiciona motivoDefeito no cadastro individual ([9de3ded](https://github.com/ByelBardini/nexus-system/commit/9de3ded98b6b4d2726bb978c5f1bf0de31c0b08d))
+* **cadastro-individual:** atualizar schema, tipos e mutation para categorias dinâmicas e destinoDefeito binário ([9aa2bd9](https://github.com/ByelBardini/nexus-system/commit/9aa2bd908887616a27f026f905f239c1e04c3c5d))
+* **cadastro-individual:** categorias de falha dinâmicas e toggle de destino em DefinicaoStatusSection ([b5008fe](https://github.com/ByelBardini/nexus-system/commit/b5008fe18348037a3bc799af56c259ce11786f39))
+* **cadastro-individual:** renomeia botões de status e adiciona campo motivoDefeito para categoria Outro ([91d637a](https://github.com/ByelBardini/nexus-system/commit/91d637a3c5890a337d6cd74d0f15b23d0d5844db))
+* **schema:** adicionar CategoriaFalhaRastreador e valor DESCARTADO ao enum StatusAparelho ([d786575](https://github.com/ByelBardini/nexus-system/commit/d78657554672e7ca9367905f18ae5a5de30bf113))
+* **tabelas-config:** criar módulo backend com endpoints CRUD de categorias de falha ([25dea7f](https://github.com/ByelBardini/nexus-system/commit/25dea7f2fb06e84582d1defa6f814079d6f85fdd))
+* **tabelas-config:** criar página de configuração de categorias de falha ([ae2c18f](https://github.com/ByelBardini/nexus-system/commit/ae2c18f0f3dc94aa05ccd3b2588aea9ea91179f0))
+* **tabelas-config:** redesign visual — layout full-screen, search e dropdown de ações ([c43d8d5](https://github.com/ByelBardini/nexus-system/commit/c43d8d5d053342bbb7d03f56eae90562f8839b67))
+
 # [1.5.0](https://github.com/ByelBardini/nexus-system/compare/v1.4.0...v1.5.0) (2026-04-29)
 
 
