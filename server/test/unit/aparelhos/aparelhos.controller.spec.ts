@@ -140,8 +140,14 @@ describe('AparelhosController', () => {
 
   describe('createIndividual', () => {
     it('chama aparelhosService.createIndividual sem verificar permissão quando destinoDefeito não é DESCARTADO', async () => {
-      const dto = { identificador: 'IMEI123', tipo: 'RASTREADOR', destinoDefeito: 'EM_ESTOQUE_DEFEITO' } as any;
-      (aparelhosService.createIndividual as jest.Mock).mockResolvedValue({ id: 1 });
+      const dto = {
+        identificador: 'IMEI123',
+        tipo: 'RASTREADOR',
+        destinoDefeito: 'EM_ESTOQUE_DEFEITO',
+      } as any;
+      (aparelhosService.createIndividual as jest.Mock).mockResolvedValue({
+        id: 1,
+      });
 
       await controller.createIndividual(dto, 'user@test.com');
 
@@ -150,11 +156,19 @@ describe('AparelhosController', () => {
     });
 
     it('com destinoDefeito=DESCARTADO e permissão EXCLUIR: delega ao service', async () => {
-      const dto = { identificador: 'IMEI123', tipo: 'RASTREADOR', destinoDefeito: 'DESCARTADO' } as any;
+      const dto = {
+        identificador: 'IMEI123',
+        tipo: 'RASTREADOR',
+        destinoDefeito: 'DESCARTADO',
+      } as any;
       const fakeUser = { id: 1, email: 'user@test.com' };
-      (usersMock.findByEmail as jest.Mock).mockResolvedValue(fakeUser);
-      (usersMock.getPermissions as jest.Mock).mockReturnValue(['CONFIGURACAO.APARELHO.EXCLUIR']);
-      (aparelhosService.createIndividual as jest.Mock).mockResolvedValue({ id: 1 });
+      usersMock.findByEmail.mockResolvedValue(fakeUser);
+      usersMock.getPermissions.mockReturnValue([
+        'CONFIGURACAO.APARELHO.EXCLUIR',
+      ]);
+      (aparelhosService.createIndividual as jest.Mock).mockResolvedValue({
+        id: 1,
+      });
 
       await controller.createIndividual(dto, 'user@test.com');
 
@@ -163,10 +177,16 @@ describe('AparelhosController', () => {
     });
 
     it('com destinoDefeito=DESCARTADO sem permissão EXCLUIR: lança ForbiddenException', async () => {
-      const dto = { identificador: 'IMEI123', tipo: 'RASTREADOR', destinoDefeito: 'DESCARTADO' } as any;
+      const dto = {
+        identificador: 'IMEI123',
+        tipo: 'RASTREADOR',
+        destinoDefeito: 'DESCARTADO',
+      } as any;
       const fakeUser = { id: 1, email: 'user@test.com' };
-      (usersMock.findByEmail as jest.Mock).mockResolvedValue(fakeUser);
-      (usersMock.getPermissions as jest.Mock).mockReturnValue(['CONFIGURACAO.APARELHO.CRIAR']);
+      usersMock.findByEmail.mockResolvedValue(fakeUser);
+      usersMock.getPermissions.mockReturnValue([
+        'CONFIGURACAO.APARELHO.CRIAR',
+      ]);
 
       await expect(
         controller.createIndividual(dto, 'user@test.com'),
@@ -175,8 +195,12 @@ describe('AparelhosController', () => {
     });
 
     it('com destinoDefeito=DESCARTADO e usuário não encontrado: lança ForbiddenException', async () => {
-      const dto = { identificador: 'IMEI123', tipo: 'RASTREADOR', destinoDefeito: 'DESCARTADO' } as any;
-      (usersMock.findByEmail as jest.Mock).mockResolvedValue(null);
+      const dto = {
+        identificador: 'IMEI123',
+        tipo: 'RASTREADOR',
+        destinoDefeito: 'DESCARTADO',
+      } as any;
+      usersMock.findByEmail.mockResolvedValue(null);
 
       await expect(
         controller.createIndividual(dto, 'user@test.com'),
