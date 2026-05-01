@@ -43,6 +43,13 @@ export class AparelhosController {
     return this.aparelhosService.findAll();
   }
 
+  @Get('descartados')
+  @RequirePermissions('CONFIGURACAO.APARELHO.LISTAR')
+  @ApiOperation({ summary: 'Listar aparelhos descartados' })
+  listarDescartados() {
+    return this.aparelhosService.listarDescartados();
+  }
+
   @Get('resumo')
   @RequirePermissions('CONFIGURACAO.APARELHO.LISTAR')
   @ApiOperation({ summary: 'Resumo de aparelhos por status' })

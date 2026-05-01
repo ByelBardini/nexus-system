@@ -9,6 +9,12 @@ import { StatusAparelho, StatusOS } from '@prisma/client';
 import { CreateIndividualDto } from './dto/create-individual.dto';
 import { DebitosRastreadoresService } from '../debitos-rastreadores/debitos-rastreadores.service';
 
+type DadosDescarte = {
+  categoriaFalha?: string | null;
+  motivoDefeito?: string | null;
+  responsavel?: string | null;
+};
+
 @Injectable()
 export class AparelhosService {
   constructor(
@@ -303,6 +309,48 @@ export class AparelhosService {
     };
   }
 
+  async listarDescartados() {
+    return this.prisma.aparelhoDescartado.findMany({
+      orderBy: { descartadoEm: 'desc' },
+    });
+  }
+
+  async descartarAparelho(aparelhoId: number, dados: DadosDescarte) {
+    const aparelho = await this.findOne(aparelhoId);
+
+    return this.prisma.$transaction(async (tx) => {
+      const descartado = await tx.aparelhoDescartado.create({
+        data: {
+          aparelhoOrigemId: aparelho.id,
+          tipo: aparelho.tipo,
+          identificador: aparelho.identificador ?? undefined,
+          proprietario: aparelho.proprietario,
+          marca: aparelho.marca ?? null,
+          modelo: aparelho.modelo ?? null,
+          operadora: aparelho.operadora ?? null,
+          marcaSimcardId: aparelho.marcaSimcardId ?? null,
+          planoSimcardId: aparelho.planoSimcardId ?? null,
+          loteId: aparelho.loteId ?? null,
+          valorUnitario: aparelho.valorUnitario ?? null,
+          tecnicoId: aparelho.tecnicoId ?? null,
+          kitId: aparelho.kitId ?? null,
+          simVinculadoId: aparelho.simVinculadoId ?? null,
+          clienteId: aparelho.clienteId ?? null,
+          subclienteId: aparelho.subclienteId ?? null,
+          veiculoId: aparelho.veiculoId ?? null,
+          observacao: aparelho.observacao ?? null,
+          criadoEm: aparelho.criadoEm,
+          categoriaFalha: dados.categoriaFalha ?? null,
+          motivoDefeito: dados.motivoDefeito ?? null,
+          responsavel: dados.responsavel ?? null,
+          descartadoEm: new Date(),
+        },
+      });
+      await tx.aparelho.delete({ where: { id: aparelhoId } });
+      return descartado;
+    });
+  }
+
   async createIndividual(dto: CreateIndividualDto) {
     const {
       identificador,
@@ -349,16 +397,33 @@ export class AparelhosService {
 
     // SIMs always belong to Infinity — no client ownership, no debt abatement
     if (tipo === 'SIM') {
-      const statusSim: StatusAparelho =
-        statusEntrada === 'CANCELADO_DEFEITO' && destinoDefeito === 'DESCARTADO'
-          ? 'DESCARTADO'
-          : 'EM_ESTOQUE';
+      if (
+        statusEntrada === 'CANCELADO_DEFEITO' &&
+        destinoDefeito === 'DESCARTADO'
+      ) {
+        return this.prisma.aparelhoDescartado.create({
+          data: {
+            aparelhoOrigemId: null,
+            tipo: 'SIM',
+            identificador: identificador ?? null,
+            proprietario: 'INFINITY',
+            operadora: operadoraSim ?? null,
+            marcaSimcardId: marcaSimcardId ?? null,
+            planoSimcardId: planoSimcardId ?? null,
+            criadoEm: new Date(),
+            categoriaFalha: categoriaFalha ?? null,
+            motivoDefeito: motivoDefeito ?? null,
+            responsavel: responsavelEntrega ?? null,
+          },
+        });
+      }
+
       return this.prisma.$transaction(async (tx) => {
         const aparelho = await tx.aparelho.create({
           data: {
             tipo: 'SIM',
             identificador,
-            status: statusSim,
+            status: 'EM_ESTOQUE',
             proprietario: 'INFINITY',
             clienteId: null,
             operadora: operadoraSim ?? null,
@@ -424,10 +489,29 @@ export class AparelhosService {
       };
     }
 
-    const statusAparelho: StatusAparelho =
-      statusEntrada === 'CANCELADO_DEFEITO' && destinoDefeito === 'DESCARTADO'
-        ? 'DESCARTADO'
-        : 'EM_ESTOQUE';
+    if (
+      statusEntrada === 'CANCELADO_DEFEITO' &&
+      destinoDefeito === 'DESCARTADO'
+    ) {
+      return this.prisma.aparelhoDescartado.create({
+        data: {
+          aparelhoOrigemId: null,
+          tipo,
+          identificador: identificador ?? null,
+          proprietario: finalProprietario,
+          marca: marca ?? null,
+          modelo: modelo ?? null,
+          clienteId: finalClienteId,
+          tecnicoId: tecnicoId ?? null,
+          criadoEm: new Date(),
+          categoriaFalha: categoriaFalha ?? null,
+          motivoDefeito: motivoDefeito ?? null,
+          responsavel: responsavelEntrega ?? null,
+        },
+      });
+    }
+
+    const statusAparelho: StatusAparelho = 'EM_ESTOQUE';
 
     return this.prisma.$transaction(async (tx) => {
       const aparelho = await tx.aparelho.create({

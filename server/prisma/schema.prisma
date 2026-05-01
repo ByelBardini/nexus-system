@@ -531,7 +531,38 @@ enum StatusAparelho {
   DESPACHADO
   COM_TECNICO
   INSTALADO
-  DESCARTADO
+}
+
+model AparelhoDescartado {
+  id               Int              @id @default(autoincrement())
+  aparelhoOrigemId Int?             @map("aparelho_origem_id")
+
+  tipo             TipoAparelho
+  identificador    String?          @db.VarChar(50)
+  proprietario     ProprietarioTipo
+  marca            String?          @db.VarChar(100)
+  modelo           String?          @db.VarChar(100)
+  operadora        String?          @db.VarChar(50)
+  marcaSimcardId   Int?             @map("marca_simcard_id")
+  planoSimcardId   Int?             @map("plano_simcard_id")
+  loteId           Int?             @map("lote_id")
+  valorUnitario    Decimal?         @map("valor_unitario") @db.Decimal(10, 2)
+  tecnicoId        Int?             @map("tecnico_id")
+  kitId            Int?             @map("kit_id")
+  simVinculadoId   Int?             @map("sim_vinculado_id")
+  clienteId        Int?             @map("cliente_id")
+  subclienteId     Int?             @map("subcliente_id")
+  veiculoId        Int?             @map("veiculo_id")
+  observacao       String?          @db.VarChar(500)
+  criadoEm         DateTime         @map("criado_em")
+
+  categoriaFalha   String?          @map("categoria_falha") @db.VarChar(200)
+  motivoDefeito    String?          @map("motivo_defeito") @db.VarChar(500)
+  responsavel      String?          @db.VarChar(200)
+
+  descartadoEm     DateTime?        @default(now()) @map("descartado_em")
+
+  @@map("aparelhos_descartados")
 }
 
 model CategoriaFalhaRastreador {
