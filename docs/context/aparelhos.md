@@ -71,7 +71,7 @@ Ver índice em `AGENTS.md`.
 | GET | `/aparelhos/pareamento/aparelhos-disponiveis` | `CONFIGURACAO.APARELHO.LISTAR` |
 | POST | `/aparelhos/pareamento/kits` | `CONFIGURACAO.APARELHO.CRIAR` |
 
-> `CONFIGURACAO.APARELHO.EXCLUIR` existe em `permission-codes.ts` mas **nenhuma rota** o usa hoje.
+> `CONFIGURACAO.APARELHO.EXCLUIR` é verificado em `POST /aparelhos/individual` quando `destinoDefeito === 'DESCARTADO'`: o controller busca o usuário por email (`usersService.findByEmail`), extrai suas permissões e lança `ForbiddenException` se o código estiver ausente.
 
 **Enums relevantes:**
 
