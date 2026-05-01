@@ -184,9 +184,7 @@ describe('AparelhosController', () => {
       } as any;
       const fakeUser = { id: 1, email: 'user@test.com' };
       usersMock.findByEmail.mockResolvedValue(fakeUser);
-      usersMock.getPermissions.mockReturnValue([
-        'CONFIGURACAO.APARELHO.CRIAR',
-      ]);
+      usersMock.getPermissions.mockReturnValue(['CONFIGURACAO.APARELHO.CRIAR']);
 
       await expect(
         controller.createIndividual(dto, 'user@test.com'),
