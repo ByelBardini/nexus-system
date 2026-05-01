@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Param,
   Patch,
@@ -10,11 +11,13 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RequirePermissions } from '../auth/decorators/require-permissions.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { AparelhosService } from './aparelhos.service';
 import { LotesService } from './lotes.service';
 import { KitsService } from './kits.service';
 import { PareamentoService } from './pareamento.service';
+import { UsersService } from '../users/users.service';
 import { CreateLoteDto } from './dto/create-lote.dto';
 import { CreateIndividualDto } from './dto/create-individual.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
@@ -34,6 +37,7 @@ export class AparelhosController {
     private readonly lotesService: LotesService,
     private readonly kitsService: KitsService,
     private readonly pareamentoService: PareamentoService,
+    private readonly usersService: UsersService,
   ) {}
 
   @Get()
@@ -110,7 +114,20 @@ export class AparelhosController {
   @Post('individual')
   @RequirePermissions('CONFIGURACAO.APARELHO.CRIAR')
   @ApiOperation({ summary: 'Criar aparelho individual' })
-  createIndividual(@Body() dto: CreateIndividualDto) {
+  async createIndividual(
+    @Body() dto: CreateIndividualDto,
+    @CurrentUser('email') email: string,
+  ) {
+    if (dto.destinoDefeito === 'DESCARTADO') {
+      const user = await this.usersService.findByEmail(email);
+      if (!user) throw new ForbiddenException('Usuário não encontrado');
+      const permissoes = this.usersService.getPermissions(user);
+      if (!permissoes.includes('CONFIGURACAO.APARELHO.EXCLUIR')) {
+        throw new ForbiddenException(
+          'Permissão CONFIGURACAO.APARELHO.EXCLUIR necessária para descartar aparelhos',
+        );
+      }
+    }
     return this.aparelhosService.createIndividual(dto);
   }
 
