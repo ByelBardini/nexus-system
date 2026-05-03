@@ -63,8 +63,8 @@ export function getDefaultNovoPedidoRastreadorFormValues(
     modeloEquipamentoId: undefined,
     operadoraEspecifica: false,
     operadoraId: undefined,
-    quantidade: 1,
-    itensMisto: [{ proprietario: "INFINITY", quantidade: 1 }],
+    quantidade: 0,
+    itensMisto: [{ proprietario: "INFINITY", quantidade: 0 }],
     urgencia: "MEDIA",
     observacao: "",
   };

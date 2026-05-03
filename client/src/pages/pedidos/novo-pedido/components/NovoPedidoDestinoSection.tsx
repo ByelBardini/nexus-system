@@ -327,7 +327,7 @@ export function NovoPedidoDestinoSection({
               );
               appendItem({
                 proprietario: infinityTomado ? "CLIENTE" : "INFINITY",
-                quantidade: 1,
+                quantidade: 0,
               });
             }}
             className="w-full py-2 text-xs font-bold text-erp-blue border border-dashed border-erp-blue rounded hover:bg-blue-50 flex items-center justify-center gap-1"
@@ -355,13 +355,13 @@ export function NovoPedidoDestinoSection({
                 control={control}
                 render={({ field }) => (
                   <Input
-                    type="number"
-                    min={1}
+                    type="text"
+                    inputMode="numeric"
                     className="h-9 text-xs flex-1"
-                    {...field}
+                    value={field.value ? String(field.value) : ""}
                     onChange={(e) => {
-                      const v = parseInt(e.target.value, 10);
-                      field.onChange(Number.isNaN(v) ? 1 : Math.max(1, v));
+                      const raw = e.target.value.replace(/\D/g, "");
+                      field.onChange(raw === "" ? 0 : parseInt(raw, 10));
                     }}
                   />
                 )}

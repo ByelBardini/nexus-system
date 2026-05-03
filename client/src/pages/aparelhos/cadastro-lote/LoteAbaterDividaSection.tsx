@@ -146,18 +146,14 @@ export function LoteAbaterDividaSection({
                 render={({ field, fieldState }) => (
                   <>
                     <Input
-                      type="number"
-                      min={1}
-                      max={Math.min(
-                        selectedDebito.quantidade,
-                        quantidadeFinal || 9999,
-                      )}
-                      value={field.value ?? ""}
+                      type="text"
+                      inputMode="numeric"
+                      value={field.value ? String(field.value) : ""}
                       onChange={(e) => {
-                        const v = parseInt(e.target.value, 10);
-                        field.onChange(Number.isNaN(v) ? null : v);
+                        const raw = e.target.value.replace(/\D/g, "");
+                        field.onChange(raw === "" ? null : parseInt(raw, 10));
                       }}
-                      placeholder="0"
+                      placeholder=""
                       className={cn(
                         "h-9 w-40",
                         fieldState.error && "border-red-500",

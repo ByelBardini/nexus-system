@@ -71,13 +71,14 @@ export function LoteIdentificadoresSection({
             render={({ field, fieldState }) => (
               <>
                 <Input
-                  type="number"
-                  min={0}
-                  value={field.value ?? ""}
-                  onChange={(e) =>
-                    field.onChange(parseInt(e.target.value, 10) || 0)
-                  }
-                  placeholder="0"
+                  type="text"
+                  inputMode="numeric"
+                  value={field.value ? String(field.value) : ""}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/\D/g, "");
+                    field.onChange(raw === "" ? 0 : parseInt(raw, 10));
+                  }}
+                  placeholder=""
                   className={cn("h-9", fieldState.error && "border-red-500")}
                 />
                 {fieldState.error && (

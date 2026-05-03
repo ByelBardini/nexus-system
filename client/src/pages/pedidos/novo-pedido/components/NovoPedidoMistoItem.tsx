@@ -189,13 +189,13 @@ export function NovoPedidoMistoItem({
             control={control}
             render={({ field: f }) => (
               <Input
-                type="number"
-                min={1}
+                type="text"
+                inputMode="numeric"
                 className="h-9 text-xs"
-                value={f.value}
+                value={f.value ? String(f.value) : ""}
                 onChange={(e) => {
-                  const v = parseInt(e.target.value, 10);
-                  f.onChange(Number.isNaN(v) ? 1 : Math.max(1, v));
+                  const raw = e.target.value.replace(/\D/g, "");
+                  f.onChange(raw === "" ? 0 : parseInt(raw, 10));
                 }}
               />
             )}
