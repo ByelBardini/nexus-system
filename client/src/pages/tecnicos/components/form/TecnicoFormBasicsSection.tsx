@@ -60,6 +60,11 @@ export function TecnicoFormBasicsSection({
               />
             )}
           />
+          {form.formState.errors.cpfCnpj && (
+            <p className="text-xs text-red-500 mt-1">
+              {form.formState.errors.cpfCnpj.message}
+            </p>
+          )}
         </div>
         <div className="col-span-1">
           <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">

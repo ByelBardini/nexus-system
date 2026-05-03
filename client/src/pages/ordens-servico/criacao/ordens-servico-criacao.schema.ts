@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  isCpfCnpjValidationEnabled,
+  validarCPFouCNPJ,
+} from "@/lib/cpf-cnpj-validation";
 
 const baseCriacaoOsFormSchema = z
   .object({
@@ -14,7 +18,14 @@ const baseCriacaoOsFormSchema = z
     subclienteBairro: z.string().optional(),
     subclienteCidade: z.string().optional(),
     subclienteEstado: z.string().optional(),
-    subclienteCpf: z.string().optional(),
+    subclienteCpf: z
+      .string()
+      .optional()
+      .refine(
+        (val) =>
+          !val || !isCpfCnpjValidationEnabled() || validarCPFouCNPJ(val),
+        { message: "CPF ou CNPJ inválido" },
+      ),
     subclienteEmail: z
       .string()
       .email("E-mail inválido")

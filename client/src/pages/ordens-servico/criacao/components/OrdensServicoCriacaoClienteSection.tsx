@@ -290,6 +290,11 @@ export function OrdensServicoCriacaoClienteSection({
                   />
                 )}
               />
+              {form.formState.errors.subclienteCpf && (
+                <p className="text-xs text-red-500 mt-1">
+                  {form.formState.errors.subclienteCpf.message}
+                </p>
+              )}
             </div>
             <div className="col-span-2">
               <Label className="text-[10px] font-bold uppercase text-slate-500 mb-1 block">

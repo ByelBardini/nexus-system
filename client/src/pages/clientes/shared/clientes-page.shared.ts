@@ -1,5 +1,9 @@
 import { z } from "zod";
 import { formatarCEP } from "@/lib/format";
+import {
+  isCpfCnpjValidationEnabled,
+  validarCNPJ,
+} from "@/lib/cpf-cnpj-validation";
 import type {
   Cliente,
   ClienteEnderecoExibicao,
@@ -100,7 +104,13 @@ export const contatoSchema = z.object({
 export const clienteFormSchema = z.object({
   nome: z.string().min(1, "Razão social obrigatória"),
   nomeFantasia: z.string().optional(),
-  cnpj: z.string().optional(),
+  cnpj: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || !isCpfCnpjValidationEnabled() || validarCNPJ(val),
+      { message: "CNPJ inválido" },
+    ),
   tipoContrato: z.enum(TIPO_CONTRATO_VALUES),
   estoqueProprio: z.boolean(),
   status: z.enum(STATUS_CLIENTE_VALUES),

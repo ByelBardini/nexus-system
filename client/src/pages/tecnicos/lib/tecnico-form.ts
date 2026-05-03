@@ -1,10 +1,21 @@
 import { z } from "zod";
 import { tecnicoPrecoToNum } from "@/lib/tecnicos-page";
+import {
+  isCpfCnpjValidationEnabled,
+  validarCPFouCNPJ,
+} from "@/lib/cpf-cnpj-validation";
 import type { Tecnico } from "./tecnicos.types";
 
 export const tecnicoFormSchema = z.object({
   nome: z.string().min(1, "Nome obrigatório"),
-  cpfCnpj: z.string().optional(),
+  cpfCnpj: z
+    .string()
+    .optional()
+    .refine(
+      (val) =>
+        !val || !isCpfCnpjValidationEnabled() || validarCPFouCNPJ(val),
+      { message: "CPF ou CNPJ inválido" },
+    ),
   telefone: z.string().optional(),
   cidade: z.string().optional(),
   estado: z.string().optional(),
