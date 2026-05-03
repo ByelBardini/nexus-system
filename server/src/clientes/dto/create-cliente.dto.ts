@@ -2,7 +2,6 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsArray,
-  IsBoolean,
   IsEmail,
   IsEnum,
   IsOptional,
@@ -59,11 +58,6 @@ export class CreateClienteDto {
   @IsOptional()
   @IsEnum(TipoContrato)
   tipoContrato?: TipoContrato;
-
-  @ApiPropertyOptional({ default: false })
-  @IsOptional()
-  @IsBoolean()
-  estoqueProprio?: boolean;
 
   @ApiPropertyOptional({ enum: StatusCliente, default: StatusCliente.ATIVO })
   @IsOptional()

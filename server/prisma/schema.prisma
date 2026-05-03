@@ -110,7 +110,6 @@ model Cliente {
   nomeFantasia               String?            @map("nome_fantasia") @db.VarChar(200)
   cnpj                       String?            @db.VarChar(20)
   tipoContrato               TipoContrato       @default(COMODATO) @map("tipo_contrato")
-  estoqueProprio             Boolean            @default(false) @map("estoque_proprio")
   status                     StatusCliente      @default(ATIVO)
   cor                        String?            @db.VarChar(7)
   cep                        String?            @db.VarChar(10)
