@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   buildTecnicoApiBody,
   emptyTecnicoFormValues,
@@ -173,6 +173,62 @@ describe("tecnico-form", () => {
       const r = tecnicoFormSchema.safeParse({
         ...emptyTecnicoFormValues(),
         nome: "Válido",
+      });
+      expect(r.success).toBe(true);
+    });
+  });
+
+  describe("tecnicoFormSchema — validação cpfCnpj", () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    const base = { ...emptyTecnicoFormValues(), nome: "Técnico" };
+
+    it("aceita cpfCnpj vazio (campo opcional)", () => {
+      const r = tecnicoFormSchema.safeParse({ ...base, cpfCnpj: "" });
+      expect(r.success).toBe(true);
+    });
+
+    it("aceita CPF com dígitos verificadores corretos", () => {
+      const r = tecnicoFormSchema.safeParse({
+        ...base,
+        cpfCnpj: "52998224725",
+      });
+      expect(r.success).toBe(true);
+    });
+
+    it("aceita CNPJ com dígitos verificadores corretos", () => {
+      const r = tecnicoFormSchema.safeParse({
+        ...base,
+        cpfCnpj: "11222333000181",
+      });
+      expect(r.success).toBe(true);
+    });
+
+    it("rejeita CPF com dígito verificador errado", () => {
+      const r = tecnicoFormSchema.safeParse({
+        ...base,
+        cpfCnpj: "12345678900",
+      });
+      expect(r.success).toBe(false);
+      if (!r.success)
+        expect(r.error.issues[0].message).toBe("CPF ou CNPJ inválido");
+    });
+
+    it("rejeita CNPJ com dígito verificador errado", () => {
+      const r = tecnicoFormSchema.safeParse({
+        ...base,
+        cpfCnpj: "11222333000182",
+      });
+      expect(r.success).toBe(false);
+    });
+
+    it("quando VITE_VALIDATE_CPF_CNPJ=false, aceita documento inválido", () => {
+      vi.stubEnv("VITE_VALIDATE_CPF_CNPJ", "false");
+      const r = tecnicoFormSchema.safeParse({
+        ...base,
+        cpfCnpj: "12345678900",
       });
       expect(r.success).toBe(true);
     });

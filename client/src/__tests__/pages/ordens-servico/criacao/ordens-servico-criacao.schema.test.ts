@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   criacaoOsFormSchema,
   criacaoOsDefaultValues,
@@ -74,5 +74,63 @@ describe("ordens-servico-criacao schema", () => {
       veiculoCor: "Prata",
     });
     expect(r.success).toBe(true);
+  });
+
+  describe("refine subclienteCpf — validação CPF/CNPJ", () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    const base = { ...criacaoOsDefaultValues, tipo: "REVISAO" };
+
+    it("aceita subclienteCpf vazio (campo opcional)", () => {
+      const r = criacaoOsFormSchema.safeParse({ ...base, subclienteCpf: "" });
+      expect(r.success).toBe(true);
+    });
+
+    it("aceita CPF com dígitos verificadores corretos", () => {
+      const r = criacaoOsFormSchema.safeParse({
+        ...base,
+        subclienteCpf: "52998224725",
+      });
+      expect(r.success).toBe(true);
+    });
+
+    it("aceita CNPJ com dígitos verificadores corretos", () => {
+      const r = criacaoOsFormSchema.safeParse({
+        ...base,
+        subclienteCpf: "11222333000181",
+      });
+      expect(r.success).toBe(true);
+    });
+
+    it("rejeita CPF com dígito verificador errado", () => {
+      const r = criacaoOsFormSchema.safeParse({
+        ...base,
+        subclienteCpf: "12345678900",
+      });
+      expect(r.success).toBe(false);
+      if (!r.success)
+        expect(
+          r.error.issues.some((i) => i.message === "CPF ou CNPJ inválido"),
+        ).toBe(true);
+    });
+
+    it("rejeita CNPJ com dígito verificador errado", () => {
+      const r = criacaoOsFormSchema.safeParse({
+        ...base,
+        subclienteCpf: "11222333000182",
+      });
+      expect(r.success).toBe(false);
+    });
+
+    it("quando VITE_VALIDATE_CPF_CNPJ=false, aceita documento inválido", () => {
+      vi.stubEnv("VITE_VALIDATE_CPF_CNPJ", "false");
+      const r = criacaoOsFormSchema.safeParse({
+        ...base,
+        subclienteCpf: "12345678900",
+      });
+      expect(r.success).toBe(true);
+    });
   });
 });

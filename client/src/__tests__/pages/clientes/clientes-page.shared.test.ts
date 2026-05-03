@@ -1,9 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   CLIENTES_PAGE_SIZE,
+  clienteFormSchema,
   formatClienteEnderecoLinhaLista,
   formatClienteEnderecoResumo,
   getClientesFooterStats,
+  getDefaultClienteFormValues,
   type Cliente,
 } from "@/pages/clientes/shared/clientes-page.shared";
 
@@ -79,7 +81,6 @@ describe("clientes-page.shared — getClientesFooterStats", () => {
       nomeFantasia: null,
       cnpj: null,
       tipoContrato: "COMODATO",
-      estoqueProprio: false,
       status: "ATIVO",
       contatos: [],
       ...over,
@@ -112,5 +113,58 @@ describe("clientes-page.shared — getClientesFooterStats", () => {
 describe("clientes-page.shared — CLIENTES_PAGE_SIZE", () => {
   it("é positivo (usado na paginação)", () => {
     expect(CLIENTES_PAGE_SIZE).toBeGreaterThan(0);
+  });
+});
+
+describe("clienteFormSchema — validação cnpj", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  const base = { ...getDefaultClienteFormValues(), nome: "Empresa X" };
+
+  it("aceita cnpj vazio (campo opcional)", () => {
+    const r = clienteFormSchema.safeParse({ ...base, cnpj: "" });
+    expect(r.success).toBe(true);
+  });
+
+  it("aceita cnpj undefined", () => {
+    const r = clienteFormSchema.safeParse({ ...base, cnpj: undefined });
+    expect(r.success).toBe(true);
+  });
+
+  it("aceita CNPJ com dígitos verificadores corretos", () => {
+    const r = clienteFormSchema.safeParse({
+      ...base,
+      cnpj: "11222333000181",
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("rejeita CNPJ com dígito verificador errado", () => {
+    const r = clienteFormSchema.safeParse({
+      ...base,
+      cnpj: "11222333000182",
+    });
+    expect(r.success).toBe(false);
+    if (!r.success)
+      expect(r.error.issues[0].message).toBe("CNPJ inválido");
+  });
+
+  it("rejeita CNPJ com sequência repetida", () => {
+    const r = clienteFormSchema.safeParse({
+      ...base,
+      cnpj: "11111111111111",
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("quando VITE_VALIDATE_CPF_CNPJ=false, aceita CNPJ inválido", () => {
+    vi.stubEnv("VITE_VALIDATE_CPF_CNPJ", "false");
+    const r = clienteFormSchema.safeParse({
+      ...base,
+      cnpj: "11222333000182",
+    });
+    expect(r.success).toBe(true);
   });
 });
