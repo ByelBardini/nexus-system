@@ -5,18 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MaterialIcon } from "@/components/MaterialIcon";
 import { SearchableSelect } from "@/components/SearchableSelect";
-import {
-  FILTRO_ESTOQUE_OPTIONS,
-  FILTRO_TIPO_CONTRATO_OPTIONS,
-} from "../shared/clientes-page.shared";
+import { FILTRO_TIPO_CONTRATO_OPTIONS } from "../shared/clientes-page.shared";
 
 type Props = {
   busca: string;
   onBuscaChange: (v: string) => void;
   filtroTipoContrato: string;
   onFiltroTipoContratoChange: (v: string) => void;
-  filtroEstoque: string;
-  onFiltroEstoqueChange: (v: string) => void;
   canCreate: boolean;
   onNovoCliente: () => void;
 };
@@ -26,8 +21,6 @@ export function ClientesPageHeader({
   onBuscaChange,
   filtroTipoContrato,
   onFiltroTipoContratoChange,
-  filtroEstoque,
-  onFiltroEstoqueChange,
   canCreate,
   onNovoCliente,
 }: Props) {
@@ -74,17 +67,6 @@ export function ClientesPageHeader({
             value={filtroTipoContrato}
             onChange={onFiltroTipoContratoChange}
             options={FILTRO_TIPO_CONTRATO_OPTIONS}
-          />
-        </div>
-        <div className="flex flex-col">
-          <Label className="mb-1 block text-[10px] font-bold uppercase text-slate-500">
-            Estoque
-          </Label>
-          <SearchableSelect
-            className="h-9 w-32"
-            value={filtroEstoque}
-            onChange={onFiltroEstoqueChange}
-            options={[...FILTRO_ESTOQUE_OPTIONS]}
           />
         </div>
         {canCreate && (

@@ -7,11 +7,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { InputCNPJ } from "@/components/InputCNPJ";
 import { InputCor } from "@/components/InputCor";
-import { cn } from "@/lib/utils";
 import {
   STATUS_FORM_OPTIONS,
   TIPO_CONTRATO_SELECT_OPTIONS,
@@ -117,37 +114,6 @@ export function ClienteModalDadosSection({ form }: Props) {
               </Select>
             )}
           />
-        </div>
-        <div className="col-span-4">
-          <Label
-            htmlFor="cliente-estoque-proprio"
-            className="block text-[10px] font-bold text-slate-500 uppercase mb-1"
-          >
-            Estoque Próprio
-          </Label>
-          <div className="flex items-center gap-3 h-9">
-            <Controller
-              name="estoqueProprio"
-              control={form.control}
-              render={({ field }) => (
-                <>
-                  <Switch
-                    id="cliente-estoque-proprio"
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                  <span
-                    className={cn(
-                      "text-xs font-bold",
-                      field.value ? "text-emerald-600" : "text-slate-500",
-                    )}
-                  >
-                    {field.value ? "SIM" : "NÃO"}
-                  </span>
-                </>
-              )}
-            />
-          </div>
         </div>
         <div className="col-span-4">
           <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">

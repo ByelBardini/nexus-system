@@ -16,7 +16,6 @@ export function useClientesPageList() {
   const [busca, setBuscaState] = useState("");
   const [filtroTipoContrato, setFiltroTipoContratoState] =
     useState<string>("todos");
-  const [filtroEstoque, setFiltroEstoqueState] = useState<string>("todos");
   const [page, setPage] = useState(0);
 
   const setBusca = (v: string) => {
@@ -25,10 +24,6 @@ export function useClientesPageList() {
   };
   const setFiltroTipoContrato = (v: string) => {
     setFiltroTipoContratoState(v);
-    setPage(0);
-  };
-  const setFiltroEstoque = (v: string) => {
-    setFiltroEstoqueState(v);
     setPage(0);
   };
 
@@ -51,13 +46,9 @@ export function useClientesPageList() {
         c.cnpj?.includes(busca);
       const matchTipoContrato =
         filtroTipoContrato === "todos" || c.tipoContrato === filtroTipoContrato;
-      const matchEstoque =
-        filtroEstoque === "todos" ||
-        (filtroEstoque === "proprio" && c.estoqueProprio) ||
-        (filtroEstoque === "terceiro" && !c.estoqueProprio);
-      return matchBusca && matchTipoContrato && matchEstoque;
+      return matchBusca && matchTipoContrato;
     });
-  }, [clientes, busca, filtroTipoContrato, filtroEstoque]);
+  }, [clientes, busca, filtroTipoContrato]);
 
   const totalPages = Math.max(
     1,
@@ -91,7 +82,5 @@ export function useClientesPageList() {
     setBusca,
     filtroTipoContrato,
     setFiltroTipoContrato,
-    filtroEstoque,
-    setFiltroEstoque,
   };
 }

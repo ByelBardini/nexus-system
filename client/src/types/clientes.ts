@@ -15,7 +15,6 @@ export interface Cliente {
   nomeFantasia: string | null;
   cnpj: string | null;
   tipoContrato: TipoContrato;
-  estoqueProprio: boolean;
   status: StatusCliente;
   cor?: string | null;
   cep?: string | null;

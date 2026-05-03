@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import { CheckCircle, ChevronDown, ChevronUp, X } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -52,9 +52,6 @@ export function ClientesTable({
               Tipo Contrato
             </TableHead>
             <TableHead className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-600 text-center">
-              Estoque Próprio
-            </TableHead>
-            <TableHead className="px-4 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-600 text-center">
               Status
             </TableHead>
             <TableHead className="w-10 px-4 py-3" />
@@ -100,13 +97,6 @@ export function ClientesTable({
                       {TIPO_CONTRATO_LABEL[c.tipoContrato]}
                     </span>
                   </TableCell>
-                  <TableCell className="px-4 py-4 text-center">
-                    {c.estoqueProprio ? (
-                      <CheckCircle className="h-5 w-5 text-emerald-600 mx-auto" />
-                    ) : (
-                      <X className="h-5 w-5 text-slate-300 mx-auto" />
-                    )}
-                  </TableCell>
                   <TableCell className="px-4 py-4">
                     <div className="flex items-center justify-center gap-2">
                       <div
@@ -131,7 +121,7 @@ export function ClientesTable({
                 {isExpanded && (
                   <TableRow className="bg-slate-50">
                     <TableCell
-                      colSpan={7}
+                      colSpan={6}
                       className="border-b border-slate-200 p-0"
                     >
                       <ClienteRowExpandedPanel

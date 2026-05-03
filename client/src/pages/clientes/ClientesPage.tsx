@@ -28,8 +28,6 @@ export function ClientesPage() {
     setBusca,
     filtroTipoContrato,
     setFiltroTipoContrato,
-    filtroEstoque,
-    setFiltroEstoque,
   } = useClientesPageList();
 
   const canCreate = hasPermission("AGENDAMENTO.CLIENTE.CRIAR");
@@ -78,8 +76,6 @@ export function ClientesPage() {
         onBuscaChange={setBusca}
         filtroTipoContrato={filtroTipoContrato}
         onFiltroTipoContratoChange={setFiltroTipoContrato}
-        filtroEstoque={filtroEstoque}
-        onFiltroEstoqueChange={setFiltroEstoque}
         canCreate={canCreate}
         onNovoCliente={openCreateModal}
       />

@@ -74,12 +74,6 @@ export const FILTRO_TIPO_CONTRATO_OPTIONS: { value: string; label: string }[] =
     })),
   ];
 
-export const FILTRO_ESTOQUE_OPTIONS = [
-  { value: "todos", label: "Todos" },
-  { value: "proprio", label: "Próprio" },
-  { value: "terceiro", label: "Terceiro" },
-] as const;
-
 export const STATUS_FORM_OPTIONS: { value: StatusCliente; label: string }[] =
   STATUS_CLIENTE_VALUES.map((v) => ({
     value: v,
@@ -112,7 +106,6 @@ export const clienteFormSchema = z.object({
       { message: "CNPJ inválido" },
     ),
   tipoContrato: z.enum(TIPO_CONTRATO_VALUES),
-  estoqueProprio: z.boolean(),
   status: z.enum(STATUS_CLIENTE_VALUES),
   cor: z.string().optional(),
   cep: z.string().optional(),
@@ -144,7 +137,6 @@ export function getDefaultClienteFormValues(): ClienteFormData {
     nomeFantasia: "",
     cnpj: "",
     tipoContrato: "COMODATO",
-    estoqueProprio: false,
     status: "ATIVO",
     cor: undefined,
     cep: "",
@@ -215,7 +207,6 @@ export function buildClienteApiBody(
     nomeFantasia: data.nomeFantasia || undefined,
     cnpj: data.cnpj || undefined,
     tipoContrato: data.tipoContrato,
-    estoqueProprio: data.estoqueProprio,
     status: data.status,
     ...optionalEnderecoFields(data),
   } as Record<string, unknown>);
@@ -287,7 +278,6 @@ export function clienteToFormValues(cliente: Cliente): ClienteFormData {
     nomeFantasia: cliente.nomeFantasia ?? "",
     cnpj: cliente.cnpj ?? "",
     tipoContrato: cliente.tipoContrato,
-    estoqueProprio: cliente.estoqueProprio,
     status: cliente.status,
     cor: cliente.cor ?? undefined,
     cep: cliente.cep ?? "",
