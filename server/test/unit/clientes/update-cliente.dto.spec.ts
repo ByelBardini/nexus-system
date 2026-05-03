@@ -1,6 +1,9 @@
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { TipoContrato } from 'src/clientes/dto/create-cliente.dto';
+import {
+  CreateClienteDto,
+  TipoContrato,
+} from 'src/clientes/dto/create-cliente.dto';
 import {
   UpdateClienteDto,
   UpdateContatoDto,
@@ -90,5 +93,23 @@ describe('UpdateClienteDto', () => {
     });
     const errors = await validate(dto);
     expect(errors.length).toBeGreaterThan(0);
+  });
+});
+
+describe('CreateClienteDto — estoqueProprio removido', () => {
+  it('aceita payload mínimo sem estoqueProprio', async () => {
+    const dto = plainToInstance(CreateClienteDto, { nome: 'Empresa X' });
+    const errors = await validate(dto);
+    expect(errors).toHaveLength(0);
+  });
+
+  it('campo estoqueProprio não é validado — payload com ele não gera erro', async () => {
+    const dto = plainToInstance(CreateClienteDto, {
+      nome: 'Empresa X',
+      estoqueProprio: true,
+    });
+    const errors = await validate(dto);
+    const erroEstoque = errors.find((e) => e.property === 'estoqueProprio');
+    expect(erroEstoque).toBeUndefined();
   });
 });
