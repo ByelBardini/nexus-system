@@ -10,9 +10,18 @@ function base() {
   };
 }
 
+/** Sobrescreve os campos que iniciam em 0 (vazio no UI) com valores válidos para testes de sucesso do schema. */
+function baseValido() {
+  return {
+    ...base(),
+    quantidade: 1,
+    itensMisto: [{ proprietario: "INFINITY" as const, quantidade: 1 }],
+  };
+}
+
 describe("schemaNovoPedido", () => {
   it("aceita TÉCNICO com técnico e data", () => {
-    const d = { ...base(), tipoDestino: "TECNICO" as const, tecnicoId: 5 };
+    const d = { ...baseValido(), tipoDestino: "TECNICO" as const, tecnicoId: 5 };
     expect(schemaNovoPedido.safeParse(d).success).toBe(true);
   });
 
@@ -43,11 +52,7 @@ describe("schemaNovoPedido", () => {
   });
 
   it("aceita MISTO com técnico e itens", () => {
-    const d = {
-      ...base(),
-      tipoDestino: "MISTO" as const,
-      tecnicoId: 2,
-    };
+    const d = { ...baseValido(), tipoDestino: "MISTO" as const, tecnicoId: 2 };
     expect(schemaNovoPedido.safeParse(d).success).toBe(true);
   });
 
@@ -63,7 +68,7 @@ describe("schemaNovoPedido", () => {
 
   it("aceita CLIENTE com destino", () => {
     const d = {
-      ...base(),
+      ...baseValido(),
       tipoDestino: "CLIENTE" as const,
       destinoCliente: "cliente-1",
     };
@@ -84,10 +89,11 @@ describe("schemaNovoPedido", () => {
 });
 
 describe("getDefaultNovoPedidoRastreadorFormValues", () => {
-  it("respeita a data passada e mantém 1 iten MISTO default", () => {
+  it("respeita a data passada; quantidade e itensMisto iniciam em 0 (campo vazio)", () => {
     const v = getDefaultNovoPedidoRastreadorFormValues("2026-04-01");
     expect(v.dataSolicitacao).toBe("2026-04-01");
     expect(v.tipoDestino).toBe("TECNICO");
-    expect(v.itensMisto).toEqual([{ proprietario: "INFINITY", quantidade: 1 }]);
+    expect(v.quantidade).toBe(0);
+    expect(v.itensMisto).toEqual([{ proprietario: "INFINITY", quantidade: 0 }]);
   });
 });

@@ -651,7 +651,7 @@ describe("LoteIdentificadoresSection", () => {
     expect(screen.getByText(/Já cadastrados/i)).toBeInTheDocument();
   });
 
-  it("toggle Definir IDs atualiza o form; quantidade vazia no input vira 0 (parseInt com fallback)", async () => {
+  it("toggle Definir IDs atualiza o form; quantidade vazia no input armazena 0 no form", async () => {
     const user = userEvent.setup();
     render(<IdToggleQuant />);
     expect(screen.getByTestId("st-definirIds")).toHaveTextContent("false");
@@ -663,7 +663,7 @@ describe("LoteIdentificadoresSection", () => {
       expect(screen.getByTestId("st-definirIds")).toHaveTextContent("true"),
     );
     expect(await screen.findByPlaceholderText(/IMEIs/i)).toBeInTheDocument();
-    const qtd = document.querySelector('input[placeholder="0"]');
+    const qtd = document.querySelector('input[type="text"]');
     expect(qtd).toBeInstanceOf(HTMLInputElement);
     fireEvent.change(qtd!, { target: { value: "" } });
     await waitFor(() =>
@@ -701,6 +701,64 @@ describe("LoteIdentificadoresSection", () => {
     };
     render(<ErrQtd />);
     expect(screen.getByText(/Quantidade informada \(2\)/i)).toBeInTheDocument();
+  });
+
+  it("campo quantidade usa type=text e inicia vazio quando valor do form é 0 (default)", () => {
+    render(<IdIccid />);
+    const input = document.querySelector('input[type="text"]') as HTMLInputElement;
+    expect(input).toBeInstanceOf(HTMLInputElement);
+    expect(input.type).toBe("text");
+    expect(input.value).toBe("");
+  });
+
+  it("campo quantidade aceita apenas dígitos: letras são descartadas e o número persiste correto", () => {
+    function QtdDigitos() {
+      const form = useForm<LoteFormValues>({
+        defaultValues: { ...loteFormDefaultValues, definirIds: false },
+      });
+      return (
+        <FormProvider {...form}>
+          <LoteIdentificadoresSection
+            form={form}
+            watchTipo="RASTREADOR"
+            watchDefinirIds={false}
+            watchIdsTexto=""
+            idValidation={{ validos: [], duplicados: [], invalidos: [], jaExistentes: [] }}
+            erroQuantidade={null}
+          />
+          <FormStateText form={form} name="quantidade" />
+        </FormProvider>
+      );
+    }
+    render(<QtdDigitos />);
+    const input = document.querySelector('input[type="text"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "4a2b" } });
+    expect(screen.getByTestId("st-quantidade")).toHaveTextContent("42");
+  });
+
+  it("campo quantidade persiste o número digitado sem alterar (sem coerção mínima)", () => {
+    function QtdNumero() {
+      const form = useForm<LoteFormValues>({
+        defaultValues: { ...loteFormDefaultValues, definirIds: false },
+      });
+      return (
+        <FormProvider {...form}>
+          <LoteIdentificadoresSection
+            form={form}
+            watchTipo="RASTREADOR"
+            watchDefinirIds={false}
+            watchIdsTexto=""
+            idValidation={{ validos: [], duplicados: [], invalidos: [], jaExistentes: [] }}
+            erroQuantidade={null}
+          />
+          <FormStateText form={form} name="quantidade" />
+        </FormProvider>
+      );
+    }
+    render(<QtdNumero />);
+    const input = document.querySelector('input[type="text"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "25" } });
+    expect(screen.getByTestId("st-quantidade")).toHaveTextContent("25");
   });
 });
 
@@ -946,8 +1004,8 @@ describe("LoteAbaterDividaSection", () => {
       name: /Z\s*→/,
     });
     await user.click(outro);
-    const q = screen.getByPlaceholderText("0");
-    expect(q).toHaveValue(null);
+    const q = screen.getByRole("textbox");
+    expect(q).toHaveValue("");
   });
 
   it("em quantidade a abater, valor vazio no input zera a quantidade", () => {
@@ -976,9 +1034,9 @@ describe("LoteAbaterDividaSection", () => {
       );
     }
     render(<QtdVazia />);
-    const q = screen.getByPlaceholderText("0");
+    const q = screen.getByRole("textbox");
     fireEvent.change(q, { target: { value: "" } });
-    expect(q).toHaveValue(null);
+    expect(q).toHaveValue("");
   });
 
   it("desliga o abatimento e zera abaterDivida, débito e quantidade no formulário", async () => {
@@ -1093,6 +1151,69 @@ describe("LoteAbaterDividaSection", () => {
     }
     render(<Max9999 />);
     expect(screen.getByText(/máx:\s*9999/)).toBeInTheDocument();
+  });
+
+  it("campo abaterQuantidade usa type=text e inicia vazio quando valor do form é null", () => {
+    function AbaterQtdVaziaInicial() {
+      const form = useForm<LoteFormValues>({
+        defaultValues: {
+          ...loteFormDefaultValues,
+          tipo: "RASTREADOR",
+          abaterDivida: true,
+          abaterDebitoId: 1,
+          abaterQuantidade: null,
+        },
+      });
+      return (
+        <FormProvider {...form}>
+          <LoteAbaterDividaSection
+            form={form}
+            watchTipo="RASTREADOR"
+            watchAbaterDivida
+            watchAbaterDebitoId={1}
+            debitosFiltrados={[debitoComCredor]}
+            selectedDebito={debitoComCredor}
+            quantidadeFinal={5}
+          />
+        </FormProvider>
+      );
+    }
+    render(<AbaterQtdVaziaInicial />);
+    const input = screen.getByRole("textbox");
+    expect((input as HTMLInputElement).type).toBe("text");
+    expect(input).toHaveValue("");
+  });
+
+  it("campo abaterQuantidade filtra não-dígitos: '3x' armazena 3 no form", () => {
+    function AbaterQtdDigitos() {
+      const form = useForm<LoteFormValues>({
+        defaultValues: {
+          ...loteFormDefaultValues,
+          tipo: "RASTREADOR",
+          abaterDivida: true,
+          abaterDebitoId: 1,
+          abaterQuantidade: null,
+        },
+      });
+      return (
+        <FormProvider {...form}>
+          <LoteAbaterDividaSection
+            form={form}
+            watchTipo="RASTREADOR"
+            watchAbaterDivida
+            watchAbaterDebitoId={1}
+            debitosFiltrados={[debitoComCredor]}
+            selectedDebito={debitoComCredor}
+            quantidadeFinal={5}
+          />
+          <FormStateText form={form} name="abaterQuantidade" />
+        </FormProvider>
+      );
+    }
+    render(<AbaterQtdDigitos />);
+    const input = screen.getByRole("textbox");
+    fireEvent.change(input, { target: { value: "3x" } });
+    expect(screen.getByTestId("st-abaterQuantidade")).toHaveTextContent("3");
   });
 });
 

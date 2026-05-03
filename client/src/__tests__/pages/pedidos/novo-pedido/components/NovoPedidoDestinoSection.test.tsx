@@ -111,9 +111,9 @@ describe("NovoPedidoDestinoSection", () => {
     expect(bag.current).not.toBeNull();
     const v = bag.current!.getValues();
     expect(v.tipoDestino).toBe("TECNICO");
-    expect(v.quantidade).toBe(1);
+    expect(v.quantidade).toBe(0);
     expect(v.urgencia).toBe("MEDIA");
-    expect(v.itensMisto).toEqual([{ proprietario: "INFINITY", quantidade: 1 }]);
+    expect(v.itensMisto).toEqual([{ proprietario: "INFINITY", quantidade: 0 }]);
     expect(
       screen.getByRole("checkbox", { name: /Pedido misto/i }),
     ).toBeInTheDocument();
@@ -139,7 +139,7 @@ describe("NovoPedidoDestinoSection", () => {
       expect(bag.current?.getValues("destinoCliente")).toBe("cliente-10");
       expect(bag.current?.getValues("tecnicoId")).toBeUndefined();
       expect(bag.current?.getValues("itensMisto")).toEqual([
-        { proprietario: "INFINITY", quantidade: 1 },
+        { proprietario: "INFINITY", quantidade: 0 },
       ]);
     });
     expect(combo).toHaveTextContent("Cliente Alpha");
@@ -210,7 +210,7 @@ describe("NovoPedidoDestinoSection", () => {
       expect(itens).toHaveLength(2);
       expect(itens![0]!.proprietario).toBe("INFINITY");
       expect(itens![1]!.proprietario).toBe("CLIENTE");
-      expect(itens![1]!.quantidade).toBe(1);
+      expect(itens![1]!.quantidade).toBe(0);
     });
   });
 
@@ -254,7 +254,7 @@ describe("NovoPedidoDestinoSection", () => {
     await waitFor(() => {
       expect(bag.current?.getValues("tipoDestino")).toBe("TECNICO");
       expect(bag.current?.getValues("itensMisto")).toEqual([
-        { proprietario: "INFINITY", quantidade: 1 },
+        { proprietario: "INFINITY", quantidade: 0 },
       ]);
     });
     expect(
@@ -444,18 +444,20 @@ describe("NovoPedidoDestinoSection", () => {
     ).toBe(true);
   });
 
-  it("quantidade global: valores válidos persistem; inválidos viram 1", () => {
+  it("quantidade global: valores válidos persistem; não-dígitos e vazio viram 0 no form", () => {
     const bag: { current: UseFormReturn<FormNovoPedido> | null } = {
       current: null,
     };
     render(<DestinoHarness formBag={bag} />);
-    const qty = screen.getByRole("spinbutton");
+    const qty = screen
+      .getByText("Unidades")
+      .parentElement!.querySelector("input")!;
     fireEvent.change(qty, { target: { value: "12" } });
     expect(bag.current?.getValues("quantidade")).toBe(12);
     fireEvent.change(qty, { target: { value: "0" } });
-    expect(bag.current?.getValues("quantidade")).toBe(1);
+    expect(bag.current?.getValues("quantidade")).toBe(0);
     fireEvent.change(qty, { target: { value: "abc" } });
-    expect(bag.current?.getValues("quantidade")).toBe(1);
+    expect(bag.current?.getValues("quantidade")).toBe(0);
   });
 
   it("exibe erros de quantidade e dataSolicitacao vindos do formState", async () => {
@@ -554,5 +556,26 @@ describe("NovoPedidoDestinoSection", () => {
       .parentElement as HTMLElement;
     const combo = within(destinoBlock).getByRole("combobox");
     expect(combo).toBeDisabled();
+  });
+
+  it("campo quantidade usa type=text e exibe vazio quando o default é 0", () => {
+    render(<DestinoHarness />);
+    const qty = screen
+      .getByText("Unidades")
+      .parentElement!.querySelector("input") as HTMLInputElement;
+    expect(qty.type).toBe("text");
+    expect(qty.value).toBe("");
+  });
+
+  it("campo quantidade filtra não-dígitos: 'a5b3' armazena 53 no form", () => {
+    const bag: { current: UseFormReturn<FormNovoPedido> | null } = {
+      current: null,
+    };
+    render(<DestinoHarness formBag={bag} />);
+    const qty = screen
+      .getByText("Unidades")
+      .parentElement!.querySelector("input")!;
+    fireEvent.change(qty, { target: { value: "a5b3" } });
+    expect(bag.current?.getValues("quantidade")).toBe(53);
   });
 });

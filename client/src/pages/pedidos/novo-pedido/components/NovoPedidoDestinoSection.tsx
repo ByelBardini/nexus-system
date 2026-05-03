@@ -107,7 +107,7 @@ export function NovoPedidoDestinoSection({
             setValue("tecnicoId", undefined);
             setValue("destinoCliente", "");
             setValue("itensMisto", [
-              { proprietario: "INFINITY", quantidade: 1 },
+              { proprietario: "INFINITY", quantidade: 0 },
             ]);
           }}
           className={cn(
@@ -130,7 +130,7 @@ export function NovoPedidoDestinoSection({
               setValue("tipoDestino", checked ? "MISTO" : "TECNICO");
               if (!checked) {
                 setValue("itensMisto", [
-                  { proprietario: "INFINITY", quantidade: 1 },
+                  { proprietario: "INFINITY", quantidade: 0 },
                 ]);
               }
             }}

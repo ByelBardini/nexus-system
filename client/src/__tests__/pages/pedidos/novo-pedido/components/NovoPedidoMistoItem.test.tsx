@@ -261,7 +261,7 @@ describe("NovoPedidoMistoItem", () => {
     ).toBeInTheDocument();
   });
 
-  it("quantidade da linha: valor válido persiste; lixo e zero viram 1 no estado", () => {
+  it("quantidade da linha: valor válido persiste; não-dígitos e vazio viram 0 no form", () => {
     const bag: { current: UseFormReturn<FormNovoPedido> | null } = {
       current: null,
     };
@@ -271,13 +271,13 @@ describe("NovoPedidoMistoItem", () => {
         itensMisto={[{ proprietario: "INFINITY", quantidade: 1 }]}
       />,
     );
-    const qty = screen.getByRole("spinbutton");
+    const qty = screen.getByRole("textbox");
     fireEvent.change(qty, { target: { value: "8" } });
     expect(bag.current?.getValues("itensMisto.0.quantidade")).toBe(8);
     fireEvent.change(qty, { target: { value: "0" } });
-    expect(bag.current?.getValues("itensMisto.0.quantidade")).toBe(1);
+    expect(bag.current?.getValues("itensMisto.0.quantidade")).toBe(0);
     fireEvent.change(qty, { target: { value: "nope" } });
-    expect(bag.current?.getValues("itensMisto.0.quantidade")).toBe(1);
+    expect(bag.current?.getValues("itensMisto.0.quantidade")).toBe(0);
   });
 
   it("marca/modelo herdado do pedido: não exibe toggles editáveis de marca/modelo", () => {
@@ -456,5 +456,31 @@ describe("NovoPedidoMistoItem", () => {
     render(<LoadingHarness />);
     const card = document.querySelector("[data-misto-item]") as HTMLElement;
     expect(within(card).getByRole("combobox")).toBeDisabled();
+  });
+
+  it("campo quantidade da linha usa type=text e exibe vazio quando o valor inicial é 0", () => {
+    render(
+      <MistoItemHarness
+        itensMisto={[{ proprietario: "INFINITY", quantidade: 0 }]}
+      />,
+    );
+    const qty = screen.getByRole("textbox") as HTMLInputElement;
+    expect(qty.type).toBe("text");
+    expect(qty.value).toBe("");
+  });
+
+  it("campo quantidade da linha filtra não-dígitos: '1a0' armazena 10 no form", () => {
+    const bag: { current: UseFormReturn<FormNovoPedido> | null } = {
+      current: null,
+    };
+    render(
+      <MistoItemHarness
+        formBag={bag}
+        itensMisto={[{ proprietario: "INFINITY", quantidade: 0 }]}
+      />,
+    );
+    const qty = screen.getByRole("textbox");
+    fireEvent.change(qty, { target: { value: "1a0" } });
+    expect(bag.current?.getValues("itensMisto.0.quantidade")).toBe(10);
   });
 });
