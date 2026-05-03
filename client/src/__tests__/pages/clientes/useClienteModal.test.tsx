@@ -37,7 +37,6 @@ function clienteFixture(over: Partial<Cliente> = {}): Cliente {
     nomeFantasia: "FX",
     cnpj: "12345678000199",
     tipoContrato: "AQUISICAO",
-    estoqueProprio: true,
     status: "PENDENTE",
     cep: "01310100",
     logradouro: "Rua 1",

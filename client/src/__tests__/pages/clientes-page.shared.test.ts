@@ -18,7 +18,6 @@ function clienteStub(
     nomeFantasia: null,
     cnpj: null,
     tipoContrato: "COMODATO",
-    estoqueProprio: false,
     contatos: [],
     ...overrides,
   };
@@ -32,9 +31,13 @@ describe("getDefaultClienteFormValues", () => {
     expect(a).toEqual(b);
     expect(a.tipoContrato).toBe("COMODATO");
     expect(a.status).toBe("ATIVO");
-    expect(a.estoqueProprio).toBe(false);
     expect(a.contatos).toEqual([]);
     expect(a.cor).toBeUndefined();
+  });
+
+  it("não possui campo estoqueProprio", () => {
+    const defaults = getDefaultClienteFormValues();
+    expect(defaults).not.toHaveProperty("estoqueProprio");
   });
 });
 
@@ -114,6 +117,22 @@ describe("buildClienteApiBody", () => {
     expect(json.contatos[1]).not.toHaveProperty("id");
   });
 
+  it("não inclui estoqueProprio no payload create", () => {
+    const body = buildClienteApiBody(
+      { ...getDefaultClienteFormValues(), nome: "X" },
+      "create",
+    );
+    expect(body).not.toHaveProperty("estoqueProprio");
+  });
+
+  it("não inclui estoqueProprio no payload update", () => {
+    const body = buildClienteApiBody(
+      { ...getDefaultClienteFormValues(), nome: "X" },
+      "update",
+    );
+    expect(body).not.toHaveProperty("estoqueProprio");
+  });
+
   it("modo update: envia cor quando preenchida", () => {
     const body = buildClienteApiBody(
       {
@@ -136,7 +155,6 @@ describe("clienteToFormValues", () => {
       nomeFantasia: null,
       cnpj: null,
       tipoContrato: "AQUISICAO",
-      estoqueProprio: true,
       status: "PENDENTE",
       cor: null,
       cep: null,

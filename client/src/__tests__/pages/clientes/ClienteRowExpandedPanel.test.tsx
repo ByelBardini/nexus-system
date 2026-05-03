@@ -11,7 +11,6 @@ function clienteBase(over: Partial<Cliente> = {}): Cliente {
     nomeFantasia: null,
     cnpj: null,
     tipoContrato: "COMODATO",
-    estoqueProprio: false,
     status: "ATIVO",
     cep: "01310100",
     logradouro: "Rua Teste",

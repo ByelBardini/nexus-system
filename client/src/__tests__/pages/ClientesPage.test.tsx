@@ -167,7 +167,6 @@ function clienteFixture(
     nomeFantasia: null,
     cnpj: null,
     tipoContrato: "COMODATO",
-    estoqueProprio: false,
     contatos: [],
     ...overrides,
   };

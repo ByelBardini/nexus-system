@@ -39,7 +39,6 @@ function clienteEdicao(): Cliente {
     nomeFantasia: null,
     cnpj: null,
     tipoContrato: "COMODATO",
-    estoqueProprio: false,
     status: "ATIVO",
     contatos: [],
   };
@@ -120,14 +119,12 @@ describe("ClienteModal — fluxo integrado", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it("Switch estoque próprio alterna rótulo SIM/NÃO", async () => {
-    const user = userEvent.setup();
+  it("não exibe switch nem label de Estoque Próprio", () => {
     renderModal(<ClienteModal open editingCliente={null} onClose={vi.fn()} />);
-
-    const sw = screen.getByRole("switch", { name: /estoque próprio/i });
-    expect(screen.getByText("NÃO")).toBeInTheDocument();
-    await user.click(sw);
-    expect(screen.getByText("SIM")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("switch", { name: /estoque próprio/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/estoque próprio/i)).not.toBeInTheDocument();
   });
 
   it("adicionar e remover contato", async () => {

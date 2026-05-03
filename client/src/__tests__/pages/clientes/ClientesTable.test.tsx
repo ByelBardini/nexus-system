@@ -11,7 +11,6 @@ function rowCliente(id: number, nome: string): Cliente {
     nomeFantasia: null,
     cnpj: null,
     tipoContrato: "COMODATO",
-    estoqueProprio: false,
     status: "ATIVO",
     contatos: [],
   };
@@ -47,6 +46,19 @@ describe("ClientesTable", () => {
       />,
     );
     expect(screen.getByText(/meios de contato/i)).toBeInTheDocument();
+  });
+
+  it("não exibe coluna Estoque Próprio", () => {
+    render(
+      <ClientesTable
+        paginated={[rowCliente(1, "Alpha")]}
+        expandedId={null}
+        onToggleExpand={vi.fn()}
+        canEdit={false}
+        onEditCliente={vi.fn()}
+      />,
+    );
+    expect(screen.queryByText(/estoque próprio/i)).not.toBeInTheDocument();
   });
 
   it("exibe CNPJ como traço quando ausente", () => {

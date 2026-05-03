@@ -21,8 +21,6 @@ describe("ClientesPageHeader", () => {
           onBuscaChange={onBuscaChange}
           filtroTipoContrato="todos"
           onFiltroTipoContratoChange={vi.fn()}
-          filtroEstoque="todos"
-          onFiltroEstoqueChange={vi.fn()}
           canCreate={false}
           onNovoCliente={vi.fn()}
         />
@@ -51,8 +49,6 @@ describe("ClientesPageHeader", () => {
           onBuscaChange={vi.fn()}
           filtroTipoContrato="todos"
           onFiltroTipoContratoChange={vi.fn()}
-          filtroEstoque="todos"
-          onFiltroEstoqueChange={vi.fn()}
           canCreate
           onNovoCliente={onNovo}
         />
@@ -63,6 +59,22 @@ describe("ClientesPageHeader", () => {
     expect(onNovo).toHaveBeenCalledTimes(1);
   });
 
+  it("não exibe filtro de Estoque", () => {
+    render(
+      <MemoryRouter>
+        <ClientesPageHeader
+          busca=""
+          onBuscaChange={vi.fn()}
+          filtroTipoContrato="todos"
+          onFiltroTipoContratoChange={vi.fn()}
+          canCreate={false}
+          onNovoCliente={vi.fn()}
+        />
+      </MemoryRouter>,
+    );
+    expect(screen.queryByText(/^estoque$/i)).not.toBeInTheDocument();
+  });
+
   it("não exibe botão Novo Cliente quando canCreate é false", () => {
     render(
       <MemoryRouter>
@@ -71,8 +83,6 @@ describe("ClientesPageHeader", () => {
           onBuscaChange={vi.fn()}
           filtroTipoContrato="todos"
           onFiltroTipoContratoChange={vi.fn()}
-          filtroEstoque="todos"
-          onFiltroEstoqueChange={vi.fn()}
           canCreate={false}
           onNovoCliente={vi.fn()}
         />

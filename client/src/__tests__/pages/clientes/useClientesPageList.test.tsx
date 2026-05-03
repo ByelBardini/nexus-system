@@ -29,7 +29,6 @@ function makeCliente(over: Partial<Cliente> & { id: number }): Cliente {
     nomeFantasia: null,
     cnpj: null,
     tipoContrato: "COMODATO",
-    estoqueProprio: false,
     status: "ATIVO",
     contatos: [],
     ...over,
@@ -94,34 +93,6 @@ describe("useClientesPageList", () => {
     );
   });
 
-  it("filtro estoque próprio / terceiro", async () => {
-    apiMock.mockResolvedValue([
-      makeCliente({ id: 1, estoqueProprio: true }),
-      makeCliente({ id: 2, estoqueProprio: false }),
-    ]);
-    const qc = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-    const { result } = renderHook(() => useClientesPageList(), {
-      wrapper: wrapper(qc),
-    });
-    await waitFor(() => expect(result.current.clientes.length).toBe(2));
-
-    act(() => {
-      result.current.setFiltroEstoque("proprio");
-    });
-    await waitFor(() =>
-      expect(result.current.filtered.map((c) => c.id)).toEqual([1]),
-    );
-
-    act(() => {
-      result.current.setFiltroEstoque("terceiro");
-    });
-    await waitFor(() =>
-      expect(result.current.filtered.map((c) => c.id)).toEqual([2]),
-    );
-  });
-
   it("paginação: reseta página ao filtrar e fatia corretamente", async () => {
     const list = Array.from({ length: CLIENTES_PAGE_SIZE + 3 }, (_, i) =>
       makeCliente({
@@ -155,6 +126,19 @@ describe("useClientesPageList", () => {
       expect(result.current.page).toBe(0);
       expect(result.current.filtered).toHaveLength(1);
     });
+  });
+
+  it("não expõe filtroEstoque nem setFiltroEstoque", async () => {
+    apiMock.mockResolvedValue([]);
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const { result } = renderHook(() => useClientesPageList(), {
+      wrapper: wrapper(qc),
+    });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current).not.toHaveProperty("filtroEstoque");
+    expect(result.current).not.toHaveProperty("setFiltroEstoque");
   });
 
   it("totalPages mínimo 1 com lista vazia", async () => {
