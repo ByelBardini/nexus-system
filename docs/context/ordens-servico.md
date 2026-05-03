@@ -210,7 +210,7 @@ Mapeamento `tipoToPrecoKey` (em `ordens-servico-criacao.constants.ts`) converte 
 
 **Formulário (react-hook-form + Zod):**
 
-- Schema: `criacao/ordens-servico-criacao.schema.ts` — `z.object(...).refine(...)` (veículo com placa preenchida exige marca/modelo/ano/cor).
+- Schema: `criacao/ordens-servico-criacao.schema.ts` — `z.object(...).refine(...)` com duas regras: (1) veículo com placa preenchida exige marca/modelo/ano/cor; (2) `subclienteCpf` validado por `validarCPFouCNPJ` de `@/lib/cpf-cnpj-validation` quando preenchido (campo vazio é válido; desabilitável via `VITE_VALIDATE_CPF_CNPJ=false`).
 - Validação mínima para habilitar "Emitir Ordem": `temCliente` (subcliente completo + cliente resolvido) **E** `temTipo` — veja `computeCriacaoOsDerivedFlags` em `ordens-servico-criacao.derived.ts`.
 - `temTecnico` e `temVeiculo` contribuem apenas para o checklist visual na sidebar — não bloqueiam submissão.
 

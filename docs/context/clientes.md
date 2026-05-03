@@ -85,7 +85,7 @@ A listagem usa `useClientesPageList`; o modal usa `useClienteModal` (TanStack Qu
 **Formulário (react-hook-form + Zod):**
 
 Três seções no modal:
-1. **Dados do Cliente** — `nome` (obrigatório), `nomeFantasia`, `cnpj` (via `InputCNPJ`), `tipoContrato` (Select), `status` (Select), `estoqueProprio` (`Switch` shadcn + rótulo SIM/NÃO), `cor` (via `InputCor` — color picker; opcional)
+1. **Dados do Cliente** — `nome` (obrigatório), `nomeFantasia`, `cnpj` (via `InputCNPJ`; campo vazio é válido; quando preenchido, validado por `validarCNPJ` de `@/lib/cpf-cnpj-validation` — desabilitável via `VITE_VALIDATE_CPF_CNPJ=false`), `tipoContrato` (Select), `status` (Select), `estoqueProprio` (`Switch` shadcn + rótulo SIM/NÃO), `cor` (via `InputCor` — color picker; opcional)
 2. **Endereço (opcional)** — `cep` via `InputCEP` com `onAddressFound` que auto-preenche `logradouro`, `bairro`, `cidade`, `estado` via BrasilAPI; `estado` usa `SelectUF` (hook `useUFs`); `cidade` usa `SelectCidade` (hook `useMunicipios(estado)`)
 3. **Contatos** — array gerenciado por `useFieldArray`; cada item tem `nome` (obrigatório), `celular` (`InputTelefone`), `email`; botão Trash2 remove inline
 
