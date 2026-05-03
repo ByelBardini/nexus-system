@@ -21,7 +21,11 @@ function baseValido() {
 
 describe("schemaNovoPedido", () => {
   it("aceita TÉCNICO com técnico e data", () => {
-    const d = { ...baseValido(), tipoDestino: "TECNICO" as const, tecnicoId: 5 };
+    const d = {
+      ...baseValido(),
+      tipoDestino: "TECNICO" as const,
+      tecnicoId: 5,
+    };
     expect(schemaNovoPedido.safeParse(d).success).toBe(true);
   });
 

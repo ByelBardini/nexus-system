@@ -22,8 +22,7 @@ const baseCriacaoOsFormSchema = z
       .string()
       .optional()
       .refine(
-        (val) =>
-          !val || !isCpfCnpjValidationEnabled() || validarCPFouCNPJ(val),
+        (val) => !val || !isCpfCnpjValidationEnabled() || validarCPFouCNPJ(val),
         { message: "CPF ou CNPJ inválido" },
       ),
     subclienteEmail: z

@@ -147,8 +147,7 @@ describe("clienteFormSchema — validação cnpj", () => {
       cnpj: "11222333000182",
     });
     expect(r.success).toBe(false);
-    if (!r.success)
-      expect(r.error.issues[0].message).toBe("CNPJ inválido");
+    if (!r.success) expect(r.error.issues[0].message).toBe("CNPJ inválido");
   });
 
   it("rejeita CNPJ com sequência repetida", () => {

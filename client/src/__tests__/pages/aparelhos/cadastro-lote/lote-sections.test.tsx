@@ -705,7 +705,9 @@ describe("LoteIdentificadoresSection", () => {
 
   it("campo quantidade usa type=text e inicia vazio quando valor do form é 0 (default)", () => {
     render(<IdIccid />);
-    const input = document.querySelector('input[type="text"]') as HTMLInputElement;
+    const input = document.querySelector(
+      'input[type="text"]',
+    ) as HTMLInputElement;
     expect(input).toBeInstanceOf(HTMLInputElement);
     expect(input.type).toBe("text");
     expect(input.value).toBe("");
@@ -723,7 +725,12 @@ describe("LoteIdentificadoresSection", () => {
             watchTipo="RASTREADOR"
             watchDefinirIds={false}
             watchIdsTexto=""
-            idValidation={{ validos: [], duplicados: [], invalidos: [], jaExistentes: [] }}
+            idValidation={{
+              validos: [],
+              duplicados: [],
+              invalidos: [],
+              jaExistentes: [],
+            }}
             erroQuantidade={null}
           />
           <FormStateText form={form} name="quantidade" />
@@ -731,7 +738,9 @@ describe("LoteIdentificadoresSection", () => {
       );
     }
     render(<QtdDigitos />);
-    const input = document.querySelector('input[type="text"]') as HTMLInputElement;
+    const input = document.querySelector(
+      'input[type="text"]',
+    ) as HTMLInputElement;
     fireEvent.change(input, { target: { value: "4a2b" } });
     expect(screen.getByTestId("st-quantidade")).toHaveTextContent("42");
   });
@@ -748,7 +757,12 @@ describe("LoteIdentificadoresSection", () => {
             watchTipo="RASTREADOR"
             watchDefinirIds={false}
             watchIdsTexto=""
-            idValidation={{ validos: [], duplicados: [], invalidos: [], jaExistentes: [] }}
+            idValidation={{
+              validos: [],
+              duplicados: [],
+              invalidos: [],
+              jaExistentes: [],
+            }}
             erroQuantidade={null}
           />
           <FormStateText form={form} name="quantidade" />
@@ -756,7 +770,9 @@ describe("LoteIdentificadoresSection", () => {
       );
     }
     render(<QtdNumero />);
-    const input = document.querySelector('input[type="text"]') as HTMLInputElement;
+    const input = document.querySelector(
+      'input[type="text"]',
+    ) as HTMLInputElement;
     fireEvent.change(input, { target: { value: "25" } });
     expect(screen.getByTestId("st-quantidade")).toHaveTextContent("25");
   });

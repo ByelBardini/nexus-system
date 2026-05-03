@@ -12,8 +12,7 @@ export const tecnicoFormSchema = z.object({
     .string()
     .optional()
     .refine(
-      (val) =>
-        !val || !isCpfCnpjValidationEnabled() || validarCPFouCNPJ(val),
+      (val) => !val || !isCpfCnpjValidationEnabled() || validarCPFouCNPJ(val),
       { message: "CPF ou CNPJ inválido" },
     ),
   telefone: z.string().optional(),
