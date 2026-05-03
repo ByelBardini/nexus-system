@@ -1,3 +1,17 @@
+# [1.8.0](https://github.com/ByelBardini/nexus-system/compare/v1.7.0...v1.8.0) (2026-05-03)
+
+
+### Bug Fixes
+
+* **inputs:** substituir inputs de quantidade numérica por campos de texto ([cd02d04](https://github.com/ByelBardini/nexus-system/commit/cd02d04dfc7f9cc8cdc29017dd50512ff790fa87))
+
+
+### Features
+
+* **clientes:** remover campo estoqueProprio do schema e do DTO ([7db140c](https://github.com/ByelBardini/nexus-system/commit/7db140c9c298b1ae3eb5ca8aba33dc8750f450b0))
+* **clientes:** remover campo estoqueProprio e filtro de estoque da UI ([5555bfc](https://github.com/ByelBardini/nexus-system/commit/5555bfc00c1004a58e8ee892b3701b86db3798e3))
+* **validation:** adicionar validação de dígito verificador em campos CPF/CNPJ ([45f80a2](https://github.com/ByelBardini/nexus-system/commit/45f80a24b354a8d09e2c037dbc0401468cf81641))
+
 # [1.7.0](https://github.com/ByelBardini/nexus-system/compare/v1.6.0...v1.7.0) (2026-05-01)
 
 
