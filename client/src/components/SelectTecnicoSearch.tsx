@@ -24,11 +24,7 @@ interface SelectTecnicoSearchProps {
 }
 
 function normalize(str: string) {
-  return str
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim();
+  return str.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
 }
 
 function getProximityScore(
@@ -119,20 +115,15 @@ export function SelectTecnicoSearch({
   }, [isOpen]);
 
   const filteredAndSorted = useMemo(() => {
-    let list = tecnicos;
-    if (subclienteEstado?.trim()) {
-      const uf = subclienteEstado.trim().toUpperCase();
-      list = list.filter((t) => (t.estado ?? "").toUpperCase() === uf);
-    }
     const filtered = searchTerm.trim()
-      ? list.filter((t) => {
+      ? tecnicos.filter((t) => {
           const term = searchTerm.toLowerCase();
           const nomeMatch = t.nome.toLowerCase().includes(term);
           const cidadeMatch = t.cidade?.toLowerCase().includes(term);
           const estadoMatch = t.estado?.toUpperCase().includes(term);
           return nomeMatch || cidadeMatch || estadoMatch;
         })
-      : list;
+      : tecnicos;
 
     return [...filtered].sort((a, b) => {
       const scoreA = getProximityScore(a, subclienteCidade, subclienteEstado);
@@ -141,6 +132,14 @@ export function SelectTecnicoSearch({
       return (a.nome ?? "").localeCompare(b.nome ?? "");
     });
   }, [tecnicos, searchTerm, subclienteCidade, subclienteEstado]);
+
+  const uf = subclienteEstado?.trim().toUpperCase() ?? "";
+  const doEstado = uf
+    ? filteredAndSorted.filter((t) => (t.estado ?? "").toUpperCase() === uf)
+    : [];
+  const outrosEstados = uf
+    ? filteredAndSorted.filter((t) => (t.estado ?? "").toUpperCase() !== uf)
+    : filteredAndSorted;
 
   const displayValue = isOpen ? searchTerm : getDisplayText(tecnicoSelecionado);
 
@@ -181,6 +180,31 @@ export function SelectTecnicoSearch({
       e.preventDefault();
       handleSelect(filteredAndSorted[0]);
     }
+  }
+
+  function renderTecnicoButton(t: TecnicoOption) {
+    return (
+      <button
+        key={t.id}
+        type="button"
+        className={cn(
+          "w-full cursor-pointer px-3 py-2 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+          value === t.id && "bg-accent",
+        )}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleSelect(t);
+        }}
+      >
+        <span className="font-medium">{t.nome}</span>
+        {t.cidade && t.estado && (
+          <span className="ml-1.5 text-slate-500 text-[11px]">
+            {t.cidade} - {t.estado}
+          </span>
+        )}
+      </button>
+    );
   }
 
   if (disabled) {
@@ -260,28 +284,20 @@ export function SelectTecnicoSearch({
               </div>
             ) : (
               <>
-                {filteredAndSorted.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    className={cn(
-                      "w-full cursor-pointer px-3 py-2 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                      value === t.id && "bg-accent",
-                    )}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleSelect(t);
-                    }}
-                  >
-                    <span className="font-medium">{t.nome}</span>
-                    {t.cidade && t.estado && (
-                      <span className="ml-1.5 text-slate-500 text-[11px]">
-                        {t.cidade} - {t.estado}
-                      </span>
-                    )}
-                  </button>
-                ))}
+                {doEstado.length > 0 && (
+                  <div className="px-3 py-1 text-[10px] font-semibold uppercase text-slate-400 tracking-wide">
+                    {uf}
+                  </div>
+                )}
+                {doEstado.map(renderTecnicoButton)}
+
+                {outrosEstados.length > 0 && doEstado.length > 0 && (
+                  <div className="mt-1 border-t border-slate-100 px-3 py-1 text-[10px] font-semibold uppercase text-slate-400 tracking-wide">
+                    Outros estados
+                  </div>
+                )}
+                {outrosEstados.map(renderTecnicoButton)}
+
                 <div className="border-t border-slate-100 pt-1 mt-1">
                   <button
                     type="button"
