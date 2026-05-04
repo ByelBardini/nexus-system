@@ -142,7 +142,7 @@ describe("SelectTecnicoSearch", () => {
     ).toBeInTheDocument();
   });
 
-  it("subclienteEstado com espaços: ainda restringe a UF (comportamento trim)", async () => {
+  it("subclienteEstado com espaços: trim normaliza a UF; todos visíveis — do estado primeiro com label de grupo", async () => {
     const user = userEvent.setup();
     renderWithRouter(
       <SelectTecnicoSearch
@@ -154,8 +154,12 @@ describe("SelectTecnicoSearch", () => {
       />,
     );
     await user.click(screen.getByPlaceholderText("B"));
+    // Técnicos do estado SP e de outros estados são todos exibidos
     expect(screen.getByRole("button", { name: /Ana/ })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Bruno/ })).toBeNull();
+    expect(screen.getByRole("button", { name: /Bruno/ })).toBeInTheDocument();
+    // Labels de grupo aparecem
+    expect(screen.getByText("SP")).toBeInTheDocument();
+    expect(screen.getByText(/outros estados/i)).toBeInTheDocument();
   });
 
   it("só com subclienteEstado, ordena por nome após filtro (Daniel antes de… ordem alfabética do locale)", async () => {
@@ -388,7 +392,7 @@ describe("SelectTecnicoSearch", () => {
     expect(screen.getByText(/B - RJ/)).toBeInTheDocument();
   });
 
-  it("estado nulo em técnicos: compara com string vazia (não cai fora com trim)", async () => {
+  it("estado nulo em técnicos: aparece em 'outros estados' sem travar (sem crash no trim)", async () => {
     const user = userEvent.setup();
     renderWithRouter(
       <SelectTecnicoSearch
@@ -400,7 +404,10 @@ describe("SelectTecnicoSearch", () => {
       />,
     );
     await user.click(screen.getByPlaceholderText("B"));
-    expect(screen.queryByRole("button", { name: /X/ })).not.toBeInTheDocument();
+    // X aparece mesmo sem estado cadastrado
+    expect(screen.getByRole("button", { name: /X/ })).toBeInTheDocument();
+    // Sem grupo SP (nenhum técnico desse estado na lista)
+    expect(screen.queryByText("SP")).not.toBeInTheDocument();
   });
 
   it("só com estado (sem cidade): rótulo no modo desabilitado usa (UF) — sem travar com cidade null", () => {
