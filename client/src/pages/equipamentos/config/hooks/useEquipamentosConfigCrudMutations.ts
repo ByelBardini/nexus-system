@@ -90,7 +90,7 @@ export function useEquipamentosConfigCrudMutations(
     mutationFn: (data: {
       nome: string;
       marcaId: number;
-      minCaracteresImei?: number;
+      quantidadeCaracteresImei?: number;
     }) =>
       api("/equipamentos/modelos", {
         method: "POST",
@@ -117,7 +117,7 @@ export function useEquipamentosConfigCrudMutations(
       id: number;
       nome?: string;
       ativo?: boolean;
-      minCaracteresImei?: number;
+      quantidadeCaracteresImei?: number;
     }) =>
       api(`/equipamentos/modelos/${id}`, {
         method: "PATCH",
@@ -204,7 +204,7 @@ export function useEquipamentosConfigCrudMutations(
       nome: string;
       operadoraId: number;
       temPlanos?: boolean;
-      minCaracteresIccid?: number;
+      quantidadeCaracteresIccid?: number;
     }) =>
       api("/equipamentos/marcas-simcard", {
         method: "POST",
@@ -230,7 +230,7 @@ export function useEquipamentosConfigCrudMutations(
       operadoraId?: number;
       temPlanos?: boolean;
       ativo?: boolean;
-      minCaracteresIccid?: number;
+      quantidadeCaracteresIccid?: number;
     }) =>
       api(`/equipamentos/marcas-simcard/${id}`, {
         method: "PATCH",

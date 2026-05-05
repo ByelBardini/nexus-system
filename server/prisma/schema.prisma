@@ -357,7 +357,7 @@ model ModeloEquipamento {
   nome                 String             @db.VarChar(100)
   marcaId              Int                @map("marca_id")
   ativo                Boolean            @default(true)
-  minCaracteresImei    Int?               @map("min_caracteres_imei")
+  quantidadeCaracteresImei Int?            @map("quantidade_caracteres_imei")
   criadoEm             DateTime           @default(now()) @map("criado_em")
   marca                MarcaEquipamento   @relation(fields: [marcaId], references: [id], onDelete: Cascade)
   pedidosRastreadores  PedidoRastreador[]
@@ -387,7 +387,7 @@ model MarcaSimcard {
   operadoraId        Int           @map("operadora_id")
   temPlanos          Boolean       @default(false) @map("tem_planos")
   ativo              Boolean       @default(true)
-  minCaracteresIccid Int?          @map("min_caracteres_iccid")
+  quantidadeCaracteresIccid Int?    @map("quantidade_caracteres_iccid")
   criadoEm           DateTime      @default(now()) @map("criado_em")
   operadora    Operadora     @relation(fields: [operadoraId], references: [id], onDelete: Cascade)
 

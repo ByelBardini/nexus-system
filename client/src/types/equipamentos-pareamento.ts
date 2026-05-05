@@ -34,7 +34,7 @@ export interface ModeloPareamentoCatalog {
   id: number;
   nome: string;
   marca: { id: number };
-  minCaracteresImei?: number | null;
+  quantidadeCaracteresImei?: number | null;
 }
 
 export interface OperadoraPareamentoCatalog {
@@ -48,7 +48,7 @@ export interface MarcaSimcardPareamentoCatalog {
   nome: string;
   operadoraId: number;
   temPlanos: boolean;
-  minCaracteresIccid?: number | null;
+  quantidadeCaracteresIccid?: number | null;
   operadora: { id: number; nome: string };
   planos?: { id: number; planoMb: number; ativo: boolean }[];
 }

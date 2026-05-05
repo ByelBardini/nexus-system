@@ -115,7 +115,7 @@ export class EquipamentosService {
       data: {
         nome: dto.nome,
         marcaId: dto.marcaId,
-        minCaracteresImei: dto.minCaracteresImei ?? null,
+        quantidadeCaracteresImei: dto.quantidadeCaracteresImei ?? null,
       },
       include: { marca: true },
     });
@@ -235,7 +235,7 @@ export class EquipamentosService {
         nome: dto.nome,
         operadoraId: dto.operadoraId,
         temPlanos: dto.temPlanos ?? false,
-        minCaracteresIccid: dto.minCaracteresIccid ?? null,
+        quantidadeCaracteresIccid: dto.quantidadeCaracteresIccid ?? null,
       },
       include: { operadora: true },
     });

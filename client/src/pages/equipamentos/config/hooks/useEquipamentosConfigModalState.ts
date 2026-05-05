@@ -26,7 +26,8 @@ export function useEquipamentosConfigModalState() {
   );
   const [nomeModelo, setNomeModelo] = useState("");
   const [marcaIdForModelo, setMarcaIdForModelo] = useState("");
-  const [minCaracteresImeiModelo, setMinCaracteresImeiModelo] = useState("");
+  const [quantidadeCaracteresImeiModelo, setMinCaracteresImeiModelo] =
+    useState("");
 
   const [modalOperadoraOpen, setModalOperadoraOpen] = useState(false);
   const [editingOperadora, setEditingOperadora] = useState<Operadora | null>(
@@ -40,8 +41,10 @@ export function useEquipamentosConfigModalState() {
   const [nomeMarcaSimcard, setNomeMarcaSimcard] = useState("");
   const [operadoraIdMarcaSimcard, setOperadoraIdMarcaSimcard] = useState("");
   const [temPlanosMarcaSimcard, setTemPlanosMarcaSimcard] = useState(false);
-  const [minCaracteresIccidMarcaSimcard, setMinCaracteresIccidMarcaSimcard] =
-    useState("");
+  const [
+    quantidadeCaracteresIccidMarcaSimcard,
+    setMinCaracteresIccidMarcaSimcard,
+  ] = useState("");
   const [expandedMarcasSimcardIds, setExpandedMarcasSimcardIds] = useState<
     Set<number>
   >(new Set());
@@ -114,7 +117,7 @@ export function useEquipamentosConfigModalState() {
     setNomeModelo,
     marcaIdForModelo,
     setMarcaIdForModelo,
-    minCaracteresImeiModelo,
+    quantidadeCaracteresImeiModelo,
     setMinCaracteresImeiModelo,
     modalOperadoraOpen,
     setModalOperadoraOpen,
@@ -132,7 +135,7 @@ export function useEquipamentosConfigModalState() {
     setOperadoraIdMarcaSimcard,
     temPlanosMarcaSimcard,
     setTemPlanosMarcaSimcard,
-    minCaracteresIccidMarcaSimcard,
+    quantidadeCaracteresIccidMarcaSimcard,
     setMinCaracteresIccidMarcaSimcard,
     expandedMarcasSimcardIds,
     setExpandedMarcasSimcardIds,

@@ -141,7 +141,9 @@ export function useEquipamentosConfig() {
     modal.setNomeModelo(modelo.nome);
     modal.setMarcaIdForModelo(String(modelo.marca.id));
     modal.setMinCaracteresImeiModelo(
-      modelo.minCaracteresImei ? String(modelo.minCaracteresImei) : "",
+      modelo.quantidadeCaracteresImei
+        ? String(modelo.quantidadeCaracteresImei)
+        : "",
     );
     modal.setModalModeloOpen(true);
   }
@@ -155,20 +157,20 @@ export function useEquipamentosConfig() {
       toast.error("Selecione uma marca");
       return;
     }
-    const minImei = modal.minCaracteresImeiModelo
-      ? Number(modal.minCaracteresImeiModelo)
+    const qtdImei = modal.quantidadeCaracteresImeiModelo
+      ? Number(modal.quantidadeCaracteresImeiModelo)
       : undefined;
     if (modal.editingModelo) {
       updateModeloMutation.mutate({
         id: modal.editingModelo.id,
         nome: modal.nomeModelo,
-        minCaracteresImei: minImei,
+        quantidadeCaracteresImei: qtdImei,
       });
     } else {
       createModeloMutation.mutate({
         nome: modal.nomeModelo,
         marcaId: Number(modal.marcaIdForModelo),
-        minCaracteresImei: minImei,
+        quantidadeCaracteresImei: qtdImei,
       });
     }
   }
@@ -226,7 +228,7 @@ export function useEquipamentosConfig() {
     modal.setOperadoraIdMarcaSimcard(String(m.operadoraId));
     modal.setTemPlanosMarcaSimcard(m.temPlanos);
     modal.setMinCaracteresIccidMarcaSimcard(
-      m.minCaracteresIccid ? String(m.minCaracteresIccid) : "",
+      m.quantidadeCaracteresIccid ? String(m.quantidadeCaracteresIccid) : "",
     );
     modal.setModalMarcaSimcardOpen(true);
   }
@@ -240,8 +242,8 @@ export function useEquipamentosConfig() {
       toast.error("Selecione uma operadora");
       return;
     }
-    const minIccid = modal.minCaracteresIccidMarcaSimcard
-      ? Number(modal.minCaracteresIccidMarcaSimcard)
+    const qtdIccid = modal.quantidadeCaracteresIccidMarcaSimcard
+      ? Number(modal.quantidadeCaracteresIccidMarcaSimcard)
       : undefined;
     if (modal.editingMarcaSimcard) {
       updateMarcaSimcardMutation.mutate({
@@ -251,14 +253,14 @@ export function useEquipamentosConfig() {
           ? Number(modal.operadoraIdMarcaSimcard)
           : undefined,
         temPlanos: modal.temPlanosMarcaSimcard,
-        minCaracteresIccid: minIccid,
+        quantidadeCaracteresIccid: qtdIccid,
       });
     } else {
       createMarcaSimcardMutation.mutate({
         nome: modal.nomeMarcaSimcard,
         operadoraId: Number(modal.operadoraIdMarcaSimcard),
         temPlanos: modal.temPlanosMarcaSimcard,
-        minCaracteresIccid: minIccid,
+        quantidadeCaracteresIccid: qtdIccid,
       });
     }
   }
@@ -377,7 +379,7 @@ export function useEquipamentosConfig() {
     setNomeModelo: modal.setNomeModelo,
     marcaIdForModelo: modal.marcaIdForModelo,
     setMarcaIdForModelo: modal.setMarcaIdForModelo,
-    minCaracteresImeiModelo: modal.minCaracteresImeiModelo,
+    quantidadeCaracteresImeiModelo: modal.quantidadeCaracteresImeiModelo,
     setMinCaracteresImeiModelo: modal.setMinCaracteresImeiModelo,
     modalOperadoraOpen: modal.modalOperadoraOpen,
     closeModalOperadora: modal.closeModalOperadora,
@@ -393,7 +395,8 @@ export function useEquipamentosConfig() {
     setOperadoraIdMarcaSimcard: modal.setOperadoraIdMarcaSimcard,
     temPlanosMarcaSimcard: modal.temPlanosMarcaSimcard,
     setTemPlanosMarcaSimcard: modal.setTemPlanosMarcaSimcard,
-    minCaracteresIccidMarcaSimcard: modal.minCaracteresIccidMarcaSimcard,
+    quantidadeCaracteresIccidMarcaSimcard:
+      modal.quantidadeCaracteresIccidMarcaSimcard,
     setMinCaracteresIccidMarcaSimcard: modal.setMinCaracteresIccidMarcaSimcard,
     modalPlanoSimcardOpen: modal.modalPlanoSimcardOpen,
     closeModalPlanoSimcard: modal.closeModalPlanoSimcard,

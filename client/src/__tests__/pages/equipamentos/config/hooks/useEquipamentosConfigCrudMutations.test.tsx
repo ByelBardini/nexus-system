@@ -148,7 +148,7 @@ describe("useEquipamentosConfigCrudMutations", () => {
       result.current.createModeloMutation.mutate({
         nome: "M",
         marcaId: 1,
-        minCaracteresImei: 14,
+        quantidadeCaracteresImei: 14,
       }),
     );
     await waitFor(() =>
@@ -171,7 +171,7 @@ describe("useEquipamentosConfigCrudMutations", () => {
     expectLastApiMutationBody("/equipamentos/modelos", "POST", {
       nome: "M",
       marcaId: 1,
-      minCaracteresImei: 14,
+      quantidadeCaracteresImei: 14,
     });
   });
 
@@ -246,7 +246,7 @@ describe("useEquipamentosConfigCrudMutations", () => {
         nome: "S",
         operadoraId: 1,
         temPlanos: true,
-        minCaracteresIccid: 18,
+        quantidadeCaracteresIccid: 18,
       }),
     );
     await waitFor(() =>
@@ -256,7 +256,7 @@ describe("useEquipamentosConfigCrudMutations", () => {
       nome: "S",
       operadoraId: 1,
       temPlanos: true,
-      minCaracteresIccid: 18,
+      quantidadeCaracteresIccid: 18,
     });
 
     closers.closeModalMarcaSimcard.mockClear();

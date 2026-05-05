@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { PreviewResult } from "@/pages/equipamentos/pareamento/preview/PreviewPareamentoTable";
 import {
-  computeMinIccidSim,
-  computeMinImeiRastreador,
+  computeQtdCaracteresIccidSim,
+  computeQtdCaracteresImeiRastreador,
   computeParesIndividual,
   computePodeConfirmarIndividual,
   computePodeConfirmarMassa,
@@ -13,7 +13,7 @@ import {
 } from "@/pages/equipamentos/pareamento/domain/preview-rules";
 
 const modeloList = [
-  { id: 1, nome: "ST-901", marca: { id: 1 }, minCaracteresImei: 14 },
+  { id: 1, nome: "ST-901", marca: { id: 1 }, quantidadeCaracteresImei: 14 },
 ];
 
 const marcasSim = [
@@ -22,7 +22,7 @@ const marcasSim = [
     nome: "MarcaX",
     operadoraId: 1,
     temPlanos: false,
-    minCaracteresIccid: 19,
+    quantidadeCaracteresIccid: 19,
     operadora: { id: 1, nome: "Op" },
   },
 ];
@@ -35,42 +35,52 @@ function previewBase(over: Partial<PreviewResult> = {}): PreviewResult {
   };
 }
 
-describe("pareamento.preview-logic — computeMinImeiRastreador", () => {
-  it("0 quando pertence a lote", () => {
-    expect(computeMinImeiRastreador(true, "ST-901", modeloList)).toBe(0);
+describe("pareamento.preview-logic — computeQtdCaracteresImeiRastreador", () => {
+  it("null quando pertence a lote", () => {
+    expect(
+      computeQtdCaracteresImeiRastreador(true, "ST-901", modeloList),
+    ).toBeNull();
   });
 
-  it("usa minCaracteresImei do modelo quando manual", () => {
-    expect(computeMinImeiRastreador(false, "ST-901", modeloList)).toBe(14);
+  it("usa quantidadeCaracteresImei do modelo quando manual", () => {
+    expect(
+      computeQtdCaracteresImeiRastreador(false, "ST-901", modeloList),
+    ).toBe(14);
   });
 
-  it("0 quando modelo não encontrado", () => {
-    expect(computeMinImeiRastreador(false, "?", modeloList)).toBe(0);
+  it("null quando modelo não encontrado", () => {
+    expect(
+      computeQtdCaracteresImeiRastreador(false, "?", modeloList),
+    ).toBeNull();
   });
 });
 
-describe("pareamento.preview-logic — computeMinIccidSim", () => {
-  it("0 quando pertence a lote", () => {
-    expect(computeMinIccidSim(true, "5", marcasSim)).toBe(0);
+describe("pareamento.preview-logic — computeQtdCaracteresIccidSim", () => {
+  it("null quando pertence a lote", () => {
+    expect(computeQtdCaracteresIccidSim(true, "5", marcasSim)).toBeNull();
   });
 
-  it("usa min da marca simcard", () => {
-    expect(computeMinIccidSim(false, "5", marcasSim)).toBe(19);
+  it("usa quantidadeCaracteresIccid da marca simcard", () => {
+    expect(computeQtdCaracteresIccidSim(false, "5", marcasSim)).toBe(19);
   });
 });
 
 describe("pareamento.preview-logic — computeParesIndividual", () => {
   it("vazio quando faltam dígitos", () => {
-    expect(computeParesIndividual("", "1", 0, 0)).toEqual([]);
+    expect(computeParesIndividual("", "1", null, null)).toEqual([]);
   });
 
-  it("respeita mínimos de imei/iccid", () => {
-    expect(computeParesIndividual("123", "456", 5, 0)).toEqual([]);
-    expect(computeParesIndividual("12345", "456", 5, 0)).toHaveLength(1);
+  it("respeita quantidade exata de imei/iccid", () => {
+    expect(computeParesIndividual("123", "456", 5, null)).toEqual([]);
+    expect(computeParesIndividual("12345", "456", 5, null)).toHaveLength(1);
+  });
+
+  it("sem quantidade configurada aceita qualquer tamanho", () => {
+    expect(computeParesIndividual("1", "2", null, null)).toHaveLength(1);
   });
 
   it("preserva trim nos valores enviados (não só dígitos)", () => {
-    const p = computeParesIndividual(" 3589 ", " 8955 ", 0, 0);
+    const p = computeParesIndividual(" 3589 ", " 8955 ", null, null);
     expect(p[0]).toEqual({ imei: "3589", iccid: "8955" });
   });
 });
@@ -90,8 +100,8 @@ describe("pareamento.preview-logic — computeProgressoVinculoIndividual", () =>
     const pct = computeProgressoVinculoIndividual({
       imeiIndividual: "358942109982341",
       iccidIndividual: "8955101234567890123",
-      minImeiIndividual: 0,
-      minIccidIndividual: 0,
+      qtdImeiIndividual: null,
+      qtdIccidIndividual: null,
       criarNovoRastreador: false,
       criarNovoSim: false,
       pertenceLoteRastreador: false,
@@ -236,9 +246,15 @@ describe("pareamento.preview-logic — paresParaPareamentoMassaFromPreview", () 
 });
 
 describe("pareamento.preview-logic — computePodeConfirmarIndividual", () => {
-  it("false quando iccid curto demais vs mínimo", () => {
+  it("false quando iccid com tamanho errado vs quantidade configurada", () => {
     expect(
-      computePodeConfirmarIndividual("358942109982341", "8955", 0, 18),
+      computePodeConfirmarIndividual("358942109982341", "8955", null, 18),
     ).toBe(false);
+  });
+
+  it("true quando sem quantidade configurada (qualquer tamanho)", () => {
+    expect(
+      computePodeConfirmarIndividual("358942109982341", "8955", null, null),
+    ).toBe(true);
   });
 });

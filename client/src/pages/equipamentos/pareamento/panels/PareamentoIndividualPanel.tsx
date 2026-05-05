@@ -58,8 +58,8 @@ export type PareamentoIndividualPanelProps = {
   podeConfirmarIndividual: boolean;
   podeConfirmarPareamentoIndividual: boolean;
   progressoVinculoIndividual: number;
-  minImeiIndividual: number;
-  minIccidIndividual: number;
+  qtdImeiIndividual: number | null;
+  qtdIccidIndividual: number | null;
   lotesRastreadoresFiltrados: LotePareamentoListItem[];
   lotesSimsFiltrados: LotePareamentoListItem[];
   marcasAtivas: MarcaPareamentoCatalog[];
@@ -350,11 +350,11 @@ export function PareamentoIndividualPanel(p: PareamentoIndividualPanelProps) {
                   (p.imeiIndividual.replace(/\D/g, "").length > 0 ||
                     p.iccidIndividual.replace(/\D/g, "").length > 0) && (
                     <p className="mt-2 text-[10px] text-amber-400">
-                      {p.minImeiIndividual > 0
-                        ? `IMEI deve ter ao menos ${p.minImeiIndividual} dígito(s).`
+                      {p.qtdImeiIndividual !== null
+                        ? `IMEI deve ter exatamente ${p.qtdImeiIndividual} dígito(s).`
                         : "Informe o IMEI."}{" "}
-                      {p.minIccidIndividual > 0
-                        ? `ICCID deve ter ao menos ${p.minIccidIndividual} dígito(s).`
+                      {p.qtdIccidIndividual !== null
+                        ? `ICCID deve ter exatamente ${p.qtdIccidIndividual} dígito(s).`
                         : "Informe o ICCID."}
                     </p>
                   )}

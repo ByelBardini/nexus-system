@@ -20,7 +20,7 @@ export interface MarcaModeloCatalog {
   nome: string;
   ativo: boolean;
   marca: { id: number; nome: string };
-  minCaracteresImei?: number | null;
+  quantidadeCaracteresImei?: number | null;
   /** Lote: marca opcional no tipo retornado por /modelos */
   marcaId?: number;
 }
@@ -36,7 +36,7 @@ export type MarcaSimcardRow = {
   nome: string;
   operadoraId: number;
   temPlanos: boolean;
-  minCaracteresIccid?: number | null;
+  quantidadeCaracteresIccid?: number | null;
   operadora: { id: number; nome: string };
   planos?: { id: number; planoMb: number; ativo: boolean }[];
 };

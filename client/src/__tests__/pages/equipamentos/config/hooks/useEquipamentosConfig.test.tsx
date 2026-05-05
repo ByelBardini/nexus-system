@@ -74,13 +74,13 @@ const modeloApi = (
   opts?: Partial<{
     nome: string;
     marcaId: number;
-    minCaracteresImei: number | null;
+    quantidadeCaracteresImei: number | null;
   }>,
 ) => ({
   id,
   nome: opts?.nome ?? `Modelo${id}`,
   ativo: true,
-  minCaracteresImei: opts?.minCaracteresImei ?? 15,
+  quantidadeCaracteresImei: opts?.quantidadeCaracteresImei ?? 15,
   marca: {
     id: opts?.marcaId ?? 1,
     nome: `Marca${opts?.marcaId ?? 1}`,
@@ -100,7 +100,7 @@ function setupDefaultCatalogMock() {
         modeloApi(100, {
           nome: "RastreadorFalcon",
           marcaId: 1,
-          minCaracteresImei: 15,
+          quantidadeCaracteresImei: 15,
         }),
       ]);
     if (url === "/equipamentos/operadoras")
@@ -116,7 +116,7 @@ function setupDefaultCatalogMock() {
           operadoraId: 1,
           temPlanos: false,
           ativo: true,
-          minCaracteresIccid: null,
+          quantidadeCaracteresIccid: null,
           operadora: { id: 1, nome: "Vivo Norte" },
           planos: [{ id: 20, marcaSimcardId: 10, planoMb: 5, ativo: true }],
         },
@@ -326,7 +326,7 @@ describe("useEquipamentosConfig", () => {
           modeloApi(100, {
             nome: "RastreadorFalcon",
             marcaId: 1,
-            minCaracteresImei: 15,
+            quantidadeCaracteresImei: 15,
           }),
         ]);
       if (url === "/equipamentos/operadoras" && !init?.method)
@@ -342,7 +342,7 @@ describe("useEquipamentosConfig", () => {
             operadoraId: 1,
             temPlanos: false,
             ativo: true,
-            minCaracteresIccid: null,
+            quantidadeCaracteresIccid: null,
             operadora: { id: 1, nome: "Vivo Norte" },
             planos: [],
           },
@@ -422,7 +422,7 @@ describe("useEquipamentosConfig", () => {
     );
   });
 
-  it("handleSaveModelo: cria sem minCaracteresImei quando campo vazio; edição omite chave ao limpar", async () => {
+  it("handleSaveModelo: cria sem quantidadeCaracteresImei quando campo vazio; edição omite chave ao limpar", async () => {
     const qc = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
@@ -451,7 +451,7 @@ describe("useEquipamentosConfig", () => {
         modeloApi(100, {
           nome: "RastreadorFalcon",
           marcaId: 1,
-          minCaracteresImei: 15,
+          quantidadeCaracteresImei: 15,
         }),
       ),
     );
@@ -492,7 +492,7 @@ describe("useEquipamentosConfig", () => {
       expectParsedBody(findApiCall("/equipamentos/modelos", "POST"), {
         nome: "Mod",
         marcaId: 1,
-        minCaracteresImei: 12,
+        quantidadeCaracteresImei: 12,
       }),
     );
   });
@@ -510,7 +510,7 @@ describe("useEquipamentosConfig", () => {
     expect(result.current.modalModeloOpen).toBe(true);
   });
 
-  it("openEditModelo com minCaracteresImei nulo limpa o campo", async () => {
+  it("openEditModelo com quantidadeCaracteresImei nulo limpa o campo", async () => {
     const qc = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
@@ -523,11 +523,11 @@ describe("useEquipamentosConfig", () => {
         id: 5,
         nome: "M",
         ativo: true,
-        minCaracteresImei: null,
+        quantidadeCaracteresImei: null,
         marca: { id: 2, nome: "Marca2", ativo: true },
       }),
     );
-    expect(result.current.minCaracteresImeiModelo).toBe("");
+    expect(result.current.quantidadeCaracteresImeiModelo).toBe("");
   });
 
   it("toggleAtivoModelo envia PATCH", async () => {
@@ -613,7 +613,7 @@ describe("useEquipamentosConfig", () => {
     );
   });
 
-  it("handleSaveMarcaSimcard: validações; create omite minCaracteresIccid se vazio", async () => {
+  it("handleSaveMarcaSimcard: validações; create omite quantidadeCaracteresIccid se vazio", async () => {
     const qc = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
@@ -698,7 +698,7 @@ describe("useEquipamentosConfig", () => {
     });
   });
 
-  it("openEditMarcaSimcard com minCaracteresIccid nulo limpa campo", async () => {
+  it("openEditMarcaSimcard com quantidadeCaracteresIccid nulo limpa campo", async () => {
     const qc = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
@@ -713,11 +713,11 @@ describe("useEquipamentosConfig", () => {
         operadoraId: 2,
         temPlanos: true,
         ativo: true,
-        minCaracteresIccid: null,
+        quantidadeCaracteresIccid: null,
         operadora: { id: 2, nome: "Op" },
       }),
     );
-    expect(result.current.minCaracteresIccidMarcaSimcard).toBe("");
+    expect(result.current.quantidadeCaracteresIccidMarcaSimcard).toBe("");
   });
 
   it("toggleAtivoMarcaSimcard envia PATCH", async () => {

@@ -22,8 +22,8 @@ export type PareamentoMassaPanelProps = {
   setTextImeis: (v: string) => void;
   textIccids: string;
   setTextIccids: (v: string) => void;
-  minImeiMassa: number;
-  minIccidMassa: number;
+  qtdImeiMassa: number | null;
+  qtdIccidMassa: number | null;
   imeisLen: number;
   iccidsLen: number;
   quantidadeBate: boolean;
@@ -112,9 +112,9 @@ export function PareamentoMassaPanel(p: PareamentoMassaPanelProps) {
                 placeholder={`358942109982341\n358942109982342\n358942109982343...`}
                 className="h-48 w-full resize-none rounded-sm border border-slate-300 p-3 font-mono text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
-              {p.minImeiMassa > 0 && (
+              {p.qtdImeiMassa !== null && (
                 <p className="mt-1 text-[10px] text-slate-400">
-                  Mínimo {p.minImeiMassa} dígito(s) por IMEI
+                  Exatamente {p.qtdImeiMassa} dígito(s) por IMEI
                 </p>
               )}
             </div>
@@ -136,9 +136,9 @@ export function PareamentoMassaPanel(p: PareamentoMassaPanelProps) {
                 placeholder={`895501100000001\n895501100000002\n895501100000003...`}
                 className="h-48 w-full resize-none rounded-sm border border-slate-300 p-3 font-mono text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               />
-              {p.minIccidMassa > 0 && (
+              {p.qtdIccidMassa !== null && (
                 <p className="mt-1 text-[10px] text-slate-400">
-                  Mínimo {p.minIccidMassa} dígito(s) por ICCID
+                  Exatamente {p.qtdIccidMassa} dígito(s) por ICCID
                 </p>
               )}
             </div>

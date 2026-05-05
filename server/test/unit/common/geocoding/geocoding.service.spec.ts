@@ -33,7 +33,9 @@ describe('GeocodingService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [GeocodingService],
-    }).compile();
+    })
+      .setLogger(false)
+      .compile();
 
     service = module.get<GeocodingService>(GeocodingService);
   });

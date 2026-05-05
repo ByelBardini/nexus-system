@@ -42,8 +42,8 @@ function baseProps(
     setTextImeis: vi.fn(),
     textIccids: "",
     setTextIccids: vi.fn(),
-    minImeiMassa: 0,
-    minIccidMassa: 0,
+    qtdImeiMassa: null,
+    qtdIccidMassa: null,
     imeisLen: 0,
     iccidsLen: 0,
     quantidadeBate: true,
@@ -162,11 +162,11 @@ describe("PareamentoMassaPanel", () => {
     });
   });
 
-  describe("dicas de mínimo", () => {
-    it("mostra avisos quando mínimos > 0", () => {
+  describe("dicas de quantidade exata", () => {
+    it("mostra avisos quando quantidade configurada (não null)", () => {
       render(
         <PareamentoMassaPanel
-          {...baseProps({ minImeiMassa: 14, minIccidMassa: 18 })}
+          {...baseProps({ qtdImeiMassa: 14, qtdIccidMassa: 18 })}
         />,
       );
       const imeiCol = screen
@@ -181,25 +181,29 @@ describe("PareamentoMassaPanel", () => {
         within(imeiCol as HTMLElement).getByText(
           (_, el) =>
             el?.tagName === "P" &&
-            (el.textContent ?? "").includes("Mínimo 14 dígito(s) por IMEI"),
+            (el.textContent ?? "").includes("Exatamente 14 dígito(s) por IMEI"),
         ),
       ).toBeInTheDocument();
       expect(
         within(iccidCol as HTMLElement).getByText(
           (_, el) =>
             el?.tagName === "P" &&
-            (el.textContent ?? "").includes("Mínimo 18 dígito(s) por ICCID"),
+            (el.textContent ?? "").includes(
+              "Exatamente 18 dígito(s) por ICCID",
+            ),
         ),
       ).toBeInTheDocument();
     });
 
-    it("não renderiza parágrafos de mínimo quando ambos são 0", () => {
+    it("não renderiza parágrafos de quantidade quando ambos são null", () => {
       render(
         <PareamentoMassaPanel
-          {...baseProps({ minImeiMassa: 0, minIccidMassa: 0 })}
+          {...baseProps({ qtdImeiMassa: null, qtdIccidMassa: null })}
         />,
       );
-      expect(screen.queryByText(/mínimo \d+ dígito/i)).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(/exatamente \d+ dígito/i),
+      ).not.toBeInTheDocument();
     });
   });
 

@@ -86,8 +86,8 @@ function baseProps(
     podeConfirmarIndividual: false,
     podeConfirmarPareamentoIndividual: false,
     progressoVinculoIndividual: 0,
-    minImeiIndividual: 14,
-    minIccidIndividual: 18,
+    qtdImeiIndividual: null,
+    qtdIccidIndividual: null,
     lotesRastreadoresFiltrados: [],
     lotesSimsFiltrados: [],
     marcasAtivas: [],
@@ -388,20 +388,20 @@ describe("PareamentoIndividualPanel", () => {
             iccidIndividual: "2",
             podeConfirmarPareamentoIndividual: false,
             podeConfirmarIndividual: false,
-            minImeiIndividual: 14,
-            minIccidIndividual: 18,
+            qtdImeiIndividual: 14,
+            qtdIccidIndividual: 18,
           })}
         />,
       );
       expect(
-        screen.getByText(/imei deve ter ao menos 14 dígito/i),
+        screen.getByText(/imei deve ter exatamente 14 dígito/i),
       ).toBeInTheDocument();
       expect(
-        screen.getByText(/iccid deve ter ao menos 18 dígito/i),
+        screen.getByText(/iccid deve ter exatamente 18 dígito/i),
       ).toBeInTheDocument();
     });
 
-    it("min 0: mensagem genérica 'Informe o IMEI' / 'Informe o ICCID' (ainda exige algum dígito para mostrar o aviso)", () => {
+    it("sem quantidade configurada (null): mensagem genérica 'Informe o IMEI' / 'Informe o ICCID'", () => {
       render(
         <PareamentoIndividualPanel
           {...baseProps({
@@ -409,8 +409,8 @@ describe("PareamentoIndividualPanel", () => {
             iccidIndividual: "2",
             podeConfirmarPareamentoIndividual: false,
             podeConfirmarIndividual: false,
-            minImeiIndividual: 0,
-            minIccidIndividual: 0,
+            qtdImeiIndividual: null,
+            qtdIccidIndividual: null,
           })}
         />,
       );
