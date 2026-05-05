@@ -284,7 +284,13 @@ describe('AparelhosService', () => {
       ]);
       prisma.ordemServico.findMany.mockResolvedValue([]);
       prisma.pedidoRastreador.findMany.mockResolvedValue([
-        { ...makePedidoDespachado([20]), tipoDespacho: 'CORREIOS', transportadora: null, numeroNf: 'BR99887766', kitIds: [20] },
+        {
+          ...makePedidoDespachado([20]),
+          tipoDespacho: 'CORREIOS',
+          transportadora: null,
+          numeroNf: 'BR99887766',
+          kitIds: [20],
+        },
       ]);
 
       const result = await service.findAll();
@@ -309,7 +315,9 @@ describe('AparelhosService', () => {
     });
 
     it('pedidoDespacho é null quando nenhum pedido despachado contém o kitId', async () => {
-      prisma.aparelho.findMany.mockResolvedValue([makeRastreador({ kitId: 99 })]);
+      prisma.aparelho.findMany.mockResolvedValue([
+        makeRastreador({ kitId: 99 }),
+      ]);
       prisma.ordemServico.findMany.mockResolvedValue([]);
       prisma.pedidoRastreador.findMany.mockResolvedValue([
         makePedidoDespachado([55]),
@@ -321,7 +329,9 @@ describe('AparelhosService', () => {
     });
 
     it('resolve kitIds armazenados como string JSON (formato legado)', async () => {
-      prisma.aparelho.findMany.mockResolvedValue([makeRastreador({ kitId: 10 })]);
+      prisma.aparelho.findMany.mockResolvedValue([
+        makeRastreador({ kitId: 10 }),
+      ]);
       prisma.ordemServico.findMany.mockResolvedValue([]);
       prisma.pedidoRastreador.findMany.mockResolvedValue([
         { ...makePedidoDespachado(), kitIds: '[10]' },
@@ -396,7 +406,12 @@ describe('AparelhosService', () => {
       prisma.aparelho.findMany.mockResolvedValue([makeRastreador()]);
       prisma.ordemServico.findMany.mockResolvedValue([]);
       prisma.pedidoRastreador.findMany.mockResolvedValue([
-        { kitIds: [10], tipoDespacho: 'EM_MAOS', transportadora: null, numeroNf: null },
+        {
+          kitIds: [10],
+          tipoDespacho: 'EM_MAOS',
+          transportadora: null,
+          numeroNf: null,
+        },
       ]);
 
       const result = await service.findAll();
@@ -415,14 +430,29 @@ describe('AparelhosService', () => {
       ]);
       prisma.ordemServico.findMany.mockResolvedValue([]);
       prisma.pedidoRastreador.findMany.mockResolvedValue([
-        { kitIds: [10], tipoDespacho: 'CORREIOS', transportadora: null, numeroNf: 'BR111' },
-        { kitIds: [20], tipoDespacho: 'EM_MAOS', transportadora: null, numeroNf: null },
+        {
+          kitIds: [10],
+          tipoDespacho: 'CORREIOS',
+          transportadora: null,
+          numeroNf: 'BR111',
+        },
+        {
+          kitIds: [20],
+          tipoDespacho: 'EM_MAOS',
+          transportadora: null,
+          numeroNf: null,
+        },
       ]);
 
       const result = await service.findAll();
 
-      expect(result[0].pedidoDespacho).toMatchObject({ tipoDespacho: 'CORREIOS', numeroNf: 'BR111' });
-      expect(result[1].pedidoDespacho).toMatchObject({ tipoDespacho: 'EM_MAOS' });
+      expect(result[0].pedidoDespacho).toMatchObject({
+        tipoDespacho: 'CORREIOS',
+        numeroNf: 'BR111',
+      });
+      expect(result[1].pedidoDespacho).toMatchObject({
+        tipoDespacho: 'EM_MAOS',
+      });
     });
   });
 
