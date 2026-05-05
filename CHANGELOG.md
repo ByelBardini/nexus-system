@@ -1,3 +1,10 @@
+## [1.8.1](https://github.com/ByelBardini/nexus-system/compare/v1.8.0...v1.8.1) (2026-05-04)
+
+
+### Bug Fixes
+
+* **selecao-tecnico:** exibir todos os técnicos no dropdown com estado do subcliente primeiro ([5eca3d6](https://github.com/ByelBardini/nexus-system/commit/5eca3d601ea845d1cace7188fa5c0e768908fb9e))
+
 # [1.8.0](https://github.com/ByelBardini/nexus-system/compare/v1.7.0...v1.8.0) (2026-05-03)
 
 
