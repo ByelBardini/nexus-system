@@ -96,6 +96,13 @@ Mutations em `side-panel/hooks/useSidePanelMutations.ts`:
 
 Quando ativo, `SidePanelDespachoCarga` realça os campos faltantes com borda âmbar e exibe mensagem de hint. Espelha a validação do backend em `updateStatus`.
 
+**Bloqueio pós-despacho (`SidePanelDespachoCarga`):** quando `bloqueado = true` (status `DESPACHADO` ou `ENTREGUE`), o componente exibe os campos como texto somente-leitura (título "Fixado" com ícone de cadeado) em vez de inputs desabilitados. Não é possível editar após despacho.
+
+**Informações de despacho no kanban/drawer:**
+- `PedidoRastreadorView` inclui `despacho?: { tipoDespacho, transportadora, numeroNf } | null` (mapeado por `mapPedidoToView` a partir dos campos da API).
+- `KanbanCard` exibe chip com meio de envio (transportadora/nome, Correios ou Em Mãos) para pedidos em status `despachado` ou `entregue`.
+- `DrawerDetalhes` exibe seção "Informações de Despacho" (bloqueada com cadeado) para status `despachado` ou `entregue`.
+
 #### Workspace persistido (`PedidosConfigPage`)
 
 `sessionStorage["nexus-pedidos-config-workspace"]` com `kitsPorPedido`, `tipoDespachoPorPedido`, `transportadoraPorPedido`, `numeroNfPorPedido`.
