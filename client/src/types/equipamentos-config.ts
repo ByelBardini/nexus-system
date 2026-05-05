@@ -11,7 +11,7 @@ export interface ModeloRastreador {
   id: number;
   nome: string;
   ativo: boolean;
-  minCaracteresImei?: number | null;
+  quantidadeCaracteresImei?: number | null;
   marca: { id: number; nome: string; ativo: boolean };
 }
 
@@ -34,7 +34,7 @@ export interface MarcaSimcard {
   operadoraId: number;
   temPlanos: boolean;
   ativo: boolean;
-  minCaracteresIccid?: number | null;
+  quantidadeCaracteresIccid?: number | null;
   operadora: { id: number; nome: string };
   planos?: PlanoSimcard[];
 }
