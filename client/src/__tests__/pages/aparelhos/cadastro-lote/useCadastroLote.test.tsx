@@ -109,7 +109,7 @@ function buildApiHandler(options: BuildApiOptions = {}) {
           nome: "X1",
           ativo: true,
           marca: { id: 1, nome: "M1" },
-          minCaracteresImei: 15,
+          quantidadeCaracteresImei: 15,
         },
       ]);
     if (url === "/equipamentos/operadoras")
@@ -124,6 +124,7 @@ function buildApiHandler(options: BuildApiOptions = {}) {
           nome: "SC",
           operadoraId: 2,
           temPlanos: false,
+          quantidadeCaracteresIccid: 19,
           operadora: { id: 2, nome: "Op" },
         },
       ]);
@@ -408,6 +409,7 @@ describe("useCadastroLote", () => {
         result.current.form.setValue("referencia", "SIM-1");
         result.current.form.setValue("tipo", "SIM");
         result.current.form.setValue("operadora", "2");
+        result.current.form.setValue("marcaSimcard", "3");
         result.current.form.setValue("definirIds", true);
         result.current.form.setValue("valorUnitario", 1000);
         result.current.form.setValue("idsTexto", IMEI_NOVO_A);

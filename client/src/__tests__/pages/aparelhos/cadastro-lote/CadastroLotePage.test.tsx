@@ -37,7 +37,7 @@ function setupApi() {
           nome: "X",
           ativo: true,
           marca: { id: 1, nome: "M" },
-          minCaracteresImei: 15,
+          quantidadeCaracteresImei: 15,
         },
       ]);
     if (url === "/equipamentos/operadoras")

@@ -57,7 +57,7 @@ function defaultApiResponse(url: string, init?: RequestInit): Promise<unknown> {
         nome: "X",
         ativo: true,
         marca: { id: 1, nome: "M" },
-        minCaracteresImei: 15,
+        quantidadeCaracteresImei: 15,
       },
     ]);
   if (url === "/equipamentos/operadoras")
@@ -70,7 +70,7 @@ function defaultApiResponse(url: string, init?: RequestInit): Promise<unknown> {
         operadoraId: 1,
         temPlanos: false,
         operadora: { id: 1, nome: "O" },
-        minCaracteresIccid: 20,
+        quantidadeCaracteresIccid: 20,
       },
     ]);
   if (url.startsWith("/debitos-rastreadores"))

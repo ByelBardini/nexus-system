@@ -21,10 +21,16 @@ describe("validateLoteIds", () => {
     expect(v.invalidos).toHaveLength(0);
   });
 
-  it("rejeita IMEI com comprimento fora da tolerância", () => {
-    const v = validateLoteIds("123", "RASTREADOR", []);
+  it("rejeita IMEI com comprimento diferente da quantidade configurada", () => {
+    const v = validateLoteIds("123", "RASTREADOR", [], 15);
     expect(v.validos).toHaveLength(0);
     expect(v.invalidos).toContain("123");
+  });
+
+  it("aceita qualquer comprimento quando quantidadeCaracteres não configurado", () => {
+    const v = validateLoteIds("123", "RASTREADOR", []);
+    expect(v.validos).toContain("123");
+    expect(v.invalidos).toHaveLength(0);
   });
 
   it("aceita ICCID 19 dígitos (SIM)", () => {
