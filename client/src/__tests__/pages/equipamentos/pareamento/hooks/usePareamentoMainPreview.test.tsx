@@ -40,8 +40,8 @@ const base = {
   quantidadeBate: true,
   imeisLength: 1,
   iccidsLength: 1,
-  minImeiIndividual: 15,
-  minIccidIndividual: 19,
+  qtdImeiIndividual: 15,
+  qtdIccidIndividual: 19,
 };
 
 describe("usePareamentoMainPreview", () => {
