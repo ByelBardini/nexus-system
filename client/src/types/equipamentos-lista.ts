@@ -24,6 +24,11 @@ export interface EquipamentoListItem {
     subclienteNome: string | null;
     veiculoPlaca: string | null;
   } | null;
+  pedidoDespacho?: {
+    tipoDespacho: string | null;
+    transportadora: string | null;
+    numeroNf: string | null;
+  } | null;
   simVinculado?: {
     id: number;
     identificador: string;

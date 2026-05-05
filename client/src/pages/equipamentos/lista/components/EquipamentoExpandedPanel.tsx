@@ -6,6 +6,7 @@ import { formatarDataHora, formatId } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { EquipamentoListItem } from "../equipamentos-page.shared";
 import {
+  formatDespachoEquipamento,
   formatMarcaModeloEquipamento,
   getEquipamentoStatusPresentation,
   loteEquipamentoResumo,
@@ -25,6 +26,7 @@ export function EquipamentoExpandedPanel({ equip, kitsPorId }: Props) {
   const kitNome = resolveKitNomeEquipamento(equip, kitsPorId);
   const marcaModelo = formatMarcaModeloEquipamento(equip);
   const proprietario = proprietarioLabelEquipamento(equip);
+  const transporte = formatDespachoEquipamento(equip.pedidoDespacho);
 
   return (
     <TableRow className="bg-white border-b border-slate-200">
@@ -149,7 +151,15 @@ export function EquipamentoExpandedPanel({ equip, kitsPorId }: Props) {
               <div className="text-[10px] text-slate-400 uppercase font-medium">
                 Transporte
               </div>
-              <div className="text-xs font-bold text-slate-700">-</div>
+              <div
+                className={
+                  transporte
+                    ? "text-xs font-bold text-slate-700"
+                    : "text-xs font-bold text-slate-400"
+                }
+              >
+                {transporte ?? "-"}
+              </div>
             </div>
             <div>
               <div className="text-[10px] text-slate-400 uppercase font-medium">
