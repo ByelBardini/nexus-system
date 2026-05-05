@@ -23,11 +23,11 @@ export class UpdateModeloDto {
 
   @ApiPropertyOptional({
     example: 15,
-    description: 'Quantidade mínima de caracteres do IMEI para este modelo',
+    description: 'Quantidade exata de caracteres do IMEI para este modelo',
   })
   @IsOptional()
   @IsInt()
   @Min(1)
   @Type(() => Number)
-  minCaracteresImei?: number;
+  quantidadeCaracteresImei?: number;
 }

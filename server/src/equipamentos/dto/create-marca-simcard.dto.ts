@@ -35,11 +35,11 @@ export class CreateMarcaSimcardDto {
 
   @ApiPropertyOptional({
     example: 19,
-    description: 'Quantidade mínima de caracteres do ICCID para esta marca',
+    description: 'Quantidade exata de caracteres do ICCID para esta marca',
   })
   @IsOptional()
   @IsInt()
   @Min(1)
   @Type(() => Number)
-  minCaracteresIccid?: number;
+  quantidadeCaracteresIccid?: number;
 }
