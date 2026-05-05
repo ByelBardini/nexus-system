@@ -1,3 +1,15 @@
+## [1.8.2](https://github.com/ByelBardini/nexus-system/compare/v1.8.1...v1.8.2) (2026-05-05)
+
+
+### Bug Fixes
+
+* **aparelhos:** exibir campo Despacho no painel expandido da listagem ([70d3093](https://github.com/ByelBardini/nexus-system/commit/70d30933cd399b6b73664f037ad02fd86ad43639))
+* **aparelhos:** retornar pedidoDespacho em findAll via lookup em pedidoRastreador ([01fcd66](https://github.com/ByelBardini/nexus-system/commit/01fcd6668e85e859ab61d8631f90e03adc758c32))
+* **client:** corrigir erros de TypeScript em validate-lote-ids e EquipamentosConfigModals ([31e850a](https://github.com/ByelBardini/nexus-system/commit/31e850af7e04693633e4047e0b80d2ce9eab7eb0))
+* **debitos-equipamentos:** remover coluna "Ações Corretivas" com botões placeholder ([bc15b8f](https://github.com/ByelBardini/nexus-system/commit/bc15b8f6d1e5afc939bcef117ef8e5f55e915426))
+* **equipamentos:** exibir campo Transporte no painel expandido da listagem ([287590f](https://github.com/ByelBardini/nexus-system/commit/287590f272eb5203acae4032200c580f458e8db6))
+* **pedidos-rastreadores:** exibir informações de despacho em pedidos despachados/entregues ([c5e8169](https://github.com/ByelBardini/nexus-system/commit/c5e816975ba10322300830a87320dbac692ef589))
+
 ## [1.8.1](https://github.com/ByelBardini/nexus-system/compare/v1.8.0...v1.8.1) (2026-05-04)
 
 
