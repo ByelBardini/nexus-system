@@ -45,6 +45,11 @@ export interface Aparelho {
     subclienteNome: string | null;
     veiculoPlaca: string | null;
   } | null;
+  pedidoDespacho?: {
+    tipoDespacho: string | null;
+    transportadora: string | null;
+    numeroNf: string | null;
+  } | null;
   criadoEm: string;
   historico?: HistoricoItem[];
 }

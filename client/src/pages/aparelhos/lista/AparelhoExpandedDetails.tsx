@@ -9,6 +9,15 @@ import {
   resolveKitNome,
 } from "./aparelhos-list.helpers";
 
+function formatDespacho(despacho: Aparelho["pedidoDespacho"]): string {
+  if (!despacho?.tipoDespacho) return "-";
+  if (despacho.tipoDespacho === "EM_MAOS") return "Em Mãos";
+  if (despacho.tipoDespacho === "CORREIOS")
+    return despacho.numeroNf ? `Correios — ${despacho.numeroNf}` : "Correios";
+  const partes = [despacho.transportadora, despacho.numeroNf].filter(Boolean);
+  return partes.length > 0 ? partes.join(" — NF ") : "Transportadora";
+}
+
 type Props = {
   aparelho: Aparelho;
   kitsPorId: Map<number, string>;
@@ -176,7 +185,7 @@ export function AparelhoExpandedDetails({ aparelho, kitsPorId }: Props) {
                 {aparelho.ordemServicoVinculada?.subclienteNome ?? "-"}
               </span>
             </div>
-            <div className="flex justify-between text-[11px]">
+            <div className="flex justify-between text-[11px] border-b border-slate-100 pb-2">
               <span className="text-slate-500">Placa</span>
               <span
                 className={cn(
@@ -187,6 +196,19 @@ export function AparelhoExpandedDetails({ aparelho, kitsPorId }: Props) {
                 )}
               >
                 {aparelho.ordemServicoVinculada?.veiculoPlaca ?? "-"}
+              </span>
+            </div>
+            <div className="flex justify-between text-[11px]">
+              <span className="text-slate-500">Despacho</span>
+              <span
+                className={cn(
+                  "font-bold text-right max-w-[60%]",
+                  aparelho.pedidoDespacho?.tipoDespacho
+                    ? "text-slate-700"
+                    : "text-slate-400",
+                )}
+              >
+                {formatDespacho(aparelho.pedidoDespacho)}
               </span>
             </div>
           </div>
