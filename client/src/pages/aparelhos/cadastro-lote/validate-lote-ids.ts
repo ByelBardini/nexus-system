@@ -15,7 +15,7 @@ export interface LoteIdValidation {
  */
 export function validateLoteIds(
   texto: string,
-  tipo: TipoAparelhoLote,
+  _tipo: TipoAparelhoLote,
   existentes: string[],
   quantidadeCaracteres?: number | null,
 ): LoteIdValidation {

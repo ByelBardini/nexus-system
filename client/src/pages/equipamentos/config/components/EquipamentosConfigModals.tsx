@@ -114,9 +114,7 @@ export function EquipamentosConfigModals({
               type="number"
               min={1}
               value={c.quantidadeCaracteresImeiModelo}
-              onChange={(e) =>
-                c.setQuantidadeCaracteresImeiModelo(e.target.value)
-              }
+              onChange={(e) => c.setMinCaracteresImeiModelo(e.target.value)}
               placeholder="Ex: 15"
               className="h-10"
             />
@@ -224,7 +222,7 @@ export function EquipamentosConfigModals({
               min={1}
               value={c.quantidadeCaracteresIccidMarcaSimcard}
               onChange={(e) =>
-                c.setQuantidadeCaracteresIccidMarcaSimcard(e.target.value)
+                c.setMinCaracteresIccidMarcaSimcard(e.target.value)
               }
               placeholder="Ex: 19"
               className="h-10"

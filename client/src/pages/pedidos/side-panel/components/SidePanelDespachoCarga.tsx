@@ -14,6 +14,12 @@ const OPCOES_TIPO_DESPACHO: {
   { value: "EM_MAOS", label: "Em Mãos", icon: "handshake" },
 ];
 
+const TIPO_DESPACHO_LABELS: Record<TipoDespacho, string> = {
+  TRANSPORTADORA: "Transportadora",
+  CORREIOS: "Correios",
+  EM_MAOS: "Em Mãos",
+};
+
 type Props = {
   bloqueado: boolean;
   podeDespachar: boolean;
@@ -66,22 +72,61 @@ export function SidePanelDespachoCarga({
     (tipoDespacho === "TRANSPORTADORA" || tipoDespacho === "CORREIOS") &&
     !numeroNf.trim();
 
+  if (bloqueado) {
+    return (
+      <div className="p-6 border-t-2 border-t-blue-100 bg-blue-50/20">
+        <h3 className="text-xs font-bold text-slate-700 uppercase mb-4 flex items-center gap-2">
+          <MaterialIcon name="local_shipping" className="text-erp-blue" />
+          Despacho de Carga
+          <span className="ml-auto flex items-center gap-1 text-[10px] font-normal text-slate-400 normal-case">
+            <MaterialIcon name="lock" className="text-xs" />
+            Fixado
+          </span>
+        </h3>
+        <div className="space-y-3">
+          <div>
+            <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">
+              Tipo de Envio
+            </p>
+            <p className="text-xs font-bold text-slate-800">
+              {TIPO_DESPACHO_LABELS[tipoDespacho] ?? tipoDespacho}
+            </p>
+          </div>
+          {tipoDespacho === "TRANSPORTADORA" && (
+            <div>
+              <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">
+                Transportadora
+              </p>
+              <p className="text-xs font-bold text-slate-800">
+                {transportadora || "-"}
+              </p>
+            </div>
+          )}
+          {tipoDespacho !== "EM_MAOS" && (
+            <div>
+              <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">
+                {tipoDespacho === "CORREIOS" ? "Cód. Rastreio" : "Nº NF"}
+              </p>
+              <p className="text-xs font-bold text-slate-800 font-mono">
+                {numeroNf || "-"}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 border-t-2 border-t-blue-100 bg-blue-50/20">
       <h3 className="text-xs font-bold text-slate-700 uppercase mb-4 flex items-center gap-2">
         <MaterialIcon name="local_shipping" className="text-erp-blue" />
         Despacho de Carga
-        {bloqueado && (
-          <span className="ml-auto flex items-center gap-1 text-[10px] font-normal text-slate-400 normal-case">
-            <MaterialIcon name="lock" className="text-xs" />
-            Bloqueado
-          </span>
-        )}
       </h3>
       <div
         className={cn(
           "space-y-3",
-          (bloqueado || !podeDespachar) && "opacity-75 pointer-events-none",
+          !podeDespachar && "opacity-75 pointer-events-none",
         )}
       >
         <div>

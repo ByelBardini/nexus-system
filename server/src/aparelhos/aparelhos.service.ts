@@ -8,6 +8,7 @@ import { Prisma, ProprietarioTipo } from '@prisma/client';
 import { StatusAparelho, StatusOS } from '@prisma/client';
 import { CreateIndividualDto } from './dto/create-individual.dto';
 import { DebitosRastreadoresService } from '../debitos-rastreadores/debitos-rastreadores.service';
+import { extrairKitIds } from '../pedidos-rastreadores/pedidos-rastreadores-kit-ids.helper';
 
 type DadosDescarte = {
   categoriaFalha?: string | null;
@@ -204,6 +205,49 @@ export class AparelhosService {
       }
     }
 
+    const kitIdsPresentes = new Set<number>();
+    aparelhos.forEach((a) => {
+      if (a.kitId) kitIdsPresentes.add(a.kitId);
+      // SIM cards têm kitId via o rastreador vinculado (aparelhosVinculados[0])
+      const kitIdViaVinculado = a.aparelhosVinculados?.[0]?.kitId;
+      if (kitIdViaVinculado) kitIdsPresentes.add(kitIdViaVinculado);
+    });
+
+    type DespachoInfo = {
+      tipoDespacho: string | null;
+      transportadora: string | null;
+      numeroNf: string | null;
+    };
+    const despachoPorKit = new Map<number, DespachoInfo>();
+
+    if (kitIdsPresentes.size > 0) {
+      const pedidosDespachados = await this.prisma.pedidoRastreador.findMany({
+        where: {
+          status: { in: ['DESPACHADO', 'ENTREGUE'] },
+          kitIds: { not: Prisma.DbNull },
+        },
+        select: {
+          kitIds: true,
+          tipoDespacho: true,
+          transportadora: true,
+          numeroNf: true,
+        },
+      });
+
+      for (const pedido of pedidosDespachados) {
+        const ids = extrairKitIds(pedido.kitIds);
+        for (const kitId of ids) {
+          if (kitIdsPresentes.has(kitId) && !despachoPorKit.has(kitId)) {
+            despachoPorKit.set(kitId, {
+              tipoDespacho: pedido.tipoDespacho,
+              transportadora: pedido.transportadora,
+              numeroNf: pedido.numeroNf,
+            });
+          }
+        }
+      }
+    }
+
     return aparelhos.map((a) => {
       const chave =
         a.tipo === 'RASTREADOR'
@@ -218,7 +262,9 @@ export class AparelhosService {
             veiculoPlaca: os.veiculo?.placa ?? null,
           }
         : undefined;
-      return { ...a, ordemServicoVinculada };
+      const kitId = a.kitId ?? a.aparelhosVinculados?.[0]?.kitId ?? null;
+      const pedidoDespacho = kitId ? (despachoPorKit.get(kitId) ?? null) : null;
+      return { ...a, ordemServicoVinculada, pedidoDespacho };
     });
   }
 

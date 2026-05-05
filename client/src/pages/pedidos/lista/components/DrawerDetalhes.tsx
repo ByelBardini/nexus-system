@@ -306,6 +306,57 @@ export function DrawerDetalhes({
               </div>
             )}
 
+            {(pedido.status === "despachado" || pedido.status === "entregue") &&
+              pedido.despacho?.tipoDespacho && (
+                <div className="mb-8">
+                  <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <MaterialIcon
+                      name="lock"
+                      className="text-xs text-slate-400"
+                    />
+                    Informações de Despacho
+                  </h3>
+                  <div className="bg-white border border-slate-200 rounded p-4 shadow-sm space-y-3">
+                    <div>
+                      <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">
+                        Meio de Envio
+                      </p>
+                      <p className="text-xs font-bold text-slate-800">
+                        {pedido.despacho.tipoDespacho === "TRANSPORTADORA"
+                          ? "Transportadora"
+                          : pedido.despacho.tipoDespacho === "CORREIOS"
+                            ? "Correios"
+                            : "Em Mãos"}
+                      </p>
+                    </div>
+                    {pedido.despacho.tipoDespacho === "TRANSPORTADORA" &&
+                      pedido.despacho.transportadora && (
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">
+                            Transportadora
+                          </p>
+                          <p className="text-xs font-semibold text-slate-800">
+                            {pedido.despacho.transportadora}
+                          </p>
+                        </div>
+                      )}
+                    {pedido.despacho.numeroNf &&
+                      pedido.despacho.tipoDespacho !== "EM_MAOS" && (
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">
+                            {pedido.despacho.tipoDespacho === "CORREIOS"
+                              ? "Cód. Rastreio"
+                              : "Nº NF"}
+                          </p>
+                          <p className="text-xs font-bold text-slate-800 font-mono">
+                            {pedido.despacho.numeroNf}
+                          </p>
+                        </div>
+                      )}
+                  </div>
+                </div>
+              )}
+
             {pedido.historico && pedido.historico.length > 0 && (
               <div>
                 <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-6">

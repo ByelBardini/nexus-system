@@ -18,8 +18,20 @@ export function KanbanCard({
 }) {
   const tipoLabel = pedido.tipo === "cliente" ? "Cliente" : "Técnico";
   const tipoIcon = pedido.tipo === "cliente" ? "business" : "engineering";
+  const isDespachado = pedido.status === "despachado";
   const isEntregue = pedido.status === "entregue";
   const urgencia = pedido.urgencia ?? "Média";
+
+  const despachoLabel =
+    isDespachado || isEntregue
+      ? pedido.despacho?.tipoDespacho === "TRANSPORTADORA"
+        ? pedido.despacho.transportadora || "Transportadora"
+        : pedido.despacho?.tipoDespacho === "CORREIOS"
+          ? "Correios"
+          : pedido.despacho?.tipoDespacho === "EM_MAOS"
+            ? "Em Mãos"
+            : null
+      : null;
   const urgenciaStyle = URGENCIA_STYLE[urgencia] ?? URGENCIA_STYLE["Média"];
 
   const solicitadoEm = pedido.solicitadoEm;
@@ -143,6 +155,12 @@ export function KanbanCard({
             isEntregue ? "text-slate-400" : "text-slate-500",
           )}
         >
+          {despachoLabel && (
+            <span className="flex items-center gap-1 text-[10px] font-semibold text-slate-600">
+              <MaterialIcon name="local_shipping" className="text-xs" />
+              {despachoLabel}
+            </span>
+          )}
           {isEntregue ? (
             <>
               <span className="flex items-center gap-1">

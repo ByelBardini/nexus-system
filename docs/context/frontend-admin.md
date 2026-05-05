@@ -31,7 +31,7 @@ Hub de navegação de configurações do sistema. Não tem estado, queries nem c
 
 Listagem somente-leitura de débitos de rastreadores entre entidades (Infinity ↔ Clientes). Rota: `/debitos-equipamentos`.
 
-**Sem mutações:** sem formulários de criação/edição. Botões "Resolver Pendência", "Transferência Direta" e "Abater Dívida" existem no painel expandido mas disparam apenas `toast("Funcionalidade em breve")`.
+**Sem mutações:** sem formulários de criação/edição.
 
 **Fonte de dados:**
 
@@ -86,10 +86,9 @@ Carrega até 500 registros de uma vez — sem paginação incremental no fronten
 
 **Layout da tabela (7 colunas):** ID · Devedor · Credor · Equip. (total un.) · Status · Últ. Mov. · ícone expand.
 
-**Painel expandido (accordion):** `TableRow` extra com `colSpan=7` em 3 colunas:
+**Painel expandido (accordion):** `TableRow` extra com `colSpan=7` em 2 colunas:
 1. Distribuição de Modelos — lista `modelos[]` com total consolidado.
 2. Histórico de Movimentações — lista `historico[]`; dot verde = entrada, vermelho = saída.
-3. Ações Corretivas — 3 botões stub.
 
 **Configs de estilo (constantes no topo do arquivo):**
 
@@ -102,6 +101,6 @@ Carrega até 500 registros de uma vez — sem paginação incremental no fronten
 - `formatarData(iso)` — `dd/mm/yyyy` (pt-BR).
 - `formatarDataHora(iso)` — `dd/mm/yyyy, hh:mm` (pt-BR).
 
-**Componentes externos usados:** `SearchableSelect`, `MaterialIcon`, shadcn `Table/*`, `Button`, `Input`.
+**Componentes externos usados:** `SearchableSelect`, `MaterialIcon`, shadcn `Table/*`, `Input`.
 
-**Ao implementar mutações futuras:** adicionar endpoints em `server/src/debitos-rastreadores/` (controller + service), chamar via `useMutation` com `queryClient.invalidateQueries(["debitos-rastreadores"])`, e substituir o `toast("Funcionalidade em breve")` pelo handler real no botão correspondente.
+**Ao implementar mutações futuras:** adicionar endpoints em `server/src/debitos-rastreadores/` (controller + service), chamar via `useMutation` com `queryClient.invalidateQueries(["debitos-rastreadores"])`, e adicionar os controles de ação no painel expandido de `DebitoEquipamentoRowGroup`.

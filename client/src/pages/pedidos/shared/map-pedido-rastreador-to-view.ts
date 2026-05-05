@@ -116,6 +116,15 @@ export function mapPedidoToView(p: PedidoRastreadorApi): PedidoRastreadorView {
     concluido: true,
   }));
 
+  const despacho =
+    p.tipoDespacho != null
+      ? {
+          tipoDespacho: p.tipoDespacho,
+          transportadora: p.transportadora ?? null,
+          numeroNf: p.numeroNf ?? null,
+        }
+      : null;
+
   return {
     id: p.id,
     codigo: p.codigo,
@@ -136,5 +145,6 @@ export function mapPedidoToView(p: PedidoRastreadorApi): PedidoRastreadorView {
     cpfCnpj: cpfCnpj ?? undefined,
     contato,
     historico,
+    despacho,
   };
 }

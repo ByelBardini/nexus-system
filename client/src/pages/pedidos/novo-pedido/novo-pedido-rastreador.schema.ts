@@ -3,7 +3,7 @@ import { z } from "zod";
 export const schemaItemMisto = z.object({
   proprietario: z.enum(["INFINITY", "CLIENTE"]),
   clienteId: z.number().optional(),
-  quantidade: z.number().min(1, "Mínimo 1"),
+  quantidade: z.number(),
   marcaModeloEspecifico: z.boolean().optional(),
   marcaEquipamentoId: z.number().optional(),
   modeloEquipamentoId: z.number().optional(),
@@ -44,6 +44,15 @@ export const schemaNovoPedido = z
       d.tipoDestino !== "CLIENTE" ||
       (d.destinoCliente != null && d.destinoCliente.length > 0),
     { message: "Selecione o destinatário", path: ["destinoCliente"] },
+  )
+  .refine(
+    (d) =>
+      d.tipoDestino !== "MISTO" ||
+      (d.itensMisto ?? []).every((item) => item.quantidade >= 1),
+    {
+      message: "Todos os itens devem ter quantidade mínima de 1",
+      path: ["itensMisto"],
+    },
   );
 
 export type FormNovoPedido = z.infer<typeof schemaNovoPedido>;

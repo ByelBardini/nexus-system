@@ -172,3 +172,18 @@ export function sliceEquipamentosPage<T>(items: T[], page: number) {
 export function totalPaginasEquipamentosList(filteredLength: number) {
   return totalPaginas(filteredLength, EQUIPAMENTOS_LIST_PAGE_SIZE);
 }
+
+export function formatDespachoEquipamento(
+  despacho: EquipamentoListItem["pedidoDespacho"],
+): string | null {
+  if (!despacho?.tipoDespacho) return null;
+  if (despacho.tipoDespacho === "EM_MAOS") return "Em Mãos";
+  if (despacho.tipoDespacho === "CORREIOS") {
+    return despacho.numeroNf ? `Correios — ${despacho.numeroNf}` : "Correios";
+  }
+  if (despacho.tipoDespacho === "TRANSPORTADORA") {
+    const partes = [despacho.transportadora, despacho.numeroNf].filter(Boolean);
+    return partes.length > 0 ? partes.join(" — NF ") : "Transportadora";
+  }
+  return null;
+}

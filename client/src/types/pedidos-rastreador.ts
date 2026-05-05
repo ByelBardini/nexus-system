@@ -176,4 +176,9 @@ export interface PedidoRastreadorView {
   cpfCnpj?: string;
   contato?: { nome: string; telefone?: string; email?: string };
   historico?: Array<{ titulo: string; descricao: string; concluido: boolean }>;
+  despacho?: {
+    tipoDespacho: string | null;
+    transportadora: string | null;
+    numeroNf: string | null;
+  } | null;
 }

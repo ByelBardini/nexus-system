@@ -109,6 +109,15 @@ Ver índice em `AGENTS.md`.
 - Lote com `identificadores` preenchido: quantidade efetiva = tamanho do array; abate de débito aplica só nos primeiros N itens.
 - Kit aceita apenas `RASTREADOR`; aparelho disponível para kit: `status=CONFIGURADO`, sem `kitId`, sem `tecnicoId`.
 - `PedidoRastreador` com `kitIds` JSON pode bloquear entrada no kit (valida modelo/marca/operadora do SIM e cliente).
+- **`pedidoDespacho` em `findAll()`:** campo computado que expõe informações de despacho por aparelho. Lógica:
+  1. Coleta `kitId` de cada aparelho em `kitIdsPresentes` — rastreadores via `a.kitId`; SIMs (que têm `kitId: null`) via `a.aparelhosVinculados?.[0]?.kitId` (o rastreador vinculado ao SIM).
+  2. Se `kitIdsPresentes` não estiver vazio, busca todos os `PedidoRastreador` com `status IN ['DESPACHADO', 'ENTREGUE']` e `kitIds IS NOT NULL`.
+  3. Parseia cada `pedido.kitIds` com `extrairKitIds` (de `pedidos-rastreadores/pedidos-rastreadores-kit-ids.helper`), que normaliza `Json?` de array ou string JSON.
+  4. Constrói `despachoPorKit: Map<number, DespachoInfo>` — primeiro pedido encontrado para cada kit prevalece.
+  5. No mapeamento de resultado: `kitId = a.kitId ?? a.aparelhosVinculados?.[0]?.kitId ?? null`; `pedidoDespacho = kitId ? despachoPorKit.get(kitId) ?? null : null`.
+  - `DespachoInfo`: `{ tipoDespacho: string | null; transportadora: string | null; numeroNf: string | null }`.
+  - Aparelhos sem kit (ou cujo kit não pertence a nenhum pedido despachado) recebem `pedidoDespacho: null`.
+  - O `prisma.pedidoRastreador.findMany` só é chamado se houver ao menos um kitId coletado (evita query desnecessária).
 
 
 ---
@@ -118,7 +127,7 @@ Ver índice em `AGENTS.md`.
 | Arquivo | Cobertura |
 |---------|-----------|
 | `aparelhos.controller.spec.ts` | Delegação controller → services; parsing de ids; preview com/sem pares; `createKit` trim |
-| `aparelhos.service.spec.ts` | `findParaTestes`, `findAll`, `findOne`, `createIndividual`, `updateStatus`, `getResumo` |
+| `aparelhos.service.spec.ts` | `findParaTestes`, `findAll`, `findOne`, `createIndividual`, `updateStatus`, `getResumo`; `findAll — pedidoDespacho` (rastreador DESPACHADO/ENTREGUE, sem kit, kit sem pedido, kitIds stringified, SIM via vinculado, EM_MAOS, múltiplos kits independentes) |
 | `kits.service.spec.ts` | `getKitById`, `updateAparelhoKit`, `criarOuBuscarKitPorNome` |
 | `lotes.service.spec.ts` | `createLote` (quantidade, SIM, identificadores), `getLotesParaPareamento` |
 | `pareamento.service.spec.ts` | `pareamentoPreview`, `pareamento` (transação, débitos, SIM/lote/manual) |
