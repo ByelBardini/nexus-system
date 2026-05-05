@@ -1,7 +1,5 @@
 import { Fragment } from "react";
-import { toast } from "sonner";
 import { MaterialIcon } from "@/components/MaterialIcon";
-import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { formatarDataDiaMesAno, formatarDataHora } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -151,7 +149,7 @@ export function DebitoEquipamentoRowGroup({
               </div>
             </div>
 
-            <div className="grid grid-cols-3 divide-x divide-slate-100">
+            <div className="grid grid-cols-2 divide-x divide-slate-100">
               <div className="px-6 py-4 space-y-3">
                 <h4 className="text-[10px] font-bold text-slate-400 uppercase pb-1 border-b border-slate-100">
                   Distribuição de Modelos
@@ -230,56 +228,6 @@ export function DebitoEquipamentoRowGroup({
                       </div>
                     </div>
                   ))}
-                </div>
-              </div>
-
-              <div className="px-6 py-4 space-y-3">
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase pb-1 border-b border-slate-100">
-                  Ações Corretivas
-                </h4>
-                <div className="space-y-2">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-[11px] font-bold uppercase gap-1.5"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toast("Funcionalidade em breve");
-                    }}
-                  >
-                    <MaterialIcon
-                      name="check_circle"
-                      className="text-base text-emerald-600"
-                    />
-                    Resolver Pendência
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-[11px] font-bold uppercase gap-1.5"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toast("Funcionalidade em breve");
-                    }}
-                  >
-                    <MaterialIcon
-                      name="swap_horiz"
-                      className="text-base text-blue-600"
-                    />
-                    Transferência Direta
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-[11px] font-bold uppercase gap-1.5"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toast("Funcionalidade em breve");
-                    }}
-                  >
-                    <MaterialIcon
-                      name="remove_circle"
-                      className="text-base text-amber-600"
-                    />
-                    Abater Dívida
-                  </Button>
                 </div>
               </div>
             </div>
