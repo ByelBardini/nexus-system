@@ -107,17 +107,47 @@ export function useCadastroLote() {
     }
   }, [debitosFiltrados.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const idValidation = useMemo(() => {
-    if (!watchDefinirIds || !watchIdsTexto.trim()) {
-      return { validos: [], duplicados: [], invalidos: [], jaExistentes: [] };
-    }
-    return validateLoteIds(watchIdsTexto, watchTipo, existingIds);
-  }, [watchIdsTexto, watchTipo, watchDefinirIds, existingIds]);
-
   const modelosDisponiveis = useMemo(
     () => getModelosDisponiveisPorMarcaId(modelos, watchMarca),
     [modelos, watchMarca],
   );
+
+  const quantidadeCaracteresLote = useMemo(() => {
+    if (watchTipo === "RASTREADOR") {
+      const modelo = modelosDisponiveis.find(
+        (m) => String(m.id) === watchModelo,
+      );
+      return modelo?.quantidadeCaracteresImei ?? null;
+    }
+    const marcaSim = marcasSimcardFiltradas.find(
+      (m) => String(m.id) === watchMarcaSimcard,
+    );
+    return marcaSim?.quantidadeCaracteresIccid ?? null;
+  }, [
+    watchTipo,
+    watchModelo,
+    watchMarcaSimcard,
+    modelosDisponiveis,
+    marcasSimcardFiltradas,
+  ]);
+
+  const idValidation = useMemo(() => {
+    if (!watchDefinirIds || !watchIdsTexto.trim()) {
+      return { validos: [], duplicados: [], invalidos: [], jaExistentes: [] };
+    }
+    return validateLoteIds(
+      watchIdsTexto,
+      watchTipo,
+      existingIds,
+      quantidadeCaracteresLote,
+    );
+  }, [
+    watchIdsTexto,
+    watchTipo,
+    watchDefinirIds,
+    existingIds,
+    quantidadeCaracteresLote,
+  ]);
 
   const valorTotal = useMemo(() => {
     const qtd =

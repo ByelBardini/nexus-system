@@ -102,27 +102,30 @@ export function CadastroIndividualPage() {
     [marcasSimcard, operadoraIdParaMarcasSimcard],
   );
 
-  const minCaracteresId = useMemo(() => {
+  const quantidadeCaracteresId = useMemo(() => {
     if (watchTipo === "RASTREADOR") {
       const modeloSelecionado = modelosDisponiveis.find(
         (m) => m.nome === form.getValues("modelo"),
       );
-      return modeloSelecionado?.minCaracteresImei ?? null;
+      return modeloSelecionado?.quantidadeCaracteresImei ?? null;
     }
     const marcaSim = (marcasSimcard ?? []).find(
       (m) => m.id === Number(watchMarcaSimcardId),
     );
-    return marcaSim?.minCaracteresIccid ?? null;
+    return marcaSim?.quantidadeCaracteresIccid ?? null;
   }, [watchTipo, watchMarcaSimcardId, modelosDisponiveis, marcasSimcard, form]);
 
   const idValido = useMemo(() => {
     if (!watchIdentificador.trim()) return false;
     const cleanId = watchIdentificador.replace(/\D/g, "");
     if (cleanId.length < 1) return false;
-    if (minCaracteresId !== null && cleanId.length < minCaracteresId)
+    if (
+      quantidadeCaracteresId !== null &&
+      cleanId.length !== quantidadeCaracteresId
+    )
       return false;
     return true;
-  }, [watchIdentificador, minCaracteresId]);
+  }, [watchIdentificador, quantidadeCaracteresId]);
 
   const debitosFiltrados = useMemo(() => {
     const todos = debitosData?.data ?? [];

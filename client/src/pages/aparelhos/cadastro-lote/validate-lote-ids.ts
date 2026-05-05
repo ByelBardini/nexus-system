@@ -11,11 +11,13 @@ export interface LoteIdValidation {
 
 /**
  * Valida e normaliza IMEI (rastreador) ou ICCID (SIM) a partir de texto multilinha.
+ * Quando `quantidadeCaracteres` é informado, valida tamanho exato; sem ele, aceita qualquer tamanho.
  */
 export function validateLoteIds(
   texto: string,
   tipo: TipoAparelhoLote,
   existentes: string[],
+  quantidadeCaracteres?: number | null,
 ): LoteIdValidation {
   const linhas = texto
     .split(/[\n,;]+/)
@@ -27,8 +29,6 @@ export function validateLoteIds(
   const invalidos: string[] = [];
   const jaExistentes: string[] = [];
   const vistos = new Set<string>();
-
-  const tamanhoEsperado = tipo === "RASTREADOR" ? 15 : 19;
 
   for (const id of linhas) {
     const cleanId = id.replace(/\D/g, "");
@@ -45,8 +45,8 @@ export function validateLoteIds(
     }
 
     if (
-      cleanId.length < tamanhoEsperado - 1 ||
-      cleanId.length > tamanhoEsperado + 1
+      quantidadeCaracteres != null &&
+      cleanId.length !== quantidadeCaracteres
     ) {
       invalidos.push(id);
       continue;
