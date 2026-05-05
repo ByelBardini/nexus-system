@@ -17,8 +17,8 @@ export function usePareamentoMainPreview(input: {
   quantidadeBate: boolean;
   imeisLength: number;
   iccidsLength: number;
-  minImeiIndividual: number;
-  minIccidIndividual: number;
+  qtdImeiIndividual: number | null;
+  qtdIccidIndividual: number | null;
 }) {
   const [preview, setPreview] = useState<PreviewResult | null>(null);
   const lastPreviewAttemptRef = useRef<string | null>(null);
@@ -64,12 +64,12 @@ export function usePareamentoMainPreview(input: {
     if (input.modo === "individual") {
       if (input.paresIndividual.length === 0) {
         const imeiMsg =
-          input.minImeiIndividual > 0
-            ? `${input.minImeiIndividual} dígitos`
+          input.qtdImeiIndividual !== null
+            ? `exatamente ${input.qtdImeiIndividual} dígitos`
             : "ao menos 1 dígito";
         const iccidMsg =
-          input.minIccidIndividual > 0
-            ? `${input.minIccidIndividual} dígitos`
+          input.qtdIccidIndividual !== null
+            ? `exatamente ${input.qtdIccidIndividual} dígitos`
             : "ao menos 1 dígito";
         toast.error(`Informe IMEI (${imeiMsg}) e ICCID (${iccidMsg})`);
         return;
@@ -94,8 +94,8 @@ export function usePareamentoMainPreview(input: {
     input.quantidadeBate,
     input.imeisLength,
     input.iccidsLength,
-    input.minImeiIndividual,
-    input.minIccidIndividual,
+    input.qtdImeiIndividual,
+    input.qtdIccidIndividual,
     previewMutation,
   ]);
 

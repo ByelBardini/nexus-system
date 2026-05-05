@@ -14,8 +14,8 @@ import {
   resetMassaFormAndPreview,
 } from "./domain/pareamento-form-reset";
 import {
-  computeMinImeiRastreador,
-  computeMinIccidSim,
+  computeQtdCaracteresImeiRastreador,
+  computeQtdCaracteresIccidSim,
   computeParesIndividual,
   computePodeConfirmarIndividual,
   computePodeConfirmarPareamentoIndividual,
@@ -174,9 +174,9 @@ export function PareamentoPage() {
     marcasSimcard,
   });
 
-  const minImeiIndividual = useMemo(
+  const qtdImeiIndividual = useMemo(
     () =>
-      computeMinImeiRastreador(
+      computeQtdCaracteresImeiRastreador(
         pertenceLoteRastreador,
         modeloRastreador,
         modelosPorMarca,
@@ -184,14 +184,19 @@ export function PareamentoPage() {
     [pertenceLoteRastreador, modeloRastreador, modelosPorMarca],
   );
 
-  const minIccidIndividual = useMemo(
-    () => computeMinIccidSim(pertenceLoteSim, marcaSimcardIdSim, marcasSimcard),
+  const qtdIccidIndividual = useMemo(
+    () =>
+      computeQtdCaracteresIccidSim(
+        pertenceLoteSim,
+        marcaSimcardIdSim,
+        marcasSimcard,
+      ),
     [pertenceLoteSim, marcaSimcardIdSim, marcasSimcard],
   );
 
-  const minImeiMassa = useMemo(
+  const qtdImeiMassa = useMemo(
     () =>
-      computeMinImeiRastreador(
+      computeQtdCaracteresImeiRastreador(
         pertenceLoteRastreadorMassa,
         modeloRastreadorMassa,
         modelosPorMarcaMassa,
@@ -199,9 +204,9 @@ export function PareamentoPage() {
     [pertenceLoteRastreadorMassa, modeloRastreadorMassa, modelosPorMarcaMassa],
   );
 
-  const minIccidMassa = useMemo(
+  const qtdIccidMassa = useMemo(
     () =>
-      computeMinIccidSim(
+      computeQtdCaracteresIccidSim(
         pertenceLoteSimMassa,
         marcaSimcardIdSimMassa,
         marcasSimcard,
@@ -214,10 +219,10 @@ export function PareamentoPage() {
       computeParesIndividual(
         imeiIndividual,
         iccidIndividual,
-        minImeiIndividual,
-        minIccidIndividual,
+        qtdImeiIndividual,
+        qtdIccidIndividual,
       ),
-    [imeiIndividual, iccidIndividual, minImeiIndividual, minIccidIndividual],
+    [imeiIndividual, iccidIndividual, qtdImeiIndividual, qtdIccidIndividual],
   );
 
   const podeConfirmarIndividual = useMemo(
@@ -225,10 +230,10 @@ export function PareamentoPage() {
       computePodeConfirmarIndividual(
         imeiIndividual,
         iccidIndividual,
-        minImeiIndividual,
-        minIccidIndividual,
+        qtdImeiIndividual,
+        qtdIccidIndividual,
       ),
-    [imeiIndividual, iccidIndividual, minImeiIndividual, minIccidIndividual],
+    [imeiIndividual, iccidIndividual, qtdImeiIndividual, qtdIccidIndividual],
   );
 
   const {
@@ -247,8 +252,8 @@ export function PareamentoPage() {
     quantidadeBate,
     imeisLength: imeis.length,
     iccidsLength: iccids.length,
-    minImeiIndividual,
-    minIccidIndividual,
+    qtdImeiIndividual,
+    qtdIccidIndividual,
   });
 
   const loteRastreadorSelecionado = useMemo(
@@ -271,8 +276,8 @@ export function PareamentoPage() {
       computeProgressoVinculoIndividual({
         imeiIndividual,
         iccidIndividual,
-        minImeiIndividual,
-        minIccidIndividual,
+        qtdImeiIndividual,
+        qtdIccidIndividual,
         criarNovoRastreador,
         criarNovoSim,
         pertenceLoteRastreador,
@@ -287,8 +292,8 @@ export function PareamentoPage() {
     [
       imeiIndividual,
       iccidIndividual,
-      minImeiIndividual,
-      minIccidIndividual,
+      qtdImeiIndividual,
+      qtdIccidIndividual,
       criarNovoRastreador,
       criarNovoSim,
       pertenceLoteRastreador,
@@ -690,8 +695,8 @@ export function PareamentoPage() {
                 podeConfirmarPareamentoIndividual
               }
               progressoVinculoIndividual={progressoVinculoIndividual}
-              minImeiIndividual={minImeiIndividual}
-              minIccidIndividual={minIccidIndividual}
+              qtdImeiIndividual={qtdImeiIndividual}
+              qtdIccidIndividual={qtdIccidIndividual}
               lotesRastreadoresFiltrados={lotesRastreadoresFiltrados}
               lotesSimsFiltrados={lotesSimsFiltrados}
               marcasAtivas={marcasAtivas}
@@ -709,8 +714,8 @@ export function PareamentoPage() {
               setTextImeis={setTextImeis}
               textIccids={textIccids}
               setTextIccids={setTextIccids}
-              minImeiMassa={minImeiMassa}
-              minIccidMassa={minIccidMassa}
+              qtdImeiMassa={qtdImeiMassa}
+              qtdIccidMassa={qtdIccidMassa}
               imeisLen={imeis.length}
               iccidsLen={iccids.length}
               quantidadeBate={quantidadeBate}

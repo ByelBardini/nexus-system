@@ -3,51 +3,53 @@ import type { MarcaSimcardPareamentoCatalog } from "./types";
 import type { ModeloPareamentoCatalog } from "./types";
 import type { ParImeiIccid } from "./types";
 
-export function computeMinImeiRastreador(
+export function computeQtdCaracteresImeiRastreador(
   pertenceLote: boolean,
   modeloRastreador: string,
   modelosPorMarca: ModeloPareamentoCatalog[],
-): number {
-  if (pertenceLote) return 0;
+): number | null {
+  if (pertenceLote) return null;
   const modelo = modelosPorMarca.find((m) => m.nome === modeloRastreador);
-  return modelo?.minCaracteresImei ?? 0;
+  return modelo?.quantidadeCaracteresImei ?? null;
 }
 
-export function computeMinIccidSim(
+export function computeQtdCaracteresIccidSim(
   pertenceLote: boolean,
   marcaSimcardId: string,
   marcasSimcard: MarcaSimcardPareamentoCatalog[],
-): number {
-  if (pertenceLote) return 0;
+): number | null {
+  if (pertenceLote) return null;
   const marca = marcasSimcard.find((m) => String(m.id) === marcaSimcardId);
-  return marca?.minCaracteresIccid ?? 0;
+  return marca?.quantidadeCaracteresIccid ?? null;
 }
 
 export function computeParesIndividual(
   imeiIndividual: string,
   iccidIndividual: string,
-  minImei: number,
-  minIccid: number,
+  qtdImei: number | null,
+  qtdIccid: number | null,
 ): ParImeiIccid[] {
   const imei = imeiIndividual.replace(/\D/g, "");
   const iccid = iccidIndividual.replace(/\D/g, "");
   if (imei.length < 1 || iccid.length < 1) return [];
-  if (minImei > 0 && imei.length < minImei) return [];
-  if (minIccid > 0 && iccid.length < minIccid) return [];
+  if (qtdImei !== null && imei.length !== qtdImei) return [];
+  if (qtdIccid !== null && iccid.length !== qtdIccid) return [];
   return [{ imei: imeiIndividual.trim(), iccid: iccidIndividual.trim() }];
 }
 
 export function computePodeConfirmarIndividual(
   imeiIndividual: string,
   iccidIndividual: string,
-  minImeiIndividual: number,
-  minIccidIndividual: number,
+  qtdImeiIndividual: number | null,
+  qtdIccidIndividual: number | null,
 ): boolean {
   const imei = imeiIndividual.replace(/\D/g, "");
   const iccid = iccidIndividual.replace(/\D/g, "");
   if (imei.length < 1 || iccid.length < 1) return false;
-  if (minImeiIndividual > 0 && imei.length < minImeiIndividual) return false;
-  if (minIccidIndividual > 0 && iccid.length < minIccidIndividual) return false;
+  if (qtdImeiIndividual !== null && imei.length !== qtdImeiIndividual)
+    return false;
+  if (qtdIccidIndividual !== null && iccid.length !== qtdIccidIndividual)
+    return false;
   return true;
 }
 
@@ -68,8 +70,8 @@ export function loteIdValidoSelecionado(
 export function computeProgressoVinculoIndividual(input: {
   imeiIndividual: string;
   iccidIndividual: string;
-  minImeiIndividual: number;
-  minIccidIndividual: number;
+  qtdImeiIndividual: number | null;
+  qtdIccidIndividual: number | null;
   criarNovoRastreador: boolean;
   criarNovoSim: boolean;
   pertenceLoteRastreador: boolean;
@@ -85,11 +87,12 @@ export function computeProgressoVinculoIndividual(input: {
   const iccid = input.iccidIndividual.replace(/\D/g, "");
   const imeiOk =
     imei.length >= 1 &&
-    (input.minImeiIndividual === 0 || imei.length >= input.minImeiIndividual);
+    (input.qtdImeiIndividual === null ||
+      imei.length === input.qtdImeiIndividual);
   const iccidOk =
     iccid.length >= 1 &&
-    (input.minIccidIndividual === 0 ||
-      iccid.length >= input.minIccidIndividual);
+    (input.qtdIccidIndividual === null ||
+      iccid.length === input.qtdIccidIndividual);
   const rastreadorOk = input.criarNovoRastreador
     ? input.pertenceLoteRastreador
       ? input.loteRastreadorSelecionado
