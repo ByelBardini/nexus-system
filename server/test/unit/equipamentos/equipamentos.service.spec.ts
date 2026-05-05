@@ -513,7 +513,7 @@ describe('EquipamentosService', () => {
           nome: 'Getrak',
           operadoraId: 1,
           temPlanos: false,
-          minCaracteresIccid: null,
+          quantidadeCaracteresIccid: null,
         },
         include: { operadora: true },
       });
