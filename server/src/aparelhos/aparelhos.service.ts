@@ -262,11 +262,8 @@ export class AparelhosService {
             veiculoPlaca: os.veiculo?.placa ?? null,
           }
         : undefined;
-      const kitId =
-        a.kitId ?? a.aparelhosVinculados?.[0]?.kitId ?? null;
-      const pedidoDespacho = kitId
-        ? (despachoPorKit.get(kitId) ?? null)
-        : null;
+      const kitId = a.kitId ?? a.aparelhosVinculados?.[0]?.kitId ?? null;
+      const pedidoDespacho = kitId ? (despachoPorKit.get(kitId) ?? null) : null;
       return { ...a, ordemServicoVinculada, pedidoDespacho };
     });
   }
