@@ -108,13 +108,15 @@ export function EquipamentosConfigModals({
           </div>
           <div>
             <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-              Mínimo de caracteres do IMEI
+              Quantidade de caracteres do IMEI
             </Label>
             <Input
               type="number"
               min={1}
-              value={c.minCaracteresImeiModelo}
-              onChange={(e) => c.setMinCaracteresImeiModelo(e.target.value)}
+              value={c.quantidadeCaracteresImeiModelo}
+              onChange={(e) =>
+                c.setQuantidadeCaracteresImeiModelo(e.target.value)
+              }
               placeholder="Ex: 15"
               className="h-10"
             />
@@ -215,14 +217,14 @@ export function EquipamentosConfigModals({
           </div>
           <div>
             <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-              Mínimo de caracteres do ICCID
+              Quantidade de caracteres do ICCID
             </Label>
             <Input
               type="number"
               min={1}
-              value={c.minCaracteresIccidMarcaSimcard}
+              value={c.quantidadeCaracteresIccidMarcaSimcard}
               onChange={(e) =>
-                c.setMinCaracteresIccidMarcaSimcard(e.target.value)
+                c.setQuantidadeCaracteresIccidMarcaSimcard(e.target.value)
               }
               placeholder="Ex: 19"
               className="h-10"
