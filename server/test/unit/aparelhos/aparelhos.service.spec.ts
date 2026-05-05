@@ -174,6 +174,7 @@ describe('AparelhosService', () => {
           identificador: '123456789012345',
           tipo: 'RASTREADOR',
           status: 'EM_ESTOQUE',
+          aparelhosVinculados: [],
         },
       ];
       prisma.aparelho.findMany.mockResolvedValue(aparelhos);
@@ -216,6 +217,7 @@ describe('AparelhosService', () => {
           identificador: '999999999999999',
           tipo: 'RASTREADOR',
           status: 'EM_ESTOQUE',
+          aparelhosVinculados: [],
         },
       ];
       prisma.aparelho.findMany.mockResolvedValue(aparelhos);
@@ -224,6 +226,203 @@ describe('AparelhosService', () => {
       const result = await service.findAll();
 
       expect(result[0].ordemServicoVinculada).toBeUndefined();
+    });
+
+    it('não consulta pedidoRastreador quando nenhum aparelho tem kit', async () => {
+      prisma.aparelho.findMany.mockResolvedValue([
+        { id: 1, tipo: 'RASTREADOR', kitId: null, aparelhosVinculados: [] },
+      ]);
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+
+      await service.findAll();
+
+      expect(prisma.pedidoRastreador.findMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findAll — pedidoDespacho', () => {
+    function makeRastreador(overrides: Record<string, unknown> = {}) {
+      return {
+        id: 1,
+        identificador: '123456789012345',
+        tipo: 'RASTREADOR',
+        status: 'DESPACHADO',
+        kitId: 10,
+        aparelhosVinculados: [],
+        ...overrides,
+      };
+    }
+
+    function makePedidoDespachado(kitIds: unknown = [10]) {
+      return {
+        kitIds,
+        tipoDespacho: 'TRANSPORTADORA',
+        transportadora: 'Arlete',
+        numeroNf: '654878998',
+      };
+    }
+
+    it('anexa pedidoDespacho ao rastreador quando kit está num pedido DESPACHADO', async () => {
+      prisma.aparelho.findMany.mockResolvedValue([makeRastreador()]);
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+      prisma.pedidoRastreador.findMany.mockResolvedValue([
+        makePedidoDespachado([10]),
+      ]);
+
+      const result = await service.findAll();
+
+      expect(result[0].pedidoDespacho).toEqual({
+        tipoDespacho: 'TRANSPORTADORA',
+        transportadora: 'Arlete',
+        numeroNf: '654878998',
+      });
+    });
+
+    it('anexa pedidoDespacho ao rastreador quando kit está num pedido ENTREGUE', async () => {
+      prisma.aparelho.findMany.mockResolvedValue([
+        makeRastreador({ status: 'COM_TECNICO', kitId: 20 }),
+      ]);
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+      prisma.pedidoRastreador.findMany.mockResolvedValue([
+        { ...makePedidoDespachado([20]), tipoDespacho: 'CORREIOS', transportadora: null, numeroNf: 'BR99887766', kitIds: [20] },
+      ]);
+
+      const result = await service.findAll();
+
+      expect(result[0].pedidoDespacho).toEqual({
+        tipoDespacho: 'CORREIOS',
+        transportadora: null,
+        numeroNf: 'BR99887766',
+      });
+    });
+
+    it('pedidoDespacho é null quando rastreador não tem kit', async () => {
+      prisma.aparelho.findMany.mockResolvedValue([
+        makeRastreador({ kitId: null }),
+      ]);
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+
+      const result = await service.findAll();
+
+      expect(result[0].pedidoDespacho).toBeNull();
+      expect(prisma.pedidoRastreador.findMany).not.toHaveBeenCalled();
+    });
+
+    it('pedidoDespacho é null quando nenhum pedido despachado contém o kitId', async () => {
+      prisma.aparelho.findMany.mockResolvedValue([makeRastreador({ kitId: 99 })]);
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+      prisma.pedidoRastreador.findMany.mockResolvedValue([
+        makePedidoDespachado([55]),
+      ]);
+
+      const result = await service.findAll();
+
+      expect(result[0].pedidoDespacho).toBeNull();
+    });
+
+    it('resolve kitIds armazenados como string JSON (formato legado)', async () => {
+      prisma.aparelho.findMany.mockResolvedValue([makeRastreador({ kitId: 10 })]);
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+      prisma.pedidoRastreador.findMany.mockResolvedValue([
+        { ...makePedidoDespachado(), kitIds: '[10]' },
+      ]);
+
+      const result = await service.findAll();
+
+      expect(result[0].pedidoDespacho).toMatchObject({
+        tipoDespacho: 'TRANSPORTADORA',
+        transportadora: 'Arlete',
+      });
+    });
+
+    it('consulta pedidoRastreador filtrando status DESPACHADO e ENTREGUE', async () => {
+      prisma.aparelho.findMany.mockResolvedValue([makeRastreador()]);
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+      prisma.pedidoRastreador.findMany.mockResolvedValue([]);
+
+      await service.findAll();
+
+      expect(prisma.pedidoRastreador.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            status: { in: ['DESPACHADO', 'ENTREGUE'] },
+          }),
+        }),
+      );
+    });
+
+    it('anexa pedidoDespacho ao SIM via kitId do rastreador vinculado (aparelhosVinculados)', async () => {
+      const sim = {
+        id: 2,
+        identificador: '89551062345678901234',
+        tipo: 'SIM',
+        status: 'DESPACHADO',
+        kitId: null,
+        aparelhosVinculados: [{ id: 1, kitId: 10 }],
+      };
+      prisma.aparelho.findMany.mockResolvedValue([sim]);
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+      prisma.pedidoRastreador.findMany.mockResolvedValue([
+        makePedidoDespachado([10]),
+      ]);
+
+      const result = await service.findAll();
+
+      expect(result[0].pedidoDespacho).toEqual({
+        tipoDespacho: 'TRANSPORTADORA',
+        transportadora: 'Arlete',
+        numeroNf: '654878998',
+      });
+    });
+
+    it('pedidoDespacho é null para SIM sem rastreador vinculado com kit', async () => {
+      const sim = {
+        id: 3,
+        tipo: 'SIM',
+        status: 'EM_ESTOQUE',
+        kitId: null,
+        aparelhosVinculados: [],
+      };
+      prisma.aparelho.findMany.mockResolvedValue([sim]);
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+
+      const result = await service.findAll();
+
+      expect(result[0].pedidoDespacho).toBeNull();
+      expect(prisma.pedidoRastreador.findMany).not.toHaveBeenCalled();
+    });
+
+    it('despacho EM_MAOS (sem transportadora e sem NF) é anexado corretamente', async () => {
+      prisma.aparelho.findMany.mockResolvedValue([makeRastreador()]);
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+      prisma.pedidoRastreador.findMany.mockResolvedValue([
+        { kitIds: [10], tipoDespacho: 'EM_MAOS', transportadora: null, numeroNf: null },
+      ]);
+
+      const result = await service.findAll();
+
+      expect(result[0].pedidoDespacho).toEqual({
+        tipoDespacho: 'EM_MAOS',
+        transportadora: null,
+        numeroNf: null,
+      });
+    });
+
+    it('múltiplos aparelhos em kits diferentes recebem despachos independentes', async () => {
+      prisma.aparelho.findMany.mockResolvedValue([
+        makeRastreador({ id: 1, kitId: 10 }),
+        makeRastreador({ id: 2, kitId: 20 }),
+      ]);
+      prisma.ordemServico.findMany.mockResolvedValue([]);
+      prisma.pedidoRastreador.findMany.mockResolvedValue([
+        { kitIds: [10], tipoDespacho: 'CORREIOS', transportadora: null, numeroNf: 'BR111' },
+        { kitIds: [20], tipoDespacho: 'EM_MAOS', transportadora: null, numeroNf: null },
+      ]);
+
+      const result = await service.findAll();
+
+      expect(result[0].pedidoDespacho).toMatchObject({ tipoDespacho: 'CORREIOS', numeroNf: 'BR111' });
+      expect(result[1].pedidoDespacho).toMatchObject({ tipoDespacho: 'EM_MAOS' });
     });
   });
 
