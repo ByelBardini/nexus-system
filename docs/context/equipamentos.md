@@ -13,12 +13,12 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 | `equipamentos.service.ts` | CRUD completo de 5 sub-recursos: marcas, modelos, operadoras, marcas-simcard, planos-simcard |
 | `dto/create-marca.dto.ts` | `nome: string` (MaxLength 100) |
 | `dto/update-marca.dto.ts` | `nome?: string`, `ativo?: boolean` |
-| `dto/create-modelo.dto.ts` | `nome: string`, `marcaId: number`, `minCaracteresImei?: number` |
-| `dto/update-modelo.dto.ts` | `nome?: string`, `ativo?: boolean`, `minCaracteresImei?: number` |
+| `dto/create-modelo.dto.ts` | `nome: string`, `marcaId: number`, `quantidadeCaracteresImei?: number` |
+| `dto/update-modelo.dto.ts` | `nome?: string`, `ativo?: boolean`, `quantidadeCaracteresImei?: number` |
 | `dto/create-operadora.dto.ts` | `nome: string` (MaxLength 100) |
 | `dto/update-operadora.dto.ts` | `nome?: string`, `ativo?: boolean` |
-| `dto/create-marca-simcard.dto.ts` | `nome: string`, `operadoraId: number`, `temPlanos?: boolean`, `minCaracteresIccid?: number` |
-| `dto/update-marca-simcard.dto.ts` | `nome?`, `operadoraId?`, `temPlanos?`, `ativo?`, `minCaracteresIccid?` |
+| `dto/create-marca-simcard.dto.ts` | `nome: string`, `operadoraId: number`, `temPlanos?: boolean`, `quantidadeCaracteresIccid?: number` |
+| `dto/update-marca-simcard.dto.ts` | `nome?`, `operadoraId?`, `temPlanos?`, `ativo?`, `quantidadeCaracteresIccid?` |
 | `dto/create-plano-simcard.dto.ts` | `marcaSimcardId: number`, `planoMb: number` |
 | `dto/update-plano-simcard.dto.ts` | `planoMb?: number`, `ativo?: boolean` |
 
@@ -63,9 +63,9 @@ Ver índice em `AGENTS.md`. Fragmento extraído da documentação do monorepo.
 **Modelos Prisma (campos-chave):**
 
 - `MarcaEquipamento`: `id`, `nome` (unique), `ativo`, `modelos[]`.
-- `ModeloEquipamento`: `id`, `nome`, `marcaId`, `ativo`, `minCaracteresImei?`. Unique: `(marcaId, nome)`.
+- `ModeloEquipamento`: `id`, `nome`, `marcaId`, `ativo`, `quantidadeCaracteresImei?`. Unique: `(marcaId, nome)`.
 - `Operadora`: `id`, `nome` (unique).
-- `MarcaSimcard`: `id`, `nome`, `operadoraId`, `temPlanos` (bool), `ativo`, `minCaracteresIccid?`. Unique: `(operadoraId, nome)`.
+- `MarcaSimcard`: `id`, `nome`, `operadoraId`, `temPlanos` (bool), `ativo`, `quantidadeCaracteresIccid?`. Unique: `(operadoraId, nome)`.
 - `PlanoSimcard`: `id`, `marcaSimcardId`, `planoMb`, `ativo`. Unique: `(marcaSimcardId, planoMb)`.
 
 **Regras de negócio críticas:**
