@@ -176,10 +176,7 @@ export function IdentificacaoTecnicaSection({
                   }}
                 >
                   <SelectTrigger
-                    className={cn(
-                      "h-9",
-                      fieldState.error && "border-red-500",
-                    )}
+                    className={cn("h-9", fieldState.error && "border-red-500")}
                   >
                     <SelectValue placeholder="Marca..." />
                   </SelectTrigger>
