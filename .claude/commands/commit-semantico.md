@@ -131,3 +131,13 @@ git commit -m "feat(equipamentos): implementar create e update no service" -m "I
 - [ ] Mensagem no formato: tipo(escopo): resumo + corpo
 - [ ] Apenas git add e git commit
 ```
+
+---
+
+## Após o commit — limpeza de plano
+
+Se este commit conclui a execução de um plano em `.claude/plans/`, avise o usuário:
+
+> "Commit criado. Se este commit finaliza um plano, me diga o nome dele para eu apagar `.claude/plans/<nome>.md`."
+
+Aguarde a confirmação do usuário antes de deletar qualquer arquivo de plano.
