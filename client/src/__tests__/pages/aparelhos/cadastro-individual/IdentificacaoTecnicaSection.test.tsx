@@ -280,7 +280,7 @@ describe("IdentificacaoTecnicaSection", () => {
     await user.click(await screen.findByRole("option", { name: /^Simcard$/i }));
 
     expect(f.getValues("tipo")).toBe("SIM");
-    expect(f.getValues("marca")).toBe("");
+    expect(f.getValues("marca") ?? "").toBe("");
     expect(f.getValues("modelo") ?? "").toBe("");
     expect(f.getValues("proprietario")).toBe("INFINITY");
     expect(f.getValues("clienteId")).toBeNull();
@@ -290,7 +290,7 @@ describe("IdentificacaoTecnicaSection", () => {
       await screen.findByRole("option", { name: /^Rastreador$/i }),
     );
     expect(f.getValues("tipo")).toBe("RASTREADOR");
-    expect(f.getValues("operadora")).toBe("");
+    expect(f.getValues("operadora") ?? "").toBe("");
     expect(f.getValues("marcaSimcardId") ?? "").toBe("");
     expect(f.getValues("planoSimcardId") ?? "").toBe("");
   });
