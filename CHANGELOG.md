@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/ByelBardini/nexus-system/compare/v1.8.2...v1.9.0) (2026-05-06)
+
+
+### Features
+
+* **planos:** adicionar sistema de agentes e comandos para criação e execução de planos TDD ([468bbe9](https://github.com/ByelBardini/nexus-system/commit/468bbe9beddc93fa73fc025621513734cd5c519e))
+
 ## [1.8.2](https://github.com/ByelBardini/nexus-system/compare/v1.8.1...v1.8.2) (2026-05-05)
 
 
