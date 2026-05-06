@@ -48,6 +48,16 @@ export function IdentificacaoTecnicaSection({
   operadorasAtivas,
   marcasSimcardFiltradas,
 }: IdentificacaoTecnicaSectionProps) {
+  const watchMarcaSimcardId = form.watch("marcaSimcardId");
+  const marcaSimcardSelecionada = marcasSimcardFiltradas.find(
+    (m) => String(m.id) === watchMarcaSimcardId,
+  );
+  const planosAtivos = (marcaSimcardSelecionada?.planos ?? []).filter(
+    (p) => p.ativo,
+  );
+  const mostrarPlano =
+    !!marcaSimcardSelecionada?.temPlanos && planosAtivos.length > 0;
+
   return (
     <div className="bg-white border border-slate-200 rounded-sm p-6">
       <div className="flex items-center gap-2 mb-6 pb-2 border-b border-slate-100">
@@ -152,38 +162,77 @@ export function IdentificacaoTecnicaSection({
         {watchTipo === "RASTREADOR" ? (
           <div>
             <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-              Marca e Modelo <span className="text-red-500">*</span>
+              Marca <span className="text-red-500">*</span>
             </Label>
-            <div className="grid grid-cols-2 gap-2">
-              <Controller
-                name="marca"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Select
-                    value={field.value}
-                    onValueChange={(v) => {
-                      field.onChange(v);
-                      form.setValue("modelo", "");
-                    }}
+            <Controller
+              name="marca"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Select
+                  value={field.value}
+                  onValueChange={(v) => {
+                    field.onChange(v);
+                    form.setValue("modelo", "");
+                  }}
+                >
+                  <SelectTrigger
+                    className={cn(
+                      "h-9",
+                      fieldState.error && "border-red-500",
+                    )}
                   >
-                    <SelectTrigger
-                      className={cn(
-                        "h-9",
-                        fieldState.error && "border-red-500",
-                      )}
-                    >
-                      <SelectValue placeholder="Marca..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {marcasAtivas.map((m) => (
-                        <SelectItem key={m.id} value={m.nome}>
-                          {m.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
+                    <SelectValue placeholder="Marca..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {marcasAtivas.map((m) => (
+                      <SelectItem key={m.id} value={m.nome}>
+                        {m.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+        ) : (
+          <div>
+            <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+              Operadora <span className="text-red-500">*</span>
+            </Label>
+            <Controller
+              name="operadora"
+              control={form.control}
+              render={({ field }) => (
+                <Select
+                  value={field.value}
+                  onValueChange={(v) => {
+                    field.onChange(v);
+                    form.setValue("marcaSimcardId", "");
+                    form.setValue("planoSimcardId", "");
+                  }}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {operadorasAtivas.map((o) => (
+                      <SelectItem key={o.id} value={o.nome}>
+                        {o.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </div>
+        )}
+
+        {watchTipo === "RASTREADOR" ? (
+          <>
+            <div>
+              <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                Modelo <span className="text-red-500">*</span>
+              </Label>
               <Controller
                 name="modelo"
                 control={form.control}
@@ -216,39 +265,10 @@ export function IdentificacaoTecnicaSection({
                 )}
               />
             </div>
-          </div>
+            <div />
+          </>
         ) : (
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                Operadora <span className="text-red-500">*</span>
-              </Label>
-              <Controller
-                name="operadora"
-                control={form.control}
-                render={({ field }) => (
-                  <Select
-                    value={field.value}
-                    onValueChange={(v) => {
-                      field.onChange(v);
-                      form.setValue("marcaSimcardId", "");
-                      form.setValue("planoSimcardId", "");
-                    }}
-                  >
-                    <SelectTrigger className="h-9">
-                      <SelectValue placeholder="Selecione..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {operadorasAtivas.map((o) => (
-                        <SelectItem key={o.id} value={o.nome}>
-                          {o.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
+          <>
             <div>
               <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
                 Marca do Simcard
@@ -285,42 +305,37 @@ export function IdentificacaoTecnicaSection({
                 )}
               />
             </div>
-            {form.watch("marcaSimcardId") &&
-              (() => {
-                const marcaSel = marcasSimcardFiltradas.find(
-                  (m) => String(m.id) === form.watch("marcaSimcardId"),
-                );
-                const planos = (marcaSel?.planos ?? []).filter((p) => p.ativo);
-                return marcaSel?.temPlanos && planos.length > 0 ? (
-                  <div>
-                    <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
-                      Plano
-                    </Label>
-                    <Controller
-                      name="planoSimcardId"
-                      control={form.control}
-                      render={({ field }) => (
-                        <Select
-                          value={field.value ?? ""}
-                          onValueChange={field.onChange}
-                        >
-                          <SelectTrigger className="h-9">
-                            <SelectValue placeholder="Selecione o plano..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {planos.map((p) => (
-                              <SelectItem key={p.id} value={String(p.id)}>
-                                {p.planoMb} MB
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
-                  </div>
-                ) : null;
-              })()}
-          </div>
+            {mostrarPlano ? (
+              <div>
+                <Label className="text-[10px] font-bold text-slate-500 uppercase mb-1.5 block">
+                  Plano
+                </Label>
+                <Controller
+                  name="planoSimcardId"
+                  control={form.control}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value ?? ""}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger className="h-9">
+                        <SelectValue placeholder="Selecione o plano..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {planosAtivos.map((p) => (
+                          <SelectItem key={p.id} value={String(p.id)}>
+                            {p.planoMb} MB
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+            ) : (
+              <div />
+            )}
+          </>
         )}
       </div>
     </div>
