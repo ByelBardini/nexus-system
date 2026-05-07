@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { formatarFromNow } from "@/lib/format";
 import type { PedidoRastreadorView } from "@/pages/pedidos/shared/pedidos-rastreador.types";
 import { getUrgenciaBadgeClass } from "@/pages/pedidos/shared/pedidos-urgencia-ui";
-import { PedidoMistoChips } from "@/pages/pedidos/lista/components/PedidoMistoChips";
+import { PedidoProprietarioBadges } from "@/pages/pedidos/lista/components/PedidoProprietarioBadges";
 
 export function KanbanCardConfig({
   pedido,
@@ -61,9 +61,7 @@ export function KanbanCardConfig({
         {pedido.cidadeEstado && (
           <span className="block text-slate-400">{pedido.cidadeEstado}</span>
         )}
-        {pedido.tipo === "misto" && pedido.itensMisto && (
-          <PedidoMistoChips itens={pedido.itensMisto} className="pt-0.5" />
-        )}
+        <PedidoProprietarioBadges pedido={pedido} className="pt-0.5" />
       </div>
       {pedido.solicitadoEm && (
         <p className="text-[10px] text-slate-400 mb-3">
