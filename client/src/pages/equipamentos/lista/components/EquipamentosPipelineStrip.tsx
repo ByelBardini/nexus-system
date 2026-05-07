@@ -37,6 +37,17 @@ const STAGES: StageDef[] = [
     label: "Configurados",
     count: (c) => c.configurados,
     itemClass:
+      "pipeline-item flex-1 bg-yellow-50 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors",
+    labelClass: "text-[10px] font-bold text-slate-600 uppercase font-condensed",
+    borderBarClass: "border-l-4 border-yellow-500 pl-2",
+    activeBorderClass:
+      "border-t-2 border-b-2 border-t-yellow-500 border-b-yellow-500",
+  },
+  {
+    filter: "EM_KIT",
+    label: "Em Kit",
+    count: (c) => c.emKit,
+    itemClass:
       "pipeline-item flex-1 bg-blue-100 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors",
     labelClass: "text-[10px] font-bold text-slate-600 uppercase font-condensed",
     borderBarClass: "border-l-4 border-erp-blue pl-2",
@@ -44,9 +55,9 @@ const STAGES: StageDef[] = [
       "border-t-2 border-b-2 border-t-blue-500 border-b-blue-500",
   },
   {
-    filter: "EM_KIT",
-    label: "Em Kit",
-    count: (c) => c.emKit,
+    filter: "DESPACHADO",
+    label: "Despachados",
+    count: (c) => c.despachados,
     itemClass:
       "pipeline-item flex-1 bg-purple-100 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors",
     labelClass: "text-[10px] font-bold text-slate-600 uppercase font-condensed",
@@ -55,24 +66,13 @@ const STAGES: StageDef[] = [
       "border-t-2 border-b-2 border-t-purple-500 border-b-purple-500",
   },
   {
-    filter: "DESPACHADO",
-    label: "Despachados",
-    count: (c) => c.despachados,
-    itemClass:
-      "pipeline-item flex-1 bg-amber-100 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors",
-    labelClass: "text-[10px] font-bold text-slate-600 uppercase font-condensed",
-    borderBarClass: "border-l-4 border-amber-500 pl-2",
-    activeBorderClass:
-      "border-t-2 border-b-2 border-t-amber-500 border-b-amber-500",
-  },
-  {
     filter: "COM_TECNICO",
     label: "Com Técnico",
     count: (c) => c.comTecnico,
     itemClass:
       "pipeline-item flex-1 bg-orange-100 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors",
     labelClass: "text-[10px] font-bold text-slate-600 uppercase font-condensed",
-    borderBarClass: "border-l-4 border-erp-orange pl-2",
+    borderBarClass: "border-l-4 border-orange-500 pl-2",
     activeBorderClass:
       "border-t-2 border-b-2 border-t-orange-500 border-b-orange-500",
   },

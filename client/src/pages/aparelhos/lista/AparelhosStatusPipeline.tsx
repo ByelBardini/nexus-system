@@ -43,12 +43,12 @@ export function AparelhosStatusPipeline({
         data-testid="aparelhos-status-em_estoque"
         onClick={() => onStatusClick("EM_ESTOQUE")}
         className={cn(
-          "pipeline-item flex-1 bg-amber-100 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors",
+          "pipeline-item flex-1 bg-yellow-50 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors",
           statusFilter === "EM_ESTOQUE" &&
-            "border-t-2 border-b-2 border-t-amber-500 border-b-amber-500",
+            "border-t-2 border-b-2 border-t-yellow-500 border-b-yellow-500",
         )}
       >
-        <div className="flex justify-between items-center border-l-4 border-amber-500 pl-2">
+        <div className="flex justify-between items-center border-l-4 border-yellow-500 pl-2">
           <span className="text-[10px] font-bold text-slate-600 uppercase font-condensed">
             Em Estoque
           </span>
@@ -81,12 +81,12 @@ export function AparelhosStatusPipeline({
         data-testid="aparelhos-status-despachado"
         onClick={() => onStatusClick("DESPACHADO")}
         className={cn(
-          "pipeline-item flex-1 bg-amber-100 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors",
+          "pipeline-item flex-1 bg-purple-100 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors",
           statusFilter === "DESPACHADO" &&
-            "border-t-2 border-b-2 border-t-amber-500 border-b-amber-500",
+            "border-t-2 border-b-2 border-t-purple-500 border-b-purple-500",
         )}
       >
-        <div className="flex justify-between items-center border-l-4 border-amber-500 pl-2">
+        <div className="flex justify-between items-center border-l-4 border-purple-500 pl-2">
           <span className="text-[10px] font-bold text-slate-600 uppercase font-condensed">
             Despachado
           </span>
@@ -105,7 +105,7 @@ export function AparelhosStatusPipeline({
             "border-t-2 border-b-2 border-t-orange-500 border-b-orange-500",
         )}
       >
-        <div className="flex justify-between items-center border-l-4 border-erp-orange pl-2">
+        <div className="flex justify-between items-center border-l-4 border-orange-500 pl-2">
           <span className="text-[10px] font-bold text-slate-600 uppercase font-condensed">
             Com Técnico
           </span>

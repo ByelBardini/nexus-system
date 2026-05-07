@@ -145,9 +145,18 @@ export function getEquipamentoStatusPresentation(
     return {
       kind: "em_kit",
       label: "Em Kit",
-      dotClass: "bg-purple-500",
-      badgeClass: "bg-purple-50 text-purple-700 border-purple-200",
-      headerIcon: "🟣",
+      dotClass: "bg-blue-500",
+      badgeClass: "bg-blue-50 text-blue-700 border-blue-200",
+      headerIcon: "🔵",
+    };
+  }
+  if (e.status === "CONFIGURADO") {
+    return {
+      kind: "standard",
+      label: "Configurado",
+      dotClass: "bg-yellow-400",
+      badgeClass: "bg-yellow-50 text-yellow-600 border-yellow-100",
+      headerIcon: "🟡",
     };
   }
   return {
