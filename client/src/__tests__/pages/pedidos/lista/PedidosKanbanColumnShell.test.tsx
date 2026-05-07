@@ -18,13 +18,14 @@ describe("PedidosKanbanColumnShell", () => {
     expect(screen.getByText("conteúdo")).toBeInTheDocument();
   });
 
-  it("variant config aplica o layout de coluna fixa (config)", () => {
+  it("variant config aplica o layout de coluna flexível (config)", () => {
     const { container } = render(
       <PedidosKanbanColumnShell status="entregue" count={0} variant="config">
         <span>v</span>
       </PedidosKanbanColumnShell>,
     );
     const col = container.firstChild as HTMLElement;
-    expect(col.className).toContain("w-[300px]");
+    expect(col.className).toContain("flex-1");
+    expect(col.className).toContain("min-w-[280px]");
   });
 });

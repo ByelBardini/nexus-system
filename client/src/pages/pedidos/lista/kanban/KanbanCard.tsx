@@ -7,7 +7,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { PedidoRastreadorView } from "@/pages/pedidos/shared/pedidos-rastreador.types";
 import { URGENCIA_STYLE } from "@/pages/pedidos/shared/pedidos-rastreador.types";
-import { PedidoMistoChips } from "@/pages/pedidos/lista/components/PedidoMistoChips";
+import { PedidoProprietarioBadges } from "@/pages/pedidos/lista/components/PedidoProprietarioBadges";
 
 export function KanbanCard({
   pedido,
@@ -114,9 +114,7 @@ export function KanbanCard({
           </span>
         )}
       </div>
-      {pedido.tipo === "misto" && pedido.itensMisto && (
-        <PedidoMistoChips itens={pedido.itensMisto} className="mb-2" />
-      )}
+      <PedidoProprietarioBadges pedido={pedido} className="mb-2" />
       {pedido.endereco && (
         <p
           className={cn(

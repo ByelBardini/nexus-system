@@ -18,11 +18,11 @@ export const STATUS_CONFIG_APARELHO: Record<
 > = {
   EM_ESTOQUE: {
     label: "Em Estoque",
-    color: "text-amber-700",
-    bgColor: "bg-amber-50",
-    borderColor: "border-amber-200",
+    color: "text-yellow-600",
+    bgColor: "bg-yellow-50",
+    borderColor: "border-yellow-100",
     icon: "🟡",
-    dotColor: "bg-amber-500",
+    dotColor: "bg-yellow-400",
   },
   CONFIGURADO: {
     label: "Configurado",
@@ -34,11 +34,11 @@ export const STATUS_CONFIG_APARELHO: Record<
   },
   DESPACHADO: {
     label: "Despachado",
-    color: "text-amber-700",
-    bgColor: "bg-amber-50",
-    borderColor: "border-amber-200",
-    icon: "🟠",
-    dotColor: "bg-amber-500",
+    color: "text-purple-700",
+    bgColor: "bg-purple-50",
+    borderColor: "border-purple-200",
+    icon: "🟣",
+    dotColor: "bg-purple-500",
   },
   COM_TECNICO: {
     label: "Com Técnico",

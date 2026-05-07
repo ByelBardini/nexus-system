@@ -39,6 +39,7 @@ export interface TecnicoResumo {
 export interface ClienteResumo {
   id: number;
   nome: string;
+  cor?: string | null;
 }
 
 export interface SubclienteResumo {
@@ -56,6 +57,7 @@ export interface ClienteApi {
   id: number;
   nome: string;
   cnpj?: string | null;
+  cor?: string | null;
 }
 
 export interface MarcaEquipamentoResumo {
@@ -78,7 +80,7 @@ export interface PedidoRastreadorItemApi {
   marcaEquipamentoId?: number | null;
   modeloEquipamentoId?: number | null;
   operadoraId?: number | null;
-  cliente?: { id: number; nome: string } | null;
+  cliente?: { id: number; nome: string; cor?: string | null } | null;
   marcaEquipamento?: MarcaEquipamentoResumo | null;
   modeloEquipamento?: ModeloEquipamentoResumo | null;
   operadora?: { id: number; nome: string } | null;
@@ -162,12 +164,17 @@ export interface PedidoRastreadorView {
   destinatario: string;
   tipo: "tecnico" | "cliente" | "misto";
   quantidade: number;
-  itensMisto?: Array<{ label: string; quantidade: number }>;
+  itensMisto?: Array<{
+    label: string;
+    quantidade: number;
+    cor?: string | null;
+  }>;
   status: StatusPedidoKey;
   dataSolicitacao?: string;
   marcaModelo?: string;
   operadora?: string;
   deCliente?: string;
+  clienteCor?: string | null;
   solicitadoEm?: string;
   entregueEm?: string | null;
   urgencia?: string;

@@ -353,7 +353,7 @@ describe("equipamentos-page.helpers", () => {
       const p = getEquipamentoStatusPresentation(e);
       expect(p.kind).toBe("em_kit");
       expect(p.label).toBe("Em Kit");
-      expect(p.dotClass).toContain("purple");
+      expect(p.dotClass).toContain("blue");
     });
 
     it("CONFIGURADO sem kitId usa status padrão", () => {

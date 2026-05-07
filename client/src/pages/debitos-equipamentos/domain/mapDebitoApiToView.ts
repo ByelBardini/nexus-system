@@ -1,5 +1,6 @@
 import type {
   DebitoEquipamento,
+  DebitoEquipamentoHistoricoItem,
   DebitoHistoricoMovimentacaoApi,
   DebitoRastreadorListaApi,
   StatusDebito,
@@ -16,6 +17,33 @@ export function buildHistoricoMovimentacaoDescricao(
   if (h.ordemServico)
     descricao = `${descricao} · OS nº ${h.ordemServico.numero}`;
   return descricao;
+}
+
+function groupHistoricoMovimentacoes(
+  historicos: DebitoHistoricoMovimentacaoApi[],
+): DebitoEquipamentoHistoricoItem[] {
+  const map = new Map<string, DebitoEquipamentoHistoricoItem>();
+
+  for (const h of historicos) {
+    const descricao = buildHistoricoMovimentacaoDescricao(h);
+    const tipo = h.delta > 0 ? ("entrada" as const) : ("saida" as const);
+    const key = `${tipo}::${descricao}`;
+    const existing = map.get(key);
+
+    if (existing) {
+      existing.quantidade += Math.abs(h.delta);
+      if (h.criadoEm > existing.data) existing.data = h.criadoEm;
+    } else {
+      map.set(key, {
+        descricao,
+        data: h.criadoEm,
+        tipo,
+        quantidade: Math.abs(h.delta),
+      });
+    }
+  }
+
+  return Array.from(map.values());
 }
 
 export function mapDebitoApiToView(
@@ -43,11 +71,6 @@ export function mapDebitoApiToView(
     modelos: [
       { nome: `${d.marca.nome} ${d.modelo.nome}`, quantidade: d.quantidade },
     ],
-    historico: (d.historicos ?? []).map((h) => ({
-      descricao: buildHistoricoMovimentacaoDescricao(h),
-      data: h.criadoEm,
-      tipo: h.delta > 0 ? ("entrada" as const) : ("saida" as const),
-      quantidade: Math.abs(h.delta),
-    })),
+    historico: groupHistoricoMovimentacoes(d.historicos ?? []),
   };
 }

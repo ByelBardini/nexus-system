@@ -255,8 +255,8 @@ export function PedidosConfigPage() {
       />
 
       <div className="bg-white border border-slate-300 shadow-sm overflow-hidden flex-1 min-h-0 flex flex-col">
-        <div className="overflow-auto bg-slate-100 p-4 flex-1 min-h-0">
-          <div className="flex gap-4 min-w-max min-h-[420px]">
+        <div className="overflow-x-auto overflow-y-hidden bg-slate-100 p-4 flex-1 min-h-0">
+          <div className="flex gap-4 w-full h-full">
             {STATUS_ORDER.map((status) => (
               <KanbanColumnConfig
                 key={status}

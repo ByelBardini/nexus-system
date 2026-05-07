@@ -29,7 +29,7 @@ const STAGES: StageDef[] = [
     label: "Agendado",
     count: (r) => r?.agendado ?? 0,
     itemClass:
-      "pipeline-item flex-1 bg-yellow-50 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors",
+      "pipeline-item flex-1 bg-yellow-100 border-r border-slate-200 p-3 flex flex-col justify-center text-left transition-colors",
     labelClass: "text-[10px] font-bold text-slate-500 uppercase font-condensed",
     borderBarClass: "border-l-4 border-erp-yellow pl-2",
     activeBorderClass:

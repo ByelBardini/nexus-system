@@ -26,8 +26,16 @@ export function mapPedidoToView(p: PedidoRastreadorApi): PedidoRastreadorView {
               ? "Infinity"
               : (item.cliente?.nome ?? `Cliente #${item.clienteId}`),
           quantidade: item.quantidade,
+          cor:
+            item.proprietario === "CLIENTE"
+              ? (item.cliente?.cor ?? null)
+              : null,
         }))
       : undefined;
+  const clienteCor =
+    p.tipoDestino === "CLIENTE"
+      ? (p.cliente?.cor ?? p.subcliente?.cliente?.cor ?? null)
+      : null;
   const urgenciaLabel = URGENCIA_LABELS[p.urgencia] ?? "Média";
 
   const dataSolicitacao = p.dataSolicitacao ?? p.criadoEm;
@@ -137,6 +145,7 @@ export function mapPedidoToView(p: PedidoRastreadorApi): PedidoRastreadorView {
     marcaModelo,
     operadora,
     deCliente,
+    clienteCor,
     solicitadoEm: p.criadoEm,
     entregueEm: p.entregueEm,
     urgencia: urgenciaLabel,

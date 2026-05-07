@@ -54,8 +54,8 @@ describe("mapPedidoToView", () => {
     );
     expect(v.tipo).toBe("misto");
     expect(v.itensMisto).toEqual([
-      { label: "Infinity", quantidade: 1 },
-      { label: "Z", quantidade: 2 },
+      { label: "Infinity", quantidade: 1, cor: null },
+      { label: "Z", quantidade: 2, cor: null },
     ]);
   });
 
