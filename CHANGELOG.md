@@ -1,3 +1,12 @@
+# [1.10.0](https://github.com/ByelBardini/nexus-system/compare/v1.9.0...v1.10.0) (2026-05-07)
+
+
+### Features
+
+* **debitos-equipamentos:** agrupar movimentações da mesma fonte no histórico ([0a81670](https://github.com/ByelBardini/nexus-system/commit/0a81670943f7e34e798ba9acb4b64c5e418a162b))
+* **pedidos-rastreadores:** incluir cor do cliente no include base ([dab8623](https://github.com/ByelBardini/nexus-system/commit/dab862383a867ac1c9166fac41ab341b12104daf))
+* **pedidos/kanban:** exibir badge de proprietário colorido nos cards ([25c4ac2](https://github.com/ByelBardini/nexus-system/commit/25c4ac2973932f4f0c2489fd06d8b9e03c3b0a1b))
+
 # [1.9.0](https://github.com/ByelBardini/nexus-system/compare/v1.8.2...v1.9.0) (2026-05-06)
 
 
