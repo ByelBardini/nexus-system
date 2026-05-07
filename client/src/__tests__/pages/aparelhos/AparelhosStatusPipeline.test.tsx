@@ -43,7 +43,7 @@ const PIPELINE_SEGMENTS: Array<{
     testId: "aparelhos-status-em_estoque",
     expectedClickArg: "EM_ESTOQUE",
     label: "Em Estoque",
-    activeTopBorderToken: "border-t-amber-500",
+    activeTopBorderToken: "border-t-yellow-500",
   },
   {
     testId: "aparelhos-status-configurado",
@@ -55,7 +55,7 @@ const PIPELINE_SEGMENTS: Array<{
     testId: "aparelhos-status-despachado",
     expectedClickArg: "DESPACHADO",
     label: "Despachado",
-    activeTopBorderToken: "border-t-amber-500",
+    activeTopBorderToken: "border-t-purple-500",
   },
   {
     testId: "aparelhos-status-com_tecnico",
