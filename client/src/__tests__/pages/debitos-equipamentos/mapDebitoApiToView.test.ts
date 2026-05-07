@@ -144,4 +144,71 @@ describe("mapDebitoApiToView", () => {
     );
     expect(v.historico).toEqual([]);
   });
+
+  it("agrupa múltiplos históricos do mesmo pedido em um único item somando quantidades", () => {
+    const pedido = { id: 1, codigo: "PED-0001" };
+    const v = mapDebitoApiToView(
+      buildDebitoRastreadorListaApi({
+        historicos: [
+          { id: 1, delta: 1, criadoEm: "2026-04-14T22:22:00.000Z", pedido },
+          { id: 2, delta: 1, criadoEm: "2026-04-14T22:22:00.000Z", pedido },
+          { id: 3, delta: 1, criadoEm: "2026-04-14T22:22:00.000Z", pedido },
+        ],
+      }),
+    );
+    expect(v.historico).toHaveLength(1);
+    expect(v.historico[0].descricao).toBe("Pedido PED-0001");
+    expect(v.historico[0].quantidade).toBe(3);
+    expect(v.historico[0].tipo).toBe("entrada");
+  });
+
+  it("não agrupa históricos de fontes distintas", () => {
+    const v = mapDebitoApiToView(
+      buildDebitoRastreadorListaApi({
+        historicos: [
+          {
+            id: 1,
+            delta: 2,
+            criadoEm: "2026-04-14T22:00:00.000Z",
+            pedido: { id: 1, codigo: "PED-0001" },
+          },
+          {
+            id: 2,
+            delta: 3,
+            criadoEm: "2026-04-14T23:00:00.000Z",
+            pedido: { id: 2, codigo: "PED-0002" },
+          },
+        ],
+      }),
+    );
+    expect(v.historico).toHaveLength(2);
+  });
+
+  it("não agrupa entrada e saída com a mesma descrição", () => {
+    const lote = { id: 5, referencia: "L-001" };
+    const v = mapDebitoApiToView(
+      buildDebitoRastreadorListaApi({
+        historicos: [
+          { id: 1, delta: 4, criadoEm: "2026-04-01T10:00:00.000Z", lote },
+          { id: 2, delta: -2, criadoEm: "2026-04-02T10:00:00.000Z", lote },
+        ],
+      }),
+    );
+    expect(v.historico).toHaveLength(2);
+    expect(v.historico[0].tipo).toBe("entrada");
+    expect(v.historico[1].tipo).toBe("saida");
+  });
+
+  it("usa a data mais recente ao agrupar históricos", () => {
+    const pedido = { id: 1, codigo: "PED-0001" };
+    const v = mapDebitoApiToView(
+      buildDebitoRastreadorListaApi({
+        historicos: [
+          { id: 1, delta: 1, criadoEm: "2026-04-14T22:00:00.000Z", pedido },
+          { id: 2, delta: 1, criadoEm: "2026-04-14T23:59:00.000Z", pedido },
+        ],
+      }),
+    );
+    expect(v.historico[0].data).toBe("2026-04-14T23:59:00.000Z");
+  });
 });
