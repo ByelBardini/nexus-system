@@ -10,7 +10,7 @@ export const PEDIDO_RASTREADOR_INCLUDE_BASE = {
   criadoPor: true,
   itens: {
     include: {
-      cliente: { select: { id: true, nome: true } },
+      cliente: { select: { id: true, nome: true, cor: true } },
       marcaEquipamento: true,
       modeloEquipamento: { include: { marca: true } },
       operadora: true,
