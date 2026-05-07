@@ -7,7 +7,7 @@ const COLUMN_VARIANT: Record<"default" | "config", string> = {
   default:
     "flex-1 min-w-[280px] flex flex-col h-full bg-slate-200/80 rounded border border-slate-200 p-3",
   config:
-    "w-[300px] shrink-0 flex flex-col h-full bg-slate-200/50 rounded-sm p-3",
+    "flex-1 min-w-[280px] flex flex-col h-full bg-slate-200/50 rounded-sm p-3",
 };
 
 type PedidosKanbanColumnShellProps = {
